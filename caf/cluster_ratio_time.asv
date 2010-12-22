@@ -1,0 +1,72 @@
+function cluster_ratio_time(varargin)
+% Calculates ratio between two clusters over time
+% Clustering should be done in VectorClust and exported to a processed
+% annotation file
+% Use this to figure out how effective CAF is -- ratio of noised syllables
+% to escapes
+
+%% Parameters
+p.window_time = 30*60; % length of window (seconds) to calculate ratio
+p.cluster_num = 2; % cluster number to use for numerator of ratio
+p.cluster_den = 1; % cluster number to use for denomenator of ratio
+p.multipart = 0; % if true, will combine data from all of the annotaion files in selected experiment. if false, will just take first annotation
+p.rootdir = 'c:\data\feelab';
+p.birdname = 'lb11';
+p.expername = datestr(today-1,'yyyy-mm-dd'); %yesterday
+p.filename = ''; % if given, this will override the combination of rootdir, birdname, and expername and multipart. can be a cell array to load multiple files
+p = parseargs(p, varargin{:});
+%% 
+
+if isempty(p.filename)
+    p.filename{1} = [p.rootdir filesep p.birdname filesep p.birdname '_all_misc_' p.expername ];
+    if p.multipart
+        part = 1;
+        f = sprintf('%s-pt%3.0f',p.filename{1},part);
+        while exist(f,'file')
+            p.filename{end+1} = f;
+            part = part + 1;
+        end
+    end
+elseif ~iscell(p.filename)
+    p.filename = {p.filename};
+end
+clear part f
+
+% load annotation file(s)
+segs = [];
+for n = 1:length(p.filename)
+    temp = load(p.filename{n});
+    if isempty(segs)
+        segs = temp.misc.segs;
+    else
+        segs = [segs temp.misc.segs];
+    end
+end
+clear temp n
+
+% make lists of syllable start times in each cluster of interest
+total_syllables = length(segs);
+times_num = nan(total_syllables,1);
+times_den = nan(total_syllables,1);
+for n = 1:total_syllables
+    if segs(n).segType == p.cluster_num
+        times_num(n) = segs(n).absStart;
+    elseif segs(n).segType == p.cluster_den
+        times_den(n) = segs(n).absStart;
+    end
+end
+times_num = times_num(~isnan(times_num)) * 24*60*60; %trim and convert to seconds
+times_den = times_den(~isnan(times_den)) * 24*60*60;
+clear n
+
+% separate into bins
+earliest = min([min(times_num) min(times_den)]);
+latest = max([max(times_num) max(times_den)]);
+edges = earliest:p.window_time:latest;
+centers = edges + p.window_time/2;
+count_num = histc(times_num,[edges]);
+count_den = histc(times_den,[edges]);
+ratio = count_num ./ count_den;
+
+% plot results
+plot(centers,ratio);
