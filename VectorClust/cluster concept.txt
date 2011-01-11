@@ -1,0 +1,136 @@
+TODO:
+Deal with nan features not resulting in handles.
+Add compute princible components.
+Add import dbase event.
+Add import dbase segments.
+Add import annotation.
+Add histogram to y-feature list.
+Add export graphs to powerpoint.
+Complete conflicts panel.
+Reset VCG vales at approriate time.
+Add prev cluster and next cluster as features (select sort)
+Add previous time cluster, next time cluster (select sort)
+Add isi feature.
+Add icn feature.
+Add time-of-day and time feature.
+When color change, update html.
+Set Store xlim/ylim for each view.
+Make selection smarter, clear selection?, reset selection, substract from selection, augment selection
+Key-press to undo-redo last polygon.
+Limit to One polygon per cluster per view.
+Make global options editable.
+Add new cluster properties: markersize, markertype?
+Add Run Macro button.
+Make subsets only load subset from file.
+Option to not load vector features.
+Make imp/exp/cmp file lists use 'parameters' to put correct name in popup.
+
+VectorClust Description:
+
+mainObject:
+	%vector info
+
+	%data
+	vcdb.d.v (vectors, cell array, nx1)
+	       d.sf (scalar features, matrix (num vectors x num scalar features)
+	       d.vf (vector features, cell arrays (num vector features) of cell arrays(num vectors)
+	       d.cn (cluster number, array)(Initially Nan)
+	       c.icn (imported cluster number)
+	       d.t (times, array) if not relevant leave as Nan.
+           d.i (identity, cell array, created on import, for use by export function, not used internally)	
+
+	%features
+	vcdb.f.sfname = {}; (num scalar features x 1)
+               f.sffcn = {}; (num scalar features x 1)
+               f.sfparam = {}; (num scalar features x 1)
+	       f.vfname = {}; (num vector features x 1)
+               f.vffcn = {}; (num vector features x 1)
+               f.vfparam = {}; (num vector features x 1)            
+
+	%clusters
+	vcdb.c(1).number % c is an array of structs
+	         .str
+	         .color
+	         .polys{n}.xfeat   %-1 is the prev cluster num, -2 is the next cluster num.
+			  .yfeat           %-1 is the prev cluster num, -2 is the next cluster num.
+			  .xverts
+			  .yverts
+	         .incs
+	         .excs
+     
+   vcdb.fileName: name of the original dbase file (when importing from ElectroGui) %%% Tatsuo
+   vcdb.pathName: path name of that file %%% Tatsuo
+	
+guidata that is not saved:
+	vcg.vcdbFilename (filename where vcbase is saved).
+	vcg.vcdir (the folder containing the vector clust functions)
+	vcg.bSel (vector specifying which are selected)(can't be true unless bDraw and bFilt are true)
+    vcg.bDraw (vector specifying which scatter points should be drawn given the current plot type)
+    vcg.bFilt (vector specifying which points meet filter criteria)
+    vcg.bRand (the current random permutation)(might not exist before initial randomization)
+    vcg.hScat (handles to the scatter group)(Userdata of each child is ud.ndx = index within vcdb.d.v) 
+              (plotted in order with filtered-out(~bFilt) and undrawn(~bDraw))
+    vcg.hVect (handles to the vectors) 
+    vcg.mVectMat (the aligned vectors in matrix form, only valid when hVect is not empty).
+    vcg.feat2colorMap (map for feature to color conversion)
+    vcg.feat2colorFeat (feature which will be mapped to color)
+    vcg.feat2colorRange (range for color)
+    vcg.subsamp.p (subsample ratio p/q)
+    vcg.subsamp.q
+    vcg.subsamp.bFast (whether to use filtering)
+    vcg.stretch.n (fixed length)
+    vcg.stretch.bFast (whether to use filtering)
+    vcg.vectRange (for vector outlier removal)
+    vcg.specgram.fs
+    vcg.specgram.freqRange
+    vcg.specgram.colorRange
+
+    vcg.options.largeSetThreshold
+               .unclusteredColor
+               .unclusteredMarker
+               .unclusteredSize
+               .maxSets   (maximum number different filter sets)
+               
+    
+
+Concept:
+	Vectors
+	Scalar_Features
+	Vector_Features
+	Clusters
+
+0)
+Importing: 
+[vectors, scalar_features, vector_features, cluster, time, identity, scalar_feature_names, vector_feature_names] = vc_imp_*(varargin);
+dmitri_dbase_segments
+dmitri_dbase_events
+aaron_annotation
+aaron_cell_withWave
+aaron_cell_noWaves
+
+Notes: empty arrays return if import fails.
+If varargin{1} = 'parameters', then returns. params.name = '';
+If varargin{1} = 'batch', then varargin{2} should be the search string.
+
+
+1) 
+(Auto-Save) checkbox
+Computing Features
+	[scalar_featurs, vector_features, sf_names, vf_names, sf_param, vfparam] = vc_cmf_*(vcdb);
+	SAPFeatures
+	AAFeatures
+	SpikeFeatures
+
+
+2)
+Exporting:
+	[errorString] = vc_exp_*(vcdb);	
+    errorString: [] if successful, 'cancel' if canceled
+	cluster identity straight to matlab.
+	To dbase
+	to Annot
+	to misc
+
+Ideas)
+next chronological vector as features
+prev chronological vector as features.
