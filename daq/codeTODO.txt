@@ -1,0 +1,15 @@
+TODO:
+
+open large files
+process large files
+modify FSCV to use new daq_ functions
+Add down sampling
+start dataset command - store experiments with data
+end dataset command
+optimize process file to run during data collection
+enhance peek functionality to allow endSamp specification?
+save as float32 for size reasons
+save start/end sample number in the file?  end can move?
+output functionality:  specifing precising timed output
+		modifing const output
+improve trigger and peek error handling.
