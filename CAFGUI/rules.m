@@ -362,6 +362,7 @@ Fs_in = handles.exper.desiredInSampRate;
 Fs = 24414; %Hz, TDT sampling rate
 audio_in = loadAudio(handles.exper, get(handles.listFiles,'Value'));
 audio = resample(audio_in, Fs, Fs_in);
+audio = audio - mean(audio);
 t = (0:length(audio)-1) * 1/Fs;
 % get list of rules to test
 toTest = handles.list2rule;%(get(handles.listRules,'Value'));
@@ -651,7 +652,7 @@ end
 
 %% apply filters to each file
 fileList = get(handles.listFiles,'Value');
-noiseByCluster = {[] };
+noiseByCluster = {[] []};
 sampledFlag = zeros(1000,1);
 for nel = 1:length(elements)
     if ismember( elements{nel}.filenum, fileList )
@@ -662,6 +663,7 @@ for nel = 1:length(elements)
         Fs = 24414; %Hz, TDT sampling rate
         audio_in = loadAudio(handles.exper, nf);
         audio = resample(audio_in, Fs, Fs_in);
+        audio = audio - mean(audio);
         t = (0:length(audio)-1) * 1/Fs;
         % apply rules to determine noise
         bNoise = testRulesOnFile(handles,audio);
@@ -747,6 +749,7 @@ Fs_in = handles.exper.desiredInSampRate;
 Fs = 24414; %Hz, TDT sampling rate
 audio_in = loadAudio(handles.exper, get(handles.listFiles,'Value'));
 audio = resample(audio_in, Fs, Fs_in);
+audio = audio - mean(audio);
 noise = testRulesTdt(audio, handles.RP, handles.testSuffix);
 figure
 axh(1) = subplot(2,1,1);

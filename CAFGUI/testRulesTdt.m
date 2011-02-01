@@ -1,5 +1,5 @@
 function noise = testRulesTdt(vec, RP, suf)
-
+vec = vec - mean(vec);
 tags.testMode = ['testMode' suf];
 tags.testAudio = ['testAudio' suf];
 tags.testIndex = ['testIndex' suf];
@@ -32,6 +32,9 @@ while true % will break from inside the loop when end of vec is reaced
         % no more data left to load. just wait for the last of it to be
         % tested and read out last part of results
         endpts = length(chunk);
+        if endpts > bufpts % this can happen if chunk is the double size chunk from the first load
+            endpts = endpts - bufpts;
+        end
         while curindex < bufpts+endpts
             curindex = RP.GetTagVal(tags.testIndex);
         end
@@ -88,4 +91,3 @@ if idx > length(vec)
     idx = length(vec);
 end
 chunk = vec(lastidx+1:idx);
-keyboard %%%DEBUG

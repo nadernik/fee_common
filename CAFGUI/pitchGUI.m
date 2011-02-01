@@ -272,7 +272,7 @@ set(handles.buttonTest,'Enable','on');
 set(handles.buttonTestFile,'Enable','on');
 set(handles.buttonAllSyllables,'Enable','on');
 
-set(handles.buttonRunTDT,'Enable','on');
+% set(handles.buttonRunTDT,'Enable','on');
 set(handles.buttonSampleAudio,'Enable','on');
 %set(handles.textFreqLow,'String',floor((handles.pitchTarget-200)/200)*200);
 %set(handles.textFreqHigh,'String',ceil((handles.pitchTarget+200)/200)*200),
