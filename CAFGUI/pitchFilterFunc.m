@@ -1,5 +1,6 @@
 function [bRuleMet, varargout] = pitchFilterFunc(sig, p, r)
-
+%testtesttest
+sig = sig - mean(sig);%%%DEBUG
 % % make the filters if they have not been made
 % if ~isfield(p,'bandFilters')
 %     p.bandFilters = makeFilter(...
@@ -26,17 +27,19 @@ lpBands = p.lpBands;
 for nharm = 1:p.harmonics
     band = filter(bandFilters.in(nharm).Numerator, 1, sig.^2);
     band = band.^2;
-    powBandHarm(nharm,:) = filter(lpBands.Numerator, 1, band);
+    powBandHarm(nharm,:) = band;
 end
 powBand = sum(powBandHarm)'; % in-band power
+powBand = filter(lpBands.Numerator, 1, powBand);
 
 %get out-band power
 for(nharm = 1:length(bandFilters.out))
     band = filter(bandFilters.out(nharm).Numerator, 1, sig.^2);
     band = band.^2;
-    powOutBandHarm(nharm,:) = filter(lpBands.Numerator, 1, band);
+    powOutBandHarm(nharm,:) = band;
 end
 powOutBand = sum(powOutBandHarm)'; % out-band power
+powOutBand = filter(lpBands.Numerator, 1, powOutBand);
 
 %Get pitch score:
 pitchScore = (powBand ./ (powBand + powOutBand + eps)); % avoid dividing by zero!
