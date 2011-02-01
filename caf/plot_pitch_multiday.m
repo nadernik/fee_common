@@ -8,6 +8,10 @@ P = parseargs(P, varargin{:});
 P.birdname = birdname;
 P.expername = expername;
 
+if ~iscell(P.expername)
+    P.expername = {P.expername};
+end
+
 clusters = [];
 times = [];
 pitches = [];
@@ -70,7 +74,13 @@ end
 function pitches = pitch_helper(segs,P)
 switch P.pitch_lim_units
     case 'percent'
-        error('not implemented yet')
+        pitches = cell(1,length(segs));
+        for k = 1:length(segs) % slow :(
+            lim_idx = round(P.pitch_lims ./ 100 .* length(segs(k).pitch));
+            lim_idx(1) = lim_idx(1) + 1; % prevent 0 index
+            pitches{k} = segs(k).pitch(lim_idx(1):lim_idx(2));
+        end
+        pitches = cellfun(@mean,pitches);
     case 'ms'
         error('not implemented yet')
     case 'samples'

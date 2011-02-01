@@ -820,7 +820,7 @@ function addExperiment(guifig, exper, varargin)
 P.minFreq = 2000;
 P.maxFreq = 6000;
 P.songDensity = .5; %aka durationThreshold
-P.ratioThreshold = 5; %aka powerThreshold
+P.ratioThreshold = 2; %aka powerThreshold
 P.songLength = .6; %aka songDuration
 P = parseargs(P, varargin{:});
 
@@ -926,8 +926,8 @@ songDetection.durationThreshold = P.songDensity;
 dgd.experData(experNdx).songDetection = songDetection;
 
 %Thread safe data
-tsd.songTrigParams(experNdx).preSecs = 5;
-tsd.songTrigParams(experNdx).postSecs = 2; 
+tsd.songTrigParams(experNdx).preSecs = 1;
+tsd.songTrigParams(experNdx).postSecs = 0; 
 tsd.songTrigParams(experNdx).maxFileLength = 30;
 tsd.displayParams(experNdx).audioCLim = [];
 
