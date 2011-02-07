@@ -22,7 +22,7 @@ function varargout = rules(varargin)
 
 % Edit the above text to modify the response to help rules
 
-% Last Modified by GUIDE v2.5 19-Aug-2010 13:50:45
+% Last Modified by GUIDE v2.5 02-Feb-2011 15:28:39
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -135,7 +135,7 @@ c(4).tdtTags(3).pfield = 'stepsHigh';
 
 handles.conditions = c;
 % to add more conditions, you need to add a radio button to the radio
-% button group 'panelCondition' and add an entry to variable c above. You
+% button group 'panelRule' and add an entry to variable c above. You
 % should always add to the end of c, otherwise you will break compatability
 % with old save files.
 for nc = 1:length(handles.conditions)
@@ -489,16 +489,16 @@ else
     set(handles.buttonCondition,'Enable','off')
 end
 
-% --- Executes when selected object is changed in panelCondition.
-function panelCondition_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in panelCondition 
+% --- Executes when selected object is changed in panelRule.
+function panelRule_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in panelRule 
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
 %	NewValue: handle of the currently selected object
 % handles    structure with handles and user data (see GUIDATA)
 % rSel = handles.list2rule(get(handles.listRules,'Value')); % selected rule #
-% cHandle = get(handles.panelCondition,'SelectedObject');
+% cHandle = get(handles.panelRule,'SelectedObject');
 % for c = 1:length(handles.conditions) 
 %     % find condition by looking for a match of object handles
 %     if cHandle == handles.conditions(c).h
@@ -534,6 +534,12 @@ function buttonLoadRules_Callback(hObject, eventdata, handles)
 temp = load([PathName FileName]);
 handles.rules = temp.handles.rules;
 handles.list2rule = temp.handles.list2rule;
+if isfield(temp.handles, 'tdt')
+    % for backwards compatability, checks to see if the field exists. In
+    % rules made before 2011-02-03 this field will not exist
+    handles.tdt = temp.handles.tdt;
+    set(handles.editTdtCircuit, 'String', handles.tdt.rcx);
+end
 % put list of rules in box
 str = cell(length(handles.list2rule),1);
 for n = 1:length(handles.list2rule)
@@ -583,8 +589,8 @@ end
 
 
 % --- Executes during object creation, after setting all properties.
-function panelCondition_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to panelCondition (see GCBO)
+function panelRule_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to panelRule (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -625,92 +631,93 @@ function buttonTestSyllable_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 %% load all annotations
+wbh = waitbar(0);
+filenum_list = get(handles.listFiles,'Value');
+total_files = length(filenum_list);
+filename_list = arrayfun(@getExperAudioFilename, repmat(handles.exper, 1, total_files), filenum_list, 'UniformOutput', false);
+
+% infer rootdir from exper dir
 idx = strfind(handles.exper.dir,filesep);
-dirname = handles.exper.dir(1:idx(end-1)); % like c:\data\birdname\
-annoTemplate = '%s_annotation_%s%s.mat';
-miscTemplate = '%s_all_misc_%s%s.mat';
-annoFile = [dirname sprintf(annoTemplate, handles.exper.birdname, handles.exper.expername, '')];
-miscFile = [dirname sprintf(miscTemplate, handles.exper.birdname, handles.exper.expername, '')];
-part = 1;
-elements = {};
-keys = {};
-misc = struct('segs',[],'bRand',[]);
-while exist(annoFile,'file')
-    % load this file and add collect elements and keys
-    temp = load(annoFile);
-    elements = [elements temp.elements];
-    keys = [keys temp.keys];
-    temp = load(miscFile);
-    misc.segs = [misc.segs temp.misc.segs];
-    misc.bRand = [misc.bRand; temp.misc.bRand];
-    % make the next filename. keep going until file doesn't exist.
-    part = part + 1;
-    partstr = sprintf('-pt%03.g',part); %like -pt002
-    annoFile = [dirname sprintf(annoTemplate, handles.exper.birdname, handles.exper.expername, partstr)];
-    miscFile = [dirname sprintf(miscTemplate, handles.exper.birdname, handles.exper.expername, partstr)];
-end
+rootdir = handles.exper.dir(1:idx(end-2)); % like c:\data\
 
-%% apply filters to each file
-fileList = get(handles.listFiles,'Value');
-noiseByCluster = {[] []};
-sampledFlag = zeros(1000,1);
-for nel = 1:length(elements)
-    if ismember( elements{nel}.filenum, fileList )
-        % for each selected file
-        nf = elements{nel}.filenum%%%DEBUG
-        % load audio
-        Fs_in = handles.exper.desiredInSampRate;
-        Fs = 24414; %Hz, TDT sampling rate
-        audio_in = loadAudio(handles.exper, nf);
-        audio = resample(audio_in, Fs, Fs_in);
-        audio = audio - mean(audio);
-        t = (0:length(audio)-1) * 1/Fs;
-        % apply rules to determine noise
-        bNoise = testRulesOnFile(handles,audio);
-        % classify noise into syllables
-        tStart = elements{nel}.segFileStartTimes;
-        tEnd = elements{nel}.segFileEndTimes;
-        clust = getClusterNumber(nel,elements,keys,misc);
-        for s = 1:length(tStart) % for each syllable
-            % clust = -1 for unclustered syllables
-            if clust(s) > 0 % skip unclustered syllables
-                % is there noise in this syllable?
-                idx = t > tStart(s) & t < tEnd(s);
-                syllNoise = bNoise(idx);
-                % chop off remainder so we can resample
-                L = length(syllNoise);%floor(length(syllNoise)/100)*100;
-                if ~sampledFlag(clust(s))
-                    sampleaudio{clust(s)} = audio(idx);
-                    sampledFlag(clust(s)) = 1;
-                end
-                
-                noiseByCluster{clust(s)}(:,end+1) = resample(syllNoise(1:L),100,L);
-                % decimateMinMax(syllNoise,floor(length(syllNoise)/100));
-            end
+miscfiles = getProcessedDataFiles(handles.exper.birdname,'experNames',handles.exper.expername, 'rootdir', rootdir);
+pitchfiles = getProcessedDataFiles(handles.exper.birdname,'experNames',handles.exper.expername, 'rootdir', rootdir, 'dataType', 'pitch');
+
+all_syll_noise = [];
+all_syll_type = [];
+all_pitch = [];
+files_processed = 0;
+for ii = 1:length(miscfiles)
+    load([rootdir handles.exper.birdname filesep miscfiles(ii).name])
+    pitch_loaded = false;
+    for jj = 1:total_files
+        key = filename_list(jj);
+        % get segs from this file
+        idx_seg_file = cellfun(@strcmp, {misc.segs.key}, repmat({key}, size(misc.segs)));
+        if any(idx_seg_file)
+            files_processed = files_processed + 1;
         end
-    end
-end
+        idx_seg_file = idx_seg_file & [misc.segs.segType] ~= -1; % skip unclustered syllables
+        total_syllables = sum(idx_seg_file);
+        if total_syllables > 0 % if we have segs, load audio and apply rules
+            % load audio
+            audio_in = loadAudio(handles.exper, filenum_list(jj));
+            Fs_in = handles.exper.desiredInSampRate;
+            Fs_tdt = 24414; %Hz, TDT sampling rate
+            audio = resample(audio_in, Fs_tdt, Fs_in);
+            audio = audio - mean(audio);
+            % apply rules
+            file_noise = testRulesOnFile(handles, audio);
+            % map noise onto syllables
+            t = (0:length(audio)-1) * 1/Fs_tdt;
+            t = repmat({t}, total_syllables, 1);
+            temp = [[misc.segs(idx_seg_file).fStartTime]' [misc.segs(idx_seg_file).fEndTime]'];
+            t_range = mat2cell(temp, ones(1,size(temp,1)), 2);
+            syll_noise = cellfun(@extract_time_range, repmat({file_noise}, total_syllables, 1), t, t_range, 'UniformOutput', false);
+            all_syll_noise = [all_syll_noise; syll_noise];
+            syll_type = [misc.segs(idx_seg_file).segType];
+            all_syll_type = [all_syll_type syll_type];
+            % load pitch
+            if ~pitch_loaded
+                load([rootdir handles.exper.birdname filesep pitchfiles(ii).name])
+                pitch_loaded = true;
+            end
+            all_pitch = [all_pitch {pitch.segs(idx_seg_file).pitch}];                
+        end
+        waitbar(files_processed / total_files)
+    end %file
+end %miscfile
 
-%% assemble statistics
-for clust = 1:length(noiseByCluster) % for each cluster
-    nz = noiseByCluster{clust};
-    pct = sum(any(nz))/size(nz,2) * 100;
-    str = sprintf('Cluster %g, %.f%% hit',clust,pct);
+L = cellfun(@length,all_syll_noise,'UniformOutput',false);
+all_syll_noise = cellfun(@resample, all_syll_noise, repmat({100},size(L)), L,'UniformOutput',false);
+all_syll_noise = cell2mat(all_syll_noise');
+
+for clust = unique(all_syll_type)
     figure
-    % plot example syllable spectrogram
-    axh(1) = subplot(2,1,1);
-    displaySpecgramQuick(sampleaudio{clust}, Fs)
-    % show where noise is
-    axh(2) = subplot(2,1,2);
-    xlims = xlim(axh(1));
-    x = linspace(xlims(1),xlims(2),size(nz,1));
-    y = 1:size(nz,2);
-    imagesc(x,y,nz')
-    title(str)
-    linkaxes(axh,'x')
+    % example spectrogram FIXME
+    %axh(1) = subplot(3,1,1)
+    %displaySpecgramQuick(sampleaudio{clust}, Fs)
+    % noise
+    axh(2) = subplot(3,1,2);
+    imagesc(all_syll_noise(all_syll_type == clust))
+    %xlims = xlim(axh(1));
+    %nz = all_syll_noise(all_syll_type == clust);
+    %x = linspace(xlims(1),xlims(2),size(nz,1));
+    %y = 1:size(nz,2);
+    %imagesc(x,y,nz')
+    % pitch traces
+    axh(3) = subplot(3,1,3);
+    has_noise = any(all_syll_noise);
+    hold on
+    idx = has_noise & all_syll_type == clust;
+    cellfun(@plot, all_pitch(idx), repmat({'r'},1,sum(idx)))
+    idx = ~has_noise & all_syll_type == clust;
+    cellfun(@plot, all_pitch(idx), repmat({'b'},1,sum(idx)))
+    %linkaxes(axh,'x') %FIXME
+    N = sum(all_syll_type==clust);
+    title(sprintf('Cluster %g N = %g %.0f%% hit',clust,N,sum(has_noise)/N * 100))
 end
-
-
+close(wbh)
 
 function editPartagSuffix_Callback(hObject, eventdata, handles)
 % hObject    handle to editPartagSuffix (see GCBO)
@@ -769,6 +776,8 @@ function buttonExportTDT_Callback(hObject, eventdata, handles)
 handles = exportTDT(handles);
 guidata(hObject, handles)
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function handles = exportTDT(handles)
 loadflag = 1; %determines if new circuit will be loaded. default yes.
 if ~isfield(handles,'RP')
@@ -780,22 +789,22 @@ if bitget(status,1)==0; % Checks for connection
     disp('Error connecting to RX8');
 end
 
-% check to see if something is currently running
-status=double(handles.RP.GetStatus); % Get status
-if bitget(status,3)==1 % if circuit is currently RUNNING
-    button = questdlg('There is already a circuit running! Load these rules into the running circuit?');
-    if isempty(button) %if user pushed 'Cancel' then stop loading
-        return
-    elseif strcmpi(button,'yes')
-        loadflag = 0;
-    end
+% If we are automatically reloading and circuit has changed since last
+% time, reload it. Otherwise, load into existing circuit
+reload = get(handles.checkReloadTdt, 'Value');
+file = dir(handles.tdt.rcx);
+last_modified_time = file.datenum;
+try
+    circuit_modified = last_modified_time > handles.tdt.rcx_modification_time;
+catch
+    circuit_modified = true; %when in doubt, just reload the circuit
 end
-%     cd('C:\Documents and Settings\stetner\Desktop\research\code\tdt\caf')
-[FileName,PathName,FilterIndex] = uigetfile('*.rcx','Choose Circuit');
-if loadflag
+handles.tdt.rcx_modification_time = last_modified_time;
+if reload && circuit_modified
+    debugdisp('Reloading circuit')
     handles.RP.Halt; % Stops any processing chains running on RP2
     handles.RP.ClearCOF; % Clears all the buffers and circuits on RP2
-    handles.RP.LoadCOF([PathName FileName]);
+    handles.RP.LoadCOF(handles.tdt.rcx);
     handles.RP.Run;
     status=double(handles.RP.GetStatus); % Get status
     if bitget(status,1)==0; % Checks for connection
@@ -808,11 +817,12 @@ if loadflag
         disp('Circuit loaded and running');
     end
 else
+    debugdisp('Loading into existing circuit')
     % User needs to choose the circuit file that is already running.
     % This will NOT reload the circuit on the TDT. We just need the
     % circuit file so that the ActiveX control can access the ParTags.
     % See TDT's ActiveX documentation on ReadCOF for more info.
-    handles.RP.ReadCOF([PathName FileName]);
+    handles.RP.ReadCOF(handles.tdt.rcx);
 end
 
 
@@ -822,7 +832,7 @@ for r = 1:length(handles.rules)
     end
 end
 disp('Rules loaded')
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 function editTestSuffix_Callback(hObject, eventdata, handles)
@@ -847,5 +857,61 @@ function editTestSuffix_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in checkReloadTDT.
+function checkReloadTDT_Callback(hObject, eventdata, handles)
+% hObject    handle to checkReloadTDT (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkReloadTDT
+
+
+
+function editTdtCircuit_Callback(hObject, eventdata, handles)
+% hObject    handle to editTdtCircuit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of editTdtCircuit as text
+%        str2double(get(hObject,'String')) returns contents of editTdtCircuit as a double
+handles.tdt.rcx = get(hObject,'String');
+guidata(hObject, handles);
+
+% --- Executes during object creation, after setting all properties.
+function editTdtCircuit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to editTdtCircuit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in buttonBrowseTdt.
+function buttonBrowseTdt_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonBrowseTdt (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+[FileName,PathName,FilterIndex] = uigetfile('*.rcx');
+if FileName == 0 % if user pushed cancel
+    return
+end
+handles.tdt.rcx = [PathName FileName];
+set(handles.editTdtCircuit, 'String', handles.tdt.rcx);
+guidata(hObject, handles);
+
+
+% --- Executes on button press in checkReloadTdt.
+function checkReloadTdt_Callback(hObject, eventdata, handles)
+% hObject    handle to checkReloadTdt (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkReloadTdt
 
 

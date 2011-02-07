@@ -3,18 +3,23 @@ P.cluster_escapes = 1;
 P.cluster_hits = NaN;
 P.rootdir = 'c:\stetner\data';
 P.pitch_lims = [30 40];
-P.pitch_lim_units = 'samples'; % also supported: ms, samples
+P.pitch_lim_units = 'samples'; % also supported: seconds, samples
+P.window_hours = 1;
 P = parseargs(P, varargin{:});
 P.birdname = birdname;
 P.expername = expername;
+P.n_distribution = 100;
 
 if ~iscell(P.expername)
     P.expername = {P.expername};
 end
-
+figure;
+subplot(2,2,1)
+hold on
 clusters = [];
 times = [];
 pitches = [];
+pitchTimes = [];
 [miscfile, pitchfile] = next_filenames(P);
 while ~isempty(miscfile)
     % load annotation file
@@ -30,16 +35,65 @@ while ~isempty(miscfile)
     % times
     times = [times misc.segs(idx).absStart];
     % pitch
+    pitchTimes = [pitchTimes {pitch.segs(idx).pitchTime}];
     pitches = [pitches pitch_helper(pitch.segs(idx),P)];
     [miscfile, pitchfile] = next_filenames(P);
+    % plot traces
+    idx = temp == P.cluster_escapes;
+    cellfun(@plot,{pitch.segs(idx).pitchTime},{pitch.segs(idx).pitch},repmat({'b'},1,sum(idx)))
+    idx = temp == P.cluster_hits;
+    cellfun(@plot,{pitch.segs(idx).pitchTime},{pitch.segs(idx).pitch},repmat({'r'},1,sum(idx)))
     clear misc pitch
 end
-fh = figure;
+
+
+% average pitch scatter
+subplot(2,2,2)
 idx = clusters == P.cluster_escapes;
 scatter(times(idx), pitches(idx), 'b')
 hold on
 idx = clusters == P.cluster_hits;
 scatter(times(idx), pitches(idx), 'r')
+
+
+% percent hits by hour
+idx = clusters == P.cluster_hits;
+times_hits = times(idx);
+idx = clusters == P.cluster_escapes;
+times_escapes = times(idx);
+earliest = min([min(times_hits) min(times_escapes)]);
+latest = max([max(times_hits) max(times_escapes)]);
+edges = earliest:P.window_hours/24:latest;
+centers = edges*24 + P.window_hours/2;
+count_hits = histc(times_hits,[edges]);
+count_escapes = histc(times_escapes,[edges]);
+percent_noised = count_hits ./ (count_hits + count_escapes);
+subplot(2,2,4)
+plot(centers, percent_noised)
+
+% pitch distributions
+idx = clusters == P.cluster_escapes | clusters == P.cluster_hits;
+pitches = pitches(idx);
+times = times(idx);
+[times, idx] = sort(times);
+pitches = pitches(idx); % put pitches in order to match times
+if length(pitches) < 2*P.n_distribution
+    warning('pitch distributions overlap in time')
+end
+subplot(2,2,3)
+hold on
+% plot distribution of last n syllables
+x = 500:5:900;
+hist(pitches(end-P.n_distribution:end),x)
+h = findobj(gca,'Type','patch');
+set(h,'FaceColor','r')
+% plot distribution of first n syllables
+hist(pitches(1:P.n_distribution),x)
+% make histograms transparent
+h = findobj(gca,'Type','patch');
+set(h,'FaceAlpha',0.5)
+
+
 end
 
 function [miscfile, pitchfile] = next_filenames(P)
@@ -81,8 +135,10 @@ switch P.pitch_lim_units
             pitches{k} = segs(k).pitch(lim_idx(1):lim_idx(2));
         end
         pitches = cellfun(@mean,pitches);
-    case 'ms'
-        error('not implemented yet')
+    case 'seconds'
+        pitch_lim = repmat({P.pitch_lims},size(segs));
+        pitches = cellfun(@extract_time_range, {segs.pitch}, {segs.pitchTime}, pitch_lim, 'UniformOutput', false);
+        pitches = cellfun(@mean,pitches);
     case 'samples'
         pitches = nan(diff(P.pitch_lims)+1,length(segs));
         for k = 1:length(segs) % slow :(

@@ -1405,36 +1405,52 @@ if(~isempty(handles.vcdb.d.v))
         
     
     %Assign vectors to clusters
-    handles.vcdb.d.cn = nan(size(d.v));
-    for(nc = 1:length(c))
-        %Find vectors in all polygons.
-        if(length(c(nc).polys)>0)
-            if get(handles.checkboxOR,'Value') % OR mode instead of AND mode if checkbox is true: TO
-                bIN = false(size(d.v)); % set all values to false
-                for(nPoly = 1:length(c(nc).polys)) % all the polygons
-                    poly = c(nc).polys{nPoly};
-                    bIN = bIN | inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
+    cn_old = handles.vcdb.d.cn;
+    hasCluster = false(size(handles.vcdb.d.cn));
+    for i = 1:10
+        for(nc = 1:length(c))
+            %Overide with manual modifications.
+            for(nInc = 1:length(c(nc).incs))
+                bIN(c(nc).incs{nInc}) = true;
+            end
+            for(nExc = 1:length(c(nc).excs))
+                bIN(c(nc).excs{nExc}) = false;
+            end
+            %Find vectors in all polygons.
+            if(length(c(nc).polys)>0)
+                if get(handles.checkboxOR,'Value') % OR mode instead of AND mode if checkbox is true: TO
+                    bIN = false(size(d.v)); % set all values to false
+                    for(nPoly = 1:length(c(nc).polys)) % all the polygons
+                        poly = c(nc).polys{nPoly};
+                        bIN = bIN | inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
+                    end
+                else
+                    bIN = true(size(d.v)); % set all values to true
+                    for(nPoly = 1:length(c(nc).polys)) % all the polygons
+                        poly = c(nc).polys{nPoly};
+                        bIN = bIN & inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
+                    end
                 end
-            else
-                bIN = true(size(d.v)); % set all values to true
-                for(nPoly = 1:length(c(nc).polys)) % all the polygons
-                    poly = c(nc).polys{nPoly};
-                    bIN = bIN & inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
-                end
-            end            
-        else % no polygon
-            bIN = false(size(d.v));
+            else % no polygon
+                bIN = false(size(d.v));
+            end
+            %Overide with manual modifications.
+            for(nInc = 1:length(c(nc).incs))
+                bIN(c(nc).incs{nInc}) = true;
+            end
+            for(nExc = 1:length(c(nc).excs))
+                bIN(c(nc).excs{nExc}) = false;
+            end
+            %Set the cluster number
+            handles.vcdb.d.cn(bIN) = c(nc).number;
+            hasCluster = hasCluster | bIN;
         end
-        %Overide with manual modifications.
-        for(nInc = 1:length(c(nc).incs))
-            bIN(c(nc).incs{nInc}) = true;
+        if all(handles.vcdb.d.cn == cn_old)
+            break
         end
-        for(nExc = 1:length(c(nc).excs))
-            bIN(c(nc).excs{nExc}) = false;
-        end
-        %Set the cluster number
-        handles.vcdb.d.cn(bIN) = c(nc).number;
+        cn_old = handles.vcdb.d.cn;
     end
+    handles.vcdb.d.cn(~hasCluster) = NaN;
     handles = refreshSelectedCluster(handles);
 end
 

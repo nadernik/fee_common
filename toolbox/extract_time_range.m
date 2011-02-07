@@ -1,4 +1,4 @@
-function y = excerpt_time_range(x, time_or_fs, t_range, t0)
+function y = extract_time_range(x, time_or_fs, t_range, t0)
 
 if nargin < 4 % t0 not provided
     t0 = 0;

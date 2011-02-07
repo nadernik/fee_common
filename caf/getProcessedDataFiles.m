@@ -4,7 +4,7 @@ function [dFiles, folder] = getProcessedDataFiles(birdName, varargin)
 P.experNames = []; %pass single or cell of experNames
 P.prefix = 'all';
 P.dataType = 'misc'; %or pitch or audio or cafProgram
-P.rootdir = 'c:\aadata\AuditoryFeedback\';
+P.rootdir = 'c:\stetner\data\';
 P = parseargs(P, varargin{:});
 
 if(isempty(P.experNames))

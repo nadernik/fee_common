@@ -14,9 +14,12 @@ end
 kernel = ones(1,p.stepsAbove) / p.stepsAbove;
 timed = filter(kernel,1,temp) >= (1-2/p.stepsAbove);
 
-% delay everything
-% keyboard %%%DEBUG
-delayed = [zeros(p.stepsDelay,1); timed];
+% delay
+%   The TTLDelay outputs a 1 after the assigned delay, but stays high for
+%   only one sample. It is like doing a rising edge detect and then
+%   delaying the resulting signal.
+edge = [false; diff(timed) == 1]; % detect rising edge
+delayed = [zeros(p.stepsDelay,1); edge];
 delayed = delayed(1:end-p.stepsDelay);
 
 % schmitt trigger
