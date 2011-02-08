@@ -40,9 +40,13 @@ while ~isempty(miscfile)
     [miscfile, pitchfile] = next_filenames(P);
     % plot traces
     idx = temp == P.cluster_escapes;
-    cellfun(@plot,{pitch.segs(idx).pitchTime},{pitch.segs(idx).pitch},repmat({'b'},1,sum(idx)))
+    if sum(idx) > 0
+        cellfun(@plot,{pitch.segs(idx).pitchTime},{pitch.segs(idx).pitch},repmat({'b'},1,sum(idx)))
+    end
     idx = temp == P.cluster_hits;
-    cellfun(@plot,{pitch.segs(idx).pitchTime},{pitch.segs(idx).pitch},repmat({'r'},1,sum(idx)))
+    if sum(idx) > 0
+        cellfun(@plot,{pitch.segs(idx).pitchTime},{pitch.segs(idx).pitch},repmat({'r'},1,sum(idx)))
+    end
     clear misc pitch
 end
 
@@ -126,6 +130,10 @@ end
 end
 
 function pitches = pitch_helper(segs,P)
+if isempty(segs)
+    pitches = [];
+    return
+end
 switch P.pitch_lim_units
     case 'percent'
         pitches = cell(1,length(segs));
