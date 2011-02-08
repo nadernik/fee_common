@@ -1136,8 +1136,8 @@ if(isequal(file,0))
     return;
 end
 %Prepare clusters for export.
-f = handles.vcdb.f;
 c = handles.vcdb.c;
+f = handles.vcdb.f; % will be saved to file
 for nc = 1:length(c)
     %Manual includes and excludes are not exportable.
     c(nc).incs = {};
@@ -1148,7 +1148,7 @@ for nc = 1:length(c)
         c(nc).polys{np}.yfeatName = getSFName(handles.vcdb, c(nc).polys{np}.yfeat);
     end
 end
-save([path,filesep,file], 'c');
+save([path,filesep,file], 'c', 'f');
 guidata(hObject, handles);
 
 
@@ -1181,15 +1181,40 @@ if(~exist('c'))
 end
 
 %Map feature names to feature numbers
-f = handles.vcdb.f;
 bPerfect = true;
 for nc = 1:length(c)
     toDel = [];
     for np = 1:length(c(nc).polys)
         temp = mapFeatureName2Number(getAllSFNames(handles.vcdb),c(nc).polys{np}.xfeatName, feature2ndx(c(nc).polys{np}.xfeat, size(handles.vcdb.d.sf,2)));
-        c(nc).polys{np}.xfeat = ndx2feature(temp, size(handles.vcdb.d.sf,2));
+        if isempty(temp) % If we could not find a match for this feature,
+            % call the function to calculate this feature now.
+            nf = c(nc).polys{np}.xfeat;
+            if nf > 0
+                % negative feature numbers are special. They cannot be
+                % calculated until we have clustered syllables
+                % (PrevClusterNum for example). Skip this and we will
+                % deal with it later.
+                handles.vcdb = feval(f.sffcn{nf}, handles.vcdb, f.sfparam{nf}{:});
+            else
+                temp = nf;
+            end
+        end
+        c(nc).polys{np}.xfeat = mapFeatureName2Number(getAllSFNames(handles.vcdb), c(nc).polys{np}.xfeatName);%ndx2feature(temp, size(handles.vcdb.d.sf,2));
         temp = mapFeatureName2Number(getAllSFNames(handles.vcdb),c(nc).polys{np}.yfeatName, feature2ndx(c(nc).polys{np}.yfeat, size(handles.vcdb.d.sf,2)));
-        c(nc).polys{np}.yfeat = ndx2feature(temp, size(handles.vcdb.d.sf,2));
+        if isempty(temp) % If we could not find a match for this feature,
+            % call the function to calculate this feature now.
+            nf = c(nc).polys{np}.yfeat;
+            if nf > 0
+                % negative feature numbers are special. They cannot be
+                % calculated until we have clustered syllables
+                % (PrevClusterNum for example). Skip this and we will
+                % deal with it later.
+                handles.vcdb = feval(f.sffcn{nf}, handles.vcdb, f.sfparam{nf}{:});
+            else
+                temp = nf;
+            end
+        end
+        c(nc).polys{np}.yfeat = mapFeatureName2Number(getAllSFNames(handles.vcdb), c(nc).polys{np}.yfeatName);%ndx2feature(temp, size(handles.vcdb.d.sf,2));
         if(isempty(c(nc).polys{np}.xfeat) || isempty(c(nc).polys{np}.yfeat))
             toDel = [toDel, np];
             bPerfect = false;
@@ -1223,17 +1248,17 @@ else
     if(sum(bMatch)==1)
         featNum = find(bMatch);
     else
-        prompt = ['A feature named ',importName,' is being imported.  Please select its match:'];
-        [sel,ok] = listdlg('PromptString',prompt ,...
-                           'SelectionMode','single',...
-                           'ListString',featNames, ...
-                           'OKString', 'OK', ...
-                           'CancelString', 'NO MATCH FOUND');
-        if(ok)
-            featNum = sel;
-        else
+        %prompt = ['A feature named ',importName,' is being imported.  Please select its match:'];
+        %[sel,ok] = listdlg('PromptString',prompt ,...
+        %                   'SelectionMode','single',...
+        %                   'ListString',featNames, ...
+        %                   'OKString', 'OK', ...
+        %                   'CancelString', 'NO MATCH FOUND');
+        %if(ok)
+        %    featNum = sel;
+        %else
             featNum = [];
-        end
+        %end
     end
 end
 
