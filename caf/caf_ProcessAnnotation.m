@@ -73,7 +73,7 @@ for(tempn = P.whichAnalyses)
         curr = [];
 
         for nSeg = 1:length(annot.segFileStartTimes)
-            segNum = segNum + 1
+            segNum = segNum + 1;
             bRand(segNum) = bRand(segNum) && (~P.bOnlyLabled || (annot.segType(nSeg)~=-1));
             %If selected by rand and meets labling contraints.
             if(bRand(segNum))
@@ -102,9 +102,9 @@ for(tempn = P.whichAnalyses)
                     misc.segs(count).fs = fs;
                     
                     % find noise in syllable audio
-                    [start_times end_times] = find_noise_in_audio(syllAudio, fs);
-                    misc.segs(count).fNoiseStartTime = start_times;
-                    misc.segs(count).fNoiseEndTime = end_times;
+%                     [start_times end_times] = find_noise_in_audio(syllAudio, fs);
+%                     misc.segs(count).fNoiseStartTime = start_times;
+%                     misc.segs(count).fNoiseEndTime = end_times;
                     
                     %BEGIN: Tatsuo's code for masking and stim.                                       
                     %convert mask times to array of 0s and 1s

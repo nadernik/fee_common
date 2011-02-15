@@ -10,7 +10,7 @@ for nAnnot = 1:length(annots)-1
         overlap = find(absStartTimesNext < absEndTimesPrev(end));
         if(~isempty(overlap))
             annots{nAnnot+1}.segAbsStartTimes = annots{nAnnot+1}.segAbsStartTimes(overlap(end)+1:end);
-            annots{nAnnot+1}.segAbsEndTimes = annots{nAnnot+1}.segAbsEndTimes(overlap(end)+1:end)
+            annots{nAnnot+1}.segAbsEndTimes = annots{nAnnot+1}.segAbsEndTimes(overlap(end)+1:end);
             annots{nAnnot+1}.segFileStartTimes = annots{nAnnot+1}.segFileStartTimes(overlap(end)+1:end);
             annots{nAnnot+1}.segFileEndTimes = annots{nAnnot+1}.segFileEndTimes(overlap(end)+1:end);
             annots{nAnnot+1}.segType = annots{nAnnot+1}.segType(overlap(end)+1:end);

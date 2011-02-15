@@ -52,3 +52,87 @@ plot_pitch_multiday('2036', {'2011-02-05', '2011-02-06'}, 'pitch_lims', [.04 .05
 
 % After debugging, found that rule "insong" was not staying triggered for
 % as long as it should. Extended time high to 800ms to compensate.
+
+%% 2011-02-08
+annotate_exper('2036','2011-02-07','maxFilesPerAnnotation',450)
+
+% New polygons file, polygons20110208.mat, to take advantage of new save
+% file format that includes information on calculating partial mean
+% features. Now, when I load this polygons file in the updated version of
+% vectorClust (that I will commit to bazaar later today), it will
+% automatically recalculate all the necessary scalar features. Yay!
+
+% Checking progress on CAF today: is my targeting working?
+annotate_exper('2036','2011-02-08') % first 116 files of the day
+vcQuickCluster('2036','2011-02-08', 'polygons20110208.mat', [], 'root', 'c:\stetner\data')
+plot_pitch_multiday('2036','2011-02-08','cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.05 .06], 'pitch_lim_units', 'seconds')
+% Looks good.
+
+%% 2011-02-09
+
+% Saved new rules into 2011-02-08 folder. These are the same as the rules I
+% was using previously, but with a different associated TDT circuit.
+
+% Look at yesterday to see if he learned
+annotate_exper('2036','2011-02-08')
+vcQuickCluster('2036','2011-02-08', 'polygons20110208.mat', [], 'root', 'c:\stetner\data')
+plot_pitch_multiday('2036',{'2011-02-08'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.05 .06], 'pitch_lim_units', 'seconds')
+% looks like he is getting noised less, but pitch is not shifting
+
+annotate_exper('2036','2011-02-09','filenum',1:790,'maxFilesPerAnnotation',400)
+vcQuickCluster('2036','2011-02-09', 'polygons20110208.mat', [], 'root', 'c:\stetner\data')
+% okay maybe the percent noised isnt even going down. arg.
+plot_pitch_multiday('2036',{'2011-02-08', '2011-02-09'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.05 .06], 'pitch_lim_units', 'seconds')
+
+%% 2011-02-11
+
+annotate_exper('2036','2011-02-10','maxFilesPerAnnotation',412,'edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+
+% Since I turned up the gain on my mic amplifier and all of my polygons
+% were dependent on amplitude, I need to make new clusters. Saved to
+% polygons20110211.mat
+
+vcQuickCluster('2036','2011-02-10','polygons20110211.mat',[],'root','c:\stetner\data\')
+
+plot_pitch_multiday('2036',{'2011-02-10'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.05 .055], 'pitch_lim_units', 'seconds')
+% Definitely not learning. It seems like he can escape even if his pitch is
+% wrong. Need to work on filters.
+
+% New filters loaded after file 97.
+
+% check to see how things are going
+annotate_exper('2036','2011-02-11','filenum',98:190,'edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+vcQuickCluster('2036','2011-02-11','polygons20110211.mat',[],'root','c:\stetner\data\')
+plot_pitch_multiday('2036',{'2011-02-11'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+
+% turned off noise 2:07pm to 2:39pm to test rules for 2055.
+
+%% 2011-02-12
+
+annotate_exper('2036','2011-02-11','edgeSyllThreshold',-11,'triggerSyllThreshold',-8,'maxFilesPerAnnotation',470)
+vcQuickCluster('2036','2011-02-11','polygons20110211.mat',[],'root','c:\stetner\data\')
+plot_pitch_multiday('2036',{'2011-02-11'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+
+% Still not learning! Will give him one more day with existing filters and
+% then give up.
+
+%% 2011-02-13
+annotate_exper('2036','2011-02-12','edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+vcQuickCluster('2036','2011-02-12','polygons20110211.mat',[],'root','c:\stetner\data\')
+plot_pitch_multiday('2036',{'2011-02-11' '2011-02-12'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+
+%% 2011-02-14
+annotate_exper('2036','2011-02-13','edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+vcQuickCluster('2036','2011-02-13','polygons20110211.mat',[],'root','c:\stetner\data\')
+plot_pitch_multiday('2036',{'2011-02-11' '2011-02-12' '2011-02-13'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+
+% appears to have learned, slowly. will begin experiment by infusing pbs
+% today and then drugs tomorrow. need to also update filters today
+
+% Started with rules from 2011-02-11 and increased pitch on pitch rule from
+% 685 to 705 Hz. Loaded at 3:53pm (after file 319)
+
+%% 2011-02-15
+
+% Looks like almost every instance of target was hit. Oops. Need to move
+% pitch filter down a bit.

@@ -44,7 +44,7 @@ if(isempty(annotExt))
     annotExt = '.mat';
 end
 if(strcmp(annotName(end-5:end-3),'-pt')) % month
-    annotName = annotName(1:end-6)
+    annotName = annotName(1:end-6);
     currPartNum = str2num(annotName(end-2:end));
 else
     currPartNum = 1;
@@ -76,7 +76,7 @@ for i = 1:length(expers)
 
         %Process as many files as will fit in the current annot.
         toProcess = filenums{i}(processedNdx+1:min(length(filenums{i}),processedNdx + P.maxFilesPerAnnotation - currAnnot.size));
-        processedNdx = min(length(filenums{i}),processedNdx + P.maxFilesPerAnnotation - currAnnot.size)
+        processedNdx = min(length(filenums{i}),processedNdx + P.maxFilesPerAnnotation - currAnnot.size);
         annotateExperBatchSegment(annotationName, expers{i}, toProcess , ...
                                   'bScreenForSong', 'none', ...
                                   'method', 'fixed', ...

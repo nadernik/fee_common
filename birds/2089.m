@@ -25,3 +25,52 @@ vcQuickCluster('2089', '2011-02-06', 'polygons.mat', [], 'root', 'c:\stetner\dat
 % very end of another syllable, but I think it will be okay.
 
 % Rules loaded after file 431
+
+% Just sitting in my room I hear the noise going off even when the bird is
+% not singing (aquisitionGui not triggered to record). Caught an example by
+% forcing recording, file 433. Will see if bird will sing anyway. May need
+% to adjust filters. Also file 435.
+
+%% 2011-02-08
+annotate_exper('2089','2011-02-07','maxFilesPerAnnotation',350)
+% no noise in part 1. rules were not loaded yet.
+
+% A glance at today's files shows that the target syllable is rarely hit.
+% In fact the syllable before it is hit much more often. Did the bird
+% learn or do my filters suck?
+
+% made new polygons
+% cluster 1 = noised targets, except not when the syllable before it was
+% also noised. DOES include noised targets that were segmented badly and
+% include the next little syllable
+% cluster 2 = escapes (targets that were not noised)
+% cluster 3 = that other syllable before the target, not noised
+% cluster 4 = that other syllable before target, noised
+% cluster 5 = other syllable and target, both noised and segmented badly so
+% they are both one syllable
+
+% applied to 2011-02-07 in vectorClust, now for today's data so far:
+annotate_exper('2089','2011-02-08','maxFilesPerAnnotation',350,'filenum',1:318)
+vcQuickCluster('2089', '2011-02-08', 'polygons20110208.mat', [], 'root', 'c:\stetner\data')
+deglitch_all_pitch('2089', '2011-02-07')
+deglitch_all_pitch('2089', '2011-02-08')
+
+plot_pitch_multiday('2089',{'2011-02-07' '2011-02-08'},'cluster_escapes',2,'cluster_hits',1,'pitch_lims', [.105 .110], 'pitch_lim_units', 'seconds')
+% Looks good! Will implant tomorrow!
+
+%% 2011-02-09
+
+% implanted probes in area X
+
+%% 2011-02-10
+
+% (9:30am) Incision is open, but no bleeding. Lightly anesthetized with
+% isoflurane and applied some vetropolycin to the area. Injected with 50 uL
+% baytril/buprenex mix.
+
+%% 2011-02-14
+
+% Yesterday was his first full day singing since surgery. Today I will get
+% CAF running again and then start injecting PBS or drugs on 2-16.
+
+annotate_exper('2089','2011-02-13','edgeSyllThreshold',-11,'triggerSyllThreshold',-7, 'fMinIntervalDuration', 0.02)

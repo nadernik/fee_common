@@ -18,3 +18,48 @@ annotate_exper('2055','2011-02-06','maxFilesPerAnnotation',400)
 
 % Made CAF filters
 % syllable 3, 25-30%, mean = 651, median = 654 Hz, sd = 20 Hz
+
+%% 2011-02-09
+
+% Per Michale's suggestion, I turned up the gain on the microphone
+% amplifier by 30dB after file 287. Now the small offset from the filter
+% does not really affect the data.
+
+%% 2011-02-11
+
+annotate_exper('2055','2011-02-10','maxFilesPerAnnotation',500, 'edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+
+% started caf at 2:39pm
+
+%% 2011-02-14
+annotate_exper('2055','2011-02-11', 'edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+annotate_exper('2055','2011-02-12', 'edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+annotate_exper('2055','2011-02-13', 'edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+
+% Arg! Bad segmenting! Target syllable is sometimes joined with the
+% syllable after it. Played with parameters a bit and trying again:
+annotate_exper('2055', '2011-02-13', ...
+    'edgeSyllThreshold', -10.5, ...
+    'triggerSyllThreshold',-6 , ...
+    'fMinIntervalDuration', 0.015, ...
+    'filenum', 900:1194)
+for filenum = 900:1194
+    show_file_with_labeled_syllables('2055', '2011-02-13', filenum)
+    pause
+end
+% arg still sometimes splitting target syllable. try again:
+annotate_exper('2055', '2011-02-13', ...
+    'edgeSyllThreshold', -10.5, ...
+    'triggerSyllThreshold',-6 , ...
+    'fMinIntervalDuration', 0.025, ...
+    'filenum', 900:1194)
+for filenum = 900:1194
+    show_file_with_labeled_syllables('2055', '2011-02-13', filenum)
+    pause
+end
+% Looks good :)
+
+% new clusters (polygons20110214.mat)
+%   1 = long syllable that is easy to find
+%   2 = escapes
+%   3 = hits
