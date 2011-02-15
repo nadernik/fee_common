@@ -821,7 +821,7 @@ P.minFreq = 2000;
 P.maxFreq = 6000;
 P.songDensity = .5; %aka durationThreshold
 P.ratioThreshold = 2; %aka powerThreshold
-P.songLength = .6; %aka songDuration
+P.songLength = 1; %aka songDuration
 P = parseargs(P, varargin{:});
 
 %check out everything we need.

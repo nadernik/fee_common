@@ -750,7 +750,7 @@ function buttonTestTDT_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonTestTDT (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+handles.testSuffix = get(handles.editTestSuffix,'String');
 handles = exportTDT(handles);
 Fs_in = handles.exper.desiredInSampRate;
 Fs = 24414; %Hz, TDT sampling rate

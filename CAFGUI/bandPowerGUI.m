@@ -89,7 +89,7 @@ if nargin > 3
     handles.params.dbDown2 = 50;
     handles.params.timeAbove = 20; %milliseconds
     handles.params.threshold = 0.8; %ratio between 0 and 1
-    if isfield(rulesHandles.rules(rulesHandles.rSel),'params')
+    if isfield(rulesHandles.rules(rulesHandles.rSel),'params') && ~isempty(rulesHandles.rules(rulesHandles.rSel).params)
         % use catstruct from matlab central to merge default parameters
         % with parameters passed from rules. parameters from rules take
         % precedence. supress warning message about the same field in both

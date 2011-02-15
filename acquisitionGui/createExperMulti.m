@@ -58,7 +58,7 @@ handles.output = hObject;
 % song detection parameters
 handles.songDetection_default.songDensity = 0.5;
 handles.songDetection_default.powerThres = 2;
-handles.songDetection_default.songLength = 0.6;
+handles.songDetection_default.songLength = 1;
 handles.songDetection_default.minFreq = 2000;
 handles.songDetection_default.maxFreq = 6000;
 

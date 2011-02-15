@@ -1241,25 +1241,22 @@ guidata(hObject, handles);
 
 % --- Used to map an imported feature to a current feature.
 function featNum = mapFeatureName2Number(featNames, importName, importNum)
-if(importNum<=length(featNames) && strcmp(importName, featNames{importNum}))
-    featNum = importNum;
-else
-    bMatch = cellfun(@strcmp, featNames, repmat({importName},size(featNames)));
-    if(sum(bMatch)==1)
-        featNum = find(bMatch);
-    else
-        %prompt = ['A feature named ',importName,' is being imported.  Please select its match:'];
-        %[sel,ok] = listdlg('PromptString',prompt ,...
-        %                   'SelectionMode','single',...
-        %                   'ListString',featNames, ...
-        %                   'OKString', 'OK', ...
-        %                   'CancelString', 'NO MATCH FOUND');
-        %if(ok)
-        %    featNum = sel;
-        %else
+switch importName
+    case 'PrevClusterNum'
+        featNum = -1;
+    case 'NextClusterNum'
+        featNum = -2;
+    case 'PrevPrevClusterNum'
+        featNum = -3;
+    case 'NextNextClusterNum'
+        featNum = -4;
+    otherwise
+        bMatch = cellfun(@strcmp, featNames, repmat({importName},size(featNames)));
+        if sum(bMatch) == 1
+            featNum = find(bMatch);
+        else
             featNum = [];
-        %end
-    end
+        end
 end
 
 % --- Executes on mouse press over axes background.
