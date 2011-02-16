@@ -12,7 +12,7 @@ function [pitchTraj, absTime, syllType, dura] = getProcessedPitchTrajectories(bi
 	P.selParam = [];
 	%Other
 	P.targetRegion = [];
-	P.targetMethod = '
+	P.targetMethod = {'percent', 'time'};
 	P = parseargs(P, varargin{:});
 
 
@@ -50,7 +50,9 @@ function [pitchTraj, absTime, syllType, dura] = getProcessedPitchTrajectories(bi
 		if strcmp(P.targetMethod,'percent')
 			pitchTraj = cellfun(@extractFragment_percent, pitchTraj, repmat({P.targetRegion},length(pitchTraj),1), 'UniformOutput', false);
 		elseif strcmp(P.targetMethod,'time')
-			pitchTraj = cellfun(@extractFragment_time, pitchTraj, repmat({fs},length(pitchTraj),1), repmat({P.},length(pitchTraj),1),repmat({P.targetRegion},length(pitchTraj),1)
+            error('not implemented yet')
+ 			%pitchTraj = cellfun(@extractFragment_time, pitchTraj, repmat({fs},length(pitchTraj),1), repmat({P.},length(pitchTraj),1),repmat({P.targetRegion},length(pitchTraj),1)
+        end
 	end
 end
 

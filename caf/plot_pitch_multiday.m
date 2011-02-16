@@ -96,6 +96,13 @@ hist(pitches(1:P.n_distribution),x)
 % make histograms transparent
 h = findobj(gca,'Type','patch');
 set(h,'FaceAlpha',0.5)
+% give some statistics on whether bird has learned
+sprintf('Starting pitch: %g +/- %g\nEnding pitch: %g +/- %g\n', ...
+    median(pitches(1:P.n_distribution)), ...
+    std(pitches(1:P.n_distribution)), ...
+    median(pitches(end-P.n_distribution:end)), ...
+    std(pitches(end-P.n_distribution:end)))
+ttest2(pitches(1:P.n_distribution), pitches(end-P.n_distribution:end))
 
 
 end
