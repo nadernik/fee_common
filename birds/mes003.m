@@ -35,3 +35,22 @@ vcQuickCluster('mes003','2011-02-08', 'polygons.mat', [], 'root', 'c:\stetner\da
 %% 2011-02-12
 annotate_exper('mes003','2011-02-10','edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
 annotate_exper('mes003','2011-02-11','edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+
+%% 2011-02-15
+
+annotate_exper('mes003','2011-02-09','edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+annotate_exper('mes003','2011-02-12','edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+annotate_exper('mes003','2011-02-13','edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
+% exper 2011-02-14 was annotated last night
+
+for dotm = 9:14
+    expername = sprintf('2011-02-%02.f', dotm);
+    deglitch_all_pitch('mes003',expername);
+    vcQuickCluster('mes003', expername, 'polygons20110215.mat', [], 'root', 'c:\stetner\data\')
+end
+
+plot_pitch_multiday('mes003', ...
+    {'2011-02-09' '2011-02-10' '2011-02-11'}, ...
+    'cluster_escapes', 1, ...
+    'pitch_lims', [.080 .085], ...
+    'pitch_lim_units', 'seconds')

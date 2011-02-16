@@ -63,3 +63,12 @@ end
 %   1 = long syllable that is easy to find
 %   2 = escapes
 %   3 = hits
+
+%% 2011-02-15
+
+vcQuickCluster('2055', '2011-02-14', 'polygons20110214.mat', [], 'root', 'c:\stetner\data\')
+
+% Updated filters: Shifted pitch up to 610 Hz and fiddled with thresholds
+% on amplitude-based rules. Loaded at 12:32pm before he sang anything.
+
+% Accidentally tore off implant while flushing drugs :(

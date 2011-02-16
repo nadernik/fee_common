@@ -135,4 +135,17 @@ plot_pitch_multiday('2036',{'2011-02-11' '2011-02-12' '2011-02-13'},'cluster_esc
 %% 2011-02-15
 
 % Looks like almost every instance of target was hit. Oops. Need to move
-% pitch filter down a bit.
+% pitch filter down a bit. Updated and loaded after file 3.
+
+%% 2011-02-16
+
+% Annotated by overnight batch.
+vcQuickCluster('2036','2011-02-15','polygons20110211.mat',[],'root','c:\stetner\data\')
+plot_pitch_multiday('2036',{'2011-02-15'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+% Looks like there is a shift in pitch, but a small one. Looks like 695 to
+% 705 Hz, which looks like it is about 1 standard deviation. I need to do
+% further analysis to see if this shift is significant.
+
+% Updated plot_pitch_multiday() to give median, standard deviation and
+% ttest from pitch distributions. It says that means are not significantly
+% different, so I will continue on PBS today.

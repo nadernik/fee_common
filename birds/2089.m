@@ -74,3 +74,23 @@ plot_pitch_multiday('2089',{'2011-02-07' '2011-02-08'},'cluster_escapes',2,'clus
 % CAF running again and then start injecting PBS or drugs on 2-16.
 
 annotate_exper('2089','2011-02-13','edgeSyllThreshold',-11,'triggerSyllThreshold',-7, 'fMinIntervalDuration', 0.02)
+
+%% 2011-02-15
+
+% clustered in vectorClust. New polygons file for escapes only. There are
+% no hits yet because caf was not running.
+
+% New rules loaded at 12:47pm before any singing.
+
+% starting with rules from 2011-02-07, updated
+
+%% 2011-02-16
+
+% Annotated by overnight batch.
+
+% Clustered in vectorClust. Made new polygons (polygons20110216.mat) that
+% are the same as yesterday except now also include hits as cluster 2.
+
+plot_pitch_multiday('2089','2011-02-15', 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
+
+% No change in pitch. Continue on PBS today.
