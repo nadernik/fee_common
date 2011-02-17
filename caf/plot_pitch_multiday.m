@@ -5,11 +5,10 @@ P.rootdir = 'c:\stetner\data';
 P.pitch_lims = [30 40];
 P.pitch_lim_units = 'samples'; % also supported: seconds, samples
 P.window_hours = 1;
+P.n_distribution = 100;
 P = parseargs(P, varargin{:});
 P.birdname = birdname;
 P.expername = expername;
-P.n_distribution = 100;
-
 if ~iscell(P.expername)
     P.expername = {P.expername};
 end
