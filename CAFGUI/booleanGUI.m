@@ -164,26 +164,28 @@ function buttonAdd_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonAdd (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-if get(handles.panelAndOr,'SelectedObject') == handles.radioOr
-    handles.params.query(end+1).func = 'or';
-    newstr = ' | ';
-else
+if isempty(handles.params.query)
     handles.params.query(end+1).func = 'and';
-    newstr = ' & ';
+    newstr = '';
+else
+    if get(handles.panelAndOr,'SelectedObject') == handles.radioOr
+        handles.params.query(end+1).func = 'or';
+        newstr = ' | ';
+    else
+        handles.params.query(end+1).func = 'and';
+        newstr = ' & ';
+    end
 end
 
 % if 1, will use ~rule ("not rule"). if 0 will use rule.
 handles.params.query(end).invert = get(handles.checkNot,'Value');
-
+if handles.params.query(end).invert
+    newstr = [newstr '~'];
+end
 r = handles.list2rule(get(handles.popupRule,'Value'));
 handles.params.query(end).rule = r;
 handles.params.dependencies(end+1) = r;
-if length(handles.params.query) > 1
-    newstr = [newstr handles.rules(r).name]; % like ' & rulename'
-else
-    % if this is the first rule, then no '&' sign preceding name
-    newstr = handles.rules(r).name;
-end
+newstr = [newstr handles.rules(r).name]; % like ' & rulename'
 oldstr = get(handles.editQuery,'String');
 set(handles.editQuery,'String',[oldstr newstr])
 % set(handles.radioAnd,'Enable','on')

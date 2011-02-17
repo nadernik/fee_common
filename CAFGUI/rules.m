@@ -68,6 +68,9 @@ c(1).tdtTags(2).pfield = 'threshold';
 c(1).tdtTags(3).name = 'rawSteps';
 c(1).tdtTags(3).type = 'scalar';
 c(1).tdtTags(3).pfield = 'stepsAbove';
+c(1).tdtTags(4).name = 'rawStepsMax';
+c(1).tdtTags(4).type = 'scalar';
+c(1).tdtTags(4).pfield = 'stepsMax';
 
 c(2).name = 'Bandpassed Sound Power';
 c(2).editFcn = @bandPowerGUI;

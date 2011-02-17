@@ -22,7 +22,7 @@ function varargout = rawPowerGUI(varargin)
 
 % Edit the above text to modify the response to help rawPowerGUI
 
-% Last Modified by GUIDE v2.5 10-Jun-2010 18:29:00
+% Last Modified by GUIDE v2.5 16-Feb-2011 17:13:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -242,21 +242,33 @@ function p = createFilter(handles)
 p.filterLength = str2double(get(handles.editFilterLength,'String'));
 p.threshold    = str2double(get(handles.editThresh,'String'));
 p.timeAbove    = str2double(get(handles.editTimeThresh,'String'));
+p.timeMax      = str2double(get(handles.editTimeMax,'String'));
 p.stepsAbove   = floor(p.timeAbove/1000 * handles.tdt_fs)+1;
+p.stepsMax     = floor(p.timeMax  /1000 * handles.tdt_fs)+1;
 p.Fs           = handles.tdt_fs;
 
 p.Numerator = ones(1,p.filterLength) ./ p.filterLength; %normalize
 
 function [tf, varargout] = rawPowerFilterFunc(sig, p, r)
+if ~isfield(p, 'stepsMax')
+    p.stepsMax = Inf;% for backwards compatability
+end
 sig = sig-mean(sig);
 temp = filter(p.Numerator, 1, sig.^2);
 sigfilt = 20*log10(temp); %convert to dB
 threshed = sigfilt > p.threshold;
-stepsAbove = ceil(p.timeAbove/1000 * p.Fs);
-kernel = ones(1,stepsAbove) / stepsAbove;
-tf = filter(kernel,1,threshed) >= (1-2/stepsAbove);
-
-
+tf = false(size(threshed));
+count = 0;
+for ii = 1:length(threshed)
+    if threshed(ii)
+        count = count + 1;
+        if count >= p.stepsAbove && count < p.stepsMax
+            tf(ii) = true;
+        end
+    else
+        count = 0;
+    end
+end
 if nargout > 1
     varargout{1} = sigfilt;
 end
@@ -299,6 +311,31 @@ function editFilterLength_Callback(hObject, eventdata, handles)
 % --- Executes during object creation, after setting all properties.
 function editFilterLength_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to editFilterLength (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+
+
+function editTimeMax_Callback(hObject, eventdata, handles)
+% hObject    handle to editTimeMax (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of editTimeMax as text
+%        str2double(get(hObject,'String')) returns contents of editTimeMax as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function editTimeMax_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to editTimeMax (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
