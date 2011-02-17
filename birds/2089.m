@@ -94,3 +94,10 @@ annotate_exper('2089','2011-02-13','edgeSyllThreshold',-11,'triggerSyllThreshold
 plot_pitch_multiday('2089','2011-02-15', 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
 
 % No change in pitch. Continue on PBS today.
+
+% recalibrated speaker 96 dB to 101 dB
+
+%% 2011-02-17
+
+vcQuickCluster('2089', '2011-02-16', 'polygons20110216.mat', [], 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-02-15' '2011-02-16'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')

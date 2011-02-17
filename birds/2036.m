@@ -124,7 +124,7 @@ plot_pitch_multiday('2036',{'2011-02-11' '2011-02-12'},'cluster_escapes',2,'clus
 %% 2011-02-14
 annotate_exper('2036','2011-02-13','edgeSyllThreshold',-11,'triggerSyllThreshold',-8)
 vcQuickCluster('2036','2011-02-13','polygons20110211.mat',[],'root','c:\stetner\data\')
-plot_pitch_multiday('2036',{'2011-02-11' '2011-02-12' '2011-02-13'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+plot_pitch_multiday('2036',{'2011-02-11' '2011-02-12' '2011-02-13'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.042 .048], 'pitch_lim_units', 'seconds')
 
 % appears to have learned, slowly. will begin experiment by infusing pbs
 % today and then drugs tomorrow. need to also update filters today
@@ -141,7 +141,7 @@ plot_pitch_multiday('2036',{'2011-02-11' '2011-02-12' '2011-02-13'},'cluster_esc
 
 % Annotated by overnight batch.
 vcQuickCluster('2036','2011-02-15','polygons20110211.mat',[],'root','c:\stetner\data\')
-plot_pitch_multiday('2036',{'2011-02-15'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+plot_pitch_multiday('2036',{'2011-02-15'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds', 'n_distribution', 200)
 % Looks like there is a shift in pitch, but a small one. Looks like 695 to
 % 705 Hz, which looks like it is about 1 standard deviation. I need to do
 % further analysis to see if this shift is significant.
@@ -149,3 +149,14 @@ plot_pitch_multiday('2036',{'2011-02-15'},'cluster_escapes',2,'cluster_hits',3,'
 % Updated plot_pitch_multiday() to give median, standard deviation and
 % ttest from pitch distributions. It says that means are not significantly
 % different, so I will continue on PBS today.
+
+% recalibrated speaker volume. Was at 90 dBL (S SPL). Now at 97 dB and
+% cannot turn amplifier any higher.
+
+%% 2011-02-17
+
+% Annotated by overnight batch.
+vcQuickCluster('2036','2011-02-16','polygons20110211.mat',[],'root','c:\stetner\data\')
+plot_pitch_multiday('2036',{'2011-02-15' '2011-02-16'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+
+% learned, but caf broke later in day? Maybe after testing noise
