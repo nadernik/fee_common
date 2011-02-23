@@ -160,3 +160,17 @@ vcQuickCluster('2036','2011-02-16','polygons20110211.mat',[],'root','c:\stetner\
 plot_pitch_multiday('2036',{'2011-02-15' '2011-02-16'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
 
 % learned, but caf broke later in day? Maybe after testing noise
+
+%% 2011-02-18
+vcQuickCluster('2036','2011-02-17','polygons20110211.mat',[1 2 3],'root','c:\stetner\data\')
+plot_pitch_multiday('2036',{'2011-02-17'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+% Hardly sang :(
+
+%% 2011-02-21
+
+vcQuickCluster('2036','2011-02-19','polygons20110221.mat',[1],'root','c:\stetner\data\')
+vcQuickCluster('2036','2011-02-20','polygons20110221.mat',[3],'root','c:\stetner\data\')
+plot_pitch_multiday('2036',{'2011-02-19' '2011-02-20'},'cluster_escapes',2,'cluster_hits',3,'pitch_lims', [.045 .05], 'pitch_lim_units', 'seconds')
+
+% Filters were not good. Not enough escapes to learn. Sacrificing this
+% bird today because probes are clogged.

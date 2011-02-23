@@ -101,3 +101,35 @@ plot_pitch_multiday('2089','2011-02-15', 'cluster_escapes', 1, 'cluster_hits', 2
 
 vcQuickCluster('2089', '2011-02-16', 'polygons20110216.mat', [], 'root','c:\stetner\data\')
 plot_pitch_multiday('2089',{'2011-02-15' '2011-02-16'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
+
+
+% after file 154 reverted to rev 21 and reloaded rules.
+
+%% 2011-02-18
+
+vcQuickCluster('2089', '2011-02-17', 'polygons20110218.mat', [], 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-02-17'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
+
+% Looks like I was not hitting only a small portion of syllables. Adjusted
+% pitch rule upwards by 5 Hz so I will hit more.
+
+%% 2011-02-19
+
+vcQuickCluster('2089', '2011-02-18', 'polygons20110218.mat', [], 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{ '2011-02-18'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
+% looks like he is learning. will try higher concenration.
+
+%% 2011-02-21
+vcQuickCluster('2089', '2011-02-19', 'polygons20110218.mat', [], 'root','c:\stetner\data\')
+vcQuickCluster('2089', '2011-02-20', 'polygons20110218.mat', [], 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{ '2011-02-19' '2011-02-20'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
+% YAY! No learning!
+
+plot_pitch_multiday('2089',{'2011-02-17' '2011-02-18' '2011-02-19' '2011-02-20'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
+
+%% 2011-02-22
+
+vcQuickCluster('2089', '2011-02-21', 'polygons20110218.mat', [], 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-02-21'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
+
+% no learning, even though he only  had PBS :(
