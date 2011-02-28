@@ -702,7 +702,7 @@ for clust = unique(all_syll_type)
     %displaySpecgramQuick(sampleaudio{clust}, Fs)
     % noise
     axh(2) = subplot(3,1,2);
-    imagesc(all_syll_noise(all_syll_type == clust))
+    imagesc(all_syll_noise(:,all_syll_type == clust)')
     %xlims = xlim(axh(1));
     %nz = all_syll_noise(all_syll_type == clust);
     %x = linspace(xlims(1),xlims(2),size(nz,1));
@@ -714,11 +714,13 @@ for clust = unique(all_syll_type)
     hold on
     idx = has_noise & all_syll_type == clust;
     cellfun(@plot, all_pitch(idx), repmat({'r'},1,sum(idx)))
+    hits = sum(idx);
     idx = ~has_noise & all_syll_type == clust;
     cellfun(@plot, all_pitch(idx), repmat({'b'},1,sum(idx)))
+    escapes = sum(idx);
     %linkaxes(axh,'x') %FIXME
-    N = sum(all_syll_type==clust);
-    title(sprintf('Cluster %g N = %g %.0f%% hit',clust,N,sum(has_noise)/N * 100))
+    N = hits + escapes;
+    title(sprintf('Cluster %g N = %g %.0f%% hit',clust,N,hits/N * 100))
 end
 close(wbh)
 
