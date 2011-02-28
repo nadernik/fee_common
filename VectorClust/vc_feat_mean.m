@@ -18,13 +18,18 @@ vf_idx = find(strcmp(vf_name, vcdb.f.vfname));
 
 
 if ~isempty(P.time_range)
+    dur = vcdb.d.sf(:,mapFeatureName2Number(vcdb.f.sfname, 'duration'));
+    if isempty(dur)
+        warning('Unable to extract time range because syllable durations unknown. Define a scalar feature called ''duration''.')
+    end
     % if we are given a specific range to take the mean over, calculate
     % which sample numbers correspond to this time range.
-    samples = round((P.time_range + 1/vcdb.g.fs) .* vcdb.g.fs);
-    for syll = 1:length(vcdb.d.v) 
+    for syll = 1:length(vcdb.d.v)
         % for each syllable, calculate mean over the time range
         try
-            vcdb.d.sf(syll, sf_idx) = mean(vcdb.d.vf{vf_idx}{syll}(samples(1):samples(2)));
+            t = linspace(0, dur(syll), length(vcdb.d.vf{vf_idx}{syll}));
+            range = t >= P.time_range(1) & t < P.time_range(2);
+            vcdb.d.sf(syll, sf_idx) = mean(vcdb.d.vf{vf_idx}{syll}(range));
         catch
             vcdb.d.sf(syll, sf_idx) = [];
         end

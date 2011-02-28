@@ -22,7 +22,7 @@ function varargout = vc_cmf_PartialMean(varargin)
 
 % Edit the above text to modify the response to help vc_cmf_PartialMean
 
-% Last Modified by GUIDE v2.5 14-Jul-2009 15:37:43
+% Last Modified by GUIDE v2.5 23-Feb-2011 16:16:44
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -190,10 +190,8 @@ vectorNdx = vectorNdx-1;
 
 handles.Start = str2double(get(handles.text_Start,'String'));
 handles.End = str2double(get(handles.text_End,'String'));
-
-if handles.Start < 0 | handles.End > 100
-    error('Input value has to be 0-100')
-end
+temp = get(handles.popupUnits,'String');
+handles.Units = temp{get(handles.popupUnits,'Value')};
 
 handles = compute(handles, vectorNdx);
 guidata(hObject, handles);
@@ -246,8 +244,19 @@ end
 function handles = compute(handles, vectorNdx)
 vf_name = handles.vcdb.f.vfname{vectorNdx};
 try
-    handles.vcdb = vc_feat_mean(handles.vcdb, vf_name, 'percent_range', [handles.Start handles.End]);
-    handles.vcdb = vc_feat_std(handles.vcdb , vf_name, 'percent_range', [handles.Start handles.End]);
+    switch handles.Units
+        case 'percent'
+            handles.vcdb = vc_feat_mean(handles.vcdb, vf_name, 'percent_range', [handles.Start handles.End]);
+            handles.vcdb = vc_feat_std(handles.vcdb , vf_name, 'percent_range', [handles.Start handles.End]);
+        case 'seconds'
+            handles.vcdb = vc_feat_mean(handles.vcdb, vf_name, 'time_range', [handles.Start handles.End]);
+            handles.vcdb = vc_feat_std(handles.vcdb , vf_name, 'time_range', [handles.Start handles.End]);
+        case 'samples' 
+            handles.vcdb = vc_feat_mean(handles.vcdb, vf_name, 'samples_range', [handles.Start handles.End]);
+            handles.vcdb = vc_feat_std(handles.vcdb , vf_name, 'samples_range', [handles.Start handles.End]);
+        otherwise
+            error('Unknown units')
+    end
     handles.output = 'success';
 catch
     handles.output = ['Compute basic statistic failed: ', lasterr];
@@ -295,3 +304,28 @@ function text_End_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on selection change in popupUnits.
+function popupUnits_Callback(hObject, eventdata, handles)
+% hObject    handle to popupUnits (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns popupUnits contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupUnits
+
+
+% --- Executes during object creation, after setting all properties.
+function popupUnits_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupUnits (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+

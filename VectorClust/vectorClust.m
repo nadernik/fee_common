@@ -1239,25 +1239,7 @@ end
 handles = refreshAll(handles);
 guidata(hObject, handles);
 
-% --- Used to map an imported feature to a current feature.
-function featNum = mapFeatureName2Number(featNames, importName, importNum)
-switch importName
-    case 'PrevClusterNum'
-        featNum = -1;
-    case 'NextClusterNum'
-        featNum = -2;
-    case 'PrevPrevClusterNum'
-        featNum = -3;
-    case 'NextNextClusterNum'
-        featNum = -4;
-    otherwise
-        bMatch = cellfun(@strcmp, featNames, repmat({importName},size(featNames)));
-        if sum(bMatch) == 1
-            featNum = find(bMatch);
-        else
-            featNum = [];
-        end
-end
+
 
 % --- Executes on mouse press over axes background.
 function axesFeatureScatter_ButtonDownFcn(hObject, eventdata)
@@ -2217,47 +2199,6 @@ else
     handles.vcg.specgram.colorRange(2) = str2num(answer{2});
 end
 guidata(hObject, handles);
-
-% --------------------------------------------------------------------
-function f = getSF(vcdb, nFeat, bndx)
-if(nFeat>0)
-    f = vcdb.d.sf(:,nFeat);
-elseif(nFeat == -1)
-    f = [nan; vcdb.d.cn(1:end-1)];
-    f = f+0.2*rand(size(f))-0.1; % add noise for better visibility, TO
-elseif(nFeat == -2)
-    f = [vcdb.d.cn(2:end); nan];
-    f = f+0.2*rand(size(f))-0.1; % add noise for better visibility, TO
-elseif(nFeat == -3)
-    f = [nan; nan; vcdb.d.cn(1:end-2)];
-    f = f+0.2*rand(size(f))-0.1; % add noise for better visibility, TO
-elseif(nFeat == -4)
-    f = [vcdb.d.cn(3:end); nan; nan];
-    f = f+0.2*rand(size(f))-0.1; % add noise for better visibility, TO  
-else
-    error(['getSF: requested feature does not exist: ', num2str(nFeat)]);
-end
-if(exist('bndx'))
-    f = f(bndx);
-end
-
-% --------------------------------------------------------------------
-function name = getSFName(vcdb, nFeat)
-if(nFeat == -1)
-    name = 'PrevClusterNum';
-elseif(nFeat == -2)
-    name = 'NextClusterNum';
-elseif(nFeat == -3)
-    name = 'PrevPrevClusterNum';
-elseif(nFeat == -4)
-    name = 'NextNextClusterNum';
-else
-    name = vcdb.f.sfname{nFeat};
-end
-
-% --------------------------------------------------------------------
-function names = getAllSFNames(vcdb)
-names = [vcdb.f.sfname; {'PrevClusterNum'}; {'NextClusterNum'}; {'PrevPrevClusterNum'}; {'NextNextClusterNum'}];
 
 % --------------------------------------------------------------------
 function nFeat = getFeaturePopupValue(popupHandle, vcdb)
