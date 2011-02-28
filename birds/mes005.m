@@ -30,4 +30,28 @@ vcQuickCluster('mes005','2011-02-20','polygons20110218.mat',[],'root','c:\stetne
 plot_pitch_multiday('mes005',{'2011-02-19' '2011-02-20'},'cluster_hits', 2, 'pitch_lims', [14 17], 'pitch_lim_units', 'percent')
 
 %% 2011-02-22
+vcQuickCluster('mes005','2011-02-21','polygons20110218.mat',[2],'root','c:\stetner\data\');
+plot_pitch_multiday('mes005',{'2011-02-21'},'cluster_hits', 2, 'pitch_lims', [14 17], 'pitch_lim_units', 'percent')
 
+%% 2011-02-23
+vcQuickCluster('mes005','2011-02-22','polygons20110218.mat',[2],'root','c:\stetner\data\');
+plot_pitch_multiday('mes005',{'2011-02-22'},'cluster_hits', 2, 'pitch_lims', [.038 .043], 'pitch_lim_units', 'seconds')
+% Did not learn. Sadness.
+
+annotate_exper('mes005', '2011-02-23', ...
+    'edgeSyllThreshold', -11, ...
+    'triggerSyllThreshold', -7, ...
+    'fMinIntervalDuration', 0.02, ...
+    'filenum', 1:106)
+vcQuickCluster('mes005','2011-02-23','polygons20110218.mat',[],'root','c:\stetner\data\');
+plot_pitch_multiday('mes005',{'2011-02-23'},'cluster_hits', 2, 'pitch_lims', [.038 .043], 'pitch_lim_units', 'seconds')
+
+%% 2011-02-24
+
+vcQuickCluster('mes005','2011-02-23','polygons20110218.mat',[],'root','c:\stetner\data\');
+plot_pitch_multiday('mes005',{'2011-02-23'},'cluster_hits', 2, 'pitch_lims', [.038 .043], 'pitch_lim_units', 'seconds')
+% no learning.
+
+%% 2011-02-25
+vcQuickCluster('mes005','2011-02-24','polygons20110218.mat',[],'root','c:\stetner\data\');
+plot_pitch_multiday('mes005',{'2011-02-23' '2011-02-24'},'cluster_hits', 2, 'pitch_lims', [.038 .043], 'pitch_lim_units', 'seconds')

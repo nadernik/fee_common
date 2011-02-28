@@ -133,3 +133,61 @@ vcQuickCluster('2089', '2011-02-21', 'polygons20110218.mat', [], 'root','c:\stet
 plot_pitch_multiday('2089',{'2011-02-21'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
 
 % no learning, even though he only  had PBS :(
+
+%% 2011-02-23
+
+% Yesterday I made new filters to target the harmonic stack at the
+% beginning of the same target syllable. This stack has a higher pitch, so
+% I will hopefully be able to push it more.
+
+vcQuickCluster('2089', '2011-02-22', 'polygons20110223.mat', 2, 'root','c:\stetner\data\')
+
+% Made new polygons to capture new noise cluster. Escapes cluster remained
+% the same.
+
+plot_pitch_multiday('2089',{'2011-02-22'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+
+%% 2011-02-23
+
+vcQuickCluster('2089', '2011-02-23', 'polygons20110223.mat', 2, 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-02-23'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+
+% He learned!! Adjusted filters to push down even further.
+
+%% 2011-02-25
+annotate_exper('2089', '2011-02-25', ...
+    'edgeSyllThreshold', -11, ...
+    'triggerSyllThreshold', -7, ...
+    'fMinIntervalDuration', 0.02, ...
+    'filenum', 1:182)
+            
+vcQuickCluster('2089', '2011-02-25', 'polygons20110223.mat', 2, 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-02-25'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+
+%% 2011-02-26
+  
+vcQuickCluster('2089', '2011-02-25', 'polygons20110223.mat', 2, 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-02-25'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+% great!!!
+
+%% 2011-02-27
+
+annotate_exper('2089', '2011-02-27', ...
+    'edgeSyllThreshold', -11, ...
+    'triggerSyllThreshold', -7, ...
+    'fMinIntervalDuration', 0.02, ...
+    'filenum', 1:670)
+vcQuickCluster('2089', '2011-02-27', 'polygons20110223.mat', [], 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-02-27'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+% did not learn. no drugs today :(
+% tomorrow start pushing up
+
+%% 2011-02-28
+
+overnight_pitch_distribution_shift('2089', '2011-02-26', '2011-02-27', ...
+    'clusters', [1 2], ...
+    'minpg', 0.3, ...
+    'range', [.029 .032], ...
+    'rangeunits', 'seconds');
+
+overnight_pitch_distribution_shift('2089', '2011-02-26', '2011-02-27', 'clusters', [1 2], 'minpg', 0.3, 'range', [.029 .032], 'rangeunits', 'seconds');
