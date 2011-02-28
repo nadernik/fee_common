@@ -8,7 +8,7 @@ P = parseargs(P, varargin{:});
 
 % omit suffix if first part
 if P.part > 1
-    suffix = num2str(P.part, '-%03.f');
+    suffix = num2str(P.part, '-pt%03.f');
 else
     suffix = '';
 end
@@ -21,4 +21,4 @@ else
 end
 
 filename = [P.rootdir filesep birdname filesep ...
-    birdname '_' prefix_and_type '_' expername suffix];
+    birdname '_' prefix_and_type '_' expername suffix '.mat'];
