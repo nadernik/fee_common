@@ -32,10 +32,16 @@ switch nargout
 end
 
 function [histargs, patchargs] = parseargs(varargin)
-for n = (length(varargin)-1):-2:1
-    if ~ischar(varargin{n})
+n = length(varargin) - 1;
+firstpatcharg = length(varargin)+1;
+while n > 1
+    if ischar(varargin{n})
+        firstpatcharg = n;
+        n = n - 2;
+    else
         break
     end
 end
-histargs = varargin(1:(n-1));
-patchargs = varargin(n:end);
+
+histargs = varargin(1:(firstpatcharg-1));
+patchargs = varargin(firstpatcharg:end);

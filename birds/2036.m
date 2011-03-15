@@ -174,3 +174,8 @@ plot_pitch_multiday('2036',{'2011-02-19' '2011-02-20'},'cluster_escapes',2,'clus
 
 % Filters were not good. Not enough escapes to learn. Sacrificing this
 % bird today because probes are clogged.
+
+%% 2011-03-09
+
+% checked in vectorClust. these polygons are good for this exper
+vcQuickCluster('2036','2011-02-14','polygons20110211.mat',[],'root','c:\stetner\data\')

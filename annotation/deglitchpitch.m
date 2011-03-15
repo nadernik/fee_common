@@ -1,4 +1,4 @@
-function deglitch_all_pitch(birdname, expername, varargin)
+function deglitchpitch(birdname, expername, varargin)
 
 P.rootdir = 'c:\stetner\data';
 ftemplate = '%s_all_pitch_%s%s.mat';

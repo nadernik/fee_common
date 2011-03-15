@@ -18,19 +18,19 @@ vcdb.d.i   = [vcdb1.d.i;  vcdb2.d.i];
 
 % icn
 if isfield(vcdb1.d, 'icn') && isfield(vcdb2.d, 'icn')
-    vcdb.icn = [vcdb1.d.icn; vcdb2.d.icn];
+    vcdb.d.icn = [vcdb1.d.icn; vcdb2.d.icn];
 elseif isfield(vcdb1.d, 'icn') && ~isfield(vcdb2.d, 'icn')
-    vcdb.icn = [vcdb1.d.icn; nan(N2,1)];
+    vcdb.d.icn = [vcdb1.d.icn; nan(N2,1)];
 elseif ~isfield(vcdb1.d, 'icn') && isfield(vcdb2.d, 'icn')
-    vcdb.icn = [nan(N1,1); vcdb2.d.icn];
+    vcdb.d.icn = [nan(N1,1); vcdb2.d.icn];
 end
 
 % vector features
 all_vfname = unique([vcdb1.f.vfname; vcdb2.f.vfname]);
 for vf = 1:length(all_vfname) % for each vf
     vfname = all_vfname{vf};
-    vf1 = mapFeatureName2Number(vcdb1.f.vfname, vfname);
-    vf2 = mapFeatureName2Number(vcdb2.f.vfname, vfname);
+    vf1 = getvfnum(vcdb1, vfname);
+    vf2 = getvfnum(vcdb2, vfname);
     vcdb.f.vfname{vf,1} = vfname;
     if ~isempty(vf1) && ~isempty(vf2)
         % if vf is in both, just concatenate
@@ -83,8 +83,8 @@ end
 all_sfname = unique([vcdb1.f.sfname; vcdb2.f.sfname]);
 for sf = 1:length(all_sfname) % for each sf
     sfname = all_sfname{sf};
-    sf1 = mapFeatureName2Number(vcdb1.f.sfname, sfname);
-    sf2 = mapFeatureName2Number(vcdb2.f.sfname, sfname);
+    sf1 = getsfnum(vcdb1, sfname);
+    sf2 = getsfnum(vcdb2, sfname);
     vcdb.f.sfname{sf} = sfname;
     if ~isempty(sf1) && ~isempty(sf2)
         % if sf is in both, just concatenate

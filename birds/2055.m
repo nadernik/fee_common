@@ -72,3 +72,80 @@ vcQuickCluster('2055', '2011-02-14', 'polygons20110214.mat', [], 'root', 'c:\ste
 % on amplitude-based rules. Loaded at 12:32pm before he sang anything.
 
 % Accidentally tore off implant while flushing drugs :(
+
+%% 2011-03-08
+
+annotate_exper('2055', '2011-01-28', ...
+    'edgeSyllThreshold', -14, ...
+    'triggerSyllThreshold',-10 , ...
+    'fMinIntervalDuration', 0.025)
+
+
+%% 2011-03-09
+
+% check to see if clustered
+close all; load(annofilename('2055', '2011-01-28', 'type', 'misc')); hist([misc.segs.segType])
+
+annotate_exper('2055', '2011-01-23', ...
+    'edgeSyllThreshold', -14, ...
+    'triggerSyllThreshold',-10 , ...
+    'fMinIntervalDuration', 0.025)
+% pretty much no singing
+
+annotate_exper('2055', '2011-01-24', ...
+    'edgeSyllThreshold', -14, ...
+    'triggerSyllThreshold',-10 , ...
+    'fMinIntervalDuration', 0.025, 'filenum', 22, 'bDebug', true)
+
+
+annotate_exper('2055', '2011-01-25', ...
+    'edgeSyllThreshold', -14, ...
+    'triggerSyllThreshold',-10 , ...
+    'fMinIntervalDuration', 0.025)
+
+%% 2011-03-09
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 2.25e-3;
+Drug.TimeIn        = datenum([2011 01 23 13 41 00]);
+Drug.TimeOut       = Inf; 
+annodrugs('2055', '2011-01-23', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 3.38e-3;
+Drug.TimeIn        = -Inf;
+Drug.TimeOut       = datenum([2011 01 25 00 00 00]); 
+annodrugs('2055', '2011-01-24', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0;
+Drug.TimeIn        = datenum([2011 01 25 13 49 00]);
+Drug.TimeOut       = datenum([2011 01 25 22 05 00]);
+annodrugs('2055', '2011-01-25', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0;
+Drug.TimeIn        = datenum([2011 01 26 12 58 00]);
+Drug.TimeOut       = Inf;
+annodrugs('2055', '2011-01-26', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 2.25e-3;
+Drug.TimeIn        = datenum([2011 01 27 13 45 00]);
+Drug.TimeOut       = Inf;
+annodrugs('2055', '2011-01-27', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0;
+Drug.TimeIn        = datenum([2011 02 02 11 42 00]);
+Drug.TimeOut       = Inf;
+annodrugs('2055', '2011-02-02', Drug)
+
+% skip 2/14 and 2/15
+
+expernames = {'2011-01-22', '2011-01-23', '2011-01-25', ...
+    '2011-01-26', '2011-01-27', '2011-01-28' };
+[conc, N] = singingwithdrugs('2055', expernames, 19, 22);
+scatter(conc, N)
+
+N = singingwithdrugs2('2055', expernames)
+plot(N)

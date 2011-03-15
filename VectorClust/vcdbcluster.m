@@ -1,4 +1,6 @@
-function vcdb = refresh_clusters(vcdb)
+function vcdb = vcdbcluster(vcdb)
+c = vcdb.c;
+d = vcdb.d;
 cn_old = vcdb.d.cn;
 hasCluster = false(size(vcdb.d.cn));
 for i = 1:10
@@ -9,7 +11,7 @@ for i = 1:10
             bIN = true(size(d.v)); % set all values to true
             for nPoly = 1:length(c(nc).polys) % all the polygons
                 poly = c(nc).polys{nPoly};
-                bIN = bIN & inpolygon(getSF(vcdb,poly.xfeat),getSF(vcdb,poly.yfeat), poly.xverts, poly.yverts);
+                bIN = bIN & inpolygon(getsf(vcdb,poly.xfeat),getsf(vcdb,poly.yfeat), poly.xverts, poly.yverts);
             end
         else % no polygon
             bIN = false(size(d.v));

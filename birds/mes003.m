@@ -118,3 +118,135 @@ plot_pitch_multiday('mes003', ...
     'pitch_lims', [.087 .090], ...
     'pitch_lim_units', 'seconds', ...
     'n_distribution', 200)
+
+%% 2011-02-28
+annotate_exper('mes003', '2011-02-28', ...
+                'edgeSyllThreshold', -11, ...
+                'triggerSyllThreshold', -8)
+
+%% 2011-03-02
+
+vcQuickCluster('mes003', '2011-03-01', 'polygons20110227.mat', 1, 'root', 'c:\stetner\data\')
+% Need to recluster due to drift.
+vcQuickCluster('mes003', '2011-03-01', 'polygons20110302.mat', [], 'root', 'c:\stetner\data\')
+plot_pitch_multiday('mes003', ...
+    {'2011-03-01'}, ...
+    'cluster_escapes', 1, ...
+    'cluster_hits', 2, ...
+    'pitch_lims', [.087 .090], ...
+    'pitch_lim_units', 'seconds', ...
+    'n_distribution', 200)
+% Looks like he didn't learn. Reverse direction of CAF.
+
+%% 2011-03-03
+vcQuickCluster('mes003', '2011-03-02', 'polygons20110303.mat', [], 'root', 'c:\stetner\data\')
+plot_pitch_multiday('mes003', ...
+    {'2011-03-02'}, ...
+    'cluster_escapes', 1, ...
+    'cluster_hits', 2, ...
+    'pitch_lims', [.087 .090], ...
+    'pitch_lim_units', 'seconds', ...
+    'n_distribution', 200)
+% Hit/escape does not seem to be based on pitch over target interval.
+% Adjusted filters by restricting syll rule to 80-90ms into syllable (much
+% shorter region than before) and changing pitch threshold to hit ~half of
+% syllables.
+
+%% 2011-03-04
+
+% Didn't sing yesterday.
+
+%% 2011-03-07
+annotate_exper('mes003', '2011-03-07', ...
+                'edgeSyllThreshold', -11, ...
+                'triggerSyllThreshold', -8, ...
+                'filenum', 1:116)
+% too little variability left
+
+%% 2011-03-09
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 19 12 50 00]);
+Drug.TimeOut       = datenum([2011 02 20 01 30 00]);
+annodrugs('mes003', '2011-02-19', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 3.38e-3;
+Drug.TimeIn        = datenum([2011 02 20 12 30 00]);
+Drug.TimeOut       = datenum([2011 02 21 00 31 00]);
+annodrugs('mes003', '2011-02-20', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 21 11 26 00]);
+Drug.TimeOut       = Inf;
+annodrugs('mes003', '2011-02-21', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 2.25e-3;
+Drug.TimeIn        = datenum([2011 02 22 11 46 00]);
+Drug.TimeOut       = datenum([2011 02 22 10 05 00]);
+annodrugs('mes003', '2011-02-22', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 23 11 30 00]);
+Drug.TimeOut       = datenum([2011 02 24 01 07 00]);
+annodrugs('mes003', '2011-02-23', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 1.13e-3;
+Drug.TimeIn        = datenum([2011 02 24 10 59 00]);
+Drug.TimeOut       = datenum([2011 02 24 23 09 00]);
+annodrugs('mes003', '2011-02-24', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 25 11 31 00]);
+Drug.TimeOut       = datenum([2011 02 26 01 14 00]);
+annodrugs('mes003', '2011-02-25', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 26 11 35 00]);
+Drug.TimeOut       = datenum([2011 02 27 00 43 00]);
+annodrugs('mes003', '2011-02-26', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 1.13e-3;
+Drug.TimeIn        = datenum([2011 02 27 19 23 00]);
+Drug.TimeOut       = datenum([2011 02 28 00 07 00]);
+annodrugs('mes003', '2011-02-27', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 1.13e-3;
+Drug.TimeIn        = datenum([2011 03 02 11 44 00]);
+Drug.TimeOut       = datenum([2011 03 03 00 13 00]);
+annodrugs('mes003', '2011-03-02', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 03 03 12 05 00]);
+Drug.TimeOut       = datenum([2011 03 03 20 52 00]);
+annodrugs('mes003', '2011-03-03', Drug)
+
+% Drug.Name          = 'CNQX + APV';
+% Drug.Concentration = 2.25e-3;
+% Drug.TimeIn        = datenum([2011 03 04 11 56 00]);
+% Drug.TimeOut       = datenum([2011 03 04 22 30 00]);
+% annodrugs('mes003', '2011-03-04', Drug)
+
+expernames = {};
+for d = datenum('2/18/2011'):datenum('3/3/2011')
+    expernames{end+1} = datestr(d, 'yyyy-mm-dd');
+end
+expernames = expernames(~strcmp(expernames, '2011-02-28'));
+N = singingwithdrugs2('mes003', expernames)
+figure
+hold on
+c = [0 0 0; 1 .75 .75; 1 .5 .5; 1 .25 .25; 1 0 0];
+for ii = 1:5
+    plot(N(1:end-1, ii),'Color',c(ii,:), 'LineWidth', 3)
+end
+xlabel('Hours after drug infusion')
+ylabel('Files recorded')

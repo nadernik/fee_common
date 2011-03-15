@@ -1144,8 +1144,8 @@ for nc = 1:length(c)
     c(nc).excs = {};
     %Add feature names to the cluster definition.
     for np = 1:length(c(nc).polys)
-        c(nc).polys{np}.xfeatName = getSFName(handles.vcdb, c(nc).polys{np}.xfeat);
-        c(nc).polys{np}.yfeatName = getSFName(handles.vcdb, c(nc).polys{np}.yfeat);
+        c(nc).polys{np}.xfeatName = getsfname(handles.vcdb, c(nc).polys{np}.xfeat);
+        c(nc).polys{np}.yfeatName = getsfname(handles.vcdb, c(nc).polys{np}.yfeat);
     end
 end
 save([path,filesep,file], 'c', 'f');
@@ -1174,67 +1174,8 @@ end
 if(isequal(file,0))
     return;
 end
-load([path,filesep,file]);
-if(~exist('c'))
-    warndlg('Specifed file is not a cluster polygon data file.');
-    return;
-end
 
-%Map feature names to feature numbers
-bPerfect = true;
-for nc = 1:length(c)
-    toDel = [];
-    for np = 1:length(c(nc).polys)
-        temp = mapFeatureName2Number(getAllSFNames(handles.vcdb),c(nc).polys{np}.xfeatName, feature2ndx(c(nc).polys{np}.xfeat, size(handles.vcdb.d.sf,2)));
-        if isempty(temp) % If we could not find a match for this feature,
-            % call the function to calculate this feature now.
-            nf = c(nc).polys{np}.xfeat;
-            if nf > 0
-                % negative feature numbers are special. They cannot be
-                % calculated until we have clustered syllables
-                % (PrevClusterNum for example). Skip this and we will
-                % deal with it later.
-                handles.vcdb = feval(f.sffcn{nf}, handles.vcdb, f.sfparam{nf}{:});
-            else
-                temp = nf;
-            end
-        end
-        c(nc).polys{np}.xfeat = mapFeatureName2Number(getAllSFNames(handles.vcdb), c(nc).polys{np}.xfeatName);%ndx2feature(temp, size(handles.vcdb.d.sf,2));
-        temp = mapFeatureName2Number(getAllSFNames(handles.vcdb),c(nc).polys{np}.yfeatName, feature2ndx(c(nc).polys{np}.yfeat, size(handles.vcdb.d.sf,2)));
-        if isempty(temp) % If we could not find a match for this feature,
-            % call the function to calculate this feature now.
-            nf = c(nc).polys{np}.yfeat;
-            if nf > 0
-                % negative feature numbers are special. They cannot be
-                % calculated until we have clustered syllables
-                % (PrevClusterNum for example). Skip this and we will
-                % deal with it later.
-                handles.vcdb = feval(f.sffcn{nf}, handles.vcdb, f.sfparam{nf}{:});
-            else
-                temp = nf;
-            end
-        end
-        c(nc).polys{np}.yfeat = mapFeatureName2Number(getAllSFNames(handles.vcdb), c(nc).polys{np}.yfeatName);%ndx2feature(temp, size(handles.vcdb.d.sf,2));
-        if(isempty(c(nc).polys{np}.xfeat) || isempty(c(nc).polys{np}.yfeat))
-            toDel = [toDel, np];
-            bPerfect = false;
-        end
-    end
-    c(nc).polys(toDel) = [];
-end
-
-if(~bPerfect)
-    strCont = questdlg('Some imported features did not have matchs.  Would you like to import anyway?', 'Cluster Import','Yes','No','No');
-    if(~strcmp(strCont,'Yes'))
-        return;
-    end
-end
-
-if(strcmpi(button,'Overwrite'))
-    handles.vcdb.c = c;
-elseif(strcmpi(button,'Augment'))
-    handles.vcdb.c = [handles.vcdb.c,c];
-end
+handles.vcdb = vcdbloadpolys(handles.vcdb, [path filesep file]);
 
 handles = refreshAll(handles);
 guidata(hObject, handles);
@@ -1359,7 +1300,7 @@ guidata(hObject, handles);
 function handles = refreshAll(handles)
 if(~isempty(handles.vcdb.d.v))
     %Set up feature popups:
-    featureNames = getAllSFNames(handles.vcdb);
+    featureNames = allsfnames(handles.vcdb);
     set(handles.popupXFeature,'String', featureNames);
     if(get(handles.popupXFeature,'Value')>length(featureNames))
         set(handles.popupXFeature,'Value',1);
@@ -1409,52 +1350,8 @@ if(~isempty(handles.vcdb.d.v))
         
     
     %Assign vectors to clusters
-    cn_old = handles.vcdb.d.cn;
-    hasCluster = false(size(handles.vcdb.d.cn));
-    for i = 1:10
-        for(nc = 1:length(c))
-            %Overide with manual modifications.
-            for(nInc = 1:length(c(nc).incs))
-                bIN(c(nc).incs{nInc}) = true;
-            end
-            for(nExc = 1:length(c(nc).excs))
-                bIN(c(nc).excs{nExc}) = false;
-            end
-            %Find vectors in all polygons.
-            if(length(c(nc).polys)>0)
-                if get(handles.checkboxOR,'Value') % OR mode instead of AND mode if checkbox is true: TO
-                    bIN = false(size(d.v)); % set all values to false
-                    for(nPoly = 1:length(c(nc).polys)) % all the polygons
-                        poly = c(nc).polys{nPoly};
-                        bIN = bIN | inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
-                    end
-                else
-                    bIN = true(size(d.v)); % set all values to true
-                    for(nPoly = 1:length(c(nc).polys)) % all the polygons
-                        poly = c(nc).polys{nPoly};
-                        bIN = bIN & inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
-                    end
-                end
-            else % no polygon
-                bIN = false(size(d.v));
-            end
-            %Overide with manual modifications.
-            for(nInc = 1:length(c(nc).incs))
-                bIN(c(nc).incs{nInc}) = true;
-            end
-            for(nExc = 1:length(c(nc).excs))
-                bIN(c(nc).excs{nExc}) = false;
-            end
-            %Set the cluster number
-            handles.vcdb.d.cn(bIN) = c(nc).number;
-            hasCluster = hasCluster | bIN;
-        end
-        if all(handles.vcdb.d.cn == cn_old)
-            break
-        end
-        cn_old = handles.vcdb.d.cn;
-    end
-    handles.vcdb.d.cn(~hasCluster) = NaN;
+    handles.vcdb = vcdbcluster(handles.vcdb);
+    
     handles = refreshSelectedCluster(handles);
 end
 
@@ -1466,7 +1363,7 @@ if(nc <= length(handles.vcdb.c))
     polyStrs = cell(length(handles.vcdb.c(nc).polys),1);
     for(nPoly = 1:length(handles.vcdb.c(nc).polys))
         poly = handles.vcdb.c(nc).polys{nPoly};
-        polyStrs{nPoly} = [num2str(nPoly),' : ', getSFName(handles.vcdb, poly.xfeat),' x ', getSFName(handles.vcdb, poly.yfeat)];        
+        polyStrs{nPoly} = [num2str(nPoly),' : ', getsfname(handles.vcdb, poly.xfeat),' x ', getsfname(handles.vcdb, poly.yfeat)];        
     end
     set(handles.listboxClusterPolygons, 'Value',1);
     set(handles.listboxClusterPolygons, 'String',polyStrs);

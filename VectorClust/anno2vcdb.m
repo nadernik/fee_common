@@ -1,15 +1,15 @@
-function vcdb_all = annotation2vcdb(birdname, expername, varargin)
+function vcdb_all = anno2vcdb(birdname, expername, varargin)
 P.rootdir = 'c:\stetner\data';
 P.audio = true;
 P.part = 1:1000;
 P = parseargs(P, varargin{:});
 
 for part = P.part
-    miscfile = get_annotation_filename(birdname, expername, ...
+    miscfile = annofilename(birdname, expername, ...
         'type', 'misc', ...
         'part', part, ...
         'rootdir', P.rootdir);
-    pitchfile = get_annotation_filename(birdname, expername, ...
+    pitchfile = annofilename(birdname, expername, ...
         'type', 'pitch', ...
         'part', part, ...
         'rootdir', P.rootdir);
@@ -21,12 +21,12 @@ for part = P.part
 
     % audio
     if P.audio
-        audiofile = get_annotation_filename(birdname, expername, ...
+        audiofile = annofilename(birdname, expername, ...
             'type', 'audio', ...
             'part', part, ...
             'rootdir', P.rootdir);
         load(audiofile)
-        vcdb.d.v = {rawaudio.segs.audio};
+        vcdb.d.v = {rawaudio.segs.audio}';
     else
         vcdb.d.v = repmat({[]},length(misc.segs),1);
     end
@@ -58,12 +58,12 @@ for part = P.part
     vcdb.d.vf{5}    = {pitch.segs.entropy}';
         
     % scalar features
-    vcdb.d.sf = nan(size(vcdb.d.v));
+%     vcdb.d.sf = nan(size(vcdb.d.v));
     
     vcdb.f.sfname{1}  = 'duration';
     vcdb.f.sffcn{1}   = mfilename;
     vcdb.f.sfparam{1} = varargin;
-    vcdb.d.sf(:,1)    = [misc.segs.duration];
+    vcdb.d.sf(:,1)    = [misc.segs.duration]';
     
     vcdb.f.sfname{2}  = 'imported cluster';
     vcdb.f.sffcn{2}   = mfilename;
@@ -82,8 +82,11 @@ for part = P.part
 
     % merge with other parts
     if exist('vcdb_all', 'var')
-        vcdb_all = merge_vcdb(vcdb_all, vcdb);
+        vcdb_all = vcdbmerge(vcdb_all, vcdb);
     else
         vcdb_all = vcdb;
     end
+    clear vcdb
 end
+vcdb_all.f.sfname = vcdb_all.f.sfname';
+vcdb_all.f.vfname = vcdb_all.f.vfname';

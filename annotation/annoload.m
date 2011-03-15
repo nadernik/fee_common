@@ -1,4 +1,4 @@
-function anno = loadAnnotation(exper, varargin)
+function anno = annoload(exper, varargin)
 
 filename = sprintf('%s_annotation_%s', exper.birdname, exper.expername);
 if nargin > 1

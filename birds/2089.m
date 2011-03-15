@@ -130,7 +130,7 @@ plot_pitch_multiday('2089',{'2011-02-17' '2011-02-18' '2011-02-19' '2011-02-20'}
 %% 2011-02-22
 
 vcQuickCluster('2089', '2011-02-21', 'polygons20110218.mat', [], 'root','c:\stetner\data\')
-plot_pitch_multiday('2089',{'2011-02-21'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
+plot_pitch_multiday('2089',{'2011-02-20' '2011-02-21'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.107 .112], 'pitch_lim_units', 'seconds')
 
 % no learning, even though he only  had PBS :(
 
@@ -171,14 +171,15 @@ plot_pitch_multiday('2089',{'2011-02-25'}, 'cluster_escapes', 1, 'cluster_hits',
 % great!!!
 
 %% 2011-02-27
+vcQuickCluster('2089', '2011-02-26', 'polygons20110223.mat', [], 'root','c:\stetner\data\')
 
-annotate_exper('2089', '2011-02-27', ...
+annotate_exper('2089', '2011-02-27', ... 
     'edgeSyllThreshold', -11, ...
     'triggerSyllThreshold', -7, ...
     'fMinIntervalDuration', 0.02, ...
     'filenum', 1:670)
 vcQuickCluster('2089', '2011-02-27', 'polygons20110223.mat', [], 'root','c:\stetner\data\')
-plot_pitch_multiday('2089',{'2011-02-27'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+plot_pitch_multiday('2089',{'2011-02-25', '2011-02-26' '2011-02-27'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
 % did not learn. no drugs today :(
 % tomorrow start pushing up
 
@@ -191,3 +192,272 @@ overnight_pitch_distribution_shift('2089', '2011-02-26', '2011-02-27', ...
     'rangeunits', 'seconds');
 
 overnight_pitch_distribution_shift('2089', '2011-02-26', '2011-02-27', 'clusters', [1 2], 'minpg', 0.3, 'range', [.029 .032], 'rangeunits', 'seconds');
+
+%% 2011-03-01
+annotate_exper('2089', '2011-02-28', ...
+    'edgeSyllThreshold', -11, ...
+    'triggerSyllThreshold', -7, ...
+    'fMinIntervalDuration', 0.02)
+vcQuickCluster('2089', '2011-02-28', 'polygons20110223.mat', [], 'root','c:\stetner\data\')
+
+plot_pitch_multiday('2089',{'2011-02-28'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+% no learning. need to reverse direction of caf.
+
+%% 2011-03-02
+
+vcQuickCluster('2089', '2011-03-01', 'polygons20110223.mat', 1, 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-03-01'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+% Great learning! Update rules to push up further.
+
+
+%% 2011-03-03
+
+vcQuickCluster('2089', '2011-03-02', 'polygons20110223.mat', [], 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-03-02'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+
+%% 2011-03-04
+
+vcQuickCluster('2089', '2011-03-03', 'polygons20110223.mat', 2, 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-03-03'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+
+% No learning. Start pushing down.
+
+%% 2011-03-05
+vcQuickCluster('2089', '2011-03-04', 'polygons20110223.mat', 1, 'root','c:\stetner\data\')
+plot_pitch_multiday('2089',{'2011-03-04'}, 'cluster_escapes', 1, 'cluster_hits', 2, 'pitch_lims', [.029 .032], 'pitch_lim_units', 'seconds')
+% good learning in spite of drugs
+
+%% 2011-03-07
+caf_plots('2089', '2011-03-04', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 200);
+
+annotate_exper('2089', '2011-03-07', ...
+    'edgeSyllThreshold', -11, ...
+    'triggerSyllThreshold', -7, ...
+    'fMinIntervalDuration', 0.02, ...
+    'filenum', 250:444)
+% adjusted clusters -- escapes are slightly louder than they used to be
+vcQuickCluster('2089', '2011-03-07', 'polygons20110307.mat', 1, 'root','c:\stetner\data\')
+% Made new filters, pushing down further
+
+%% 2011-03-08
+vcQuickCluster('2089', '2011-03-07', 'polygons20110307.mat', 1, 'root','c:\stetner\data\')
+cafplots('2089', '2011-03-07', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 200);
+
+%% 2011-03-09
+annotate_exper('2089', '2011-03-08', ...
+    'edgeSyllThreshold', -11, ...
+    'triggerSyllThreshold', -7, ...
+    'fMinIntervalDuration', 0.02)
+vcQuickCluster('2089', '2011-03-08', 'polygons20110307.mat', 2, 'root','c:\stetner\data\')
+cafplots('2089', '2011-03-08', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 50);
+% looks like no learning, but too few files to tell for sure.
+
+%%
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 16 11 26 00]);
+Drug.TimeOut       = Inf;
+annodrugs('2089', '2011-02-16', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 3.38e-3;
+Drug.TimeIn        = datenum([2011 02 17 11 26 00]);
+Drug.TimeOut       = datenum([2011 02 18 00 11 00]);
+annodrugs('2089', '2011-02-17', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 3.38e-3;
+Drug.TimeIn        = datenum([2011 02 18 11 27 00]);
+Drug.TimeOut       = datenum([2011 02 18 22 59 00]);
+annodrugs('2089', '2011-02-18', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 4.5e-3;
+Drug.TimeIn        = datenum([2011 02 19 12 43 00]);
+Drug.TimeOut       = datenum([2011 02 20 01 12 00]);
+annodrugs('2089', '2011-02-19', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 4.5e-3;
+Drug.TimeIn        = datenum([2011 02 20 12 34 00]);
+Drug.TimeOut       = datenum([2011 02 21 00 34 00]);
+annodrugs('2089', '2011-02-20', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 21 11 28 00]);
+Drug.TimeOut       = Inf;
+annodrugs('2089', '2011-02-21', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 22 11 46 00]);
+Drug.TimeOut       = datenum([2011 02 22 22 09 00]);
+annodrugs('2089', '2011-02-22', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 23 11 36 00]);
+Drug.TimeOut       = datenum([2011 02 24 01 10 00]);
+annodrugs('2089', '2011-02-23', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 4.5e-3;
+Drug.TimeIn        = datenum([2011 02 24 11 05 00]);
+Drug.TimeOut       = datenum([2011 02 24 23 05 00]);
+annodrugs('2089', '2011-02-24', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 25 11 33 00]);
+Drug.TimeOut       = datenum([2011 02 26 01 17 00]);
+annodrugs('2089', '2011-02-25', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 1.13e-3;
+Drug.TimeIn        = datenum([2011 02 26 11 39 00]);
+Drug.TimeOut       = datenum([2011 02 27 00 50 00]);
+annodrugs('2089', '2011-02-26', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 02 27 12 33 00]);
+Drug.TimeOut       = datenum([2011 02 28 00 10 00]);
+annodrugs('2089', '2011-02-27', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 1.13e-3;
+Drug.TimeIn        = datenum([2011 03 02 11 54 00]);
+Drug.TimeOut       = datenum([2011 03 03 00 17 00]);
+annodrugs('2089', '2011-03-02', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 03 03 12 08 00]);
+Drug.TimeOut       = datenum([2011 03 03 20 57 00]);
+annodrugs('2089', '2011-03-03', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 2.25e-3;
+Drug.TimeIn        = datenum([2011 03 04 11 59 00]);
+Drug.TimeOut       = datenum([2011 03 04 22 33 00]);
+annodrugs('2089', '2011-03-04', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 03 07 18 27 00]);
+Drug.TimeOut       = Inf;
+annodrugs('2089', '2011-03-07', Drug)
+
+Drug.Name          = 'CNQX + APV';
+Drug.Concentration = 4.5e-3;
+Drug.TimeIn        = datenum([2011 03 08 12 25 00]);
+Drug.TimeOut       = datenum([2011 03 08 21 49 00]);
+annodrugs('2089', '2011-03-08', Drug)
+
+Drug.Name          = 'PBS';
+Drug.Concentration = 0.01;
+Drug.TimeIn        = datenum([2011 03 09 12 25 00]);
+Drug.TimeOut       = datenum([2011 03 09 00 17 00]); %FIXME
+annodrugs('2089', '2011-03-09', Drug)
+
+
+expernames = {};
+for d = datenum('2/15/2011'):datenum('3/3/2011')
+    expernames{end+1} = datestr(d, 'yyyy-mm-dd');
+end
+N = singingwithdrugs2('2089', expernames)
+figure
+hold on
+c = [0 0 0; 1 .75 .75; 1 .5 .5; 1 .25 .25; 1 0 0];
+for ii = 1:5
+    plot(N(1:end-1, ii),'Color',c(ii,:), 'LineWidth', 3)
+end
+xlabel('Hours after drug infusion')
+ylabel('Files recorded')
+
+
+%% figure for lab meeting
+
+close all
+cafplots('2089', '2011-03-02', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds');
+cafplots('2089', '2011-03-03', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds');
+cafplots('2089', '2011-03-04', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds');
+
+%% fig 2
+
+cafplots('2089', '2011-02-25', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds', 'LastN', 200);
+
+%% 2011-03-10
+vcQuickCluster('2089', '2011-03-09', 'polygons20110307.mat', 1, 'root','c:\stetner\data\')
+cafplots('2089', '2011-03-09', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 100);
+% Good learning, and fast.
+
+%% 2011-03-11
+vcQuickCluster('2089', '2011-03-10', 'polygons20110307.mat', 2, 'root','c:\stetner\data\')
+cafplots('2089', '2011-03-10', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds');
+
+% Reverse direction of CAF in middle of day
+annotate_exper('2089', '2011-03-11', ...
+                'edgeSyllThreshold', -11, ...
+                'triggerSyllThreshold', -7, ...
+                'fMinIntervalDuration', 0.02, ...
+                'filenum', 340:398)
+vcQuickCluster('2089', '2011-03-11', 'polygons20110307.mat', 1, 'root','c:\stetner\data\')
+% reversed after file 416.
+
+%% 2011-03-13
+vcQuickCluster('2089', '2011-03-11', 'polygons20110307.mat', 2, 'root','c:\stetner\data\')
+cafplots('2089', '2011-03-11', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds');
+
+vcQuickCluster('2089', '2011-03-12', 'polygons20110307.mat', 1, 'root','c:\stetner\data\')
+cafplots('2089', '2011-03-12', ...
+    'EscapeCluster', 1, ...
+    'HitCluster', 2, ...
+    'Range', [.029 .032], ...
+    'RangeUnits', 'seconds');
+% Did not learn very much. Continue with same filters.

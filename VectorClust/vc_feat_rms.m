@@ -14,14 +14,17 @@ n = size(vcdb.d.sf, 2) + 1;
 vf = getVFbyName(vcdb, feat);
 
 % If we are using time to extract snippets, we need a time vector. Try to
-% use a vector feature called 'pitchTime', but if it doesn't exist or if it
-% does not match the size of our vector feature of interest, just assume
-% the sampling frequency is 40 kHz.
+% use a vector feature called 'pitchTime'. If that doesn't work, try to
+% make time vector based on duration. If that doesn't work, give an error.
 if strcmp(P.rangeunits, 'seconds')
     t = getVFbyName(vcdb, 'pitchTime');
     if isempty(t) || length(t{1}) ~= length(vf{1})
-        warning('MATLAB:vectorClust:vc_feat_rms:noTime', 'Cannnot use vector feature pitchTime as time for feature %s. Guessing that sampling rate is 40kHz.', feat)
-        t = repmat({40000}, size(vf));
+        dur = getSFbyName(vcdb, 'duration');
+        
+        if isempty(dur)
+            error('Cannot make time vector.')
+        end
+        
     end
 else
     t = repmat({[]}, size(vf));
@@ -31,7 +34,7 @@ end
 for syll = 1:length(vcdb.d.v)
     vcdb.d.sf(syll, n) = mean(abs(snippet(vf{syll}, P.range, ...
         't', t{syll}, ...
-        'units', rangeunits)));
+        'units', P.rangeunits)));
 end
 
 vcdb.f.sfname{n} = P.name;
