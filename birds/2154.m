@@ -37,3 +37,7 @@ cafplots('2154', '2011-03-12', ...
     'RangeUnits', 'seconds', ...
     'SaveVcdb', 'c:\stetner\data\2154\vcdb2011-03-12.mat')
 % Overnight maybe lost some learning? Learned. Should update filters.
+
+%% 2011-03-18
+
+annotate_exper('2154', '2011-03-17', 'edgeSyllThreshold',-10,'triggerSyllThreshold',-5.5, 'maxFilesPerAnnotation', 500)
