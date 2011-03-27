@@ -11,8 +11,7 @@ if Category ==7 %% load dbase for TO data for development
 elseif Category ==8 %% adult song database   
     
 else % load dbase for DA data
-    cd(['Y:\Cooling\',birdName,'\',folder,'\bouts'])
-    load analysis.mat % load dbase
+    load(['c:\stetner\data\' birdName '\' folder '\analysis.mat']) % load dbase
     
     if strfind(dbase.PathName,'z:')
         dbase.PathName = strrep(dbase.PathName,'z:','Y:');

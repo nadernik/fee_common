@@ -39,7 +39,7 @@ end
 
 durs = durs(:,2)-durs(:,1); % calculating duration (samples)
 durs = durs/dbase.Fs*1000; % converting duration to miliseconds
-GOF_DA = judge_bird_TO(durs);
+% GOF_DA = judge_bird_TO(durs);
 handles.durs = durs; % save in handles
 handles.gaps = gaps;
 
@@ -135,27 +135,10 @@ ylabel('Probability density (s^{-1})','fontsize',12);
 box off
 
 %% save data and figures (TO DO: separate the save part)
-switch Category
-    case 1 % subsong
-        PathName = 'Z:\Data\Song_rhythm\Subsong';
-    case 2 % plastic song
-        PathName = 'Z:\Data\Song_rhythm\Plastic_song';
-    case 3 % HVC lesion
-        PathName = 'Z:\Data\Song_rhythm\HVC_lesion';
-    case 4 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\LMAN_inactivation';
-    case 5 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\HVC_cooling';
-    case 6 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\LMAN_cooling';
-    case 7 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\Development';
-end
-
+PathName = ['c:\stetner\data\' birdName];
 FileName = [birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.mat'];
-save([PathName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau');
-cd(PathName)
-saveas(20,[birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.fig'],'fig');
+save([PathName,filesep,FileName],'lst','lst2','durs','gaps','GOF','tau');
+saveas(20,[PathName, filesep, birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.fig'],'fig');
 close(19);
 close(20);
 dbase.durs = durs;
