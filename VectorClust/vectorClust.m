@@ -1414,7 +1414,7 @@ handles.vcg.bDraw = computeDrawVector(handles);
 [mcolor, msize, mstyle] = computeScatterStyle(handles);
 
 %draw the markers
-bVis = handles.vcg.bDraw & handles.vcg.bFilt & ~isnan(getSF(handles.vcdb,xfeat)) & ~isnan(getSF(handles.vcdb,yfeat));
+bVis = handles.vcg.bDraw & handles.vcg.bFilt & ~isnan(getsf(handles.vcdb,xfeat)) & ~isnan(getsf(handles.vcdb,yfeat));
 axes(handles.axesFeatureScatter);
 hold off;
 % screenImage = zeros(xPix, yPix, 3) color code

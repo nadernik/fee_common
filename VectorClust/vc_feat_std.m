@@ -1,64 +1,73 @@
-function vcdb = vc_feat_std(vcdb, vf_name, varargin)
-P.sfname = '';
-P.time_range = [];
+function vcdb = vc_feat_std(vcdb, feat, varargin)
+P.Name = ['std_' feat];
+P.Range = [0 100];
+P.RangeUnits = {'percent', 'seconds', 'samples'};
+% for backwards compatability
 P.percent_range = [];
+P.time_range = [];
 P.samples_range = [];
+% end backwards compatability code
 P = parseargs(P, varargin{:});
 
-if isempty(P.sfname)
-    sfname = ['std_' vf_name]; % may add to this later base on range
-    use_default_sfname = true;
-else
-    sfname = P.sfname;
-    use_default_sfname = false;
-end
+rangeGiven = any(strcmp(varargin, 'Range'));
 
-sf_idx = length(vcdb.f.sfname) + 1;
-vf_idx = find(strcmp(vf_name, vcdb.f.vfname));
-
-
-if ~isempty(P.time_range)
-    % if we are given a specific range to take the mean over, calculate
-    % which sample numbers correspond to this time range.
-    samples = round((P.time_range + 1/vcdb.g.fs) .* vcdb.g.fs);
-    for syll = 1:length(vcdb.d.v) 
-        % for each syllable, calculate mean over the time range
-        try
-            vcdb.d.sf(syll, sf_idx) = std(vcdb.d.vf{vf_idx}{syll}(samples(1):samples(2)));
-        catch
-            vcdb.d.sf(syll, sf_idx) = [];
-        end
-    end
-    if use_default_sfname
-        % if user did not supply a name for this feature, add the time
-        % range to our default name so it becomes like "mean_pitch_10_20".
-        sfname = sprintf('%s_%g_%g', sfname, P.time_range(1), P.time_range(2));
-    end
-elseif ~isempty(P.percent_range)
-    for syll = 1:length(vcdb.d.v)
-        L = length(vcdb.d.vf{vf_idx}{syll});
-        ndxStart = ceil((L - 1) * P.percent_range(1) / 100) + 1;
-        ndxEnd = floor((L - 1) * P.percent_range(2) / 100) + 1;
-        vcdb.d.sf(syll, sf_idx) = std(vcdb.d.vf{vf_idx}{syll}(ndxStart:ndxEnd));
-    end
-    if use_default_sfname
-        % if user did not supply a name for this feature, add the time
-        % range to our default name so it becomes like "mean_pitch_10_20".
-        sfname = sprintf('%s_%g_%g', sfname, P.percent_range(1), P.percent_range(2));
-    end
+% for backwards compatability
+if ~isempty(P.percent_range)
+    P.Range = P.percent_range;
+    P.RangeUnits = 'percent';
+    rangeGiven = true;
+elseif ~isempty(P.time_range)
+    P.Range = P.time_range;
+    P.RangeUnits = 'seconds';
+    rangeGiven = true;
 elseif ~isempty(P.samples_range)
-    for syll = 1:length(vcdb.d.v) % for each syllable
-        vcdb.d.sf(syll, sf_idx) = std(vcdb.d.vf{vf_idx}{syll}(P.samples_range(1):P.samples_range(2)));
-    end
-    if use_default_sfname
-        sfname = sprintf('%s_%g_%g', sfname, P.samples_range(1), P.samples_range(2));
-    end
-else
-    % if we weren't given any ranges, just take the mean of the whole
-    % vector
-    vcdb.d.sf(:,sf_idx) = cellfun(@std, vcdb.d.vf{vf_idx});
+    P.Range = P.samples_range;
+    P.RangeUnits = 'samples';
+    rangeGiven = true;
+end
+% end backwards compatability code
+
+if ~any(strcmp(varargin, 'Name')) && rangeGiven
+    P.Name = sprintf('%s_%g_%g', P.Name, P.Range(1), P.Range(2));
 end
 
-vcdb.f.sfname{sf_idx} = sfname;
-vcdb.f.sffcn{sf_idx} = mfilename;
-vcdb.f.sfparam{sf_idx} = {vf_name, varargin{:}};
+n = size(vcdb.d.sf, 2) + 1;
+vf = getvf(vcdb, feat);
+
+% If we are using time to extract snippets, we need a time vector. Try to
+% use a vector feature called 'pitchTime'. If that doesn't work, try to
+% make time vector based on duration. If that doesn't work, give an error.
+if strcmp(P.RangeUnits, 'seconds')
+    t = getvf(vcdb, 'pitchTime');
+    if isempty(t) || length(t{1}) ~= length(vf{1})
+        dur = getsf(vcdb, 'duration');
+        len = cellfun(@length, vf);
+        if isempty(dur)
+            error('Cannot make time vector.')
+        end
+        t = arrayfun(@linspace, zeros(size(dur)), dur, len, 'UniformOutput', false);
+    end
+else
+    t = repmat({[]}, size(vf));
+end
+
+% Calculate the feature, the root-mean-square value over a range
+for syll = 1:length(vcdb.d.v)
+    try
+        x = snippet(vf{syll}, P.Range, ...
+            't', t{syll}, ...
+            'units', P.RangeUnits);
+        if isempty(x)
+            vcdb.d.sf(syll, n) = nan;
+        else
+            vcdb.d.sf(syll, n) = std(x);
+        end
+    catch
+        warning('MATLAB:vectorClust:vc_feat_std', 'Could not calculate feature %s for syllable number %g because %s', P.Name, syll, lasterr)
+        vcdb.d.sf(syll,n) = nan;
+    end
+end
+
+vcdb.f.sfname{n} = P.Name;
+vcdb.f.sffcn{n} = mfilename;
+vcdb.f.sfparam{n} = {feat, varargin{:}};

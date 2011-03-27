@@ -1,10 +1,19 @@
-function show_file_with_labeled_syllables(varargin)
-% show_file_with_labeled_syllables(exper, filenum)
-% show_file_with_labeled_syllables('birdname', 'expername', filenum)
-% show_file_with_labeled_syllables('birdname', 'expername', filenum, 'rootdir', 'c:\your\data\dir')
+function labeledspecgram(varargin)
+% Spectrogram with labeled syllables from processed annotation files
+%
+% USAGE:
+%   labeledspecgram(exper, filenum)
+%   labeledspecgram('birdname', 'expername', filenum)
+%   labeledspecgram('birdname', 'expername', filenum, 'RootDir', 'c:\your\data\dir')
+%
+% Always plots the spectrogram in figure 3628. Calls displaySpecgramQuick()
+% to plot the spectrogram.
 
-P.rootdir = 'c:\stetner\data\';
+%% Parameters
+P.RootDir = 'c:\stetner\data';
+P = parseargs(P, varargin{:});
 
+%% Get exper and file number from arguments
 switch nargin
     case 2
         exper = varargin{1};
@@ -20,27 +29,25 @@ switch nargin
         error('wrong number of arugments')
 end
 
-% get the audio to make spectrogram
-[audio, timeFileCreated, startTime, startSamp, names, values, info] = loadAudio(exper,filenum);
-% get syllable labels from this file only (based on start and end time of
-% file)
-filename = getExperAudioFilename(exper, filenum);
-anno_files = dir([P.rootdir filesep exper.birdname filesep exper.birdname '_annotation_' exper.expername '*']);
-for n = 1:length(anno_files)
+%% Get syllable labels from processed annotation file
+filename = getExperAudioFilename(exper, filenum); % file we are looking for
+
+for part = 1:1000
     % look through annotations to find this file
-    hash = aaLoadHashtable(anno_files(n).name);
-    element = hash.get(filename);
-    if ~isempty(element)
-        break
+    annofile = annofilename(exper.birdname, exper.expername, ...
+        'Part', part, 'RootDir', P.RootDir, 'Type', 'annotation');
+    if exist(annofile, 'file')
+        hash = aaLoadHashtable(annofile);
+        element = hash.get(filename);
+        if ~isempty(element) % if we found this file
+            break
+        end
     end
-end    
+end
 
-% make unique color for each segType (up to 
-
-
-% plot results
+%% Plot labels
 figure(3628)
-ax(1) = subplot(10,1,1);
+ax(1) = subplot(10,1,1); % height of spectrogram is 9x height of labels
 cla
 hold on
 segtypes = unique(element.segType);
@@ -58,6 +65,11 @@ for syll = 1:length(element.segType)
 end
 axis off
 hold off
-ax(2) = subplot(10,1,2:10);
+
+
+%% Plot spectrogram
+[audio, timeFileCreated, startTime, startSamp, names, values, info] = loadAudio(exper,filenum);
+
+ax(2) = subplot(10,1,2:10); % height of spectrogram is 9x height of labels
 displaySpecgramQuick(audio, info.fs)
-linkaxes(ax,'x')
+linkaxes(ax,'x') % linking x axis makes zooming on spectrogram also adjust labels to match

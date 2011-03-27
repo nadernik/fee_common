@@ -30,7 +30,7 @@ if exist(P.LoadVcdb, 'file')
 end
             
 if ~exist('vcdb', 'var')
-    vcdb = anno2vcdb(birdname, expername, 'audio', false);
+    vcdb = anno2vcdb(birdname, expername, 'Audio', false);
 end
 
 %%
@@ -78,12 +78,14 @@ mask_firstn = mask & cumsum(mask) <= P.LastN;
 % Plot pitch traces of last_n syllables. Hits in red and escapes in black.
 figure(4441)
 clf
-h = vfplot(vcdb, 'pitch', 'mask', mask_lastn & is_hit);
+% h = vfplot(vcdb, 'pitch', 'mask', mask_lastn & is_hit);
+h = vfplot(vcdb, 'pitch', 'mask', is_hit);
 hold on
 for ii = 1:length(h)
     set(h(ii), 'Color', 'r');
 end
-h = vfplot(vcdb, 'pitch', 'mask', mask_lastn & is_escape);
+% h = vfplot(vcdb, 'pitch', 'mask', mask_lastn & is_escape);
+h = vfplot(vcdb, 'pitch', 'mask', is_escape);
 for ii = 1:length(h)
     set(h(ii), 'Color', 'b');
 end

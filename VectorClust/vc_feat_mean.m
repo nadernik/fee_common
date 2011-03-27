@@ -41,11 +41,11 @@ if strcmp(P.RangeUnits, 'seconds')
     t = getvf(vcdb, 'pitchTime');
     if isempty(t) || length(t{1}) ~= length(vf{1})
         dur = getsf(vcdb, 'duration');
-        
+        len = cellfun(@length, vf);
         if isempty(dur)
             error('Cannot make time vector.')
         end
-        
+        t = arrayfun(@linspace, zeros(size(dur)), dur, len, 'UniformOutput', false);
     end
 else
     t = repmat({[]}, size(vf));
@@ -54,9 +54,14 @@ end
 % Calculate the feature, the root-mean-square value over a range
 for syll = 1:length(vcdb.d.v)
     try
-        vcdb.d.sf(syll, n) = mean(snippet(vf{syll}, P.Range, ...
+        x = snippet(vf{syll}, P.Range, ...
             't', t{syll}, ...
-            'units', P.RangeUnits));
+            'units', P.RangeUnits);
+        if isempty(x)
+            vcdb.d.sf(syll, n) = nan;
+        else
+            vcdb.d.sf(syll, n) = mean(x);
+        end
     catch
         warning('MATLAB:vectorClust:vc_feat_mean', 'Could not calculate feature %s for syllable number %g because %s', P.Name, syll, lasterr)
         vcdb.d.sf(syll,n) = nan;

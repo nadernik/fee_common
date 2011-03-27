@@ -1,24 +1,24 @@
-function filename = get_annotation_filename(birdname, expername, varargin)
+function filename = annofilename(birdname, expername, varargin)
 
-P.part = 1;
-P.rootdir = 'c:\stetner\data\';
-P.type = 'annotation';
-P.prefix = 'all';
+P.Part = 1;
+P.RootDir = 'c:\stetner\data\';
+P.Type = 'annotation';
+P.Prefix = 'all';
 P = parseargs(P, varargin{:});
 
 % omit suffix if first part
-if P.part > 1
-    suffix = num2str(P.part, '-pt%03.f');
+if P.Part > 1
+    suffix = num2str(P.Part, '-pt%03.f');
 else
     suffix = '';
 end
 
 % omit prefix if annotation
-if strcmp(P.type, 'annotation')
-    prefix_and_type = P.type;
+if strcmp(P.Type, 'annotation')
+    prefix_and_type = P.Type;
 else
-    prefix_and_type = [P.prefix '_' P.type];
+    prefix_and_type = [P.Prefix '_' P.Type];
 end
 
-filename = [P.rootdir filesep birdname filesep ...
+filename = [P.RootDir filesep birdname filesep ...
     birdname '_' prefix_and_type '_' expername suffix '.mat'];

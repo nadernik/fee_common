@@ -1,18 +1,39 @@
 function vcdb_all = anno2vcdb(birdname, expername, varargin)
-P.rootdir = 'c:\stetner\data';
-P.audio = true;
-P.part = 1:1000;
+% anno2vcdb converts processed annotation file to vectorClust format
+%
+% Usage:
+%   vcdb = anno2vcdb(birdname, expername)
+%   vcdb = anno2vcdb(birdname, expername, 'Parameter', value ...)
+% 
+% Parameter (default value)
+%   Explanation
+% 
+% RootDir (c:\stetner\data)
+%   Directory where data is. Looks for annotation files in birdname
+%   subdirectory of RootDir.
+% Audio (true)
+%   Boolean controls whether audio is loaded into vcdb.d.v. Setting to
+%   false saves time and memory.
+% Part (1:1000)
+%   If annotation is divided into multiple parts, you can convert only a
+%   subset of those parts. Part must be an array of part numbers. Part
+%   numbers in Part that do not exist are skipped silently. Default is to
+%   use all parts.
+
+P.RootDir = 'c:\stetner\data';
+P.Audio = true;
+P.Part = 1:1000;
 P = parseargs(P, varargin{:});
 
-for part = P.part
+for part = P.Part
     miscfile = annofilename(birdname, expername, ...
-        'type', 'misc', ...
-        'part', part, ...
-        'rootdir', P.rootdir);
+        'Type', 'misc', ...
+        'Part', part, ...
+        'RootDir', P.RootDir);
     pitchfile = annofilename(birdname, expername, ...
-        'type', 'pitch', ...
-        'part', part, ...
-        'rootdir', P.rootdir);
+        'Type', 'pitch', ...
+        'Part', part, ...
+        'RootDir', P.RootDir);
     if ~exist(miscfile, 'file') || ~exist(pitchfile, 'file')
         continue
     end
@@ -20,11 +41,11 @@ for part = P.part
     load(pitchfile)
 
     % audio
-    if P.audio
+    if P.Audio
         audiofile = annofilename(birdname, expername, ...
-            'type', 'audio', ...
-            'part', part, ...
-            'rootdir', P.rootdir);
+            'Type', 'audio', ...
+            'Part', part, ...
+            'RootDir', P.RootDir);
         load(audiofile)
         vcdb.d.v = {rawaudio.segs.audio}';
     else
