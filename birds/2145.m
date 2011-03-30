@@ -82,3 +82,52 @@ cafplots('2145', '2011-03-25', ...
     'LastN', 100, ...
     'SaveVcdb', 'c:\stetner\data\2145\2011-03-25\vcdb.mat')
 % Filters not good? Or maybe pitch goodness in target region is bad.
+
+%% 2011-03-28
+
+figure
+dotm = 25:27;
+axh = nan(size(dotm));
+for ii = 1:length(dotm)
+    filename = ['c:\stetner\data\2145\2011-03-' int2str(dotm(ii)) '\vcdb.mat'];
+    % Load vcdb
+    load(filename)
+    % caluclate new feature -- pitch goodness in target region (~20 to 40 ms
+    % into the syllable)
+    try
+        vcdb = handles.vcdb;
+        clear handles
+    catch
+    end
+    vcdb = vc_feat_mean(vcdb, 'pitchGoodness', 'Range', [0.03 0.04], 'RangeUnits', 'seconds', 'Name', 'tpg');
+    % histogram of new feature
+    axh(ii) = subplot(length(dotm),1,ii);
+    sfhist(vcdb, 'tpg','BinWidth', 0.05, 'Mask', vcdb.d.cn == 1)
+    title(filename)
+    clear vcdb
+end
+% doesn't seem like pitchGoodness is decreasing. What about std(pitch)
+
+figure
+dotm = 25:27;
+axh = nan(size(dotm));
+for ii = 1:length(dotm)
+    filename = ['c:\stetner\data\2145\2011-03-' int2str(dotm(ii)) '\vcdb.mat'];
+    % Load vcdb
+    load(filename)
+    % caluclate new feature -- pitch goodness in target region (~20 to 40 ms
+    % into the syllable)
+    try
+        vcdb = handles.vcdb;
+        clear handles
+    catch
+    end
+    vcdb = vc_feat_std(vcdb, 'pitch', 'Range', [0.03 0.04], 'RangeUnits', 'seconds', 'Name', 'stdp');
+    % histogram of new feature
+    axh(ii) = subplot(length(dotm),1,ii);
+    sfhist(vcdb, 'stdp','BinWidth', 5, 'Mask', vcdb.d.cn == 1)
+    title(filename)
+    clear vcdb
+end
+% Hard to tell. A few syllables on each day have very high SD, but most are
+% very low. 
