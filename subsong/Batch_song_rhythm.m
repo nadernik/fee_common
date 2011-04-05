@@ -11,7 +11,11 @@ if Category ==7 %% load dbase for TO data for development
 elseif Category ==8 %% adult song database   
     
 else % load dbase for DA data
-    load(['c:\stetner\data\' birdName '\' folder '\analysis.mat']) % load dbase
+    filename = ['c:\stetner\data\' birdName '\' folder '\analysis.mat'];
+    if ~exist(filename, 'file')
+        filename = ['c:\stetner\data\' birdName '\' folder '\bouts\analysis_selected.mat'];
+    end
+    load(filename) % load dbase
     
     if strfind(dbase.PathName,'z:')
         dbase.PathName = strrep(dbase.PathName,'z:','Y:');
@@ -57,29 +61,9 @@ Plot_spectrum(4,Freq,P_syll,P_syll_null,birdName,Date);
 Plot_spectrum(5,Freq,P_on,P_on_null,birdName,Date);
 
 %% save results
-switch Category
-    case 1 % subsong
-        PathName = 'Z:\Data\Song_rhythm\Subsong';
-    case 2 % plastic song
-        PathName = 'Z:\Data\Song_rhythm\Plastic_song';
-    case 3 % HVC lesion
-        PathName = 'Z:\Data\Song_rhythm\HVC_lesion';
-    case 4 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\LMAN_inactivation';
-%     case 5 % HVC cooling
-%         PathName = 'Z:\Data\Song_rhythm\HVC_cooling';
-%     case 6 % LMAN cooling
-%         PathName = 'Z:\Data\Song_rhythm\LMAN_cooling';
-    case 7 % development
-        PathName = ['Z:\Data\Song_rhythm\Development'];
-end
+PathName = ['c:\stetner\data\' birdName];
 FileName = [birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_song_rhythm.mat'];
-if exist([PathName,filesep,birdName,filesep,FileName])
-    save([PathName,filesep,birdName,filesep,FileName]);
-else
-     mkdir(PathName,birdName);
-     save([PathName,filesep,birdName,filesep,FileName]);
-end
+save([PathName, filesep, FileName]);
 
 cd(PathName)
 saveas(3,[birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_sound_amp_rhythm.fig'],'fig');

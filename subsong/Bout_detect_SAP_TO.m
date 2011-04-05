@@ -8,7 +8,7 @@ if nargin<1 % input argument empty
     pathName = uigetdir('C:\SAP\', 'Choose the directory that contains songs');
 end
 
-cd(pathName)
+% cd(pathName)
 dbase.ChannelFiles =[];
 
 
@@ -25,6 +25,7 @@ if isempty(dir([pathName filesep 'analysis.mat']))
     dbase.SoundLoader = 'WaveRead';
     
     if ~isempty(s_files)
+        % initialize dbase
         dbase.EventSources = {};
         dbase.EventFunctions = {};
         dbase.EventDetectors = {};
@@ -48,6 +49,7 @@ if isempty(dir([pathName filesep 'analysis.mat']))
         dbase.FileLength = zeros(1,length(s_files));
         dbase.Times = zeros(1,length(s_files));
         
+        % make graphic to show progress
         fig = figure;
         subplot('position',[.05 0.35 0.9 0.6]);
         text(0,3,[pathName],'fontsize',14,'interpreter','none','horizontalalignment','center');
@@ -87,7 +89,8 @@ if isempty(dir([pathName filesep 'analysis.mat']))
             % CHANGE HERE FOR WAVE FILES
             
             try
-                [a, fs] = wavread(s_files(fl).name);%[a fs] = wavread([fold(bird).name filesep days(dy).name filesep files(fl).name]);
+                filename = [dbase.PathName filesep s_files(fl).name]
+                [a, fs] = wavread(filename);
                 dbase.FileLength(fl) = length(a);
                 dbase.Times(fl) = s_files(fl).datenum;
                 dateandtime= s_files(fl).datenum;
@@ -175,12 +178,12 @@ if isempty(dir([pathName filesep 'analysis.mat']))
                         figure(fig);
                         subplot('position',[.05 0.05 0.9 0.3]);
                         ylim([1000 7000]);
-                        [p f t] = quick_spectrogram(gca,rec.Data,rec.Fs);
-                        imagesc(t,f,p);
+                        displaySpecgramQuick(rec.Data,rec.Fs);
+%                         imagesc(t,f,p);
                         set(gca,'ydir','normal');
                         axis tight
                         axis off
-                        set(gca,'clim',[prctile(p(1:prod(size(p))),50) prctile(p(1:prod(size(p))),95)*1.2]);
+%                         set(gca,'clim',[prctile(p(1:prod(size(p))),50) prctile(p(1:prod(size(p))),95)*1.2]);
                         drawnow
                     end
                 end
