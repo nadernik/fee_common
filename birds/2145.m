@@ -131,3 +131,8 @@ for ii = 1:length(dotm)
 end
 % Hard to tell. A few syllables on each day have very high SD, but most are
 % very low. 
+
+%% 2011-03-30
+vcQuickCluster('2145', '2011-03-29', 'polygons20110328.mat', [], 'root', 'c:\stetner\data')
+labeledspecgram('2145', '2011-03-29')
+% Cannot get good filters. Sac him.

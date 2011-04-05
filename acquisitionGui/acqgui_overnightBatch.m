@@ -22,8 +22,8 @@ for ii = 1:length(expers)
                 'edgeSyllThreshold', -9.5, ...
                 'triggerSyllThreshold', -8)
             fprintf(1, 'Annotated exper %s for bird %s\n', expername, birdname)
-        case '2145'
-            annotate_exper('2145', expername, 'edgeSyllThreshold',-10,'triggerSyllThreshold',-8)
+        case 'mes021'
+            annotate_exper('mes021', expername, 'edgeSyllThreshold', -9.5, 'triggerSyllThreshold', -7)
             fprintf(1, 'Annotated exper %s for bird %s\n', expername, birdname)
         otherwise
             fprintf(1, 'Skipping exper %s for bird %s\n', expername, birdname)
