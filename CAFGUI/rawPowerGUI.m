@@ -68,9 +68,8 @@ if nargin > 3
         handles.audioCh = exper.audioCh;
         handles.exper = exper;
         % put list of files in box
-        handles.files = dir([handles.pathName '*.dat']);
-        n = (1:length(handles.files))';
-        str = mat2cell(n,ones(size(n)), 1);
+        n = 1:getLatestDatafileNumber(exper);
+        str = cellfun(@num2str, mat2cell(n', ones(length(n), 1), 1), 'UniformOutput', false);
         set(handles.listFile,'String',str);
         set(handles.listFile,'Value',1);
         % if(get(handles.checkAutoshow,'Value') == 1)
@@ -82,6 +81,7 @@ if nargin > 3
         set(handles.editFilterLength,'String',num2str(p.filterLength))
         set(handles.editThresh,'String',num2str(p.threshold))
         set(handles.editTimeThresh,'String',num2str(p.timeAbove))
+        set(handles.editTimeMax, 'String', num2str(p.timeMax))
         handles.params = p;
     catch
         e = lasterror;

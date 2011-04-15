@@ -75,20 +75,22 @@ fh = figure(3628);
 ax(1) = subplot(10,1,1); % height of spectrogram is 9x height of labels
 cla
 hold on
-segtypes = unique(element.segType);
-colors = get(gca,'ColorOrder');
-chash = mhashtable;
-cidx = mod(1:length(segtypes),size(colors,1)) + 1;
-for n = 1:length(segtypes)
-    chash.put(segtypes(n), colors(cidx(n),:));
+if ~isempty(element)
+    segtypes = unique(element.segType);
+    colors = get(gca,'ColorOrder');
+    chash = mhashtable;
+    cidx = mod(1:length(segtypes),size(colors,1)) + 1;
+    for n = 1:length(segtypes)
+        chash.put(segtypes(n), colors(cidx(n),:));
+    end
+    for syll = 1:length(element.segType)
+        x = [element.segFileStartTimes(syll) element.segFileEndTimes(syll) element.segFileEndTimes(syll) element.segFileStartTimes(syll)];
+        y = [0 0 1 1];
+        fill(x,y,chash.get(element.segType(syll)))
+        text(element.segFileStartTimes(syll),0.5,num2str(element.segType(syll)))
+    end
+    axis off
 end
-for syll = 1:length(element.segType)
-    x = [element.segFileStartTimes(syll) element.segFileEndTimes(syll) element.segFileEndTimes(syll) element.segFileStartTimes(syll)];
-    y = [0 0 1 1];
-    fill(x,y,chash.get(element.segType(syll)))
-    text(element.segFileStartTimes(syll),0.5,num2str(element.segType(syll)))
-end
-axis off
 hold off
 title(sprintf('%s %s file %g', exper.birdname, exper.expername, filenum))
 

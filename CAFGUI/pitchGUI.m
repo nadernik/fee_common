@@ -67,7 +67,7 @@ if nargin > 3
     handles.audioCh = exper.audioCh;
     k = strfind(exper.dir, filesep);
     handles.rootdir = exper.dir(1:k(end-2)); % has filesep at end
-    cd(handles.rootdir) % going up exper and bird directory
+%     cd(handles.rootdir) % going up exper and bird directory
     set(handles.textBirdName,'String',handles.birdName,'Enable','off');
     set(handles.textExperName,'String',handles.experName,'Enable','off');
     set(handles.buttonSyllable,'Enable','on');
@@ -1043,8 +1043,8 @@ function buttonLoad_Callback(hObject, eventdata, handles)
 % TO DO, ask whether to save or not
 handles=ClearDisplay(handles);
 [file,path] = uigetfile('cafgui*','Specify cafgui file'); % TO DO cancel
-cd(path);
-load(file);
+% cd(path);
+load([path, file]);
 
 % basic info
 handles.rootdir = cafguidb.rootdir;
@@ -1371,7 +1371,7 @@ function pushVectorClust_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 if exist([handles.rootdir,handles.birdName])
-    cd([handles.rootdir,handles.birdName]);
+%     cd([handles.rootdir,handles.birdName]);
 end
 pn = [handles.rootdir,handles.birdName,filesep];
 fn = [handles.birdName,'_all_misc_',handles.experName,'.mat'];
@@ -1450,17 +1450,17 @@ function buttonLoadExper_Callback(hObject, eventdata, handles)
 % TO DO, ask save
 
 % loading exper.mat
-cd('c:\data\feelab\acquisitionGui') %%% TO
+% cd('c:\data\feelab\acquisitionGui') %%% TO
 [fileName,pathName] = uigetfile('exper*','Specify exper.mat');
 handles.pathName = pathName;
 handles.fileName = fileName;
-cd(pathName); % move to directory where the exper.mat is
+% cd(pathName); % move to directory where the exper.mat is
 load(fileName); % load exper.mat
 handles.birdName = exper.birdname;
 handles.experName = exper.expername;
 handles.fs = exper.desiredInSampRate;
 handles.audioCh = exper.audioCh;
-cd ../../ % going up exper and bird directory
+% cd ../../ % going up exper and bird directory
 handles.rootdir = [pwd,filesep]; % file separater \ in the end!!
 handles.tdt_fs = 24414; % sampling frequency of the TDT [Hz]
 set(handles.textBirdName,'String',handles.birdName,'Enable','off');
@@ -1667,15 +1667,15 @@ set(handles.textFreqHigh,'String',handles.pitchRange(2));
 set(handles.textFreqStep,'String',handles.stepSize);
 
 % update file list
-cd([handles.rootdir,handles.birdName,filesep,handles.experName]);
-FileList = dir(['*chan',num2str(handles.audioCh),'.dat']);
+% cd([]);
+FileList = dir([handles.rootdir,handles.birdName,filesep,handles.experName,filesep,'*chan',num2str(handles.audioCh),'.dat']);
 if isempty(FileList)
     errordlg('No files or wrong audio ch!')
 end
 TotalFile = length(FileList);
 
 set(handles.listFiles,'String',num2str((1:TotalFile)'));
-cd([handles.rootdir,handles.birdName]);
+% cd([handles.rootdir,handles.birdName]);
 
 Idx = get(handles.listFiles,'Value');
 FileList = str2num(get(handles.listFiles,'String')); % convert to double
@@ -1850,9 +1850,9 @@ if ~isfield(handles,'exper') % no handles.exper
 end
 
 handles = UpdateDisplay(handles); % get fileNum
-cd([handles.rootdir,handles.birdName,filesep,handles.experName]); % move to the directory that has the data
+% cd([handles.rootdir,handles.birdName,filesep,handles.experName]); % move to the directory that has the data
 
-audio = loadAudio(handles.exper, handles.fileNum);
+audio = loadAudio(handles.exper, handles.fileNum, handles.rootdir);
 
 fig=figure;
 displaySpecgramQuick(audio, handles.fs)
@@ -1879,12 +1879,12 @@ function buttonTestTDT_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.TDTpathName = 'C:\Documents and Settings\Tatsuo\My Documents\DSP_programs\Tatsuo\CAF';
-temp = pwd; % save current directory
-cd(handles.TDTpathName);
+% temp = pwd; % save current directory
+% cd(handles.TDTpathName);
 [fn,pn] = uigetfile('*.rcx','Specify TDT file');
 handles.TDTfileName = fn;
 guidata(hObject, handles);
-cd(temp) % return to the original directory
+% cd(temp) % return to the original directory
 
 %% TDT Connection parameters
 connectionType = 'USB';
