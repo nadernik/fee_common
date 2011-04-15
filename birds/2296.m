@@ -14,3 +14,29 @@ Bout_detect_SAP_TO('C:\stetner\data\2296\2264')
 Parse_segments('c:\stetner\data\2296\2264\bouts\analysis.mat')
 Batch_song_rhythm('2296','2264',1)
 % STILL no protosyllable peak
+
+%% 2011-04-05
+Bout_detect_SAP_TO('C:\stetner\data\2296\2265')
+Parse_segments
+Batch_song_rhythm('2296','2265',1)
+% Something around 5 Hz, but it should be lower freq. This is probably
+% nothing. 
+
+%% 2011-04-07
+Bout_detect_SAP_TO('C:\stetner\data\2296\2267')
+Parse_segments
+Batch_song_rhythm('2296','2267',1)
+% still nothing. what is wrong with this guy?!??!?!?!?
+
+%% 2011-04-11
+
+Bout_detect_SAP_TO('C:\stetner\data\2296\2271')
+Parse_segments
+Batch_song_rhythm('2296','2271',1)
+% Still subsong.
+
+%% 2011-04-13
+Bout_detect_SAP_TO('C:\stetner\data\2296\2273')
+Parse_segments
+Batch_song_rhythm('2296','2273',1,1:402)
+% Still subsong.
