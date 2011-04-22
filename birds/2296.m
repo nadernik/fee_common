@@ -40,3 +40,21 @@ Bout_detect_SAP_TO('C:\stetner\data\2296\2273')
 Parse_segments
 Batch_song_rhythm('2296','2273',1,1:402)
 % Still subsong.
+
+%% 2011-04-15
+Bout_detect_SAP_TO('C:\stetner\data\2296\2275')
+Parse_segments
+Batch_song_rhythm('2296','2275',1)
+% Maybe a small peak.
+
+%% 2011-04-18
+Bout_detect_SAP_TO('C:\stetner\data\2296\2278')
+Parse_segments
+Batch_song_rhythm('2296','2278',1, 1:300)
+% No surgery yet.
+
+%% 2011-04-19
+Bout_detect_SAP_TO('C:\stetner\data\2296\2279')
+Parse_segments
+Batch_song_rhythm('2296','2279',1, 1:300)
+% Do surgery NOW!

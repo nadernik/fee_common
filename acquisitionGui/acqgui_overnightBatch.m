@@ -14,13 +14,11 @@ for ii = 1:length(expers)
         case 'mes020'
             annotate_exper('mes020', expername, 'edgeSyllThreshold', -10,'triggerSyllThreshold', -8)
             fprintf(1, 'Annotated exper %s for bird %s\n', expername, birdname)
-        case 'mes011'
-            annotate_exper('mes011', expername, 'edgeSyllThreshold', -9, 'triggerSyllThreshold', -7, 'fMinIntervalDuration', 0.02)
+        case 'mes025'
+            annotate_exper('mes025', expername, 'triggerSyllThreshold', -5, 'edgeSyllThreshold', -10)
             fprintf(1, 'Annotated exper %s for bird %s\n', expername, birdname)            
-        case 'mes013'
-            annotate_exper('mes013', expername, ...
-                'edgeSyllThreshold', -9.5, ...
-                'triggerSyllThreshold', -8)
+        case 'empty'
+
             fprintf(1, 'Annotated exper %s for bird %s\n', expername, birdname)
         case 'mes021'
             annotate_exper('mes021', expername, 'edgeSyllThreshold', -9.5, 'triggerSyllThreshold', -7)

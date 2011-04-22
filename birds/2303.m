@@ -53,3 +53,13 @@ Batch_song_rhythm('2303','2271',1,1:400);
 Bout_detect_SAP_TO('C:\stetner\data\2303\2274')
 Parse_segments
 Batch_song_rhythm('2303','2274',1,1:200);
+
+%% 2011-04-18
+Bout_detect_SAP_TO('C:\stetner\data\2303\2278')
+Parse_segments
+Batch_song_rhythm('2303','2278',1,1:200);
+
+%% 2011-04-21
+Bout_detect_SAP_TO('C:\stetner\data\2303\2281')
+Parse_segments
+Batch_song_rhythm('2303','2281',1,1:205);
