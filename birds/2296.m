@@ -58,3 +58,7 @@ Bout_detect_SAP_TO('C:\stetner\data\2296\2279')
 Parse_segments
 Batch_song_rhythm('2296','2279',1, 1:300)
 % Do surgery NOW!
+
+%% 2011-04-25
+% First singing post surgery
+Bout_detect_SAP_TO('C:\stetner\data\2296\2284')

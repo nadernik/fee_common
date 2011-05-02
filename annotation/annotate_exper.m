@@ -1,15 +1,17 @@
 function annotate_exper(birdname, expername, varargin)
+
 P.rootdir = 'c:\stetner\data\';
-P.triggerSyllThreshold = -11;
-P.edgeSyllThreshold = -14;
-P.filenum = [];
-P.bDebug = false;
+P.triggerSyllThreshold = -11; % threshold to detect middle of syllable
+P.edgeSyllThreshold = -14; % threhold to detect beginning and end of syllables
+P.filenum = []; % files to annotate. leave blank to annotate all files.
+P.bDebug = false; % show spectrogram of segmented files?
 P.maxFilesPerAnnotation = 300;
 P.fMinSyllDuration = .016; %secs
 P.fMinIntervalDuration = .007; %secs
 P.fMaxSyllDuration = 1; %sec
 P = parseargs(P,varargin{:});
 
+%%
 P.filenum = {P.filenum};
 
 expers{1} = loadExper(birdname, expername, P.rootdir);
