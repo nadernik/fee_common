@@ -63,3 +63,15 @@ Batch_song_rhythm('2303','2278',1,1:200);
 Bout_detect_SAP_TO('C:\stetner\data\2303\2281')
 Parse_segments
 Batch_song_rhythm('2303','2281',1,1:205);
+
+%% 2011-04-27
+Bout_detect_SAP_TO('C:\stetner\data\2303\2287')
+% In the past I have just taken the first 200-300 files, but this may be
+% biased because I am only getting the morning singing on most days. Maybe
+% I should take some from beginning and some from the end? But he always
+% seems to sing a similar number of files so I will just keep on doing what
+% i have been doing.
+Parse_segments
+% File 29 lots of intro notes, 80, 85
+% Made an effort to exclude intro notes that were not embedded in song.
+Batch_song_rhythm('2303','2287',1,1:200);
