@@ -6,7 +6,7 @@ function ratemodel(varargin)
 P.dt = 0.001; % seconds, time step
 P.thvc = 0.01; % seconds, length of hvc burst. sometimes I call this one time slice (slice is bigger than a step)
 P.tlman = 0.05; % seconds, timescale of fluctuations in lman
-P.motifs = 500;%5000; % number of motifs in simulation
+P.motifs = 1500;%5000; % number of motifs in simulation
 
 % Size of the network
 P.hvcunits = 6; % number of units in hvc
@@ -25,15 +25,15 @@ P.discountrate = 0; % for reward prediction error. 0 means no history.
 P.inhibition = 200; % MSN global inhibition strength
 P.noiseamp = 1; % amplitude of background LMAN activity
 P.syndec = 0.001; % Strength of heterosynaptic competition. 0 turns off competition
-P.Wmax = 0.06; % Threshold for heterosynaptic competition
+P.Wmax = 0.03; % Threshold for heterosynaptic competition
 P.thresh = 0.01; % spiking threshold for X neurons
 
 % Initial conditions
 
 % The template, aka the sequence we are trying to learn. 
 % P.template = ones(P.raunits,1) * [0.5, -0.5, 0.5, -0.5, 0.5, -0.5]; 
-P.template = [1 1 1 1 1 1];
-% P.template = [0 0 0 0 0 1];
+% P.template = [1 1 1 1 1 1];
+P.template = [0 0 0 0 0 1];
 
 % P = parseargs(P, varargin{:});
 
@@ -196,6 +196,32 @@ for t = 1:maxsteps
     %%%DEBUG change template to see medium spiny neurons relearn
     if t / motifsteps == 501 % after 500th motif
         P.template = [1 0 0 0 0 0];
+        for nX = 1:P.xunits
+            nL = find(W_X1L(nX, :));
+            %fprintf(1, '%g of %g synapses onto LMAN unit %g\n', nX, P.xunits, nL)
+
+            temp = mean(reshape(X1(nX, :), hvcsteps, []));% average over all time steps in each HVC burst
+            Y = reshape(temp, P.hvcunits,  P.motifs)';
+            %     area(Y)
+            %     pause
+            if nL == 1
+                [hi, nh] = max(Y(500, :));
+                if hi/sum(Y(500, :)) > 0.8; % assign to category if more than 80% activity in this bin
+                    category(nX) = nh;
+                else
+                    category(nX) = 0; % unassigned
+                end
+            else
+                category(nX) = nan; % exclude because wrong lman neuron
+            end
+        end
+
+        figure
+        hist(category, 0:P.hvcunits)
+        title('X neurons per hvc burst (0=unassigned)')
+        xlabel('HVC burst')
+        ylabel('Number of X neurons')
+
         disp('template changed!')
     end
         
@@ -221,8 +247,8 @@ for nX = 1:P.xunits
     
     temp = mean(reshape(X1(nX, :), hvcsteps, []));% average over all time steps in each HVC burst
     Y = reshape(temp, P.hvcunits,  P.motifs)';
-%     area(Y)
-%     pause
+    area(Y)
+    pause
     if nL == 1
         [hi, nh] = max(Y(end, :));
         if hi/sum(Y(end, :)) > 0.8; % assign to category if more than 80% activity in this bin
