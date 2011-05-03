@@ -1,5 +1,5 @@
 function ratemodel(varargin)
-rand('twister', 123465)
+
 %% Parameters
 
 % Time
@@ -12,7 +12,7 @@ P.motifs = 500;%5000; % number of motifs in simulation
 P.hvcunits = 6; % number of units in hvc
 P.raunits = 1;
 P.lmanunits = P.raunits*2; % number of units in lman
-P.xunits = 1000;%P.hvcunits * P.lmanunits; % number of units in x
+P.xunits = 100;%P.hvcunits * P.lmanunits; % number of units in x
 % Number of units in X is forced to be hvcunits*lmanunits because of the
 % wiring pattern in X. Each unit in X receives input from a single HVC unit
 % and a single LMAN unit. There is one X unit for each pair of inputs.
@@ -64,7 +64,6 @@ for m = 1:P.motifs
 end
 
 % Make LMAN neurons fire randomly
-rand('twister', 123465)
 L = zeros(P.lmanunits, maxsteps + 1);
 randomness = zeros(P.lmanunits, maxsteps); 
 for u = 1:P.lmanunits
@@ -72,7 +71,6 @@ for u = 1:P.lmanunits
 end
 randomness = max(randomness, 0);
 L(:, 1) = randomness(:, 1);
-rand('twister', now)
 
 % Initialize empty matrices for activity in other neurons
 X1 = zeros(P.xunits,  maxsteps);
@@ -98,11 +96,10 @@ end
 % projects back to that same LMAN neuron. Approximates topographic loop.
 W_X1L = zeros(P.xunits, P.lmanunits);
 W_X2L = zeros(P.xunits, P.lmanunits);
-nL1 = ceil(P.lmanunits .* rand(P.xunits, 1));
-nL2 = ceil(P.lmanunits .* rand(P.xunits, 1));
 for nX = 1:P.xunits
-    W_X1L(nX, nL1(nX)) = 1;
-    W_X2L(nX, nL2(nX)) = 1;
+    nL = mod(nX, P.lmanunits) + 1;
+    W_X1L(nX, nL) = 1;
+    W_X2L(nX, nL) = 1;
 end
 W_LX1 =  W_X1L';
 W_LX2 = -W_X2L';
@@ -112,10 +109,16 @@ W_LX2 = zeros(size(W_LX2));
 %%%/DEBUG
 
 % Weak all-to-all connectivity with random weights in HVC -> X
-
 W_X1H = 0.01 * rand(P.xunits, P.hvcunits);
 W_X2H = 0.01 * rand(P.xunits, P.hvcunits);
 
+% X collaterals between X1 and X2 neurons that receive similar LMAN input
+[junk, nL1] = find(W_X1L ~= 0);
+[junk, nL2] = find(W_X2L ~= 0);
+W_X1X1 = -P.inhibition / P.xunits * P.lmanunits * ((ones(P.xunits, 1) * nL1') == (ones(P.xunits, 1) * nL1')');
+W_X2X2 = -P.inhibition / P.xunits * P.lmanunits * (ones(P.xunits, 1) * nL2') == (ones(P.xunits, 1) * nL2')';
+W_X2X1 = -P.inhibition / P.xunits * P.lmanunits * (ones(P.xunits, 1) * nL2') == (ones(P.xunits, 1) * nL1')';
+W_X1X2 = W_X2X1';
 
 % HVC starts out completely disconnected from RA
 W_RAH = zeros(P.raunits, P.hvcunits);
@@ -163,12 +166,8 @@ for t = 1:maxsteps
     end
     
     % Global inhibition supresses learning in MSNs. 
-    popactivity(t) = sum([X1(:, t); X2(:, t)]); % average activity of whole MSN population
-    I1 = 1 - P.inhibition/P.xunits .* (ones(P.xunits, 1) .* popactivity(t) - X1(:, t));
-    I2 = 1 - P.inhibition/P.xunits .* (ones(P.xunits, 1) .* popactivity(t) - X2(:, t));
-    I1 = max(I1, 0) * ones(1, P.hvcunits);
-    I2 = max(I2, 0) * ones(1, P.hvcunits);
-    % NOTE: Inhibition is shared between direct and indirect pathway MSNs
+    I1 = max(0, 1 + W_X1X1 * X1(:, t) + W_X1X2 * X2(:, t)) * ones(1, P.hvcunits);
+    I2 = max(0, 1 + W_X2X2 * X2(:, t) + W_X2X1 * X1(:, t)) * ones(1, P.hvcunits);
     % NOTE: Inhibition only effects learning, not the actual output of MSNs
     
     % Update synaptic weights onto medium spiny neurons based on reward and
@@ -195,8 +194,9 @@ for t = 1:maxsteps
     W_RAH = max(W_RAH, 0);
     
     %%%DEBUG change template to see medium spiny neurons relearn
-    if t == 30000
+    if t / motifsteps == 501 % after 500th motif
         P.template = [1 0 0 0 0 0];
+        disp('template changed!')
     end
         
 end
@@ -216,14 +216,14 @@ figure
 % quickimage('HVC', H(:, end-motifsteps:end), 'X1', X1(:, end-motifsteps:end), 'X2', X2(:, end-motifsteps:end))
 % title('Last motif of activity')
 for nX = 1:P.xunits
-    nL = find(W_X2L(nX, :));
+    nL = find(W_X1L(nX, :));
     %fprintf(1, '%g of %g synapses onto LMAN unit %g\n', nX, P.xunits, nL)
     
-    temp = mean(reshape(X2(nX, :), hvcsteps, []));% average over all time steps in each HVC burst
+    temp = mean(reshape(X1(nX, :), hvcsteps, []));% average over all time steps in each HVC burst
     Y = reshape(temp, P.hvcunits,  P.motifs)';
-    area(Y)
-    %pause
-    if nL == 2
+%     area(Y)
+%     pause
+    if nL == 1
         [hi, nh] = max(Y(end, :));
         if hi/sum(Y(end, :)) > 0.8; % assign to category if more than 80% activity in this bin
             category(nX) = nh;
@@ -241,9 +241,9 @@ title('X neurons per hvc burst (0=unassigned)')
 xlabel('HVC burst')
 ylabel('Number of X neurons')
 
-figure
-plot(popactivity)
-title('Michale''s I')
+% figure
+% plot(popactivity)
+% title('Michale''s I')
 
 keyboard
 end
