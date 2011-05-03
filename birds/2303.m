@@ -75,3 +75,9 @@ Parse_segments
 % File 29 lots of intro notes, 80, 85
 % Made an effort to exclude intro notes that were not embedded in song.
 Batch_song_rhythm('2303','2287',1,1:200);
+
+%% 2011-05-02
+Bout_detect_SAP_TO('C:\stetner\data\2303\2292')
+Parse_segments
+% A lot of intro notes! tried to exclude most of them.
+Batch_song_rhythm('2303','2292',1,1:200);
