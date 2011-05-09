@@ -27,3 +27,9 @@ Batch_song_rhythm('2365','2292',1, 1:200)
 % Plastic song!
 % GOF is 0.87847
 % Lesion today!
+
+%% 2011-05-08
+Bout_detect_SAP_TO('C:\stetner\data\2365\2291')
+Bout_detect_SAP_TO('C:\stetner\data\2365\2293')
+Parse_segments
+Batch_song_rhythm('2365','2293',1, 1:200)

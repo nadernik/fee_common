@@ -107,3 +107,11 @@ fprintf(1, '%g/%g = %g%% post-lesion\n', ones, twos, ones/twos*100)
 Bout_detect_SAP_TO('C:\stetner\data\2296\2290')
 Parse_segments
 Batch_song_rhythm('2296','2290',1,1:200)
+
+%% 2011-05-05
+Bout_detect_SAP_TO('C:\stetner\data\2296\2295')
+% Abnormal song. Very harmonic. See file 3, 17 (is this even song?)
+% Much less singing than normal and when I changed his cage he didn't look
+% too good. Feathers ruffled. Hopefully it was because he was low on food.
+Parse_segments
+Batch_song_rhythm('2296','2295',1)

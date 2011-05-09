@@ -81,3 +81,10 @@ Bout_detect_SAP_TO('C:\stetner\data\2303\2292')
 Parse_segments
 % A lot of intro notes! tried to exclude most of them.
 Batch_song_rhythm('2303','2292',1,1:200);
+
+%% 2011-05-08
+Bout_detect_SAP_TO('C:\stetner\data\2303\2297')
+Parse_segments
+% lots of intro notes see file 3. long stacks interpsersed with song like
+% file 184
+Batch_song_rhythm('2303','2297',1,1:200);
