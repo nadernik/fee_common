@@ -88,3 +88,13 @@ Parse_segments
 % lots of intro notes see file 3. long stacks interpsersed with song like
 % file 184
 Batch_song_rhythm('2303','2297',1,1:200);
+
+%% 2011-05-12
+Bout_detect_SAP_TO('C:\stetner\data\2303\2302')
+Parse_segments
+% motif in file 3?
+% inspirations are being counted as syllables 
+electro_gui
+% sorted in electrogui so i could zoom in and make sure to exclude
+% inspiratory syllables
+Batch_song_rhythm('2303','2302',1,49:101)

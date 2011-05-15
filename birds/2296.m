@@ -115,3 +115,8 @@ Bout_detect_SAP_TO('C:\stetner\data\2296\2295')
 % too good. Feathers ruffled. Hopefully it was because he was low on food.
 Parse_segments
 Batch_song_rhythm('2296','2295',1)
+
+%% 2011-05-12
+Bout_detect_SAP_TO('C:\stetner\data\2296\2300')
+Parse_segments
+Batch_song_rhythm('2296','2300',1, 1:200)
