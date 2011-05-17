@@ -1,11 +1,12 @@
-function varargout = plottrials(vec, trials, trialsteps)
-% PLOTTRIALS plots overlaid trials from a vector
+function Y = gettrials(vec, trials, trialsteps)
+% GETTRIALS returns matrix of trials from a vector
 % 
-% Usage: plottrials(vec, trials, trialsteps)
+% Usage: gettrials(vec, trials, trialsteps)
 %
 %
 % If trials are negative, they are measured from end
 % If the last trial is not complete, it doesn't count
+% Assumes that first element in vec is the beginning of the first trial
 
 npad = trialsteps - mod(length(vec), trialsteps);
 if npad ~= trialsteps
@@ -15,8 +16,4 @@ end
 Y = reshape(vec, trialsteps, []);
 
 trials(trials <= 0) = size(Y, 2) + trials(trials <= 0) + 1;
-h = plot(Y(:, trials));
-
-if nargout > 0
-    varargout{1} = h;
-end
+Y = Y(:, trials);
