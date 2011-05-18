@@ -1,10 +1,9 @@
-% Rate model of Area X
-% One pallidal neuron
-% One DLM (thalamic) neuron
-% One LMAN neuron
-% 10 HVC neurons each emit one 10 ms burst
-% Hard wired connectivity onto MSNs
-% Direct pathway only
+% 100 motifs without learning -- get baseline singing and let V(s) converge
+% 500 motifs to learn -- hopefully for the last 100 motifs of this, we are
+% at a stable learned state
+
+% Start with song learned -- HVC->RA synapses non zero
+% No consolidation -- HVC->RA synapse learning rate is zero
 
 close all
 clear all
@@ -14,7 +13,7 @@ clear all
 P.dt = 0.001; % seconds, time step
 P.thvc = 0.006; % seconds, length of hvc burst. sometimes I call this one time slice (slice is bigger than a step)
 P.tlman = 0.05; % seconds, timescale of fluctuations in lman
-P.motifs = 1500; % number of motifs in simulation
+P.motifs = 1000; % number of motifs in simulation
 
 % Size of the network
 P.hvcunits = 50; % number of units in hvc
@@ -24,13 +23,18 @@ P.xunits = P.lmanunits * P.hvcunits; % number of units in x
 
 % Learning rates and other fudge factors
 P.xrate = .01; % learning rate in HVC->X synapse
-P.rarate = 0.0005; % learning rate in HVC->RA synapse
+P.rarate = 0; % learning rate in HVC->RA synapse
 P.rperate = 0.05; % learning rate of state value function V(s)
 P.discountrate = 0; % for reward prediction error. 0 means no history.
 
 P.noiseamp = 1;
 P.thresh = 0;
 P.radecay = 2e-3 * P.rarate;
+
+% conditional auditory feedback
+P.caftime = 25;
+P.cafthresh = 1.2;
+P.caferror = 3;
 
 % The template, aka the sequence we are trying to learn.
 % P.template = .5*ones(1, P.hvcunits);
@@ -64,7 +68,7 @@ W_PM = zeros(P.lmanunits, P.xunits);
 W_DP = -eye(P.lmanunits); % inhibitory
 W_LD =  eye(P.lmanunits);
 W_RL = ones(P.raunits, P.lmanunits);
-W_RH = zeros(P.raunits, P.hvcunits);
+W_RH = ones(P.raunits, P.hvcunits);
 
 % Make HVC neurons fire in a chain with each neuron bursting once per motif
 onemotif = zeros(P.hvcunits, motifsteps);
@@ -97,10 +101,7 @@ winit = W_MH;
 % Initialize empty matrices for activity in other neurons
 etrace = zeros(P.xunits, P.hvcunits);
 V = zeros(maxsteps + 1, P.hvcunits);
-rpe = zeros(1,maxsteps);
-error = zeros(1,maxsteps);
-temp = zeros(1,maxsteps);
-
+temp = zeros(maxsteps, 1);
 %% Main loop
 for t = 1:maxsteps
 
@@ -121,14 +122,18 @@ for t = 1:maxsteps
     R(:, t) = W_RH * H(:, t) + W_RL * L(:, t);
 
     % Calculate reward prediction error
-    error(t)  = abs(R(:, t) - P.template(:, s(t)));
-    reward = 1 - mean(error(t), 1); % averaged across all neurons
-    rpe(t) = reward - V(s(t));
+    error  = (R(:, t) - P.template(:, s(t))^2;
+    if s(t) == P.caftime && R(:, t) < P.cafthresh
+        error = P.caferror;
+    end
+    temp(t) = error;
+    reward = -mean(error, 1); % averaged across all neurons
+    rpe = reward - V(s(t));
 
     % Update expected state value
-    V(s(t)) = V(s(t)) + P.rperate * rpe(t);
+    V(s(t)) = V(s(t)) + P.rperate * rpe;
 
-    if t > 0 %6000 % no learning for first 6000 time steps so V can converge
+    if t > 100*motifsteps % no learning for first 100 motifs
         % Update eligibility trace
         % Eligibility trace decays over time according to the discount rate and
         % receives an impulse when both the HVC and LMAN neuron . Eligibility
@@ -139,21 +144,24 @@ for t = 1:maxsteps
 
         % Update synaptic weights onto medium spiny neurons based on reward and
         % spiking history of LMAN and HVC neurons.
-        W_MH = W_MH + etrace .* rpe(t) .* P.xrate; % direct pathway
+        W_MH = W_MH + etrace .* rpe .* P.xrate; % direct pathway
 
         % Update HVC to RA synapses with a spike timing dependent plasticity
         % rule. If they both spike in this time step, the synapse is
         % strengthened.
-        dw = (W_RL * L(:,t)) * H(:, t)' .* P.rarate - P.radecay;
-        temp(t) = dw(1);
-        W_RH  = W_RH + dw;
+        %dw = (W_RL * L(:,t)) * H(:, t)' .* P.rarate - P.radecay;
+        %temp(t) = dw(1);
+        %W_RH  = W_RH + dw;
 
         % Make sure none of the updated synaptic weights change sign.
         W_MH = max(W_MH, winit); % don't let weights on to MSNs go to zero
-        W_RH = max(W_RH, 0);
+        %W_RH = max(W_RH, 0);
     end
 end
+save('charlesworthdemo.mat')
+Y = gettrials(R, 1:P.motifs, motifsteps);
+t = 1:motifsteps;
+target = mean(Y(s(t) == P.caftime, :));
+plot(target)
 figure
 plot(temp)
-title('dw')
-save 'consolidation.mat'
