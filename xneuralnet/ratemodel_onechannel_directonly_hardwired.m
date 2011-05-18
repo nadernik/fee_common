@@ -14,7 +14,7 @@ clear all
 P.dt = 0.001; % seconds, time step
 P.thvc = 0.006; % seconds, length of hvc burst. sometimes I call this one time slice (slice is bigger than a step)
 P.tlman = 0.05; % seconds, timescale of fluctuations in lman
-P.motifs = 500; % number of motifs in simulation
+P.motifs = 1500; % number of motifs in simulation
 
 % Size of the network
 P.hvcunits = 50; % number of units in hvc
@@ -24,12 +24,13 @@ P.xunits = P.lmanunits * P.hvcunits; % number of units in x
 
 % Learning rates and other fudge factors
 P.xrate = .01; % learning rate in HVC->X synapse
-P.rarate = 0; % learning rate in HVC->RA synapse
+P.rarate = 0.0005; % learning rate in HVC->RA synapse
 P.rperate = 0.05; % learning rate of state value function V(s)
 P.discountrate = 0; % for reward prediction error. 0 means no history.
 
 P.noiseamp = 1;
 P.thresh = 0;
+P.radecay = 2e-3 * P.rarate;
 
 % The template, aka the sequence we are trying to learn.
 % P.template = .5*ones(1, P.hvcunits);
@@ -79,7 +80,7 @@ for u = 1:P.lmanunits
     randomness(u, :) = P.noiseamp * smoothnoise(maxsteps, P.tlman / P.dt);
 end
 % randomness = max(randomness, 0);
-L(:, 1) = randomness(:, 1);
+L(:, 1) = max(randomness(:, 1), 0);
 
 % fill in weights for LMAN-X-DLM loop
 m = 0;
@@ -127,7 +128,7 @@ for t = 1:maxsteps
     % Update expected state value
     V(s(t)) = V(s(t)) + P.rperate * rpe(t);
 
-    if t > 6000 % no learning for first 6000 time steps so V can converge
+    if t > 0 %6000 % no learning for first 6000 time steps so V can converge
         % Update eligibility trace
         % Eligibility trace decays over time according to the discount rate and
         % receives an impulse when both the HVC and LMAN neuron . Eligibility
@@ -138,18 +139,21 @@ for t = 1:maxsteps
 
         % Update synaptic weights onto medium spiny neurons based on reward and
         % spiking history of LMAN and HVC neurons.
-        dw = etrace .* rpe(t) .* P.xrate;
-        temp(t) = dw(1);
-        W_MH = W_MH + dw; % direct pathway
+        W_MH = W_MH + etrace .* rpe(t) .* P.xrate; % direct pathway
 
         % Update HVC to RA synapses with a spike timing dependent plasticity
         % rule. If they both spike in this time step, the synapse is
         % strengthened.
-        W_RH  = W_RH + R(:, t) * H(:, t)' .* P.rarate;
-        % NOTE: These synapses have no way to get weaker.
+        dw = (W_RL * L(:,t)) * H(:, t)' .* P.rarate - P.radecay;
+        temp(t) = dw(1);
+        W_RH  = W_RH + dw;
 
         % Make sure none of the updated synaptic weights change sign.
         W_MH = max(W_MH, winit); % don't let weights on to MSNs go to zero
         W_RH = max(W_RH, 0);
     end
 end
+figure
+plot(temp)
+title('dw')
+save 'consolidation.mat'
