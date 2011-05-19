@@ -1,14 +1,15 @@
 %% Figure 3: Learned changes are consolidated from AFP into motor pathway
 close all
 clear all
-load 'consolidation.mat'
+load 'c:\stetner\data\figures\xmodel\consolidation.mat'
 motorpathway = R - W_RL * L(:, 1:maxsteps); % assumes W_RL is constant
+N = 20;
 
 %% (a) Error is reduced over time
 figure(301)
 t = 1:motifsteps;
-for ii = 1:P.motifs - 49
-    trials = ii + (0:49);
+for ii = 1:P.motifs - N+1
+    trials = ii + (0:N-1);
     err(ii) = sum((P.template(s(t))' - nanmean(gettrials(R, trials, motifsteps), 2)).^2);
     err_mp(ii) = sum((P.template(s(t))' - nanmean(gettrials(motorpathway, trials, motifsteps), 2)).^2);
 end
@@ -22,7 +23,7 @@ xlabel('Trials')
 
 %% (b) Output gradually approaches template in motor pathway and AFP
 figure(302)
-trials = [1, 150, 300, P.motifs-49];
+trials = [1, 150, 300, P.motifs-N+1];
 cols = length(trials);
 t = 1:motifsteps;
 
@@ -32,10 +33,10 @@ for ii = 1:cols
     plot(P.template(s(t)), 'b', 'LineWidth', 2)
     hold on
     % total output
-    Y = gettrials(R, trials(ii) + (0:49), motifsteps); 
+    Y = gettrials(R, trials(ii) + (0:N-1), motifsteps); 
     plot(nanmean(Y, 2), 'k', 'LineWidth', 2);
     % motor pathway
-    Y = gettrials(motorpathway, trials(ii) + (0:49), motifsteps);
+    Y = gettrials(motorpathway, trials(ii) + (0:N-1), motifsteps);
     plot(nanmean(Y, 2), 'r', 'LineWidth', 2)
 end
 
@@ -46,10 +47,10 @@ end
 
 %% (c) Bias over time
 figure(303)
-t = nan(P.motifs - 49, 1);
-bias = nan(P.motifs - 49, 1);
-for ii = 1:P.motifs - 49
-    trials = ii + (0:49);
+t = nan(P.motifs - N+1, 1);
+bias = nan(P.motifs - N+1, 1);
+for ii = 1:P.motifs - N+1
+    trials = ii + (0:N-1);
     t(ii) = mean(trials); 
     % Bias is the effect of the DLM signal on motor output. Assumes W_RL
     % and W_LD are constant through learning.

@@ -13,7 +13,7 @@ clear all
 P.dt = 0.001; % seconds, time step
 P.thvc = 0.006; % seconds, length of hvc burst. sometimes I call this one time slice (slice is bigger than a step)
 P.tlman = 0.05; % seconds, timescale of fluctuations in lman
-P.motifs = 1000; % number of motifs in simulation
+P.motifs = 200; % number of motifs in simulation
 
 % Size of the network
 P.hvcunits = 50; % number of units in hvc
@@ -25,15 +25,17 @@ P.xunits = P.lmanunits * P.hvcunits; % number of units in x
 P.xrate = .01; % learning rate in HVC->X synapse
 P.rarate = 0; % learning rate in HVC->RA synapse
 P.rperate = 0.05; % learning rate of state value function V(s)
-P.discountrate = 0; % for reward prediction error. 0 means no history.
+P.discountrate = 0.98; % for reward prediction error. 0 means no history.
 
-P.noiseamp = 1;
+P.noiseamp = 0.25;
 P.thresh = 0;
 P.radecay = 2e-3 * P.rarate;
 
+P.rewarddelay = 50; % 50 ms 
+
 % conditional auditory feedback
 P.caftime = 25;
-P.cafthresh = 1.2;
+P.cafthresh = 1;
 P.caferror = 3;
 
 % The template, aka the sequence we are trying to learn.
@@ -51,7 +53,7 @@ motifsteps = hvcsteps * P.hvcunits; % number of time steps per motif
 maxsteps = motifsteps * P.motifs; % total number of time steps to simulate
 
 % "State" is the HVC unit that is currently firing.
-s = @(t) max(1, ceil((mod(t-1, motifsteps)) / hvcsteps));
+s = @(t) ceil(modnonzero(t, motifsteps)/hvcsteps);
 
 % Neural activity
 H = zeros(P.hvcunits,  maxsteps);
@@ -68,7 +70,7 @@ W_PM = zeros(P.lmanunits, P.xunits);
 W_DP = -eye(P.lmanunits); % inhibitory
 W_LD =  eye(P.lmanunits);
 W_RL = ones(P.raunits, P.lmanunits);
-W_RH = ones(P.raunits, P.hvcunits);
+W_RH = P.template;
 
 % Make HVC neurons fire in a chain with each neuron bursting once per motif
 onemotif = zeros(P.hvcunits, motifsteps);
@@ -102,6 +104,8 @@ winit = W_MH;
 etrace = zeros(P.xunits, P.hvcunits);
 V = zeros(maxsteps + 1, P.hvcunits);
 temp = zeros(maxsteps, 1);
+error = zeros(1,maxsteps +P.rewarddelay);
+rpe = zeros(maxsteps, 1);
 %% Main loop
 for t = 1:maxsteps
 
@@ -122,16 +126,16 @@ for t = 1:maxsteps
     R(:, t) = W_RH * H(:, t) + W_RL * L(:, t);
 
     % Calculate reward prediction error
-    error  = (R(:, t) - P.template(:, s(t))^2;
+    e  = (R(:, t) - P.template(:, s(t))).^2;
     if s(t) == P.caftime && R(:, t) < P.cafthresh
-        error = P.caferror;
+        e = P.caferror;
     end
-    temp(t) = error;
-    reward = -mean(error, 1); % averaged across all neurons
-    rpe = reward - V(s(t));
+    error(t + P.rewarddelay) = e; %%%DEBUG
+    reward = -mean(error(t), 1); % averaged across all neurons
+    rpe(t) = reward - V(s(t));
 
     % Update expected state value
-    V(s(t)) = V(s(t)) + P.rperate * rpe;
+    V(s(t)) = V(s(t)) + P.rperate * rpe(t);
 
     if t > 100*motifsteps % no learning for first 100 motifs
         % Update eligibility trace
@@ -144,7 +148,7 @@ for t = 1:maxsteps
 
         % Update synaptic weights onto medium spiny neurons based on reward and
         % spiking history of LMAN and HVC neurons.
-        W_MH = W_MH + etrace .* rpe .* P.xrate; % direct pathway
+        W_MH = W_MH + etrace .* rpe(t) .* P.xrate; % direct pathway
 
         % Update HVC to RA synapses with a spike timing dependent plasticity
         % rule. If they both spike in this time step, the synapse is
@@ -159,9 +163,39 @@ for t = 1:maxsteps
     end
 end
 save('charlesworthdemo.mat')
-Y = gettrials(R, 1:P.motifs, motifsteps);
-t = 1:motifsteps;
-target = mean(Y(s(t) == P.caftime, :));
-plot(target)
+
 figure
-plot(temp)
+maxlag = 200;
+[c, lags] = xcorr(randomness, maxlag, 'coeff');
+axes('FontSize', 16)
+plot(lags, c)
+xlabel('Lag (ms)')
+ylabel('Autocorrelation, normalized')
+ylim([-0.2 1.2])
+
+figure
+t = 1:motifsteps;
+t = t - mean(t(s(t) == P.caftime));
+pre = mean(gettrials(R, 1:50, motifsteps), 2);
+post = mean(gettrials(R, -50:-1, motifsteps), 2);
+learning = post - pre;
+axes('FontSize', 16)
+plot(t, learning / max(learning))
+xlabel('Time from target (ms)')
+ylabel('Learning, normalized')
+xlim([-160 160])
+ylim([-0.2 1.2])
+
+
+% Y = gettrials(rpe, 1:P.motifs, motifsteps);
+% t = 1:motifsteps;
+% target = mean(Y(s(t) == 34, :), 2);
+% plot(target)
+% figure
+% plot(error)
+% figure
+% Y = gettrials(R, 1:50, motifsteps);
+% plot(nanmean(Y, 2), 'k')
+% hold on
+% Y = gettrials(R, -50:-1, motifsteps);
+% plot(nanmean(Y, 2), 'r')
