@@ -14,31 +14,27 @@ clear all
 P.dt = 0.001; % seconds, time step
 P.thvc = 0.006; % seconds, length of hvc burst. sometimes I call this one time slice (slice is bigger than a step)
 P.tlman = 0.05; % seconds, timescale of fluctuations in lman
-P.motifs = 400; % number of motifs in simulation
+P.motifs = 1500; % number of motifs in simulation
 
 % Size of the network
-P.hvcunits = 50; % number of units in hvc
-P.raunits = 1;
-P.lmanunits = 1; % number of units in lman
-P.xunits = P.lmanunits * P.hvcunits; % number of units in x
+P.hvcunits = 50; % number of units in HVC
+P.raunits = 1; % number of units in RA
+P.lmanunits = P.raunits; % number of units in LMAN
+P.xunits = P.lmanunits * P.hvcunits; % number of medium spiny neurons in Area X
 
 % Learning rates and other fudge factors
-P.xrate = .01; % learning rate in HVC->X synapse
+P.xrate = .003; % learning rate in HVC->X synapse
 P.rarate = 0.0005; % learning rate in HVC->RA synapse
 P.rperate = 0.05; % learning rate of state value function V(s)
-P.discountrate = 0.98; % for reward prediction error. 0 means no history.
+P.discountrate = 0.98; % History in eligibility trace. 0 means no history.
 
-P.noiseamp = 1;
-P.thresh = 0;
-P.radecay = 2e-3 * P.rarate;
+P.noiseamp = 0.25; % Amplitude of LMAN activity fluctuations
+P.thresh = 0; % Threshold for firing in Area X medium spiny neurons
+P.radecay = 2e-3 * P.rarate; % Constant decay rate on HVC->RA synapses
 
-P.rewarddelay = 50; % 50 ms 
-t = 1:100;
-tau = P.thvc / P.dt;
-P.rewardkernel = t/tau .* exp(-(t - tau)/tau);% like an alpha synapse
+P.rewarddelay = .05 / P.dt; % 50 ms 
 
 % The template, aka the sequence we are trying to learn.
-% P.template = .5*ones(1, P.hvcunits);
 t = linspace(0, 1, P.hvcunits);
 P.template = -8e2 * t .* (t - 0.25).^2 .* (t - 0.7) .* (t - 0.8) .* (t - 1) + 0.1;
 
@@ -53,9 +49,6 @@ maxsteps = motifsteps * P.motifs; % total number of time steps to simulate
 
 % "State" is the HVC unit that is currently firing.
 s = @(t) ceil(modnonzero(t, motifsteps)/hvcsteps);
-
-% Update error function uses delay and kernel
- 
 
 % Neural activity
 H = zeros(P.hvcunits,  maxsteps);
@@ -103,13 +96,10 @@ end
 winit = W_MH;
 
 % Initialize empty matrices for activity in other neurons
-kndx = 0:length(P.rewardkernel)-1;
 etrace = zeros(P.xunits, P.hvcunits);
-V = zeros(maxsteps + 1, P.hvcunits);
+V = zeros(1, P.hvcunits);
 rpe = zeros(1,maxsteps);
-error = zeros(1,maxsteps +P.rewarddelay + kndx(end));
-temp = zeros(maxsteps, P.xunits);
-
+error = zeros(1,maxsteps + P.rewarddelay);
 
 %% Main loop
 for t = 1:maxsteps
@@ -132,8 +122,7 @@ for t = 1:maxsteps
 
     % Calculate reward prediction error
     e  = (R(:, t) - P.template(:, s(t))).^2;
-%     error(t + P.rewarddelay + kndx) = error(t + P.rewarddelay + kndx) + e * P.rewardkernel;
-    error(t+P.rewarddelay) = e; %%%DEBUG
+    error(t + P.rewarddelay) = e;
     reward = -mean(error(t), 1); % averaged across all neurons
     rpe(t) = reward - V(s(t));
 
@@ -148,7 +137,6 @@ for t = 1:maxsteps
         etrace = (((W_ML>0) * L(:, t)) * ones(1, P.hvcunits)) ...
             .*    ((W_MH>0) .* (ones(P.xunits, 1) * H(:, t)')) ...
             + P.discountrate * etrace;
-        temp(t,:) = diag(etrace);
 
         % Update synaptic weights onto medium spiny neurons based on reward and
         % spiking history of LMAN and HVC neurons.
@@ -158,7 +146,6 @@ for t = 1:maxsteps
         % rule. If they both spike in this time step, the synapse is
         % strengthened.
         dw = (W_RL * L(:,t)) * H(:, t)' .* P.rarate - P.radecay;
-        temp(t) = dw(1);
         W_RH  = W_RH + dw;
 
         % Make sure none of the updated synaptic weights change sign.
@@ -166,9 +153,7 @@ for t = 1:maxsteps
         W_RH = max(W_RH, 0);
     end
 end
-figure
-plot(temp)
-title('dw')
 save 'c:\stetner\data\figures\xmodel\consolidation.mat'
-
-
+disp('DONE!!')
+pause
+clc
