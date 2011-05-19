@@ -34,6 +34,11 @@ P.radecay = 2e-3 * P.rarate; % Constant decay rate on HVC->RA synapses
 
 P.rewarddelay = .05 / P.dt; % 50 ms 
 
+P.syndec = 0.0001; % Strength of heterosynaptic competition. 0 turns off competition
+P.Wmax = 1; % Threshold for heterosynaptic competition
+P.wmax = 1; % absolute cap on any single weight
+P.thresh = 0.007; % spiking threshold for X neurons
+
 % The template, aka the sequence we are trying to learn.
 t = linspace(0, 1, P.hvcunits);
 P.template = -8e2 * t .* (t - 0.25).^2 .* (t - 0.7) .* (t - 0.8) .* (t - 1) + 0.1;
@@ -59,7 +64,7 @@ D = zeros(P.lmanunits, maxsteps);
 R = zeros(P.raunits,   maxsteps);
 
 % Weights
-W_MH = zeros(P.xunits, P.hvcunits);
+W_MH = 0.001 * rand(P.xunits, P.hvcunits);
 W_ML = zeros(P.xunits, P.lmanunits);
 W_PM = zeros(P.lmanunits, P.xunits);
 W_DP = -eye(P.lmanunits); % inhibitory
@@ -88,7 +93,7 @@ m = 0;
 for h = 1:P.hvcunits
     for ell = 1:P.lmanunits
         m = m + 1;
-        W_MH(m, h) = 1e-3; % start small. these weights are learned 
+%         W_MH(m, h) = 1e-3; % start small. these weights are learned 
         W_ML(m, ell) = 1;
         W_PM(ell, m) = -1; % inhibitory
     end
@@ -142,6 +147,11 @@ for t = 1:maxsteps
         % spiking history of LMAN and HVC neurons.
         W_MH = W_MH + etrace .* rpe(t) .* P.xrate; % direct pathway
 
+        % Heterosynaptic competition: If all weights onto a given X neuron
+        % exceed a limit (Wmax), then all weights onto that neuron are
+        % decreased in strength by a constant (syndec)
+        W_MH = W_MH - P.syndec * (sum(W_MH, 2) > P.Wmax) * ones(1, P.hvcunits);
+        
         % Update HVC to RA synapses with a spike timing dependent plasticity
         % rule. If they both spike in this time step, the synapse is
         % strengthened.
@@ -149,11 +159,12 @@ for t = 1:maxsteps
         W_RH  = W_RH + dw;
 
         % Make sure none of the updated synaptic weights change sign.
+        W_MH = min(W_MH, P.wmax);
         W_MH = max(W_MH, winit); % don't let weights on to MSNs go to zero
         W_RH = max(W_RH, 0);
     end
 end
-save 'c:\stetner\data\figures\xmodel\bias.mat'
+save 'c:\stetner\data\figures\xmodel\withcomp.mat'
 disp('DONE!!')
 pause
 clc
