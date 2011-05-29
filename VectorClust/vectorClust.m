@@ -1424,7 +1424,7 @@ hold off;
 % end
 %codes which changes the pixeles in the screen image.
 %image(screenImage);
-handles.vcg.hScat = scatter(getSF(handles.vcdb,xfeat,bVis), getSF(handles.vcdb,yfeat,bVis), msize(bVis), mcolor(bVis,:));
+handles.vcg.hScat = scatter(getsf(handles.vcdb,xfeat,bVis), getsf(handles.vcdb,yfeat,bVis), msize(bVis), mcolor(bVis,:));
 
 xl = xlim; % expand the axis TO
 yl = ylim; % expand the axis TO
