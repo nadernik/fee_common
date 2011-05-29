@@ -501,7 +501,7 @@ for ch = 0:7
         end
     end
 end
-
+save_values('createExperMulti_defaults.mat', handles)
 acquisitionGui('expers', expers, 'songDetection', songDetection, 'bTrigOnSong', ones(size(expers)))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1113,7 +1113,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function handles = load_values(filename, handles)
 temp = load(filename);
-handles.val = temp.val;
+handles.val = temp.handles.val;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function save_values(filename, handles)
 save(filename,'handles')
