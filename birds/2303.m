@@ -81,3 +81,34 @@ Bout_detect_SAP_TO('C:\stetner\data\2303\2292')
 Parse_segments
 % A lot of intro notes! tried to exclude most of them.
 Batch_song_rhythm('2303','2292',1,1:200);
+
+%% 2011-05-08
+Bout_detect_SAP_TO('C:\stetner\data\2303\2297')
+Parse_segments
+% lots of intro notes see file 3. long stacks interpsersed with song like
+% file 184
+Batch_song_rhythm('2303','2297',1,1:200);
+
+%% 2011-05-12
+Bout_detect_SAP_TO('C:\stetner\data\2303\2302')
+Parse_segments
+% motif in file 3?
+% inspirations are being counted as syllables 
+electro_gui
+% sorted in electrogui so i could zoom in and make sure to exclude
+% inspiratory syllables
+Batch_song_rhythm('2303','2302',1,49:101)
+
+%% 2011-05-23
+Bout_detect_SAP_TO('C:\stetner\data\2303\2307')
+Bout_detect_SAP_TO('C:\stetner\data\2303\2312')
+Parse_segments %2307
+% arg! need to sort in electrogui because there are prominent inspiratory
+% syllables
+electro_gui
+% aggressively removing intro notes (e.g. file 6)
+Batch_song_rhythm('2303','2307',1,1:50)
+
+% 2312
+electro_gui
+Batch_song_rhythm('2303','2312',1,1:50)

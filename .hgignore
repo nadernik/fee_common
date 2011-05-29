@@ -1,3 +1,4 @@
 syntax: glob
 *.asv
-*defaults_*
+defaults_*.m
+*.mat

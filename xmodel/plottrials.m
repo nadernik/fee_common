@@ -1,4 +1,9 @@
 function varargout = plottrials(vec, trials, trialsteps)
+% PLOTTRIALS plots overlaid trials from a vector
+% 
+% Usage: plottrials(vec, trials, trialsteps)
+%
+%
 % If trials are negative, they are measured from end
 % If the last trial is not complete, it doesn't count
 
