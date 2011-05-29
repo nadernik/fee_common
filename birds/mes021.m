@@ -122,3 +122,12 @@ cafplots('mes021', '2011-04-20', ...
     'LastN', 200, ...
     'SaveVcdb', 'c:\stetner\data\mes021\2011-04-20\cafplots_vcdb.mat')
 % No learning. This must be the upper limit.
+
+%% 2011-05-04
+% Restarting CAF after some time off. Speaker was unplugged during this
+% time so he was not hearing any noise.
+vectorClust % Checked part 3 and it looks like escapes cluster is still good
+vcQuickCluster('mes021', '2011-05-03', 'polygons20110412.mat', [], 'root', 'c:\stetner\data')
+rules % starting from 2011-04-19
+% 1337+
+%N = 42; 64% hit; files 676 to 709

@@ -61,3 +61,12 @@ cafplots('mes025', '2011-04-24', ...
 % Compared to 4/20, before filters started, he definitely learned. Need to
 % push up further to find the limit.
 % 956+
+
+%% 2011-05-03
+% Forgot to check on him for many days. Appears to be getting hit 100% of
+% the time. Reverse direction to make sure he can still learn. I will try
+% to use him with Liora to find out of RAcup lesion can prevent CAF-driven
+% learning.
+annotate_exper('mes025', '2011-05-03', 'triggerSyllThreshold', -5, 'edgeSyllThreshold', -10, 'filenum', 300:427)
+vectorClust
+% new rules 880-
