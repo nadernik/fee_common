@@ -98,3 +98,17 @@ electro_gui
 % sorted in electrogui so i could zoom in and make sure to exclude
 % inspiratory syllables
 Batch_song_rhythm('2303','2302',1,49:101)
+
+%% 2011-05-23
+Bout_detect_SAP_TO('C:\stetner\data\2303\2307')
+Bout_detect_SAP_TO('C:\stetner\data\2303\2312')
+Parse_segments %2307
+% arg! need to sort in electrogui because there are prominent inspiratory
+% syllables
+electro_gui
+% aggressively removing intro notes (e.g. file 6)
+Batch_song_rhythm('2303','2307',1,1:50)
+
+% 2312
+electro_gui
+Batch_song_rhythm('2303','2312',1,1:50)

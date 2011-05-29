@@ -120,3 +120,19 @@ Batch_song_rhythm('2296','2295',1)
 Bout_detect_SAP_TO('C:\stetner\data\2296\2300')
 Parse_segments
 Batch_song_rhythm('2296','2300',1, 1:200)
+
+%% 2011-05-20
+Bout_detect_SAP_TO('C:\stetner\data\2296\2305')
+Bout_detect_SAP_TO('C:\stetner\data\2296\2310')
+Parse_segments
+Batch_song_rhythm('2296','2305',1, 1:100)
+
+
+%% 2011-05-22
+Parse_segments
+% Hard to tell what is singing (e.g. file 65)
+Batch_song_rhythm('2296','2310',1, 1:150)
+% did not make special effort to exclude intro notes because it was hard to
+% tell where singing began
+% Sac today. Bird does not look good. feathers ruffled
+% s
