@@ -94,12 +94,12 @@ while ctr == 1
                     dbase.Times(j) = [];
                     dbase.FileLength(j) = [];
                     dbase.SoundFiles(j) = [];
-                    for b = 1:length(dchan)
-                        c = dchan(b);
-                        if ~isempty(dbase.ChannelFiles{c})
-                            dbase.ChannelFiles{c}(j) = [];
-                        end
-                    end
+%                     for b = 1:length(dchan)
+%                         c = dchan(b);
+%                         if ~isempty(dbase.ChannelFiles{c})
+%                             dbase.ChannelFiles{c}(j) = [];
+%                         end
+%                     end
                     dbase.SegmentThresholds(j) = [];
                     dbase.SegmentTimes(j) = [];
                     dbase.SegmentTitles(j) = [];
@@ -119,5 +119,9 @@ while ctr == 1
     end
 end
 
-save([pathName filename],'dbase')
+if strfind(filename, pathName)
+    save(filename, 'dbase')
+else
+    save([pathName filename],'dbase')
+end
 display('combine_boutfiles done')
