@@ -73,9 +73,14 @@ weights_on_lman_from_dlm =  eye(lman_units);
 hvc_centers = round((0.5:hvc_units-0.5)*hvc_steps); 
 weights_on_ra_from_hvc = template(hvc_centers);
 
-for t = 1:motif_steps
-    hvc_output(ceil(t/hvc_steps), t) = 1;
+x = linspace(0, pi, hvc_steps * 2);
+burst = sin(x).^2;
+for u = 1:hvc_units
+    offset = (u - 1) * hvc_steps;
+    t = modnonzero((1:2*hvc_steps) + offset, motif_steps);
+    hvc_output(u, t) = burst;
 end
+
 
 % Two LMAN units with opposite effects on the single RA neuron.
 % W_RL = [1, -1];
