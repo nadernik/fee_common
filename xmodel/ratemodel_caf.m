@@ -111,7 +111,7 @@ end
 winit = weights_on_msn_from_hvc;
 
 % Initialize empty matrices for activity in other neurons
-eligibility_trace = zeros(msn_units, hvc_units);
+eligibility_trace = zeros(msn_units, total_steps + length(kernel));
 expected_reward = zeros(1, motif_steps);
 error = zeros(1,total_steps + length(kernel));
 
@@ -120,7 +120,6 @@ if debugging
     dw = zeros(size(weights_on_msn_from_hvc));
     dwall = zeros(total_steps, msn_units);
     wall = zeros(total_steps, msn_units);
-    eall = zeros(total_steps, msn_units);
 end
 is_escape = false(1, total_motifs);
 steps_to_noise = 0;
@@ -186,15 +185,15 @@ for t = 1:total_steps
     %% Update synaptic weights only if we are past the baseline period
     if current_motif > baseline_motifs
         % Update eligibility trace
-        % Eligibility trace decays over time according to the discount rate and
-        % receives an impulse when both the HVC and LMAN neuron . Eligibility
-        % trace is specific to a single HVC->X synapse
-        eligibility_trace = (((weights_on_msn_from_lman>0) * lman_output(:,t)) * ones(1, hvc_units)) ...
-            .*    ((weights_on_msn_from_hvc~=0) .* (ones(msn_units, 1) * hvc_output(:, s(t))')) ...
-            + eligibility_discount_rate * eligibility_trace;
+        %    - Uses same kernel as error
+        %    - This code will NOT generalize to multiple LMAN neurons
+        %    - This code will NOT generalize to all-to-all HVC connections
+        eligibility_trace(:, t + t_kernel) = ...
+            eligibility_trace(:, t + t_kernel) + ...
+            lman_output(1, t) .* hvc_output(:, s(t)) * kernel;
 
-
-        dw = eligibility_trace .* rpe .* msn_learning_rate;
+        eligibility_matrix = diag(eligibility_trace(:, t));
+        dw = eligibility_matrix .* rpe .* msn_learning_rate;
         weights_on_msn_from_hvc = weights_on_msn_from_hvc + dw;
         % Make sure these synaptic weights are nonnegative.
         weights_on_msn_from_hvc = max(0, weights_on_msn_from_hvc);
@@ -207,7 +206,6 @@ for t = 1:total_steps
     % Bookkeeping
     if debugging
         Vall(ceil(t/motif_steps), s(t)) = expected_reward(s(t));
-        eall(t, :) = diag(eligibility_trace);
         wall(t,:) = diag(weights_on_msn_from_hvc);
         dwall(t,:) = diag(dw);
     end
