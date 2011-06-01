@@ -39,7 +39,11 @@ eligibility_discount_rate = 0.98;
 randomness_amplitude = 0.25;
 msn_threshold = 0;
 ra_synapse_decay = 0;
-error_delay = 50; % time steps
+
+x = 1:100;
+kernel = x.^8 .* exp(-(x./20).^2);
+kernel = kernel ./ max(kernel);
+t_kernel = 0:length(kernel) - 1;
 
 % conditional auditory feedback
 caf_target_time = 125; % time steps
@@ -109,7 +113,7 @@ winit = weights_on_msn_from_hvc;
 % Initialize empty matrices for activity in other neurons
 eligibility_trace = zeros(msn_units, hvc_units);
 expected_reward = zeros(1, motif_steps);
-error = zeros(1,total_steps + error_delay);
+error = zeros(1,total_steps + length(kernel));
 
 if debugging
     Vall = zeros(total_motifs, motif_steps);
@@ -165,7 +169,7 @@ for t = 1:total_steps
     else
         instantaneous_error = (ra_output(:, t) - template(:, s(t))).^2;
     end
-    error(t + error_delay) = instantaneous_error;
+    error(t + t_kernel) = error(t + t_kernel) + instantaneous_error * kernel;
 
 
     reward = -error(t);
