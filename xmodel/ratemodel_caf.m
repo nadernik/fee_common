@@ -10,7 +10,7 @@ clear all
 debugging = true;
 %% Parameters
 
-total_motifs = 500; % number of motifs in simulation
+total_motifs = 300; % number of motifs in simulation
 baseline_motifs = 100; % number of motifs before learning starts
 
 % Size of the network
@@ -40,8 +40,8 @@ randomness_amplitude = 0.25;
 msn_threshold = 0;
 ra_synapse_decay = 0;
 
-x = 1:100;
-kernel = x.^8 .* exp(-(x./20).^2);
+x = 1:200;
+kernel = x.^8 .* exp(-(x./50).^2);
 kernel = kernel ./ max(kernel);
 t_kernel = 0:length(kernel) - 1;
 
@@ -137,10 +137,10 @@ for t = 1:total_steps
     pallidal_output(:, t) = pallidal_input;
     
     dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, t);
-    dlm_output = dlm_input;
+    dlm_output(:, t) = dlm_input;
 
     % LMAN activity is the sum of intrinsic randomness and input from DLM
-    lman_input = randomness(:, t);% + weights_on_lman_from_dlm * D(:, t);
+    lman_input = randomness(:, t);% + weights_on_lman_from_dlm * dlm_output(:, t);
     lman_output(:, t) = max(lman_input, 0); % Firing rates must be positive
 
     % RA activity is the sum of inputs from HVC and LMAN
@@ -223,31 +223,38 @@ ylabel('Autocorrelation, normalized')
 ylim([-0.2 1.2])
 title('LMAN autocorrelation')
 
-%% learning (change in pitch) normalized
-
-% calculate actual learning
-pre  = gettrials(ra_output,   1:20, motif_steps);
-post = gettrials(ra_output, -20:-1, motif_steps);
-learning = mean(post, 2) - mean(pre, 2);
-learning = learning ./ max(learning);
-
-% calculate predicted learning based on reinforced lman fluctuations
-mo = find(is_escape);
-mo = mo(mo < baseline_motifs);
-rewarded = gettrials(ra_output, mo, motif_steps);
-predicted = mean(rewarded, 2) - mean(pre, 2);
-predicted = predicted ./ max(predicted);
-
+%% kernel
 figure
-t = 1:motif_steps;
-t = t - mean(t(s(t) == caf_target_time));
 axes('FontSize', 16)
-plot(t, learning, 'k')
-hold on
-plot(t, predicted, 'r')
-xlabel('Time from target (ms)')
-ylabel('Learning, normalized')
-title('Actual and predicted learning')
+plot(t_kernel, kernel)
+xlabel('Time (ms)')
+title('Kernel for reward and eligibility trace')
+
+%% learning (change in pitch) normalized
+% 
+% % calculate actual learning
+% pre  = gettrials(ra_output,   1:20, motif_steps);
+% post = gettrials(ra_output, -20:-1, motif_steps);
+% learning = mean(post, 2) - mean(pre, 2);
+% learning = learning ./ max(learning);
+% 
+% % calculate predicted learning based on reinforced lman fluctuations
+% mo = find(is_escape);
+% mo = mo(mo < baseline_motifs);
+% rewarded = gettrials(ra_output, mo, motif_steps);
+% predicted = mean(rewarded, 2) - mean(pre, 2);
+% predicted = predicted ./ max(predicted);
+% 
+% figure
+% t = 1:motif_steps;
+% t = t - mean(t(s(t) == caf_target_time));
+% axes('FontSize', 16)
+% plot(t, learning, 'k')
+% hold on
+% plot(t, predicted, 'r')
+% xlabel('Time from target (ms)')
+% ylabel('Learning, normalized')
+% title('Actual and predicted learning')
 
 %% Pitch distributions before and after, showing CAF threshold
 
@@ -306,29 +313,28 @@ imagesc(x, y, wall)
 xlabel('HVC-X Synapse')
 ylabel('Motif')
 
-% figure
-% plot(wall(:, [11, 25, 34]))
+%% Predicted learning vs synaptic weights 
 
-%%
+% calculate predicted learning based on reinforced lman fluctuations
+mo = find(is_escape);
+mo = mo(mo < baseline_motifs);
+pre  = gettrials(ra_output, 1:baseline_motifs, motif_steps);
+rewarded = gettrials(ra_output, mo, motif_steps);
+predicted = mean(rewarded, 2) - mean(pre, 2);
+predicted = predicted ./ max(predicted);
+
+actual = wall(end, :);
+actual = actual ./ max(actual);
 
 
-%% rpe-eligibility trace correlations at problem time
-% figure
-% Y = gettrials(rpe, 1:P.motifs, motif_steps);
-% yrpe = Y(s(1:motif_steps) == 36, :);
-% Y = gettrials(eall(:,35), 1:P.motifs, motif_steps);
-% yetrace = Y(s(1:motif_steps) == 36, :);
-% scatter(yrpe(:), yetrace(:))
-% plot(yrpe(:))
-
-%% RPE over time
-% figure
-% axes('FontSize', 16)
-% Y = gettrials(rpe, 1:P.motifs, motif_steps);
-% imagesc(Y')
-% title('rpe')
-% xlabel('Time (ms)')
-% ylabel('Motif')
+figure
+axes('FontSize', 16)
+hold on
+t = (1:motif_steps) - caf_target_time;
+plot(t, predicted, 'r')
+t = ((1:hvc_units) - 0.5) * hvc_steps - caf_target_time;
+plot(t, actual, 'k')
+title('Predicted learning vs. actual synaptic weights')
 
 %% Error over time
 % figure
