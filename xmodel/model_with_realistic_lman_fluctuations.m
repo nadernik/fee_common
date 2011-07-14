@@ -1,7 +1,14 @@
-%% Changes from burstmodel
-% Added FIR filter to mimic power spectrum of natural pitch fluctuations
-% Removed DLM baseline rate
-% Removed LMAN bursts
+% Intrinsic noise in LMAN has spectrum matching measured pitch fluctuations
+% in an acutal bird!
+%
+% Area X is still able to affect LMAN instantaneously
+%
+% There are two 
+
+% "RA output" is like percent deviation from mean pitch. It varies
+% continuously and can be positive and negative. To make this simulation
+% more realistic, RA might have many bursty neurons and then there would be
+% a transfer function between RA activity and pitch
 
 close all
 clear all
@@ -55,14 +62,18 @@ rkernel = 1 / sqrt(2 * pi * sig .^ 2) * exp(-(x - mu) .^ 2 ./ (2 * sig .^ 2));
 rkernel = rkernel ./ max(rkernel);
 t_rkernel = 0:length(rkernel) - 1;
 
+% rkernel = ekernel;
+% t_rkernel = t_ekernel;
+
+% rkernel = 1;
+% t_rkernel = 0;
+
 if debugging
     figure
     axes('FontSize', 16)
     plot(t_ekernel, ekernel, 'b', t_rkernel, rkernel, 'g')
     title('Kernels: reward in green, eligibility in blue')
 end
-
-lman_fir_coefs = [0.0033,0.0043,0.0071,0.0118,0.0154,0.0236,0.0309,0.0409,0.0572,0.0826,0.1022,0.1522,0.1851,0.2073,0.3047,0.3268,0.4149,0.5614,0.5789,0.8352,1.0066,1.0413,1.658,1.7975,2.3201,5.7335,2.3201,1.7975,1.658,1.0413,1.0066,0.8352,0.5789,0.5614,0.4149,0.3268,0.3047,0.2073,0.1851,0.1522,0.1022,0.0826,0.0572,0.0409,0.0309,0.0236,0.0154,0.0118,0.0071,0.0043,0.0033]';
 
 % The template, aka the sequence we are trying to learn.
 template = zeros(1, motif_steps);
@@ -71,9 +82,9 @@ template = zeros(1, motif_steps);
 caf_target_time1 = 100; % time steps
 caf_target_time2 = 125;
 caf_pitch_threshold1 = nan; % hits if above this
-caf_pitch_threshold2 = 0.1; % hits if below this
+caf_pitch_threshold2 = 4; % hits if below this
 caf_random_hit_probability = 0;
-caf_error_value = 40;
+caf_error_value = 400;
 caf_noise_duration = 20; % time steps
 
 %% Initialize
@@ -87,7 +98,7 @@ pallidal_output = zeros(lman_units, motif_steps, total_motifs);
 dlm_output      = zeros(lman_units, motif_steps, total_motifs);
 ra_output       = zeros(ra_units,   motif_steps, total_motifs);
 
-% Weights
+% Synaptic weights
 weights_on_msn_from_hvc = zeros(msn_units, hvc_units);
 weights_on_msn_from_lman = zeros(msn_units, lman_units);
 weights_on_pallidus_from_msn = zeros(lman_units, msn_units);
@@ -125,10 +136,13 @@ for ell = 1:lman_units
     end
 end
 
-t_filter = length(lman_fir_coefs)-1:-1:0;
-% filter_matrix = ones(lman_units, 1) * lman_fir_coefs;
+% Generate intrinsic noise in LMAN
+lman_noise = zeros(lman_units, motif_steps, total_motifs);
+for u = 1:lman_units
+    lman_noise(u,:,:) = generate_lman_noise(motif_steps, total_motifs);
+end
 
-extra_steps = min(length(rkernel), length(ekernel));
+extra_steps = max(length(rkernel), length(ekernel)); %%%DEBUG
 expected_reward = zeros(motif_steps + extra_steps, total_motifs + 1);
 reward = zeros(motif_steps, total_motifs);
 eligibility_matrix = zeros(msn_units, hvc_units);
@@ -164,10 +178,8 @@ for motif = 1:total_motifs
             dlm_output(:, t, motif) = dlm_input;
 
             % LMAN neurons 
-            lman_input(:, t) = rand(lman_units, 1) + weights_on_lman_from_dlm * dlm_output(:, t, motif);
-            if t > t_filter(1)
-                lman_output(:,t,motif) = lman_input(:, t - t_filter) * lman_fir_coefs;
-            end
+            lman_input(:, t) = lman_noise(:,t,motif) + weights_on_lman_from_dlm * dlm_output(:, t, motif);
+            lman_output(:,t,motif) = lman_input(:, t);
 
             % RA activity is the sum of inputs from HVC and LMAN
             ra_input = weights_on_ra_from_hvc * hvc_output(:, t) + weights_on_ra_from_lman * lman_output(:, t, motif);
@@ -233,7 +245,8 @@ for motif = 1:total_motifs
             % Make sure these synaptic weights are between 0 and 1 (hard
             % limits)
             weights_on_msn_from_hvc = max(0, weights_on_msn_from_hvc);
-            weights_on_msn_from_hvc = min(1, weights_on_msn_from_hvc);
+%             weights_on_msn_from_hvc = min(1, weights_on_msn_from_hvc);
+%             %%%DEBUG
         end
 
         % Bookkeeping

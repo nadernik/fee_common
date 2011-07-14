@@ -36,8 +36,9 @@ filtered_noise_ifft = ifft(filtered_noise_fft);
 filtered_noise = real(filtered_noise_ifft(1:rows, :));
 
 % Rescale to compensate for dpss window that was used to calculate
-% the frequency domain filter (this is hidden pitchfluctuations.m)
-scale_factor = (1 ./ mean(dpss_window(:,1)));
+% the frequency domain filter (this is hidden pitchfluctuations.m) and for
+% the length of the noise
+scale_factor = (1 ./ mean(dpss_window(:,1))) ./ sqrt(rows/20);
 final_noise = filtered_noise .* scale_factor;
 
 
