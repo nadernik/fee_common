@@ -228,11 +228,11 @@ function buttonCondition_Callback(hObject, eventdata, handles)
 % opens the appropriate condition editor and captures the changes you make
 % there
 % get the rule
-rSel = handles.list2rule(get(handles.listRules,'Value'));
+handles.rSel = handles.list2rule(get(handles.listRules,'Value'));
 % get the condition
-c = handles.rules(rSel).condition;
+c = handles.rules(handles.rSel).condition;
 % open up the editor
-handles.rules(rSel).params = handles.conditions(c).editFcn(handles);
+handles.rules(handles.rSel).params = handles.conditions(c).editFcn(handles);
 % store results
 guidata(hObject,handles)
 
