@@ -22,10 +22,15 @@ ending_motifs = 200; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
 % Size of the network
-hvc_units = 50; % number of units in hvc
+hvc_units = 50; % number of units in hvc - change this to control length of song
+
+% There is one RA unit representing the output of the system. It might be
+% better to think of it as "pitch"
 ra_units = 1;
-lman_units = 2; % number of units in lman
-msn_units = lman_units * hvc_units; % number of units in x
+% There are two LMAN units. One increases pitch and one decreases pitch.
+lman_units = 2; 
+% There is also one pallidal and one DLM unit for each LMAN unit
+msn_units = lman_units * hvc_units; % Medium Spiny Neurons
 
 % Time
 dt = 0.001; % seconds, time step
@@ -42,31 +47,25 @@ ra_learning_rate = 0; % learning rate in HVC->RA synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 % Other
-mean_dlm_baseline_rate = 0.85;
-std_dlm_baseline_rate = 0.1;
-dlm_baseline_rate = randn(lman_units, total_motifs) * std_dlm_baseline_rate + mean_dlm_baseline_rate;
 msn_threshold = 0;
 
+% Synaptic eligibility trace and reward signal are both Gaussians with 4
+% standard deviations before and after the mean. That puts a 4 standard
+% deviation delay to peak of response
+
 % Eligibility trace
-x = 1:200;
-mu = 100;
-sig = 25;
-ekernel = 1 / sqrt(2 * pi * sig .^ 2) * exp(-(x - mu) .^ 2 ./ (2 * sig .^ 2));
+sig = 50;
+x = -4*sig:4*sig;
+ekernel = 1 / sqrt(2 * pi * sig .^ 2) * exp(-(x) .^ 2 ./ (2 * sig .^ 2));
 ekernel = ekernel./max(ekernel);
 t_ekernel = 0:length(ekernel) - 1;
 
-x = 1:200;
-mu = 80;
-sig = 25;
-rkernel = 1 / sqrt(2 * pi * sig .^ 2) * exp(-(x - mu) .^ 2 ./ (2 * sig .^ 2));
+% Reward
+sig = 50;
+x = -4*sig:4*sig;
+rkernel = 1 / sqrt(2 * pi * sig .^ 2) * exp(-(x) .^ 2 ./ (2 * sig .^ 2));
 rkernel = rkernel ./ max(rkernel);
 t_rkernel = 0:length(rkernel) - 1;
-
-% rkernel = ekernel;
-% t_rkernel = t_ekernel;
-
-% rkernel = 1;
-% t_rkernel = 0;
 
 if debugging
     figure
@@ -74,7 +73,6 @@ if debugging
     plot(t_ekernel, ekernel, 'b', t_rkernel, rkernel, 'g')
     title('Kernels: reward in green, eligibility in blue')
 end
-
 % The template, aka the sequence we are trying to learn.
 template = zeros(1, motif_steps);
 
@@ -84,7 +82,7 @@ caf_target_time2 = 125;
 caf_pitch_threshold1 = nan; % hits if above this
 caf_pitch_threshold2 = 4; % hits if below this
 caf_random_hit_probability = 0;
-caf_error_value = 400;
+caf_error_value = 800;
 caf_noise_duration = 20; % time steps
 
 %% Initialize
@@ -242,11 +240,8 @@ for motif = 1:total_motifs
             dw = eligibility_matrix .* rpe .* msn_learning_rate;
             weights_on_msn_from_hvc = weights_on_msn_from_hvc + dw;
             
-            % Make sure these synaptic weights are between 0 and 1 (hard
-            % limits)
+            % Make sure these synaptic weights are not negative
             weights_on_msn_from_hvc = max(0, weights_on_msn_from_hvc);
-%             weights_on_msn_from_hvc = min(1, weights_on_msn_from_hvc);
-%             %%%DEBUG
         end
 
         % Bookkeeping
@@ -292,7 +287,7 @@ last_motifs = squeeze(ra_output(1, :, end-n:end));
 actual_learning = mean(last_motifs, 2) - mean(all_baseline_motifs, 2);
 actual_learning = actual_learning ./ max(actual_learning); % normalize to 1
 
-actual_bias = squeeze(mean(sum(-pallidal_output(:,:,end-n:end), 1), 3));
+actual_bias = weights_on_ra_from_lman * weights_on_lman_from_dlm * weights_on_dlm_from_pallidus * pallidal_output(:,:,end);
 actual_bias = actual_bias ./ max(actual_bias); % normalize to 1
 
 figure
