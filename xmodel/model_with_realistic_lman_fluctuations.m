@@ -86,7 +86,7 @@ caf_error_value = 800;
 caf_noise_duration = 20; % time steps
 
 % add a random dc offset to ra output over each motif
-dc_amplitude = 0;
+dc_amplitude = 10;
 
 %% Initialize
 
@@ -139,10 +139,8 @@ end
 
 % Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
-d = load('c:\stetner\data\pitchfluctuations\mes011_yesdc.mat');
 for u = 1:lman_units
-    ndx = randsample(size(d.pitches, 2), total_motifs, true);
-    lman_noise(u, :, :) = d.pitches(:, ndx);
+    lman_noise(u, :, :) = generate_lman_noise(motif_steps, total_motifs);
 end
 
 extra_steps = max(length(rkernel), length(ekernel)); %%%DEBUG
