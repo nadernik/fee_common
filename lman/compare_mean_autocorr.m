@@ -1,7 +1,7 @@
 clear all
 close all
 datadir = 'c:\stetner\data\pitchfluctuations';
-datafiles = dir([datadir filesep '*.mat']);
+datafiles = dir([datadir filesep '*_yesdc.mat']);
 figure
 axes('FontSize', 16)
 hold all
@@ -14,9 +14,9 @@ for n = 1:length(datafiles)
     acorr(:, n) = mean(temp.acorr, 2); % assume lags are the same for all
     meanpitch(n) = mean(mean(temp.meanpitch));
     duration(n) = temp.timewindow(2) - temp.timewindow(1);
-       
-    %pause
 end
+
+legend(birdname{:})
 
 figure
 scatter(meanpitch, acorr(1,:))

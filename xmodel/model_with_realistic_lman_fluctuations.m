@@ -22,7 +22,7 @@ ending_motifs = 200; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
 % Size of the network
-hvc_units = 50; % number of units in hvc - change this to control length of song
+hvc_units = 4; % number of units in hvc - change this to control length of song
 
 % There is one RA unit representing the output of the system. It might be
 % better to think of it as "pitch"
@@ -77,13 +77,16 @@ end
 template = zeros(1, motif_steps);
 
 % conditional auditory feedback
-caf_target_time1 = 100; % time steps
-caf_target_time2 = 125;
+caf_target_time1 = 5; % time steps
+caf_target_time2 = 10;
 caf_pitch_threshold1 = nan; % hits if above this
-caf_pitch_threshold2 = 4; % hits if below this
+caf_pitch_threshold2 = 2; % hits if below this
 caf_random_hit_probability = 0;
 caf_error_value = 800;
 caf_noise_duration = 20; % time steps
+
+% add a random dc offset to ra output over each motif
+dc_amplitude = 0;
 
 %% Initialize
 
@@ -136,8 +139,10 @@ end
 
 % Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
+d = load('c:\stetner\data\pitchfluctuations\mes011_yesdc.mat');
 for u = 1:lman_units
-    lman_noise(u,:,:) = generate_lman_noise(motif_steps, total_motifs);
+    ndx = randsample(size(d.pitches, 2), total_motifs, true);
+    lman_noise(u, :, :) = d.pitches(:, ndx);
 end
 
 extra_steps = max(length(rkernel), length(ekernel)); %%%DEBUG
@@ -150,6 +155,9 @@ if debugging
     wall = zeros(msn_units, motif_steps, total_motifs);
 end
 
+% add a random dc offset to ra output over each motif
+dc_offset = (rand(total_motifs, 1) - 0.5) * 2 * dc_amplitude;
+keyboard
 
 %% Main loop
 for motif = 1:total_motifs
@@ -181,7 +189,7 @@ for motif = 1:total_motifs
 
             % RA activity is the sum of inputs from HVC and LMAN
             ra_input = weights_on_ra_from_hvc * hvc_output(:, t) + weights_on_ra_from_lman * lman_output(:, t, motif);
-            ra_output(:, t, motif) = ra_input;
+            ra_output(:, t, motif) = ra_input + dc_offset(motif);
 
             % Update eligibility trace
             %    - Uses same kernel as error

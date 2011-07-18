@@ -125,40 +125,12 @@ if P.PlotPowerSpectrum
 
     nfft = 1024;
     
-    % Window after padding
-%     e = dpss(nfft, 4);
-%     fftcoefs = zeros(nfft, size(pitches, 2), size(e, 2));
-%     for nwin = 1:size(e, 2)
-%         padded = zeros(nfft, size(pitches, 2));
-%         padded(1:size(pitches, 1), :) = pitches;
-%         windowed = padded .* (e(:, nwin) * ones(1, size(padded, 2)));
-%         fftcoefs(:,:,nwin) = fft(windowed, nfft);
-%     end
-%     freqpower = abs(mean(fftcoefs(1:nfft/2,:,:), 3)).^2;
-%     freq = linspace(0, 1, nfft/2)' * Fs/2;
-    
     % Window before padding
     e = dpss(size(pitches, 1), 4);
         windowed = pitches .* (e(:, 1) * ones(1, size(pitches, 2)));
         fftcoefs = fft(windowed, nfft);
     freqpower = abs(fftcoefs(1:nfft/2,:)).^2;
-    freq = linspace(0, 1, nfft/2)' * Fs/2;
-
-%     freqpower = zeros(nfft / 2 + 1, size(pitches, 2));
-%     for col = 1:size(pitches, 2)
-%         [Pxx, freq] = pmtm(pitches(:, col),1.5,nfft,Fs,0.99);
-%         freqpower(:, col) = Pxx;
-%     end
-    
-    % plot fft over time and over trials
-%     figure
-%     axes('FontSize', 16)
-%     trials = 1:length(t);
-%     imagesc(trials, freq, freqpower)
-%     xlabel('Trials')
-%     ylabel('Frequency (Hz)')
-%     title('Pitch Fluctuations in all trials')
-    
+    freq = linspace(0, 1, nfft/2)' * Fs/2;    
     
     % Power on log log plot
     figure

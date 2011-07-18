@@ -22,8 +22,8 @@ end
 
 d = load('c:\stetner\data\pitchfluctuations\mes011_yesdc.mat');
 nfft = d.nfft;
-
-frequency_domain_filter = mean(abs(d.fftcoefs), 2) * ones(1, cols);
+cols = size(d.fftcoefs, 2);
+frequency_domain_filter = abs(d.fftcoefs);
 
 e = dpss(rows, 1);
 dpss_window = e(:, 1) * ones(1, cols);
