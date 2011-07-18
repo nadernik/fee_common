@@ -38,20 +38,25 @@ filtered_noise = real(filtered_noise_ifft(1:rows, :));
 % Rescale to compensate for dpss window that was used to calculate
 % the frequency domain filter (this is hidden pitchfluctuations.m) and for
 % the length of the noise
-scale_factor = (1 ./ mean(dpss_window(:,1))) ./ sqrt(rows/20);
-final_noise = filtered_noise .* scale_factor;
+scale_factor = (1 ./ mean(dpss_window(:,1))) ./ sqrt(rows/20) ./ 1.3;
+dc_std = 1.6;
+extra_dc = ones(rows, 1) * (randn(1, cols) .* dc_std);
+final_noise = filtered_noise .* scale_factor + extra_dc;
 
 
 if debugging
     close all
     
     % All pitch traces
+    n_plot = min(size(d.pitches, 2), cols);
     figure
     subplot(1,2,1)
-    plot(final_noise)
+    n = randsample(cols, n_plot);
+    plot(final_noise(:,n))
     title('simulated')
     subplot(1,2,2)
-    plot(d.pitches)
+    n = randsample(size(d.pitches, 2), n_plot);
+    plot(d.pitches(:,n))
     title('actual')
     
     % Spectra
@@ -85,6 +90,16 @@ if debugging
     xlabel('time (ms)')
     ylabel('% from mean')
     
+    % histogram of pitches
+    t = round(rows/2);
+    figure
+    stairs(centers, nsimulated(t, :) ./ sum(nsimulated(t,:)))
+    hold all
+    stairs(centers, nactual(t, :) ./ sum(nactual(t, :)))
+    legend('simulated', 'actual')
+    xlabel('pitch')
+    ylabel('probability')
+    
     % Histogram of dc offsets
     figure
     centers = -9:9;
@@ -106,7 +121,19 @@ if debugging
     plot(ratio)
     title('ratio of spectra')
     
-    keyboard
+    % autocorrelation
+    acorr = zeros(d.P.MaxLag * 2 + 1, size(final_noise, 2));
+    for col = 1:size(final_noise, 2)
+        [c, lags] = xcorr(final_noise(:, col), d.P.MaxLag, 'unbiased');
+        acorr(:, col) = c / max(c);
+    end
+    figure
+    plot(lags, mean(acorr, 2))
+    hold all
+    plot(lags, mean(d.acorr, 2))
+    legend('simulated', 'actual')
+    xlabel('lag (ms)')
+    ylabel('autocorrelation')
     
     % Example pitch traces
     figure
