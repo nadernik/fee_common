@@ -20,7 +20,7 @@ if ~exist('debugging', 'var')
 end
 
 
-d = load('c:\stetner\data\pitchfluctuations\mes011_nodc.mat');
+d = load('c:\stetner\data\pitchfluctuations\mes011_yesdc.mat');
 nfft = d.nfft;
 
 frequency_domain_filter = mean(abs(d.fftcoefs), 2) * ones(1, cols);
@@ -41,7 +41,7 @@ filtered_noise = real(filtered_noise_ifft(1:rows, :));
 % the length of the noise
 scale_factor = (1 ./ mean(dpss_window(:,1)));
 ddc = load('c:\stetner\data\pitchfluctuations\mes011_yesdc.mat');
-dc_std = std(ddc.offset);
+dc_std = 1;
 extra_dc = ones(rows, 1) * (randn(1, cols) .* dc_std);
 final_noise = filtered_noise .* scale_factor + extra_dc;
 
