@@ -20,7 +20,7 @@ if ~exist('debugging', 'var')
 end
 
 
-d = load('c:\stetner\data\pitchfluctuations\mes011_yesdc.mat');
+d = load('c:\stetner\data\pitchfluctuations\black401_yesdc.mat');
 nfft = d.nfft;
 
 frequency_domain_filter = mean(abs(d.fftcoefs), 2) * ones(1, cols);
@@ -40,8 +40,8 @@ filtered_noise = real(filtered_noise_ifft(1:rows, :));
 % the frequency domain filter (this is hidden pitchfluctuations.m) and for
 % the length of the noise
 scale_factor = (1 ./ mean(dpss_window(:,1)));
-ddc = load('c:\stetner\data\pitchfluctuations\mes011_yesdc.mat');
-dc_std = 1;
+ddc = load('c:\stetner\data\pitchfluctuations\black401_yesdc.mat');
+dc_std = .75;
 extra_dc = ones(rows, 1) * (randn(1, cols) .* dc_std);
 final_noise = filtered_noise .* scale_factor + extra_dc;
 
@@ -50,7 +50,7 @@ if debugging
     close all
     
     clear d
-    ddc = load('c:\stetner\data\pitchfluctuations\mes011_yesdc.mat');
+    ddc = load('c:\stetner\data\pitchfluctuations\black401_yesdc.mat');
     
     % All pitch traces
     n_plot = min(size(ddc.pitches, 2), cols);
