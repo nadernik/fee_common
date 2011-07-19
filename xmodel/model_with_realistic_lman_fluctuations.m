@@ -22,7 +22,7 @@ ending_motifs = 200; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
 % Size of the network
-hvc_units = 4; % number of units in hvc - change this to control length of song
+hvc_units = 50; % number of units in hvc - change this to control length of song
 
 % There is one RA unit representing the output of the system. It might be
 % better to think of it as "pitch"
@@ -78,7 +78,7 @@ template = zeros(1, motif_steps);
 
 % conditional auditory feedback
 caf_target_time1 = 5; % time steps
-caf_target_time2 = 10;
+caf_target_time2 = 100;
 caf_pitch_threshold1 = nan; % hits if above this
 caf_pitch_threshold2 = 2; % hits if below this
 caf_random_hit_probability = 0;
@@ -86,7 +86,7 @@ caf_error_value = 800;
 caf_noise_duration = 20; % time steps
 
 % add a random dc offset to ra output over each motif
-dc_amplitude = 10;
+dc_amplitude = 0;
 
 %% Initialize
 
