@@ -1,18 +1,4 @@
-% Intrinsic noise in LMAN has spectrum matching measured pitch fluctuations
-% in an acutal bird!
-%
-% Area X is still able to affect LMAN instantaneously
-%
-% There are two 
-
-% "RA output" is like percent deviation from mean pitch. It varies
-% continuously and can be positive and negative. To make this simulation
-% more realistic, RA might have many bursty neurons and then there would be
-% a transfer function between RA activity and pitch
-
-close all
-clear all
-debugging = false;
+for dc = 
 %% Parameters
 
 % Length of simulation
@@ -67,12 +53,6 @@ rkernel = 1 / sqrt(2 * pi * sig .^ 2) * exp(-(x) .^ 2 ./ (2 * sig .^ 2));
 rkernel = rkernel ./ max(rkernel);
 t_rkernel = 0:length(rkernel) - 1;
 
-if debugging
-    figure
-    axes('FontSize', 16)
-    plot(t_ekernel, ekernel, 'b', t_rkernel, rkernel, 'g')
-    title('Kernels: reward in green, eligibility in blue')
-end
 % The template, aka the sequence we are trying to learn.
 template = zeros(1, motif_steps);
 
@@ -84,9 +64,6 @@ caf_pitch_threshold2 = 2; % hits if below this
 caf_random_hit_probability = 0;
 caf_error_value = 800;
 caf_noise_duration = 20; % time steps
-
-% add a random dc offset to ra output over each motif
-dc_amplitude = 0;
 
 %% Initialize
 
@@ -107,6 +84,8 @@ weights_on_dlm_from_pallidus = -eye(lman_units); % inhibitory
 weights_on_lman_from_dlm = eye(lman_units);
 hvc_centers = round((0.5:hvc_units-0.5)*hvc_steps);
 weights_on_ra_from_hvc = template(hvc_centers);
+% Two LMAN units with opposite effects on the single RA neuron.
+weights_on_ra_from_lman = [1, -1];
 
 % Make one motif of HVC activity
 x = linspace(0, pi, hvc_steps * 2);
@@ -122,9 +101,6 @@ for u = 1:hvc_units
         hvc_output(u, t) = sinburst;
     end
 end
-
-% Two LMAN units with opposite effects on the single RA neuron.
-weights_on_ra_from_lman = [1, -1];
 
 % fill in weights for LMAN-X-DLM loop
 m = 0;
@@ -149,13 +125,6 @@ reward = zeros(motif_steps, total_motifs);
 eligibility_matrix = zeros(msn_units, hvc_units);
 is_escape = true(1, total_motifs);
 is_random_hit = false(1, total_motifs);
-if debugging
-    wall = zeros(msn_units, motif_steps, total_motifs);
-end
-
-% add a random dc offset to ra output over each motif
-dc_offset = (rand(total_motifs, 1) - 0.5) * 2 * dc_amplitude;
-
 
 %% Main loop
 for motif = 1:total_motifs
@@ -165,23 +134,21 @@ for motif = 1:total_motifs
     for t = 1:motif_steps + extra_steps
 
         if t <= motif_steps
-            % X activity is determined by input from HVC
+            % MSN activity is determined by input from HVC. LMAN has no
+            % effect.
             msn_input = weights_on_msn_from_hvc * hvc_output(:, t);
             msn_output(:, t, motif) = max(msn_input - msn_threshold, 0);
-            % NOTE: LMAN has no immediate effect on HVC activity. Need to justify
-            % this asymmmetry!
 
-
+            
+            % Each LMAN unit has a corresponding pallidal unit. The
+            % pallidal unit sums the activity 
             pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, motif);
             pallidal_output(:, t, motif) = pallidal_input;
 
-            % DLM neurons receive input from pallidus that is added to a
-            % baseline firing rate that can be set in the Paramters
-            % section.
             dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, t, motif);
             dlm_output(:, t, motif) = dlm_input;
 
-            % LMAN neurons 
+            % LMAN activity is the sum of intrinsic noise 
             lman_input(:, t) = lman_noise(:,t,motif) + weights_on_lman_from_dlm * dlm_output(:, t, motif);
             lman_output(:,t,motif) = lman_input(:, t);
 
@@ -189,9 +156,6 @@ for motif = 1:total_motifs
             ra_input = weights_on_ra_from_hvc * hvc_output(:, t) + weights_on_ra_from_lman * lman_output(:, t, motif);
             ra_output(:, t, motif) = ra_input + dc_offset(motif);
 
-            % Update eligibility trace
-            %    - Uses same kernel as error
-            %    - This code will NOT generalize to all-to-all HVC connections
             u_msn = 0;
             for u_lman = 1:lman_units
                 for u_hvc = 1:hvc_units
@@ -249,144 +213,5 @@ for motif = 1:total_motifs
             % Make sure these synaptic weights are not negative
             weights_on_msn_from_hvc = max(0, weights_on_msn_from_hvc);
         end
-
-        % Bookkeeping
-        if debugging
-            for u_lman = 1:lman_units
-                u_msn = (u_lman - 1) * hvc_units + (1:hvc_units);
-                wall(u_msn, t, motif) = diag(weights_on_msn_from_hvc(u_msn, :));
-            end
-        end
-
     end
 end
-
-%% All baseline motifs, with escapes in red (like fig 3b from charlesworth)
-fprintf(1,'%.0f%% escapes!\n', sum(is_escape(1:baseline_motifs))/baseline_motifs*100 )
-all_baseline_motifs = squeeze(ra_output(1, :, 1:baseline_motifs));
-baseline_escapes = all_baseline_motifs(:, is_escape(1:baseline_motifs));
-baseline_hits = all_baseline_motifs(:, ~is_escape(1:baseline_motifs));
-figure
-axes('FontSize', 16)
-hold on
-plot(baseline_hits, 'Color', [.8, .8, .8])
-plot(baseline_escapes, 'Color', [1, .2, .2])
-title('All baseline motifs, escapes in red')
-
-
-%% Average of baseline escapes
-all_baseline_motifs = squeeze(ra_output(1, :, 1:baseline_motifs));
-baseline_escapes = all_baseline_motifs(:, is_escape(1:baseline_motifs));
-figure
-axes('FontSize', 16)
-hold on
-plot(baseline_escapes, 'Color', [.8, .8, .8])
-plot(mean(baseline_escapes, 2), 'k', 'LineWidth', 3)
-title('Average of baseline escapes')
-
-%% Actual learning
-predicted_learning = mean(baseline_escapes, 2) - mean(all_baseline_motifs, 2);
-predicted_learning = predicted_learning ./ max(predicted_learning); % Normalize to 1
-
-n = 100; % number of trials to average to get final pitch trajectory
-last_motifs = squeeze(ra_output(1, :, end-n:end));
-actual_learning = mean(last_motifs, 2) - mean(all_baseline_motifs, 2);
-actual_learning = actual_learning ./ max(actual_learning); % normalize to 1
-
-actual_bias = weights_on_ra_from_lman * weights_on_lman_from_dlm * weights_on_dlm_from_pallidus * pallidal_output(:,:,end);
-actual_bias = actual_bias ./ max(actual_bias); % normalize to 1
-
-figure
-axes('FontSize', 16)
-hold on
-plot(predicted_learning, 'r')
-plot(actual_learning, 'k')
-plot(actual_bias, 'g')
-title('Predicted and actual learning, and bias in green')
-
-
-%% Pitch histogram
-
-n = 150;
-target_pitch_before = squeeze(ra_output(1, caf_target_time2, 1:n));
-target_pitch_after  = squeeze(ra_output(1, caf_target_time2, end-n:end));
-figure
-axes('FontSize', 16)
-hold on
-bin_centers = -10:1:10;
-stairs(bin_centers, histc(target_pitch_before, bin_centers), 'k', 'LineWidth', 3)
-stairs(bin_centers, histc(target_pitch_after, bin_centers), 'r', 'LineWidth', 3)
-title('Pitch distributions at target time before (black) and after (red)')
-xlabel('Pitch')
-ylabel('N')
-
-%% LMAN autocorrelation
-
-
-%% mean pitch traces beginning and ending (not normalized)
-figure
-axes('FontSize', 16)
-n = 50; % number of trials to average
-final = squeeze(mean(ra_output(1, :, end-n:end), 3));
-start = squeeze(mean(ra_output(1, :,     1:n  ), 3));
-plot(start, 'k')
-hold on
-plot(final, 'r')
-xlabel('Time (ms)')
-ylabel('"Pitch"')
-title('Song, before and after')
-
-%% weights over time
-
-
-figure
-axes('FontSize', 16)
-imagesc(squeeze(pallidal_output(1,:,:))')
-xlabel('Time (ms)')
-ylabel('Motif')
-title('pitch up pallidal')
-
-figure
-axes('FontSize', 16)
-imagesc(squeeze(pallidal_output(2,:,:))')
-xlabel('Time (ms)')
-ylabel('Motif')
-title('pitch down pallidal')
-
-return %%%DEBUG
-
-%% Random escapes or random hits?
-baseline = squeeze(ra_output(1, :, 1+baseline_motifs:learning_motifs));
-during_learning = (1:total_motifs > baseline_motifs) & ...
-    (1:total_motifs < baseline_motifs + learning_motifs);
-is_random_hit_during_learning = is_random_hit & during_learning;
-is_escape_during_learning = is_escape & during_learning;
-random_hits    = squeeze(ra_output(1, :, is_random_hit_during_learning));
-random_escapes = squeeze(ra_output(1, :, is_escape_during_learning));
-after_learning = squeeze(ra_output(1, :, end-ending_motifs:end));
-
-predicted_from_escapes = mean(random_escapes, 2);% - mean(baseline, 2);
-predicted_from_escapes = predicted_from_escapes ./ max(predicted_from_escapes); % normalize to 1
-
-predicted_from_hits = mean(random_hits, 2);% - mean(baseline, 2);
-predicted_from_hits = predicted_from_hits ./ max(predicted_from_hits);
-
-actual_learning = mean(after_learning, 2);% - mean(baseline, 2);
-actual_learning = actual_learning ./ max(actual_learning);
-
-figure
-subplot(1,2,1)
-
-hold on
-plot(actual_learning, 'k', 'LineWidth', 3)
-plot(predicted_from_escapes, 'b', 'LineWidth', 3)
-r = corr(actual_learning, predicted_from_escapes);
-fprintf(1, 'Corrleation between average of ESCAPES and actual learning, R = %g\n', r)
-
-subplot(1,2,2)
-
-hold on
-plot(actual_learning, 'k', 'LineWidth', 3)
-plot(predicted_from_hits, 'r', 'LineWidth', 3)
-r = corr(actual_learning, predicted_from_hits);
-fprintf(1, 'Corrleation between average of HITS and actual learning, R = %g\n', r)

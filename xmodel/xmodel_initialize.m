@@ -1,5 +1,15 @@
 %% Neural activity
-hvc_output      = zeros(hvc_units,  motif_steps);
+
+% Make one motif of the HVC chain
+hvc_output = zeros(hvc_units,  motif_steps);
+t_burst = 1:9;
+sinburst = sin((t_burst-1)/8*pi).^2;
+for u = 1:hvc_units
+    hvc_output(u, t_burst) = sinburst;
+    t_burst = modnonzero(t_burst + hvc_burst_shift, motif_steps);
+end
+
+% Initialize empty matrices for other units
 lman_input      = zeros(lman_units, motif_steps);
 lman_output     = zeros(lman_units, motif_steps, total_motifs);
 msn_output      = zeros(msn_units,  motif_steps, total_motifs);
@@ -10,20 +20,21 @@ ra_output       = zeros(ra_units,   motif_steps, total_motifs);
 %% Synaptic weights
 
 % Start with the motor pathway (HVC -> RA) matching the template
-hvc_centers = round((0.5:hvc_units-0.5)*hvc_steps);
+hvc_centers = round((0.5:hvc_units-0.5)*hvc_burst_shift);
 weights_on_ra_from_hvc = template(hvc_centers);
 
 % There are two units in LMAN. One increases RA activity and one decreases
 % RA activity. FIXME add explanation for pitch up and pitch down channels.
 weights_on_ra_from_lman = [1, -1];
 
-weights_on_msn_from_hvc = zeros(msn_units, hvc_units);
-weights_on_msn_from_lman = zeros(msn_units, lman_units);
-weights_on_pallidus_from_msn = zeros(lman_units, msn_units);
+% One-to-one connections to relay pallidal output to LMAN through DLM
 weights_on_dlm_from_pallidus = -eye(lman_units); % inhibitory
 weights_on_lman_from_dlm = eye(lman_units);
 
-% fill in weights for LMAN-X-DLM loop
+% Topographic LMAN-X-DLM loop
+weights_on_msn_from_hvc = zeros(msn_units, hvc_units);
+weights_on_msn_from_lman = zeros(msn_units, lman_units);
+weights_on_pallidus_from_msn = zeros(lman_units, msn_units);
 m = 0;
 for ell = 1:lman_units
     for h = 1:hvc_units
@@ -31,23 +42,6 @@ for ell = 1:lman_units
         weights_on_msn_from_hvc(m, h) = 1e-3; % start small. these weights are learned
         weights_on_msn_from_lman(m, ell) = 1;
         weights_on_pallidus_from_msn(ell, m) = -1; % inhibitory
-    end
-end
-
-
-%% Make one motif of HVC activity
-
-x = linspace(0, pi, hvc_steps * 2);
-cosburst = cos(x).^2;
-cosburst = cosburst([hvc_steps+1:hvc_steps*2, 1:hvc_steps]);
-sinburst = sin(x).^2;
-for u = 1:hvc_units
-    offset = (u - 1) * hvc_steps;
-    t = modnonzero((1:2*hvc_steps) + offset, motif_steps);
-    if mod(u, 2) == 1 % odd bursts are cosine
-        hvc_output(u, t) = cosburst;
-    else
-        hvc_output(u, t) = sinburst;
     end
 end
 
