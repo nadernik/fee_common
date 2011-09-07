@@ -19,9 +19,8 @@ ra_output       = zeros(ra_units,   motif_steps, total_motifs);
 
 %% Synaptic weights
 
-% Start with the motor pathway (HVC -> RA) matching the template
-hvc_centers = round((0.5:hvc_units-0.5)*hvc_burst_shift);
-weights_on_ra_from_hvc = template(hvc_centers);
+% Start with the motor pathway empty
+weights_on_ra_from_hvc = zeros(ra_units, hvc_units);
 
 % There are two units in LMAN. One increases RA activity and one decreases
 % RA activity. FIXME add explanation for pitch up and pitch down channels.
