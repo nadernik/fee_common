@@ -57,6 +57,13 @@ function electro_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to electro_gui (see VARARGIN)
 
+% egdir is the directory containing electro_gui.m All support m-files (for macros etc.)
+% must be in this same directory.
+egdir = fileparts(mfilename('fullpath'));
+egfile = @(filename) [egdir filesep filename];
+handles.egdir = egdir;
+handles.egfile = egfile;
+% egfile is a function that prepends egdir to a filename
 
 % Allow macros to call individual functions within ElectroGui
 if ~isempty(varargin)
@@ -70,20 +77,16 @@ if ~isempty(varargin)
     return
 end
 
-% Make ElectroGui's directory the current directory
-[pathstr, name, ext, versn] = fileparts(mfilename('fullpath'));
-cd(pathstr);
-
 
 lic = license('inuse');
 user = lic(1).user;
 f = regexpi(user,'[A-Z1-9]');
 user = user(f);
 
-handles.userfile = ['defaults_' user '.m'];
+handles.userfile = egfile(['defaults_' user '.m']);
 mt = dir(handles.userfile);
 if isempty(mt)
-    fid1 = fopen('eg_Get_Defaults.m','r');
+    fid1 = fopen(egfile('eg_Get_Defaults.m'),'r');
     fid2 = fopen(handles.userfile,'w');
     fgetl(fid1);
     str = ['function handles = ' handles.userfile(1:end-2) '(handles)'];
@@ -108,10 +111,10 @@ end
 
 
 lst = {'(Default)'};
-mt = dir('defaults_*.m');
+mt = dir(egfile('defaults_*.m'));
 for c = 1:length(mt)
     lst{end+1} = mt(c).name(10:end-2);
-    if strcmp(handles.userfile,mt(c).name)
+    if strcmp(handles.userfile,egfile(mt(c).name))
         indx = c+1;
     end
 end
@@ -234,7 +237,7 @@ set(handles.check_TopPlot,'value',handles.DefaultMix(2));
 set(handles.check_BottomPlot,'value',handles.DefaultMix(3));
 
 % Find all spectrum algorithms
-mt = dir('egs_*.m');
+mt = dir(egfile('egs_*.m'));
 ischeck = 0;
 for c = 1:length(mt)
     handles.menu_Algorithm(c) = uimenu(handles.menu_AlgorithmList,'label',mt(c).name(5:end-2),...
@@ -249,7 +252,7 @@ if ischeck == 0
 end
 
 % Find all segmenting algorithms
-mt = dir('egg_*.m');
+mt = dir(egfile('egg_*.m'));
 ischeck = 0;
 for c = 1:length(mt)
     handles.menu_Segmenter(c) = uimenu(handles.menu_SegmenterList,'label',mt(c).name(5:end-2),...%%% remove 'egg_' and '.m'
@@ -264,7 +267,7 @@ if ischeck == 0 % no segmenter is specified as handles.DefaultSegmenter
 end
 
 % Find all filters
-mt = dir('egf_*.m');
+mt = dir(egfile('egf_*.m'));
 ischeck = 0;
 for c = 1:length(mt)
     handles.menu_Filter(c) = uimenu(handles.menu_FilterList,'label',mt(c).name(5:end-2),...
@@ -279,7 +282,7 @@ if ischeck == 0
 end
 
 % Find all colormaps
-mt = dir('egc_*.m');
+mt = dir(egfile('egc_*.m'));
 handles.menu_ColormapList(1) = uimenu(handles.menu_Colormap,'label','(Default)',...
     'callback','electro_gui(''ColormapClick'',gcbo,[],guidata(gcbo))');
 for c = 1:length(mt)
@@ -293,7 +296,7 @@ handles.Colormap(1,:) = handles.BackgroundColors(1,:);
 
 
 % Find all function algorithms
-mt = dir('egf_*.m');
+mt = dir(egfile('egf_*.m'));
 str = {'(Raw)'};
 for c = 1:length(mt)
     str{end+1} = mt(c).name(5:end-2);
@@ -302,7 +305,7 @@ set(handles.popup_Function1,'string',str,'userdata',cell(1,length(str)));
 set(handles.popup_Function2,'string',str,'userdata',cell(1,length(str)));
 
 % Find all macros
-mt = dir('egm_*.m');
+mt = dir(egfile('egm_*.m'));
 for c = 1:length(mt)
     handles.menu_Macros(c) = uimenu(handles.context_Macros,'label',mt(c).name(5:end-2),...
         'callback','electro_gui(''MacrosMenuclick'',gcbo,[],guidata(gcbo))');
@@ -310,7 +313,7 @@ end
 
 
 % Find all event detector algorithms
-mt = dir('ege_*.m');
+mt = dir(egfile('ege_*.m'));
 str = {'(None)'};
 for c = 1:length(mt)
     str{end+1} = mt(c).name(5:end-2);
@@ -320,7 +323,7 @@ set(handles.popup_EventDetector2,'string',str,'userdata',cell(1,length(str)));
 
 
 % Find all event feature algorithms
-mt = dir('ega_*.m');
+mt = dir(egfile('ega_*.m'));
 str = {};
 for c = 1:length(mt)
     handles.menu_XAxis_List(c) = uimenu(handles.menu_XAxis,'label',mt(c).name(5:end-2),...
