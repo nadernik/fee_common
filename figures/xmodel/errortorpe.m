@@ -1,5 +1,5 @@
 %% Reward Prediction Error
-
+close all
 N = 10; % number of trials
 T = 50; % number of time points in each trial
 nred = 3; % red example trial number
@@ -58,11 +58,12 @@ yhi = yhi + 0.15 * yrange;
 fill([-.5, .5, .5, -.5] + t, [ylo ylo yhi yhi], [1 1 .7], 'FaceAlpha', 0.5)
 xlim([1 T])
 ylim([ylo yhi])
+xlabel('Time (ms)')
+ylabel('Pitch')
 
 %% (b) Error is squared difference between template and actual song
 
 figure
-subplot(1, 2, 1)
 hold on
 yhi = max(max(errors));
 ylo = min(min(errors));
@@ -78,14 +79,18 @@ plot(x, y, 'g', 'LineWidth', 2)
 fill([-.5, .5, .5, -.5] + t, [ylo ylo yhi yhi], [1 1 .7], 'FaceAlpha', 0.5)
 xlim([0 T])
 ylim([ylo yhi])
+xlabel('Time (ms)')
+ylabel('Error')
 
-subplot(1, 2, 2)
+figure
 scatter(1:N, errors(t, :),'.k')
 hold on
 scatter(nred, errors(t, nred), 300, '.r')
 scatter(ngreen, errors(t, ngreen), 300, '.g')
 xlim([0 N+1])
-
+ylim([ylo yhi])
+xlabel('Trial')
+ylabel('Error')
 
 %% (c) Reward is negative error
 % Because VTA seems to signal rewarding things, not punishments
@@ -93,7 +98,6 @@ xlim([0 N+1])
 pred = mean(rewards, 2);
 
 figure
-subplot(1, 2, 1)
 hold on
 plot(rewards, 'Color', [.8 .8 .8])
 plot(pred, 'k')
@@ -110,14 +114,19 @@ plot(x, y, 'g', 'LineWidth', 2)
 fill([-.5, .5, .5, -.5] + t, [ylo ylo yhi yhi], [1 1 .7], 'FaceAlpha', 0.5)
 xlim([1 T])
 ylim([ylo yhi])
+xlabel('Time (ms)')
+ylabel('Reward')
 
-subplot(1, 2, 2)
+figure
 hold on
 plot(1:N, pred(t)*ones(N,1), 'k')
 scatter(1:N, rewards(t, :),'.k')
 scatter(nred, rewards(t, nred), 300, '.r')
 scatter(ngreen, rewards(t, ngreen), 300, '.g')
 xlim([0 N+1])
+ylim([ylo yhi])
+xlabel('Trial')
+ylabel('Reward')
 
 
 %% (d) Reward prediction error is difference between reward and predicted reward
@@ -125,7 +134,6 @@ xlim([0 N+1])
 rpe2 = rewards - pred * ones(1, N);
 
 figure
-subplot(1, 2, 1)
 hold on
 plot(rpe2, 'Color', [.8 .8 .8])
 yhi = max(max(rpe2));
@@ -141,10 +149,17 @@ plot(x, y, 'g', 'LineWidth', 2)
 fill([-.5, .5, .5, -.5] + t, [ylo ylo yhi yhi], [1 1 .7], 'FaceAlpha', 0.5)
 xlim([1 T])
 ylim([ylo yhi])
+xlabel('Time (ms)')
+ylabel('Reward prediction error')
 
-subplot(1, 2, 2)
+figure
 hold on
 scatter(1:N, rpe2(t, :), '.k')
 scatter(nred, rpe2(t, nred), 300, '.r')
 scatter(ngreen, rpe2(t, ngreen), 300, '.g')
 xlim([0 N+1])
+ylim([ylo yhi])
+xlabel('Trial')
+ylabel('Reward prediction error')
+%%
+save c:\stetner\data\figures\xmodel\errortorpe.mat
