@@ -21,7 +21,7 @@ for motif = 1:total_motifs
 
             % LMAN activity is the sum of intrinsic noise 
             lman_input(:, t) = lman_noise(:,t,motif) + weights_on_lman_from_dlm * dlm_output(:, t, motif);
-            lman_output(:,t,motif) = lman_input(:, t);
+            lman_output(:,t,motif) = max(lman_input(:, t) + lman_offset, 0);
 
             % RA activity is the sum of inputs from HVC and LMAN
             ra_input = weights_on_ra_from_hvc * hvc_output(:, t) + weights_on_ra_from_lman * lman_output(:, t, motif);

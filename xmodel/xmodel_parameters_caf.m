@@ -1,6 +1,6 @@
 % Length of simulation
-baseline_motifs = 0; % number of motifs before learning starts
-learning_motifs = 200; % number of motifs where learning happens!
+baseline_motifs = 200; % number of motifs before learning starts
+learning_motifs = 600; % number of motifs where learning happens!
 ending_motifs = 0; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
@@ -13,7 +13,7 @@ ra_units = 1;
 % There are two LMAN units. One increases pitch and one decreases pitch.
 lman_units = 2; 
 % There is also one pallidal and one DLM unit for each LMAN unit
-msn_units = lman_units * hvc_units; % Medium Spiny Neurons in each pathway
+msn_units = lman_units * hvc_units; % Medium Spiny Neurons
 
 % Time
 hvc_burst_shift = 4; %number of time steps in hvc burst
@@ -22,7 +22,7 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 1e-7; % learning rate in HVC->X synapse
+msn_learning_rate = 5e-8; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 % Other
@@ -36,14 +36,13 @@ std_etrace = 50; % Eligibility trace
 std_rkernel = 50; % Reward
 
 % The template, aka the sequence we are trying to learn.
-template = 10*sin(linspace(0, 4*pi, motif_steps));
-% template = zeros(1, motif_steps);
+template = zeros(1, motif_steps);
 
 % conditional auditory feedback
-caf_target_time1 = 100; % time steps
+caf_target_time1 = 5; % time steps
 caf_target_time2 = 100;
 caf_pitch_threshold1 = nan; % hits if above this
-caf_pitch_threshold2 = nan; % hits if below this
+caf_pitch_threshold2 = 2; % hits if below this
 caf_random_hit_probability = 0;
 caf_error_value = 800;
 caf_noise_duration = 20; % time steps

@@ -1,165 +1,189 @@
 %% Reward Prediction Error
 close all
-N = 10; % number of trials
+N = 100; % number of trials
 T = 50; % number of time points in each trial
-nred = 3; % red example trial number
-ngreen = 4; % green example trial number
-taulman = 8; % width of lman fluctuations (in time points)
-taurpe = .1; % time constant of exponentially weighted average in rpe
 t = 40; % target time for examples
-template = sin(linspace(0, 4*pi, T)) + 4;
-meansong = cos(linspace(0, 4*pi, T)) + 2;
+Nshow = 10;
+nred = 89 % red example trial number
+ngreen = 3; % green example trial number
 
-songs      = zeros(length(template), N);
-prediction = zeros(size(songs));
-rpe        = zeros(size(songs));
-errors     = zeros(size(songs));
-rewards    = zeros(size(songs));
+colors.good = [0 1 0]; %green
+colors.bad = [1 0 0]; %red
+colors.trace = [.4 .4 1];
+colors.mean = [1 1 1]; %white
+colors.template = [1 1 0]; %yellow
 
-for n = 1:N
-    % song is average underlying song (motor pathway or bias) plus random
-    % noise
-    songs(:, n) = meansong' + smoothnoise(length(template), taulman);
-    % Error is the squared difference between song and template.
-    errors(:, n) = (songs(:, n) - template').^2;
-    % Reward is just negative error.
-    rewards(:, n) = -errors(:, n);
-    
-    % Initial prediction is initial reward.
-    if n == 1
-        prediction(:, 1) = rewards(:, 1);
-    end
-    
-    % Reward prediction error is the difference between actual and expected
-    % rewards.
-    rpe(:, n) = rewards(:, n) - prediction(:, n);
-    % Update predicted rewards using reward prediction error. This makes
-    % something like an exponentially weighted mean of rewards.
-    prediction(:, n + 1) = prediction(:, n) + taurpe * rpe(:, n);    
+hist_ymax = 50;
+
+if exist('regen', 'var') && regen == true
+    template = sin(linspace(0, 4*pi, T)) + 4;
+    meansong = cos(linspace(0, 4*pi, T)) + 2;
+
+    songs = meansong'*ones(1, N) + generate_lman_noise(T, N);
+    errors = (songs - template'*ones(1, N)).^2;
+    rewards = -errors;
+    prediction = mean(rewards, 2);
+    rpe = rewards - prediction*ones(1, N);
+    nrand = randperm(N);
+    nrand = nrand(nrand~=nred & nrand~=ngreen);
+    nshow = [nred, ngreen, nrand(1:Nshow-2)];
 end
 
-%% (a) Template and actual song
 
+
+%% (a) Template and actual song
+bin_centers = -9.5:1:9.5;
 figure
 hold on
-plot(template)
-plot(songs, 'Color', [.8 .8 .8])
-plot(mean(songs, 2), 'k')
+plot(songs, 'Color', [.5 .5 1])
+plot(mean(songs, 2), 'Color', mean_color, 'LineWidth', 3)
 x = t + [-0.5, 0.5];
 y = interp1(1:T, songs(:, nred), x);
-plot(x, y, 'r', 'LineWidth', 2)
+plot(x, y, 'Color', bad_color, 'LineWidth', 3)
 y = interp1(1:T, songs(:, ngreen), x);
-plot(x, y, 'g', 'LineWidth', 2)
+plot(x, y, 'g', 'Color', good_color, 'LineWidth', 3)
+plot(template, 'Color', template_color, 'LineWidth', 3)
+
 ylo = min(min(min(songs)), min(template));
 yhi = max(max(max(songs)), max(template));
-yrange = yhi - ylo;
-ylo = ylo - 0.15 * yrange;
-yhi = yhi + 0.15 * yrange;
-fill([-.5, .5, .5, -.5] + t, [ylo ylo yhi yhi], [1 1 .7], 'FaceAlpha', 0.5)
 xlim([1 T])
 ylim([ylo yhi])
 xlabel('Time (ms)')
 ylabel('Pitch')
+axis off
+
+figure
+counts = hist(songs(t, :), bin_centers);
+h = histdot(counts, bin_centers);
+set(h, 'Marker', '.', 'MarkerEdgeColor', trace_color, 'MarkerFaceColor', trace_color)
+hold on
+[junk, redbin] = min(abs(bin_centers - songs(t, nred)));
+scatter(bin_centers(redbin), counts(redbin) + 1, 'MarkerEdgeColor', bad_color, 'MarkerFaceColor', bad_color)
+[junk, greenbin] = min(abs(bin_centers - songs(t, ngreen)));
+scatter(bin_centers(greenbin), counts(greenbin) + 1, 'MarkerEdgeColor', good_color, 'MarkerFaceColor', good_color)
+% scatter(nred, errors(t, nred), 300, '.r')
+% scatter(ngreen, errors(t, ngreen), 300, '.g')
+xlim([-10 10])
+ylim([0 30])
+xlabel('Error')
+ylabel('count')
+axis off
+
+
+
 
 %% (b) Error is squared difference between template and actual song
+bin_centers = -97.5:5:97.5;
+
+Y = errors;
 
 figure
 hold on
-yhi = max(max(errors));
-ylo = min(min(errors));
+yhi = max(max(Y));
+ylo = min(min(Y));
 yrange = yhi - ylo;
 ylo = ylo - 0.15 * yrange;
 yhi = yhi + 0.15 * yrange;
-plot(errors, 'Color', [.8 .8 .8])
+plot(Y, 'Color', colors.trace)
+plot(mean(Y, 2), 'Color', colors.mean, 'LineWidth', 3)
 x = t + [-0.5, 0.5];
-y = interp1(1:T, errors(:, nred), x);
-plot(x, y, 'r', 'LineWidth', 2)
-y = interp1(1:T, errors(:, ngreen), x);
-plot(x, y, 'g', 'LineWidth', 2)
-fill([-.5, .5, .5, -.5] + t, [ylo ylo yhi yhi], [1 1 .7], 'FaceAlpha', 0.5)
+y = interp1(1:T, Y(:, nred), x);
+plot(x, y, 'Color', colors.bad, 'LineWidth', 3)
+y = interp1(1:T, Y(:, ngreen), x);
+plot(x, y, 'Color', colors.good, 'LineWidth', 3)
 xlim([0 T])
 ylim([ylo yhi])
-xlabel('Time (ms)')
-ylabel('Error')
+axis off
 
 figure
-scatter(1:N, errors(t, :),'.k')
+counts = hist(Y(t, :), bin_centers);
+h = histdot(counts, bin_centers);
+set(h, 'Marker', '.', 'MarkerEdgeColor', colors.trace, 'MarkerFaceColor', colors.trace)
 hold on
-scatter(nred, errors(t, nred), 300, '.r')
-scatter(ngreen, errors(t, ngreen), 300, '.g')
-xlim([0 N+1])
-ylim([ylo yhi])
-xlabel('Trial')
-ylabel('Error')
+[junk, redbin] = min(abs(bin_centers - Y(t, nred)));
+scatter(bin_centers(redbin), counts(redbin) + 1, 'MarkerEdgeColor', colors.bad, 'MarkerFaceColor', colors.bad)
+[junk, greenbin] = min(abs(bin_centers - Y(t, ngreen)));
+scatter(bin_centers(greenbin), counts(greenbin) + 1, 'MarkerEdgeColor', colors.good, 'MarkerFaceColor', colors.good)
+x = mean(Y(t, :));
+line([x x], [0 hist_ymax], 'Color', colors.mean, 'LineWidth', 2)
+xlim([-100 100])
+ylim([0 hist_ymax])
+axis off
 
 %% (c) Reward is negative error
 % Because VTA seems to signal rewarding things, not punishments
 
-pred = mean(rewards, 2);
+Y = rewards;
 
 figure
 hold on
-plot(rewards, 'Color', [.8 .8 .8])
-plot(pred, 'k')
-yhi = max(max(rewards));
-ylo = min(min(rewards));
+yhi = max(max(Y));
+ylo = min(min(Y));
 yrange = yhi - ylo;
 ylo = ylo - 0.15 * yrange;
 yhi = yhi + 0.15 * yrange;
+plot(Y, 'Color', colors.trace)
+plot(mean(Y, 2), 'Color', colors.mean, 'LineWidth', 3)
 x = t + [-0.5, 0.5];
-y = interp1(1:T, rewards(:, nred), x);
-plot(x, y, 'r', 'LineWidth', 2)
-y = interp1(1:T, rewards(:, ngreen), x);
-plot(x, y, 'g', 'LineWidth', 2)
-fill([-.5, .5, .5, -.5] + t, [ylo ylo yhi yhi], [1 1 .7], 'FaceAlpha', 0.5)
-xlim([1 T])
+y = interp1(1:T, Y(:, nred), x);
+plot(x, y, 'Color', colors.bad, 'LineWidth', 3)
+y = interp1(1:T, Y(:, ngreen), x);
+plot(x, y, 'Color', colors.good, 'LineWidth', 3)
+xlim([0 T])
 ylim([ylo yhi])
-xlabel('Time (ms)')
-ylabel('Reward')
+axis off
 
 figure
+counts = hist(Y(t, :), bin_centers);
+h = histdot(counts, bin_centers);
+set(h, 'Marker', '.', 'MarkerEdgeColor', colors.trace, 'MarkerFaceColor', colors.trace)
 hold on
-plot(1:N, pred(t)*ones(N,1), 'k')
-scatter(1:N, rewards(t, :),'.k')
-scatter(nred, rewards(t, nred), 300, '.r')
-scatter(ngreen, rewards(t, ngreen), 300, '.g')
-xlim([0 N+1])
-ylim([ylo yhi])
-xlabel('Trial')
-ylabel('Reward')
+[junk, redbin] = min(abs(bin_centers - Y(t, nred)));
+scatter(bin_centers(redbin), counts(redbin) + 1, 'MarkerEdgeColor', colors.bad, 'MarkerFaceColor', colors.bad)
+[junk, greenbin] = min(abs(bin_centers - Y(t, ngreen)));
+scatter(bin_centers(greenbin), counts(greenbin) + 1, 'MarkerEdgeColor', colors.good, 'MarkerFaceColor', colors.good)
+x = mean(Y(t, :));
+line([x x], [0 hist_ymax], 'Color', colors.mean, 'LineWidth', 2)
+xlim([-100 100])
+ylim([0 hist_ymax])
+axis off
 
 
 %% (d) Reward prediction error is difference between reward and predicted reward
 
-rpe2 = rewards - pred * ones(1, N);
+Y = rpe;
 
 figure
 hold on
-plot(rpe2, 'Color', [.8 .8 .8])
-yhi = max(max(rpe2));
-ylo = min(min(rpe2));
+yhi = max(max(Y));
+ylo = min(min(Y));
 yrange = yhi - ylo;
 ylo = ylo - 0.15 * yrange;
 yhi = yhi + 0.15 * yrange;
+plot(Y, 'Color', colors.trace)
+plot(mean(Y, 2), 'Color', colors.mean, 'LineWidth', 3)
 x = t + [-0.5, 0.5];
-y = interp1(1:T, rpe2(:, nred), x);
-plot(x, y, 'r', 'LineWidth', 2)
-y = interp1(1:T, rpe2(:, ngreen), x);
-plot(x, y, 'g', 'LineWidth', 2)
-fill([-.5, .5, .5, -.5] + t, [ylo ylo yhi yhi], [1 1 .7], 'FaceAlpha', 0.5)
-xlim([1 T])
+y = interp1(1:T, Y(:, nred), x);
+plot(x, y, 'Color', colors.bad, 'LineWidth', 3)
+y = interp1(1:T, Y(:, ngreen), x);
+plot(x, y, 'Color', colors.good, 'LineWidth', 3)
+xlim([0 T])
 ylim([ylo yhi])
-xlabel('Time (ms)')
-ylabel('Reward prediction error')
+axis off
 
 figure
+counts = hist(Y(t, :), bin_centers);
+h = histdot(counts, bin_centers);
+set(h, 'Marker', '.', 'MarkerEdgeColor', colors.trace, 'MarkerFaceColor', colors.trace)
 hold on
-scatter(1:N, rpe2(t, :), '.k')
-scatter(nred, rpe2(t, nred), 300, '.r')
-scatter(ngreen, rpe2(t, ngreen), 300, '.g')
-xlim([0 N+1])
-ylim([ylo yhi])
-xlabel('Trial')
-ylabel('Reward prediction error')
+[junk, redbin] = min(abs(bin_centers - Y(t, nred)));
+scatter(bin_centers(redbin), counts(redbin) + 1, 'MarkerEdgeColor', colors.bad, 'MarkerFaceColor', colors.bad)
+[junk, greenbin] = min(abs(bin_centers - Y(t, ngreen)));
+scatter(bin_centers(greenbin), counts(greenbin) + 1, 'MarkerEdgeColor', colors.good, 'MarkerFaceColor', colors.good)
+x = mean(Y(t, :));
+line([x x], [0 hist_ymax], 'Color', colors.mean, 'LineWidth', 2)
+xlim([-100 100])
+ylim([0 hist_ymax])
+axis off
 %%
-save c:\stetner\data\figures\xmodel\errortorpe.mat
+% save c:\stetner\data\figures\xmodel\errortorpe.mat

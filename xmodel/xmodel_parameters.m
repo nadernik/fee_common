@@ -22,11 +22,12 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = .5e-8; % learning rate in HVC->X synapse
+msn_learning_rate = 1e-7; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 % Other
 msn_threshold = 0;
+lman_offset = 5;
 
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard

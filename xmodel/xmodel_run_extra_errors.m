@@ -21,7 +21,7 @@ for motif = 1:total_motifs
 
             % LMAN activity is the sum of intrinsic noise 
             lman_input(:, t) = lman_noise(:,t,motif) + weights_on_lman_from_dlm * dlm_output(:, t, motif);
-            lman_output(:,t,motif) = lman_input(:, t);
+            lman_output(:,t,motif) = max(lman_input(:, t)+lman_offset, 0);
 
             % RA activity is the sum of inputs from HVC and LMAN
             ra_input = weights_on_ra_from_hvc * hvc_output(:, t) + weights_on_ra_from_lman * lman_output(:, t, motif);
@@ -57,7 +57,8 @@ for motif = 1:total_motifs
                 instantaneous_error = caf_error_value;
                 steps_to_noise = steps_to_noise - 1;
             else
-                instantaneous_error = (ra_output(:, t, motif) - template(:, t)).^2 + total_extra_error(t, motif);
+                keyboard
+                instantaneous_error = 1/sqrt(extra_channels + 1) .* ((ra_output(:, t, motif) - template(:, t)).^2 + total_extra_error(t, motif));
             end
             error(t + t_rkernel) = error(t + t_rkernel) + instantaneous_error * rkernel;
         end

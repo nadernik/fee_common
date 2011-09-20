@@ -1,0 +1,93 @@
+%% Temporal Resolution of Learning
+
+%% many different LMAN values
+dc_levels = [0 1 2 4 8 16 32 64];
+for n = 1:length(dc_levels)
+    fprintf(1, 'Run %g of %g\n', n, length(dc_levels))
+    save temp n dc_levels
+    xmodel_parameters_caf
+    xmodel_initialize
+    for u = 1:lman_units
+        lman_noise(u, :, :) = generate_lman_noise_set_dc(motif_steps, total_motifs, dc_levels(n));
+    end
+    xmodel_run
+    save(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n)])
+    clear all
+    load temp
+end
+    
+%% different reward kernels
+kernel_widths = [1 5 10 15 20 30 50 100 200];
+for n = 1:length(kernel_widths)
+    fprintf(1, 'Run %g of %g\n', n, length(kernel_widths))
+    save temp n kernel_widths
+    xmodel_parameters_caf
+    std_rkernel = kernel_widths(n);
+    std_etrace  = kernel_widths(n);
+    xmodel_initialize
+    xmodel_run
+    save(['c:\stetner\data\figures\xmodel\temporal_resolution_reward' int2str(n)])
+    clear all
+    load temp
+end
+    
+
+
+%% (a) Limit on the precision of learning
+% Conditional auditory feedback targets a specific moment (1 ms in our
+% simulation) for pitch change. The optimal solution is to change the pitch
+% at just the target time, but this is not what happens. Our model allows
+% the basal ganglia to bias 
+d = load('C:\stetner\data\figures\xmodel\temporal_resolution_reward5.mat');
+N = 200;
+
+
+
+%% (b) 
+
+figure(402)
+clf
+hold on
+
+actual_learning = mean(-d.pallidal_output(1,:,end-N:end) + d.pallidal_output(2,:,end-N:end), 3);
+actual_learning = actual_learning ./ max(actual_learning);
+hvc_burst = d.hvc_output(1, 1:9);
+reward_kernel = d.rkernel;
+
+maxlag = 100;
+noise = squeeze(d.lman_noise(1,:,:) - d.lman_noise(2,:,:));
+lman_autocorrelation = zeros(maxlag * 2 + 1, d.motif_steps);
+for motif = 1:d.total_motifs
+    [c, t_acor] = xcorr(noise(:, motif), maxlag, 'unbiased');
+    lman_autocorrelation(:, motif) = c / max(c);
+end
+
+t_learning = (1:d.motif_steps) - d.caf_target_time2;
+plot(t_learning,actual_learning,':m')
+t_hvc = -4:4;
+plot(t_hvc,hvc_burst,'y')
+plot(t_acor,mean(lman_autocorrelation,2),'g')
+t_reward = -4*d.std_rkernel:4*d.std_rkernel;
+plot(t_reward, reward_kernel,'Color', [1, .65, 0])
+
+
+%%
+figure(404)
+clf
+hold all
+
+for n = 1:9
+    n
+    d = load(['c:\stetner\data\figures\xmodel\temporal_resolution_reward' int2str(n)]);
+    actual_learning = mean(-d.pallidal_output(1,:,end-N:end) + d.pallidal_output(2,:,end-N:end), 3);
+    actual_learning = actual_learning ./ max(actual_learning);
+    plot(actual_learning)
+    reward_std(n) = d.std_rkernel;
+    abovehalf = actual_learning > 0.5;
+    x1 = find(abovehalf, 1, 'first');
+    x2 = d.caf_target_time2 - 1 + find(~abovehalf(d.caf_target_time2:end), 1,'first');
+    fwhm(n) = t_learning(x2) - t_learning(x1);
+    clear d
+end
+figure(403)
+plot(reward_std, fwhm)
