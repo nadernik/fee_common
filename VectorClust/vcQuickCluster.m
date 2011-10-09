@@ -1,7 +1,7 @@
 function bSuccess = vcQuickCluster(birdname,datestr,polygonfile,displayCluster, varargin)
 
 P.prefix = 'all';
-P.root = 'Z:\Data\CAF';
+P.root = 'c:\stetner\data';
 P = parseargs(P, varargin{:});
 
 if ~exist(polygonfile, 'file')
