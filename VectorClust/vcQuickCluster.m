@@ -1,4 +1,12 @@
 function bSuccess = vcQuickCluster(birdname,datestr,polygonfile,displayCluster, varargin)
+% VCQUICKCLUSTER clustering from saved polygons without user interaction 
+%   Clusters a processed annotation file without user interaction using a
+%   saved set of polygons created in vectorClust.
+%
+%   Usage:
+%     vcQuickCluster(birdname, expername, polygonfile, displaycluster, ...
+%                    'root', rootdir, 'prefix', prefix)
+
 
 P.prefix = 'all';
 P.root = 'c:\stetner\data';
