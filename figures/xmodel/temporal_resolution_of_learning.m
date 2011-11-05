@@ -1,10 +1,13 @@
 %% Temporal Resolution of Learning
 
 %% many different LMAN values
-dc_levels = [0 1 2 4 8 16 32 64];
-for n = 1:length(dc_levels)
-    fprintf(1, 'Run %g of %g\n', n, length(dc_levels))
-    save temp n dc_levels
+dc_levels = linspace(0,15);
+randomized_order = randperm(length(dc_levels));
+nrun = 0;
+for n = randomized_order
+    nrun = nrun +1;
+    fprintf(1, 'Run %g of %g\n', nrun, length(dc_levels))
+    save temp n dc_levels randomized_order nrun
     xmodel_parameters_caf
     xmodel_initialize
     for u = 1:lman_units
@@ -26,7 +29,7 @@ for n = 1:length(kernel_widths)
     std_etrace  = kernel_widths(n);
     xmodel_initialize
     xmodel_run
-    save(['c:\stetner\data\figures\xmodel\temporal_resolution_reward' int2str(n)])
+    save(['c:\stetner\data\figures\xmodel\temporal_resolution_reward_shortnoise' int2str(n)])
     clear all
     load temp
 end
@@ -38,7 +41,7 @@ end
 % simulation) for pitch change. The optimal solution is to change the pitch
 % at just the target time, but this is not what happens. Our model allows
 % the basal ganglia to bias 
-d = load('C:\stetner\data\figures\xmodel\temporal_resolution_reward5.mat');
+d = load('C:\stetner\data\figures\xmodel\temporal_resolution_reward7.mat');
 N = 200;
 
 
@@ -63,12 +66,12 @@ for motif = 1:d.total_motifs
 end
 
 t_learning = (1:d.motif_steps) - d.caf_target_time2;
-plot(t_learning,actual_learning,':m')
+plot(t_learning,actual_learning,':m', 'LineWidth', 3)
 t_hvc = -4:4;
-plot(t_hvc,hvc_burst,'y')
-plot(t_acor,mean(lman_autocorrelation,2),'g')
+plot(t_hvc,hvc_burst,'y', 'LineWidth', 3)
+plot(t_acor,mean(lman_autocorrelation,2),'g', 'LineWidth', 3)
 t_reward = -4*d.std_rkernel:4*d.std_rkernel;
-plot(t_reward, reward_kernel,'Color', [1, .65, 0])
+plot(t_reward, reward_kernel,'Color', [1, .65, 0], 'LineWidth', 3)
 
 
 %%
@@ -91,3 +94,29 @@ for n = 1:9
 end
 figure(403)
 plot(reward_std, fwhm)
+
+%% 
+clear all
+figure(405)
+clf
+hold all
+N = 200;
+nplot  = [2 7 8];
+for n = 1:8
+    n
+    d = load(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n)]);
+    t_learning = (1:d.motif_steps) - d.caf_target_time2;
+    actual_learning = mean(-d.pallidal_output(1,:,end-N:end) + d.pallidal_output(2,:,end-N:end), 3);
+    actual_learning = actual_learning ./ max(actual_learning);
+    if any(n == nplot)
+        plot(actual_learning)
+    end
+    abovehalf = actual_learning > 0.5;
+    x1 = find(abovehalf, 1, 'first');
+    x2 = d.caf_target_time2 - 1 + find(~abovehalf(d.caf_target_time2:end), 1,'first');
+    fwhm(n) = t_learning(x2) - t_learning(x1);
+end
+figure(406)
+clf
+dc_levels = [0 1 2 4 8 16 32 64];
+plot(dc_levels, fwhm, 'x', 'MarkerSize', 10)
