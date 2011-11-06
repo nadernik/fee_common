@@ -8,12 +8,12 @@ for motif = 1:total_motifs
             % MSN activity is determined by input from HVC. LMAN has no
             % effect.
             msn_input = weights_on_msn_from_hvc * hvc_output(:, t);
-            msn_output(:, t, motif) = max(msn_input - msn_threshold, 0);
+            msn_output(:, t) = max(msn_input - msn_threshold, 0);
 
             
             % Each LMAN unit has a corresponding pallidal unit. The
             % pallidal unit sums the activity 
-            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, motif);
+            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t);
             pallidal_output(:, t, motif) = pallidal_input;
 
             dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, t, motif);
@@ -57,7 +57,7 @@ for motif = 1:total_motifs
                 instantaneous_error = caf_error_value;
                 steps_to_noise = steps_to_noise - 1;
             else
-                keyboard
+                
                 instantaneous_error = 1/sqrt(extra_channels + 1) .* ((ra_output(:, t, motif) - template(:, t)).^2 + total_extra_error(t, motif));
             end
             error(t + t_rkernel) = error(t + t_rkernel) + instantaneous_error * rkernel;

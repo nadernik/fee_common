@@ -15,103 +15,58 @@ for run = 1:10
     load temp
 end
 %%
-example_run_file = 'C:\stetner\data\figures\xmodel\reducing_variability2.mat';
+example_run_file = 'C:\stetner\data\figures\xmodel\reducing_variability5.mat';
 N = 100; % number of pitch traces to show before and after learning
 histogram_bin_edges = -10:0.5:10;
-%% (a) Song before learning
-% Overlayed traces of N renditions of the song before learning. Successful
-% (unpunished) trials in red.
-figure(801)
-clf
-clear d
-d = load(example_run_file);
-yhi = max(max(max(d.ra_output)));
-ylo = min(min(min(d.ra_output)));
-is_successful = 1:d.total_motifs <= N &  d.is_escape;
-is_punished   = 1:d.total_motifs <= N & ~d.is_escape;
-plot(squeeze(d.ra_output(1,:,is_punished)), 'Color', [.8, .8, .8])
-hold on
-plot(squeeze(d.ra_output(1,:,is_successful)), 'Color', 'r')
-xlabel('Time (ms)')
-ylabel('"Pitch"')
+load(example_run_file)
+colors.hits = 'r';
+colors.escapes = 'g';
+colors.before = 'k';
+colors.after = 'm';
 
+is_before = (1:total_motifs) <= N;
+is_after = (1:total_motifs) > total_motifs-N;
 
-%% (b) Distribution of pitches at target time
-% Values that will be punished are shaded
-figure(802)
-clf
-clear d
-d = load(example_run_file);
-counts = histc(squeeze(d.ra_output(1,d.caf_target_time1,1:N)), histogram_bin_edges);
-[x, y] = stairs(histogram_bin_edges, counts);
-plot(x, y)
-hold on 
-toohi = x >= d.caf_pitch_threshold1;
-toolo = x <= d.caf_pitch_threshold2;
-fill([x(toohi); d.caf_pitch_threshold1], [y(toohi); 0],'b')
-fill([x(toolo); d.caf_pitch_threshold2], [y(toolo); 0],'b')
-%% (c) Song after learning
-% N overlayed traces
-figure(803)
-clf
-clear d
-d = load(example_run_file);
-yhi = max(max(max(d.ra_output)));
-ylo = min(min(min(d.ra_output)));
-is_successful = 1:d.total_motifs >= d.total_motifs-N &  d.is_escape;
-is_punished   = 1:d.total_motifs >= d.total_motifs-N & ~d.is_escape;
-if sum(is_punished) > 0
-    plot(squeeze(d.ra_output(1,:,is_punished)), 'Color', [.8, .8, .8])
-end
+% pitch traces before learning
+figure
+a(1) = subplot(4,1,1);
 hold on
-plot(squeeze(d.ra_output(1,:,is_successful)), 'Color', 'r')
-xlabel('Time (ms)')
-ylabel('"Pitch"')
+plot(squeeze(ra_output(1,:,is_before & ~is_escape)), 'Color', colors.hits)
+plot(squeeze(ra_output(1,:,is_before & is_escape)), 'Color', colors.escapes)
+plot(mean(ra_output(1,:,is_before), 3), ':', 'Color', colors.before,'LineWidth', 3)
 
-%% (d) Distribution of pitches at target time after learning
-% punished values are shaded
-figure(804)
-clf
-clear d
-d = load(example_run_file);
-counts = histc(squeeze(d.ra_output(1,d.caf_target_time1,end-N:end)), histogram_bin_edges);
-[x, y] = stairs(histogram_bin_edges, counts);
-plot(x, y)
-hold on 
-toohi = x >= d.caf_pitch_threshold1;
-toolo = x <= d.caf_pitch_threshold2;
-fill([x(toohi); d.caf_pitch_threshold1], [y(toohi); 0],'b')
-fill([x(toolo); d.caf_pitch_threshold2], [y(toolo); 0],'b')
+% pitch traces after learning
+a(2) = subplot(4,1,2);
+hold on
+plot(squeeze(ra_output(1,:,is_after & ~is_escape)), 'Color', colors.hits)
+plot(squeeze(ra_output(1,:,is_after & is_escape)), 'Color', colors.escapes)
+plot(mean(ra_output(1,:,is_after), 3), ':', 'Color', colors.after,'LineWidth', 3)
 
-%% (e) Learning reduces variability
-% Variability is measured as the sample standard deviation of the
-% histograms shown in (b) and (d).
-figure(805)
-clf
-total_runs = 10;
-variability_pre = zeros(total_runs, 1);
-variability_post = zeros(total_runs, 1);
-for run = 1:total_runs
-    d = load(['C:\stetner\data\figures\xmodel\reducing_variability' int2str(run)]);
-    pre  = squeeze(d.ra_output(1, d.caf_target_time1, 1:N));
-    post = squeeze(d.ra_output(1, d.caf_target_time1, end-N:end));
-    variability_pre(run) = std(pre);
-    variability_post(run) = std(post);
-end
-scatter(zeros(1, total_runs), variability_pre)
+% show direct and indirect pathway activity, pitch up neuron only
+direct_pathway_activity = squeeze(  mean(sum(direct_msn_output(:, :, end-N+1:end), 1), 3)  );
+indirect_pathway_activity = squeeze(  mean(sum(indirect_msn_output(:, :, end-N+1:end), 1), 3)  );
+ylo = min(min(direct_pathway_activity), min(indirect_pathway_activity));
+yhi = max(max(direct_pathway_activity), max(indirect_pathway_activity));
+
+a(3) = subplot(4,1,3);
+plot(direct_pathway_activity)
+ylim([ylo yhi])
+
+a(4) = subplot(4,1,4);
+plot(indirect_pathway_activity)
+ylim([ylo yhi])
+
+linkaxes(a, 'x')
+xlim([0 motif_steps])
+
+% histograms before/after
+bin_centers = -19.5:1:19.5;
+figure
+counts = hist(squeeze(ra_output(1,caf_target_time2,is_before)),bin_centers);
+stairs(bin_centers, counts, 'Color', colors.before,'LineWidth', 3)
 hold on
-scatter(ones(1, total_runs), variability_post)
-X = [zeros(total_runs, 1), ones(total_runs, 1)];
-Y = [variability_pre, variability_post];
-line(X', Y')
-%% (f) Activity in the indirect pathway reduces variability.
-% A reduction in variability can be caused by a decrease in LMAN activity. 
-figure(806)
-clf
-d = load(example_run_file);
-direct = squeeze(sum(d.direct_msn_output(:, :, end-N:end)));
-indirect = squeeze(sum(d.indirect_msn_output(:, :, end-N:end)));
-plot(mean(direct, 2),'g')
-hold on
-plot(mean(-indirect, 2),'r')
-plot(mean(direct-indirect, 2), 'k')
+counts = hist(squeeze(ra_output(1,caf_target_time2,is_after)),bin_centers);
+stairs(bin_centers, counts, 'Color', colors.after,'LineWidth', 3)
+
+%% 
+

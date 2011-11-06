@@ -12,7 +12,8 @@ clear all
 % have independent influences on the song. The influence of the six other
 % muscles is modeled as six independent LMAN signals
 
-for extra_channels = 12
+for nrun = 1:10
+for extra_channels = 2.^(1:5) - 1
     extra_channels
     xmodel_parameters_extra_noise
     xmodel_initialize
@@ -22,13 +23,13 @@ for extra_channels = 12
     end
     extra_errors = extra_lman .^ 2;
     total_extra_error = squeeze(sum(extra_errors, 1));
-    keyboard
     xmodel_run_extra_errors
-    filename = ['c:\stetner\data\figures\xmodel\curse_of_dimensionality_' int2str(extra_channels)];
+    filename = sprintf('c:\\stetner\\data\\figures\\xmodel\\curse_of_dimensionality_%g_%g.mat', extra_channels, nrun); 
     save(filename)
-    save temp extra_channels
+    save temp extra_channels nrun
     clear all
     load temp
+end
 end
 
 %%
@@ -37,18 +38,24 @@ figure
 hold all
 datapath = 'c:\stetner\data\figures\xmodel\'; % ends in filesep
 files = dir([datapath 'curse_of_dimensionality_*.mat']);
-extra_dimensions_list = [0 1 3 6 12];
+threshold = 0;
+extra_dimensions_list = 2.^(1:5) - 1;
+for run = 1:3
 for n = 1:length(extra_dimensions_list)
-    filename = ['c:\stetner\data\figures\xmodel\curse_of_dimensionality_' int2str(extra_dimensions_list(n))];
-    d = load(filename);
-    dimensions(n) = d.extra_channels + 1;
-    legend_labels{n} = int2str(dimensions(n));
-    extra_error_mean(n) = mean(d.total_extra_error(:));
-    extra_error_var(n) = var(d.total_extra_error(:));
-    error = squeeze(d.ra_output) - d.template' * ones(1, d.total_motifs);
-    mean_squared_error(:, n) = mean(error.^2, 1);
-    plot(smooth(mean_squared_error(:,n), 20))
-    clear d
+    for run = 1:3
+        filename = ['c:\stetner\data\figures\xmodel\curse_of_dimensionality_' int2str(extra_dimensions_list(n))];
+        d = load(filename);
+        dimensions(n) = d.extra_channels + 1;
+        legend_labels{n} = int2str(dimensions(n));
+        extra_error_mean(n,run) = mean(d.total_extra_error(:));
+        extra_error_var(n,run) = var(d.total_extra_error(:));
+        error = squeeze(d.ra_output) - d.template' * ones(1, d.total_motifs);
+        mean_squared_error(:, n) = mean(error.^2, 1);
+        smoothed_error = smooth(mean_squared_error(:,n), 20);
+        plot(smoothed_error)
+        %     time_to_learn(n, run) = find(smoothed_error > threshold, 1, 'last');
+        clear d
+    end
 end
 legend(legend_labels)
 xlabel('Trials')
@@ -63,6 +70,13 @@ figure
 scatter(dimensions, extra_error_var)
 xlabel('Dimensions')
 ylabel('Variance of extra error')
+
+
+figure
+hold on
+for run = 1:3
+scatter(dimensions, time_to_learn(:, run))
+end
 
 
 %%

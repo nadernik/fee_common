@@ -66,7 +66,7 @@ set(h, 'LineWidth', 3)
 set(h, 'Color', [0 0 1])
 %% (c) Random CAF
 clear all
-load c:\stetner\data\figures\xmodel\random_caf.mat
+load c:\stetner\data\figures\xmodel\random_caf25.mat
 N = 50; % number of trials to average at the end of learning
 
 % escapes
@@ -89,7 +89,9 @@ plot(mean(random_hits, 2), 'LineWidth', 3, 'Color', [0 0 1])
 figure(4033)
 clf
 after_learning = squeeze(ra_output(1, :, end-N:end));
-plot(mean(after_learning, 2), 'LineWidth', 3, 'Color', [0 0 0])
+before_learning = squeeze(ra_output(1, :, 1:N));
+learning = mean(after_learning, 2) - mean(before_learning, 2);
+plot(learning, 'LineWidth', 3, 'Color', [0 0 0])
 hold on
 plot(mean(escapes, 2), 'LineWidth', 3, 'Color', [1 0 0])
 plot(mean(random_hits, 2), 'LineWidth', 3, 'Color', [0 0 1])
@@ -98,3 +100,22 @@ plot(squeeze(mean(ra_output, 3)))
 
 %% (d) Comparison of successes vs. failures
 figure(404)
+hold all
+all_b = zeros(50, 3);
+all_bint = zeros(50, 3, 2);
+for n = 1:50
+    load(['c:\stetner\data\figures\xmodel\random_caf' int2str(n)]);
+    random_hits = mean(squeeze(ra_output(1, :, is_random_hit)), 2);
+    escapes = mean(squeeze(ra_output(1, :, is_escape)), 2);
+    after_learning = squeeze(ra_output(1, :, end-N:end));
+    before_learning = squeeze(ra_output(1, :, 1:N));
+    learning = mean(after_learning, 2) - mean(before_learning, 2);
+    X = [escapes, random_hits, escapes.*random_hits];
+    [b, bint] = regress(learning, X);
+    all_b(n,:) = b;
+    all_bint(n,:,:) = bint;
+    errorbar(1:3, b, bint(:, 1), bint(:, 2))
+end
+
+ylabel('coef from linear regression')
+set(gca, 'XTick', 1:3, 'XTickLabels', 'escapes|hits|interaction')
