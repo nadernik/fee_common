@@ -1,20 +1,21 @@
 %% Temporal Resolution of Learning
 
 %% many different LMAN values
-dc_levels = linspace(0,15);
-randomized_order = randperm(length(dc_levels));
+% stretches = logspace(1, -1, 100);
+stretches = logspace(-1,-2,50);
+randomized_order = randperm(length(stretches));
 nrun = 0;
 for n = randomized_order
     nrun = nrun +1;
-    fprintf(1, 'Run %g of %g\n', nrun, length(dc_levels))
-    save temp n dc_levels randomized_order nrun
+    fprintf(1, 'Run %g of %g\n', nrun, length(stretches))
+    save temp n stretches randomized_order nrun
     xmodel_parameters_caf
     xmodel_initialize
     for u = 1:lman_units
-        lman_noise(u, :, :) = generate_lman_noise_set_dc(motif_steps, total_motifs, dc_levels(n));
+        lman_noise(u, :, :) = generate_lman_noise_streched_spectrum(motif_steps, total_motifs, stretches(n));
     end
     xmodel_run
-    save(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n)])
+    save(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n+100)])
     clear all
     load temp
 end
@@ -101,22 +102,31 @@ figure(405)
 clf
 hold all
 N = 200;
-nplot  = [2 7 8];
-for n = 1:8
+nplot  = [];
+for n = 1:150
     n
     d = load(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n)]);
     t_learning = (1:d.motif_steps) - d.caf_target_time2;
-    actual_learning = mean(-d.pallidal_output(1,:,end-N:end) + d.pallidal_output(2,:,end-N:end), 3);
-    actual_learning = actual_learning ./ max(actual_learning);
-    if any(n == nplot)
-        plot(actual_learning)
-    end
-    abovehalf = actual_learning > 0.5;
+    actual_learning(:,n) = mean(-d.pallidal_output(1,:,end-N:end) + d.pallidal_output(2,:,end-N:end), 3);
+%     actual_learning = actual_learning ./ max(actual_learning);
+%     if any(n == nplot)
+imagesc(squeeze(d.pallidal_output(1,:,:)))
+title(int2str(n))
+pause
+        
+%     end
+    abovehalf = actual_learning(:,n) > 0.5;
     x1 = find(abovehalf, 1, 'first');
     x2 = d.caf_target_time2 - 1 + find(~abovehalf(d.caf_target_time2:end), 1,'first');
     fwhm(n) = t_learning(x2) - t_learning(x1);
 end
+
 figure(406)
 clf
-dc_levels = [0 1 2 4 8 16 32 64];
-plot(dc_levels, fwhm, 'x', 'MarkerSize', 10)
+
+plot(fwhm, 'x', 'MarkerSize', 10)
+
+for n = 1:106
+    plot(actual_learning(:,n))
+    pause
+end
