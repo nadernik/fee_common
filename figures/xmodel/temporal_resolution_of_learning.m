@@ -1,8 +1,7 @@
 %% Temporal Resolution of Learning
 
 %% many different LMAN values
-% stretches = logspace(1, -1, 100);
-stretches = logspace(-1,-2,50);
+stretches = logspace(1, -2, 150);
 randomized_order = randperm(length(stretches));
 nrun = 0;
 for n = randomized_order
@@ -15,7 +14,7 @@ for n = randomized_order
         lman_noise(u, :, :) = generate_lman_noise_streched_spectrum(motif_steps, total_motifs, stretches(n));
     end
     xmodel_run
-    save(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n+100)])
+    save(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n)])
     clear all
     load temp
 end
@@ -102,31 +101,44 @@ figure(405)
 clf
 hold all
 N = 200;
-nplot  = [];
-for n = 1:150
+DEBUG_FLAG = 0;
+total_files = 150;
+width_lman = nan(total_files,1);
+width_learning = nan(total_files, 1);
+maxlag = 50;
+for n = 1:total_files
     n
-    d = load(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n)]);
-    t_learning = (1:d.motif_steps) - d.caf_target_time2;
-    actual_learning(:,n) = mean(-d.pallidal_output(1,:,end-N:end) + d.pallidal_output(2,:,end-N:end), 3);
-%     actual_learning = actual_learning ./ max(actual_learning);
-%     if any(n == nplot)
-imagesc(squeeze(d.pallidal_output(1,:,:)))
-title(int2str(n))
-pause
+    filename = ['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n) '.mat'];
+    if exist(filename, 'file')
+        d = load(filename);
+        bias = zeros(d.motif_steps, d.total_motifs);
+        for motif = 1:d.total_motifs
+            bias(:, motif) = d.weights_on_ra_from_lman*d.weights_on_lman_from_dlm*d.weights_on_dlm_from_pallidus*d.pallidal_output(:,:,motif);
+        end
+        keyboard
+        [c, lags] = autocorrelation_by_columns(squeeze(d.lman_noise(1,:,:)), maxlag);
+        acorr_lman = mean(c, 2);
+        [c, lags] = autocorrelation_by_columns(bias(:,end-N:end), maxlag);
+        acorr_learning = mean(c, 2);
+        width_lman(n) = fwhm(acorr_lman);
+        width_learning(n) = fwhm(acorr_learning);
         
-%     end
-    abovehalf = actual_learning(:,n) > 0.5;
-    x1 = find(abovehalf, 1, 'first');
-    x2 = d.caf_target_time2 - 1 + find(~abovehalf(d.caf_target_time2:end), 1,'first');
-    fwhm(n) = t_learning(x2) - t_learning(x1);
+        if DEBUG_FLAG
+            plot(acorr_lman)
+            hold all
+            plot(acorr_learning)
+            plot(mean(bias,2))
+            legend({'lman', 'learning', 'bias'})
+            hold off
+        end
+    end
 end
 
 figure(406)
 clf
+scatter(width_lman, width_learning, 'x', 'MarkerSize', 10)
 
-plot(fwhm, 'x', 'MarkerSize', 10)
-
-for n = 1:106
-    plot(actual_learning(:,n))
-    pause
-end
+% for n = 1:106
+%     plot(actual_learning(:,n))
+%     pause
+% end

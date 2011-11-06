@@ -22,7 +22,7 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 5e-8; % learning rate in HVC->X synapse
+msn_learning_rate = 1e-8; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 % Other
@@ -44,5 +44,5 @@ caf_target_time2 = 100;
 caf_pitch_threshold1 = nan; % hits if above this
 caf_pitch_threshold2 = 2; % hits if below this
 caf_random_hit_probability = 0;
-caf_error_value = 800;
-caf_noise_duration = 20; % time steps
+caf_error_value = 8000;
+caf_noise_duration = 2; % time steps
