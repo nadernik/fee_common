@@ -9,24 +9,24 @@ P.tlman = 0.05; % seconds, timescale of fluctuations in lman
 P.motifs = 1500;%5000; % number of motifs in simulation
 
 % Size of the network
-P.hvcunits = 6; % number of units in hvc
+P.hvcunits = 20; % number of units in hvc
 P.raunits = 1;
 P.lmanunits = P.raunits*2; % number of units in lman
-P.xunits = 100;%P.hvcunits * P.lmanunits; % number of units in x
+P.xunits = 75;%P.hvcunits * P.lmanunits; % number of units in x
 % Number of units in X is forced to be hvcunits*lmanunits because of the
 % wiring pattern in X. Each unit in X receives input from a single HVC unit
 % and a single LMAN unit. There is one X unit for each pair of inputs.
 
 % Learning rates and other fudge factors
-P.xrate = .1; % learning rate in HVC->X synapse
+P.xrate = .001; % learning rate in HVC->X synapse
 P.rarate = 0; % learning rate in HVC->RA synapse
 P.rperate = 0.05; % learning rate of state value function V(s)
 P.discountrate = 0; % for reward prediction error. 0 means no history.
 P.inhibition = 200; % MSN global inhibition strength
-P.noiseamp = 1; % amplitude of background LMAN activity
 P.syndec = 0.001; % Strength of heterosynaptic competition. 0 turns off competition
 P.Wmax = 0.03; % Threshold for heterosynaptic competition
 P.thresh = 0.01; % spiking threshold for X neurons
+P.lman_offset = 5;
 
 % P = parseargs(P, varargin{:});
 
@@ -38,8 +38,9 @@ maxsteps = motifsteps * P.motifs; % total number of time steps to simulate
 
 % The template, aka the sequence we are trying to learn. 
 P.template = zeros(P.raunits, motifsteps);
-tburst = (P.hvcunits-1)*hvcsteps + (1:hvcsteps); % last burst in motif
-P.template(:,tburst) = 1;
+h = 15;% 15th burst in motif
+tburst = (h-1)*hvcsteps + (1:hvcsteps); 
+P.template(:,tburst) = 10;
 
 
 % Make HVC neurons fire in a chain
@@ -56,11 +57,8 @@ end
 L = zeros(P.lmanunits, motifsteps + 1, P.motifs);
 randomness = zeros(P.lmanunits, motifsteps, P.motifs); 
 for u = 1:P.lmanunits
-    for motif = 1:P.motifs
-        randomness(u, :, motif) = P.noiseamp * smoothnoise(motifsteps, P.tlman / P.dt);
-    end
+    randomness(u,:,:) = generate_lman_noise(motifsteps, P.motifs);
 end
-randomness = max(randomness, 0);
 L(:, 1, :) = randomness(:, 1, :);
 
 % Initialize empty matrices for activity in other neurons
@@ -111,7 +109,7 @@ for motif = 1:P.motifs
         % move impulse template from 6th time step to 1st
         P.template = zeros(P.raunits, motifsteps);
         tburst = 1:hvcsteps; % last burst in motif
-        P.template(:,tburst) = 1;
+        P.template(:,tburst) = 10;
         disp('template changed!')
     end
 
@@ -122,7 +120,7 @@ for motif = 1:P.motifs
 
         % LMAN activity is the sum of intrinsic randomness and input from X.
         L(:, t + 1, motif) = randomness(:, t, motif) + W_LX1 * X1(:, t, motif);
-        L(:, t + 1, motif) = max(L(:, t + 1, motif), 0);
+        L(:, t + 1, motif) = max(L(:, t + 1, motif) + P.lman_offset, 0);
         % Note that this LMAN input is used in NEXT time step
 
         % RA activity is the sum of inputs from HVC and LMAN
@@ -130,11 +128,11 @@ for motif = 1:P.motifs
 
         % Calculate reward prediction error
         error  = RA(:, t, motif) - P.template(:, t);
-        reward(t, motif) = 1 - mean(error.^2, 1); % averaged across all neurons
-        rpe(t, motif) = reward(t, motif) - V(t);
+        reward = 1 - mean(error.^2, 1); % averaged across all neurons
+        rpe = reward - V(t);
 
         % Update expected state value
-        V(t) = V(t) + P.rperate * rpe(t,motif);
+        V(t) = V(t) + P.rperate * rpe;
         if motif > 100
             % Update eligibility trace
             % Eligibility trace decays over time according to the discount rate and
@@ -151,7 +149,7 @@ for motif = 1:P.motifs
 
         % Update synaptic weights onto medium spiny neurons based on reward and
         % spiking history of LMAN and HVC neurons.
-        W_X1H = W_X1H + etrace1 .* rpe(t, motif) .* I1 .* P.xrate; % direct pathway
+        W_X1H = W_X1H + etrace1 .* rpe .* I1 .* P.xrate; % direct pathway
 
         % Heterosynaptic competition: If all weights onto a given X neuron
         % exceed a limit (Wmax), then all weights onto that neuron are
@@ -188,23 +186,23 @@ for nX = 1:P.xunits
     end
 
     area(mean_activity_per_hvc_burst')
-    pause
-%     if nL == 1
-%         [hi, nh] = max(Y(end, :));
-%         if hi/sum(Y(end, :)) > 0.8; % assign to category if more than 80% activity in this bin
-%             category(nX) = nh;
-%         else
-%             category(nX) = 0; % unassigned
-%         end
-%     else
-%         category(nX) = nan; % exclude because wrong lman neuron
-%     end
+    pause(0.1)
+    if nL == 1
+        % before switch
+        [junk, h1] = max(mean(mean_activity_per_hvc_burst(:,400:500), 2));
+        preferred_time_before(nX) = h1;
+        [junk, h2] = max(mean(mean_activity_per_hvc_burst(:,end-100:end), 2));
+        preferred_time_after(nX) = h2;
+    else
+        preferred_time_before(nX) = nan;
+        preferred_time_after(nX) = nan;
+    end
 end
 
 figure
-hist(category, 0:P.hvcunits)
-title('X neurons per hvc burst (0=unassigned)')
-xlabel('HVC burst')
-ylabel('Number of X neurons')
-
+x = .5:1:P.hvcunits+.5;
+subplot(2,1,1)
+hist(preferred_time_before,x)
+subplot(2,1,2)
+hist(preferred_time_after,x)
 end
