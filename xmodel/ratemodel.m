@@ -28,13 +28,14 @@ P.Wmax = 0.03; % Threshold for heterosynaptic competition
 P.thresh = 0.01; % spiking threshold for X neurons
 P.lman_offset = 5;
 
+kernel_length = 100;
+
 % P = parseargs(P, varargin{:});
 
 %% Initialize
 
 hvcsteps = P.thvc / P.dt; % number of time steps in each hvc burst
 motifsteps = hvcsteps * P.hvcunits; % number of time steps per motif
-maxsteps = motifsteps * P.motifs; % total number of time steps to simulate
 
 % The template, aka the sequence we are trying to learn. 
 P.template = zeros(P.raunits, motifsteps);
@@ -42,6 +43,13 @@ h = 15;% 15th burst in motif
 tburst = (h-1)*hvcsteps + (1:hvcsteps); 
 P.template(:,tburst) = 10;
 
+
+mu = kernel_length/2;
+sig = kernel_length/4;
+x = 1:kernel_length;
+kernel = 1/sqrt(2*pi*sig.^2) * exp(-(x-mu).^2 / (2*sig^2));
+ekernel_matrix = ones(P.hvcunits, 1) * kernel;
+t_kernel = x;
 
 % Make HVC neurons fire in a chain
 H = zeros(P.hvcunits, motifsteps);
@@ -98,14 +106,11 @@ W_X1X1 = -P.inhibition / P.xunits * P.lmanunits * ((ones(P.xunits, 1) * nL1') ==
 % HVC starts out completely disconnected from RA
 W_RAH = zeros(P.raunits, P.hvcunits);
 
-rpe = zeros(1,motifsteps, P.motifs);
-reward= zeros(1,motifsteps, P.motifs);
-
 %% Main loop
 for motif = 1:P.motifs
 
     % Change templates at the beginning of the 501st motif
-    if motif == 501
+    if motif == 601
         % move impulse template from 6th time step to 1st
         P.template = zeros(P.raunits, motifsteps);
         tburst = 1:hvcsteps; % last burst in motif
@@ -113,6 +118,8 @@ for motif = 1:P.motifs
         disp('template changed!')
     end
 
+    reward = zeros(1,motifsteps+kernel_length+1);
+    eligibility_trace = zeros([size(W_X1H), motifsteps+kernel_length+1]);
     for t = 1:motifsteps
 
         % X activity is determined by input from HVC
@@ -128,8 +135,9 @@ for motif = 1:P.motifs
 
         % Calculate reward prediction error
         error  = RA(:, t, motif) - P.template(:, t);
-        reward = 1 - mean(error.^2, 1); % averaged across all neurons
-        rpe = reward - V(t);
+        r = 1 - mean(error.^2, 1); % averaged across all neurons
+        reward(t+t_kernel) = r * kernel + reward(t+t_kernel);
+        rpe = reward(t) - V(t);
 
         % Update expected state value
         V(t) = V(t) + P.rperate * rpe;
@@ -138,9 +146,14 @@ for motif = 1:P.motifs
             % Eligibility trace decays over time according to the discount rate and
             % receives an impulse when both the HVC and LMAN neuron . Eligibility
             % trace is specific to a single HVC->X synapse
-            etrace1 = (((W_X1L * L(:, t, motif)) * ones(1, P.hvcunits)) > 0) ...
-                .*    (W_X1H .* (ones(P.xunits, 1) * H(:, t)')) ...
-                + P.discountrate * etrace1;
+            ee = (((W_X1L * L(:, t, motif)) * ones(1, P.hvcunits)) > 0) ...
+                .*    (W_X1H .* (ones(P.xunits, 1) * H(:, t)'));
+            for m = 1:P.xunits % for each MSN
+                % eligibility trace is hvc input times lman input convolved
+                % with kernel
+                eligibility_trace(m,:, t+t_kernel) =  ee(m,:)'*ones(1,kernel_length) .* ekernel_matrix + ...
+                    squeeze(eligibility_trace(m,:, t+t_kernel));
+            end
         end
 
         % Global inhibition supresses learning in MSNs.
@@ -189,7 +202,7 @@ for nX = 1:P.xunits
     pause(0.1)
     if nL == 1
         % before switch
-        [junk, h1] = max(mean(mean_activity_per_hvc_burst(:,400:500), 2));
+        [junk, h1] = max(mean(mean_activity_per_hvc_burst(:,500:600), 2));
         preferred_time_before(nX) = h1;
         [junk, h2] = max(mean(mean_activity_per_hvc_burst(:,end-100:end), 2));
         preferred_time_after(nX) = h2;
@@ -205,4 +218,8 @@ subplot(2,1,1)
 hist(preferred_time_before,x)
 subplot(2,1,2)
 hist(preferred_time_after,x)
+
+filename = sprintf('c:\\stetner\\data\\xmodel\\ratemodel%.f.m', now);
+save(filename)
+
 end
