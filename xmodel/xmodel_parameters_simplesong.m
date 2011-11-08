@@ -36,7 +36,7 @@ std_etrace = 50; % Eligibility trace
 std_rkernel = 50; % Reward
 
 % The template, aka the sequence we are trying to learn.
-template = 5*sin(linspace(0,2*pi, motif_steps))+10;
+template = 10*sin(linspace(0,2*pi, motif_steps))+10;
 
 % conditional auditory feedback
 caf_target_time1 = 5; % time steps

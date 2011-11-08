@@ -34,12 +34,14 @@ for n = 1:total_files
             hold off
         end
     else
-        fprintf('File number %03.g of %03.g -- skipping (file does not exist)\n',n,total_files)
+        fprintf('File number %03.f of %03.f -- skipping (file does not exist)\n',n,total_files)
     end
 end
 
 figure(406)
 clf
-plot(width_lman, width_learning, 'x', 'MarkerSize', 10)
+plot(width_lman, width_learning, '.k', 'MarkerSize', 15)
 hold on
-plot(width_lman, width_reward, '--r')
+plot([0 400], [mode(width_reward)*ones(2,1)], '--r', 'LineWidth', 2)
+xlabel('FWHM of LMAN autocorrelation (ms)')
+ylabel('FWHM of learning (ms)')

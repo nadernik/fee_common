@@ -24,16 +24,20 @@ figure
 imagesc(bias)
 
 figure
+subplot(2,1,1)
+hold all
+plot(4*(bias(:,end)-10)/ymax, 'k', 'LineWidth', 3)
+plot(4*(template-10)/ymax, 'r:', 'LineWidth', 3)
+xlim([0,motif_steps])
+
+subplot(2,1,2)
 hold all
 ymax = globalmax(msn_output(:,:,end));
-plot(4*(bias(:,end)-10)/ymax, 'k')
-plot(4*(template-10)/ymax, 'r:')
 offset=1.5;
 for h = 5:10:hvc_units
     p = msn_output(h,:,end) / ymax;
     n = -msn_output(h+hvc_units,:,end)/ymax;
-    plot(p - offset, 'k')
-    %plot(n - offset, 'r')
-    %plot(p+n - offset, 'k')
+    plot(p - offset, 'k', 'LineWidth', 3)
     offset = offset +1.5;
 end
+xlim([0,motif_steps])
