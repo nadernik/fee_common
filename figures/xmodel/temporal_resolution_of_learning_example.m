@@ -17,10 +17,10 @@ maxlag = 100;
 [c, lags] = autocorrelation_by_columns(squeeze(d.lman_noise(1,:,:)), maxlag);
 lman_autocorrelation = mean(c, 2);
 
-t_learning = (1:d.motif_steps) - d.caf_target_time2;
-plot(t_learning,actual_learning,':m', 'LineWidth', 3)
 t_hvc = -4:4;
-plot(t_hvc,hvc_burst,'y', 'LineWidth', 3)
-plot(lags,mean(lman_autocorrelation,2),'g', 'LineWidth', 3)
+plot(t_hvc,hvc_burst, 'LineWidth', 3, 'Color', [.6 .6 0])
+plot(lags,mean(lman_autocorrelation,2), 'LineWidth', 3, 'Color', [0 .6 0])
 t_reward = -4*d.std_rkernel:4*d.std_rkernel;
-plot(t_reward, reward_kernel,'Color', [1, .65, 0], 'LineWidth', 3)
+plot(t_reward, reward_kernel,'Color', [0 0 .6], 'LineWidth', 3)
+t_learning = (1:d.motif_steps) - d.caf_target_time2;
+plot(t_learning,actual_learning,'LineWidth', 3, 'Color', [.6 0 .6])

@@ -1,0 +1,5 @@
+close all
+clear all
+xmodel_parameters_caf
+xmodel_initialize
+xmodel_run

@@ -24,15 +24,19 @@ figure
 imagesc(bias)
 
 figure
+subplot(2,1,1)
 hold all
 ymax = globalmax(msn_output(:,:,end));
-plot(4*(bias(:,end)-10)/ymax, 'k')
-plot(4*(template-10)/ymax, 'r:')
+plot((bias(:,end)), '--', 'Color', [0 0 .6], 'LineWidth', 4)
+plot((template), 'Color', [.6 0 .6], 'LineWidth', 4)
+
+subplot(2,1,2)
+hold all
 offset=1.5;
 for h = 5:10:hvc_units
     p = msn_output(h,:,end) / ymax;
     n = -msn_output(h+hvc_units,:,end)/ymax;
-    plot(p - offset, 'k')
+    plot(p - offset, 'Color', [.6 .6 0], 'LineWidth', 3)
     %plot(n - offset, 'r')
     %plot(p+n - offset, 'k')
     offset = offset +1.5;
