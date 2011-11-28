@@ -1,31 +1,55 @@
 %% Learning from successes
-% Charlesworth et al. 2011 showed that . Here we replicate that finding.
+% Charlesworth et al. 2011 showed that CAF induces learning that looks more
+% like successful trials than the opposite of unsuccessful trials. Here we
+% replicate that finding.
 
+%%
 close all
-
-%%
 clear all
-xmodel_parameters_caf;
+xmodel_parameters_learning_from_successes;
 xmodel_initialize;
-xmodel_run;
-save c:\stetner\data\figures\xmodel\caf.mat
 
 %%
-clear all
-for n = 1:50
-    n
-    xmodel_parameters_random_caf;
-    xmodel_initialize;
-    xmodel_run;
-    save(['c:\stetner\data\figures\xmodel\random_caf' int2str(n)])
-    save temp n
-    clear all
-    load temp
+clear lman_noise
+unbiased_lman_noise = zeros(lman_units, motif_steps, total_motifs*2);
+for u = 1:lman_units
+    unbiased_lman_noise(u,:,:) = generate_lman_noise(motif_steps, total_motifs*2);
+end
+song = zeros(motif_steps, total_motifs*2);
+for m = 1:total_motifs*2
+    song(:,m) = weights_on_ra_from_lman * unbiased_lman_noise(:,:,m);
 end
 
+% Normally, CAF makes 
+over1  = song(caf_target_time1, :) >= caf_pitch_threshold1;
+under1 = song(caf_target_time1, :) <  caf_pitch_threshold1;
+over2  = song(caf_target_time2, :) >= caf_pitch_threshold2;
+under2 = song(caf_target_time2, :) <  caf_pitch_threshold2;
+
+is_escape    =          over2;
+is_hit       = over1  & under2;
+is_discarded = under1 & under2;
+
+selected_songs = [song(:, is_escape), song(:,is_hit), song(:,is_hit)];
+selected_noise = [unbiased_lman_noise(:,:,is_escape), unbiased_lman_noise(:,:,is_hit),unbiased_lman_noise(:,:,is_hit)];
+% randomize motif order so all escapes don't happen at the beginning
+rndx = randperm(size(selected_songs,2));
+selected_motifs = rndx(1:total_motifs);
+selected_songs = selected_songs(:, selected_motifs);
+lman_noise = unbiased_lman_noise(:,:,selected_motifs);
+
+
+
+clear is_escape is_hit is_discarded unbiased_lman_noise
+is_escape = ones(1,total_motifs);
+keyboard
+%%
+xmodel_run;
+save c:\stetner\data\figures\xmodel\learning_from_successes.mat
+
 %%
 clear all
-load c:\stetner\data\figures\xmodel\caf.mat
+load c:\stetner\data\figures\xmodel\learning_from_successes.mat
 
 % Vocal output (pitch) before learning. Successful trials in red.
 figure(4011)
