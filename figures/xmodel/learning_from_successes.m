@@ -10,136 +10,87 @@ xmodel_parameters_learning_from_successes;
 xmodel_initialize;
 
 %%
-clear lman_noise
-unbiased_lman_noise = zeros(lman_units, motif_steps, total_motifs*2);
-for u = 1:lman_units
-    unbiased_lman_noise(u,:,:) = generate_lman_noise(motif_steps, total_motifs*2);
+is_escape = rand(1,total_motifs) < 0.5;
+t1 = 21;
+t2 = 81;
+mu = 0;
+t = -20:20;
+sigma = 5;
+p = normpdf(t,mu,sigma)*50;
+esc = zeros(lman_units, motif_steps);
+hit = zeros(lman_units, motif_steps);
+esc(1,t2+t) = p; % on escape, pitch up LMAN neuron is active at t2
+hit(1,t1+t) = p; % on hit, pitch up neuron is active at t1 ...
+hit(2,t2+t) = p; % ... and pitch down neuron is active at t2
+for m = 1:total_motifs
+    if is_escape(m)
+        lman_noise(:,:,m) = esc;
+    else
+        lman_noise(:,:,m) = hit;
+    end
 end
-song = zeros(motif_steps, total_motifs*2);
-for m = 1:total_motifs*2
-    song(:,m) = weights_on_ra_from_lman * unbiased_lman_noise(:,:,m);
-end
-
-% Normally, CAF makes 
-over1  = song(caf_target_time1, :) >= caf_pitch_threshold1;
-under1 = song(caf_target_time1, :) <  caf_pitch_threshold1;
-over2  = song(caf_target_time2, :) >= caf_pitch_threshold2;
-under2 = song(caf_target_time2, :) <  caf_pitch_threshold2;
-
-is_escape    =          over2;
-is_hit       = over1  & under2;
-is_discarded = under1 & under2;
-
-selected_songs = [song(:, is_escape), song(:,is_hit), song(:,is_hit)];
-selected_noise = [unbiased_lman_noise(:,:,is_escape), unbiased_lman_noise(:,:,is_hit),unbiased_lman_noise(:,:,is_hit)];
-% randomize motif order so all escapes don't happen at the beginning
-rndx = randperm(size(selected_songs,2));
-selected_motifs = rndx(1:total_motifs);
-selected_songs = selected_songs(:, selected_motifs);
-lman_noise = unbiased_lman_noise(:,:,selected_motifs);
-
-
-
-clear is_escape is_hit is_discarded unbiased_lman_noise
-is_escape = ones(1,total_motifs);
+weights_on_lman_from_dlm = zeros(size(weights_on_lman_from_dlm));
 keyboard
+
 %%
-xmodel_run;
+xmodel_run_learning_from_sucesses;
 save c:\stetner\data\figures\xmodel\learning_from_successes.mat
 
 %%
 clear all
 load c:\stetner\data\figures\xmodel\learning_from_successes.mat
 
-% Vocal output (pitch) before learning. Successful trials in red.
-figure(4011)
-clf
-is_baseline = 1:total_motifs <= baseline_motifs;
-baseline_escapes = squeeze(ra_output(1,:, is_escape & is_baseline));
-baseline_hits  = squeeze(ra_output(1,:,~is_escape & is_baseline));
-plot(baseline_hits, 'b')
-hold on
-plot(baseline_escapes, 'r')
-xlabel('Time (ms)')
-ylabel('"Pitch"')
+%% Plots of escapes and hits
+% Overlay of all hits and escapes, with LMAN activity
+figure
 
-% Vocal output after learning
-figure(4012)
-clf
-is_after_learning = 1:total_motifs >= total_motifs - baseline_motifs;
-after_learning = squeeze(ra_output(1, :, is_after_learning));
-plot(after_learning,'k')
-xlabel('Time (ms)')
-ylabel('"Pitch"')
+% Activity in the first LMAN neuron (the "pitch up" channel) on all escapes
+subplot(3,2,1)
+plot(squeeze(lman_output(1,:,is_escape)))
+title('Escapes, pitch up channel')
 
-% histogram before
-bins = -10:2:25;
-figure(4013)
-clf
-y_escape = histc(baseline_escapes(caf_target_time2,:), bins);
-y_hit = histc(baseline_hits(caf_target_time2,:), bins);
-stairs(bins, y_escape+y_hit, 'k')
+% Activity in the first LMAN neuron (the "pitch up" channel) on all hits
+subplot(3,2,2)
+plot(squeeze(lman_output(1,:,~is_escape)))
+title('Hits, pitch up channel')
 
-% histogram after
-hold on
-y_after = histc(after_learning(caf_target_time2, :),bins);
-stairs(bins, y_after, 'g')
+% Activity in the second LMAN neuron (the "pitch down" channel) on all escapes
+subplot(3,2,3)
+plot(squeeze(lman_output(2,:,is_escape)))
+title('Escapes, pitch down channel')
 
-h = line(caf_pitch_threshold2*ones(2,1), ylim);
-set(h, 'LineWidth', 3)
-set(h, 'Color', [0 0 1])
-%% (c) Random CAF
-clear all
-load c:\stetner\data\figures\xmodel\random_caf25.mat
-N = 50; % number of trials to average at the end of learning
+% Activity in the second LMAN neuron (the "pitch down" channel) on all hits
+subplot(3,2,4)
+plot(squeeze(lman_output(2,:,~is_escape)))
+title('Hits, pitch down channel')
 
-% escapes
-figure(4031)
-clf
-escapes = squeeze(ra_output(1, :, is_escape));
-plot(escapes, 'Color', [1 .8 .8])
-hold on
-plot(mean(escapes, 2), 'LineWidth', 3, 'Color', [1 0 0])
+% RA output on all escapes
+subplot(3,2,5)
+plot(squeeze(ra_output(1,:,is_escape)))
+title('Escapes, actual song')
 
-% random hits
-figure(4032)
-clf
-random_hits = squeeze(ra_output(1, :, is_random_hit));
-plot(random_hits, 'Color', [.8 .8 1])
-hold on
-plot(mean(random_hits, 2), 'LineWidth', 3, 'Color', [0 0 1])
+% RA output on all hits
+subplot(3,2,6)
+plot(squeeze(ra_output(1,:,~is_escape)))
+title('Hits, actual song')
 
-% show average of escapes, random hits, and actual learning
-figure(4033)
-clf
-after_learning = squeeze(ra_output(1, :, end-N:end));
-before_learning = squeeze(ra_output(1, :, 1:N));
-learning = mean(after_learning, 2) - mean(before_learning, 2);
-plot(learning, 'LineWidth', 3, 'Color', [0 0 0])
-hold on
-plot(mean(escapes, 2), 'LineWidth', 3, 'Color', [1 0 0])
-plot(mean(random_hits, 2), 'LineWidth', 3, 'Color', [0 0 1])
-plot(squeeze(mean(ra_output, 3)))
+%% Bias
+
+% DLM was disconnected from LMAN during learning so that learned bias would
+% not disrupt our prearranged escapes and hits. Now we reconnect DLM to
+% LMAN to calculate bias.
+weights_on_lman_from_dlm = eye(lman_units);
+xmodel_calculate_bias
 
 
-%% (d) Comparison of successes vs. failures
-figure(404)
-hold all
-all_b = zeros(50, 3);
-all_bint = zeros(50, 3, 2);
-for n = 1:50
-    load(['c:\stetner\data\figures\xmodel\random_caf' int2str(n)]);
-    random_hits = mean(squeeze(ra_output(1, :, is_random_hit)), 2);
-    escapes = mean(squeeze(ra_output(1, :, is_escape)), 2);
-    after_learning = squeeze(ra_output(1, :, end-N:end));
-    before_learning = squeeze(ra_output(1, :, 1:N));
-    learning = mean(after_learning, 2) - mean(before_learning, 2);
-    X = [escapes, random_hits, escapes.*random_hits];
-    [b, bint] = regress(learning, X);
-    all_b(n,:) = b;
-    all_bint(n,:,:) = bint;
-    errorbar(1:3, b, bint(:, 1), bint(:, 2))
-end
+figure
+imagesc(bias')
+title('Bias')
+xlabel('Time in motif')
+ylabel('Motif number')
 
-ylabel('coef from linear regression')
-set(gca, 'XTick', 1:3, 'XTickLabels', 'escapes|hits|interaction')
+figure
+plot(bias(:,end))
+xlabel('Time in motif')
+ylabel('Bias')
+title('Bias on the last motif')
