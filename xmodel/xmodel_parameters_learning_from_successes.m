@@ -27,7 +27,7 @@ reward_learning_rate = .2; % learning rate of state value function V(s)
 
 % Other
 msn_threshold = 0;
-lman_offset = 5;
+lman_offset = 0;
 
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
@@ -40,7 +40,7 @@ template = zeros(1, motif_steps);
 
 % conditional auditory feedback
 caf_target_time1 = 20; % time steps
-caf_target_time2 = 80;
+caf_target_time2 = 120;
 caf_pitch_threshold1 = 0; % hits if above this
 caf_pitch_threshold2 = 0; % hits if below this
 caf_random_hit_probability = 0;

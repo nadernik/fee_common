@@ -13,12 +13,15 @@ xmodel_initialize;
 is_escape = rand(1,total_motifs) < 0.5;
 t1 = 80;
 t2 = 100;
-t = 0:20;
-p = sin(2*pi/40*t);
+t = -20:20;
+p1 = sin(2*pi/40*t);
+p2 = cos(2*pi/40*t);
 esc = zeros(lman_units, motif_steps);
 hit = zeros(lman_units, motif_steps);
-esc(1,t2+t) = p; % on escape, pitch up LMAN neuron is active at t2
-hit(2,t1+t) = p; % on hit and pitch down neuron is active at t1
+esc(1,t1+t) =  p1 .* (p1>0); % on escape, pitch up LMAN neuron is active at t2
+esc(2,t1+t) = -p1 .* (p1<0);
+hit(1,t1+t) =  p2 .* (p2>0); % on hit and pitch down neuron is active at t1
+hit(2,t1+t) = -p2 .* (p2<0);
 for m = 1:total_motifs
     if is_escape(m)
         lman_noise(:,:,m) = esc;
@@ -27,7 +30,7 @@ for m = 1:total_motifs
     end
 end
 weights_on_lman_from_dlm = zeros(size(weights_on_lman_from_dlm));
-
+keyboard %DEBUG
 xmodel_run_learning_from_sucesses;
 save c:\stetner\data\figures\xmodel\learning_from_successes_1.mat
 
@@ -44,7 +47,7 @@ save c:\stetner\data\figures\xmodel\learning_from_successes_2.mat
 
 %%
 clear all
-load c:\stetner\data\figures\xmodel\learning_from_successes_2.mat
+load c:\stetner\data\figures\xmodel\learning_from_successes_1.mat
 
 %% Plots of escapes and hits
 % Overlay of all hits and escapes, with LMAN activity
