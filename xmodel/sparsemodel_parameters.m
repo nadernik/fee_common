@@ -28,7 +28,6 @@ reward_learning_rate = .2; % learning rate of state value function V(s)
 max_total_synaptic_weight = 6;
 max_single_synaptic_weight = Inf;
 competition = 100 * msn_learning_rate;
-
 msn_initial_weight = 0.5;
 
 % Other
@@ -42,11 +41,11 @@ std_etrace = 1; % Eligibility trace
 std_rkernel = 1; % Reward
 
 % The template, aka the sequence we are trying to learn.
-% template = zeros(1, motif_steps);
-% template(20:40) = 7;
-% template(160:180) = 7;
-t = linspace(0, 2*pi, motif_steps);
-template = 10*sin(t);
+template = zeros(1, motif_steps);
+template(35:40) = 5;
+template(160:165) = 10;
+% t = linspace(0, 2*pi, motif_steps);
+% template = 10*sin(t);
 
 % conditional auditory feedback
 caf_target_time1 = 5; % time steps
