@@ -1,6 +1,6 @@
 % Length of simulation
 baseline_motifs = 25; % number of motifs before learning starts
-learning_motifs = 300; % number of motifs where learning happens!
+learning_motifs = 200; % number of motifs where learning happens!
 ending_motifs = 0; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
@@ -24,14 +24,15 @@ motif_steps = hvc_burst_shift * hvc_units;
 % Learning rates
 msn_learning_rate = 10e-6; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
-max_total_synaptic_weight = 40;
-max_single_synaptic_weight = 2;
 
-competition = 0;%500 * msn_learning_rate;
+max_total_synaptic_weight = 6;
+max_single_synaptic_weight = Inf;
+competition = 100 * msn_learning_rate;
+
 msn_initial_weight = 0.5;
 
 % Other
-msn_threshold = 0;
+msn_threshold = .2;
 lman_offset = 5;
 
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
@@ -42,8 +43,10 @@ std_rkernel = 1; % Reward
 
 % The template, aka the sequence we are trying to learn.
 template = zeros(1, motif_steps);
-template(50:60) = 7;
-template(150:160) = 7;
+template(20:40) = 7;
+template(160:180) = 7;
+% t = linspace(0, 2*pi, motif_steps);
+% template = 10*sin(t);
 
 % conditional auditory feedback
 caf_target_time1 = 5; % time steps
