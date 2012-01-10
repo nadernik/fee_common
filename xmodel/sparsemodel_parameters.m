@@ -22,12 +22,12 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 10e-8; % learning rate in HVC->X synapse
+msn_learning_rate = 10e-6; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 max_total_synaptic_weight = 40;
 max_single_synaptic_weight = 2;
 
-competition = 500 * msn_learning_rate;
+competition = 0;%500 * msn_learning_rate;
 msn_initial_weight = 0.5;
 
 % Other
@@ -37,8 +37,8 @@ lman_offset = 5;
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
 % deviation delay to peak of response
-std_etrace = 50; % Eligibility trace
-std_rkernel = 50; % Reward
+std_etrace = 1; % Eligibility trace
+std_rkernel = 1; % Reward
 
 % The template, aka the sequence we are trying to learn.
 template = zeros(1, motif_steps);
