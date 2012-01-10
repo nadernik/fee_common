@@ -4,7 +4,6 @@ end
 
 for motif = 1:total_motifs
     motif
-    eligibility_trace = zeros([size(weights_on_msn_from_hvc), motif_steps + extra_steps]);
     error = zeros(1, motif_steps + extra_steps);
     steps_to_noise = 0;
     for t = 1:motif_steps + extra_steps
@@ -31,17 +30,36 @@ for motif = 1:total_motifs
             % RA activity is the sum of inputs from HVC and LMAN
             ra_input = weights_on_ra_from_hvc * hvc_output(:, t) + weights_on_ra_from_lman * lman_output(:, t, motif);
             ra_output(:, t, motif) = ra_input;
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Calculate eligibility trace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
+            % Time vector for looking backwards in time. We look back the
+            % number of steps we need to cover the length of the
+            % eligibility trace. At the edge we just copy the value of the
+            % first point of the motif.
+            te = max(t-(length(ekernel):-1:1), 1);
 
-            L = weights_on_msn_from_lman * lman_output(:,t,motif); %lman input to each MSN
-            for m = 1:msn_units % for each MSN
-                % eligibility trace is hvc input times lman input convolved
-                % with kernel
-                H = weights_on_msn_from_hvc(m, :)' .* hvc_output(:,t); % hvc input at each hvc synapse on THIS msn
-                eligibility_trace(m,:, t+t_ekernel) =  L(m) * H * ones(1, length(ekernel)) .* ekernel_matrix + ...
-                    squeeze(eligibility_trace(m,:, t+t_ekernel));
+            % LMAN input onto each MSN for the timepoints in the past that
+            % we care about, seen thru LMAN-X synapses.
+            L_in = weights_on_msn_from_lman * lman_noise(:,te,motif);
+
+            for m = 1:msn_units
+                
+                L = ones(hvc_units, 1) * L_in(m,:); % past lman activity
+                
+                H = hvc_output(:,te) .* ...              % past hvc
+                    (weights_on_msn_from_hvc(m,:)' * ... % activity, seen 
+                    ones(1, length(ekernel))) ;          % thru synapses
+                
+                % This is the convolution! Past LMAN and HVC activities
+                % mutliplied by the kernel and summed. This gives the value
+                % of the convolution at the CURRENT time step, which is all
+                % we care about.
+                eligibility_trace(m,:) = sum(L .* H .* ekernel_matrix, 2);
             end
             
-            % Conditional auditory feedback
+            % Conditional auditory feedback %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             if t == caf_target_time2 
                 above_threshold1 = ra_output(1, caf_target_time1, motif) > caf_pitch_threshold1;
                 below_threshold2 = ra_output(1, caf_target_time2, motif) < caf_pitch_threshold2;
@@ -79,7 +97,7 @@ for motif = 1:total_motifs
         if motif > baseline_motifs && motif < (total_motifs - ending_motifs)
 
 
-            dw = eligibility_trace(:,:,t) .* rpe .* msn_learning_rate;
+            dw = eligibility_trace .* rpe .* msn_learning_rate;
             weights_on_msn_from_hvc = weights_on_msn_from_hvc + dw;
             % decrement weights if over limit
             over_limit = sum(weights_on_msn_from_hvc,2) > max_total_synaptic_weight;
