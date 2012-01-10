@@ -13,7 +13,7 @@ ra_units = 1;
 % There are two LMAN units. One increases pitch and one decreases pitch.
 lman_units = 2; 
 % There is also one pallidal and one DLM unit for each LMAN unit
-msn_units = 40; % Medium Spiny Neurons
+msn_units = 200; % Medium Spiny Neurons
 
 % Time
 hvc_burst_shift = 4; %number of time steps in hvc burst
@@ -42,11 +42,11 @@ std_etrace = 1; % Eligibility trace
 std_rkernel = 1; % Reward
 
 % The template, aka the sequence we are trying to learn.
-template = zeros(1, motif_steps);
-template(20:40) = 7;
-template(160:180) = 7;
-% t = linspace(0, 2*pi, motif_steps);
-% template = 10*sin(t);
+% template = zeros(1, motif_steps);
+% template(20:40) = 7;
+% template(160:180) = 7;
+t = linspace(0, 2*pi, motif_steps);
+template = 10*sin(t);
 
 % conditional auditory feedback
 caf_target_time1 = 5; % time steps
