@@ -63,10 +63,10 @@ eligibility_trace = zeros(msn_units, hvc_units);
 x = -4*std_rkernel:4*std_rkernel;
 rkernel = 1 / sqrt(2 * pi * std_rkernel .^ 2) * exp(-(x) .^ 2 ./ (2 * std_rkernel .^ 2));
 rkernel = rkernel ./ max(rkernel);
-t_rkernel = 0:length(rkernel) - 1;
 
 %%
 extra_steps = max(length(rkernel), length(ekernel)); %%%DEBUG
+instantaneous_error = zeros(1, motif_steps+extra_steps);
 expected_reward = zeros(motif_steps + extra_steps, total_motifs + 1);
 reward = zeros(motif_steps, total_motifs);
 is_escape = true(1, total_motifs);

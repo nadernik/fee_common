@@ -9,6 +9,10 @@ for motif = 1:total_motifs
     for t = 1:motif_steps + extra_steps
 
         if t <= motif_steps
+            
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Calculate neural activity %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            
             % MSN activity is determined by input from HVC. LMAN has no
             % effect.
             msn_input = weights_on_msn_from_hvc * hvc_output(:, t);
@@ -59,6 +63,7 @@ for motif = 1:total_motifs
                 eligibility_trace(m,:) = sum(L .* H .* ekernel_matrix, 2);
             end
             
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             % Conditional auditory feedback %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             if t == caf_target_time2 
                 above_threshold1 = ra_output(1, caf_target_time1, motif) > caf_pitch_threshold1;
@@ -74,18 +79,22 @@ for motif = 1:total_motifs
                 end
             end
             
-            % Instantaneous error
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            % Instantaneous error %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             if steps_to_noise > 0
-                instantaneous_error = caf_error_value;
+                instantaneous_error(t) = caf_error_value;
                 steps_to_noise = steps_to_noise - 1;
             else
-                instantaneous_error = (ra_output(:, t, motif) - template(:, t)).^2;
+                instantaneous_error(t) = (ra_output(:, t, motif) - template(:, t)).^2;
             end
-            error(t + t_rkernel) = error(t + t_rkernel) + instantaneous_error * rkernel;
+            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         end
 
-
-        reward(t, motif) = -error(t);
+        % Convolution of instantaneous errors with kernel by "looking back"
+        % in time, just like we did for eligibility trace.
+        tr = max(t-(length(rkernel):-1:1), 1);
+        error = sum(instantaneous_error(tr) .* rkernel);
+        reward(t, motif) = -error;
         rpe = reward(t, motif) - expected_reward(t, motif);
 
         %
