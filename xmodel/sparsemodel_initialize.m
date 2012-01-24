@@ -51,7 +51,7 @@ end
 %% Eligibility trace
 x = -4*std_etrace:4*std_etrace;
 ekernel = 1 / sqrt(2 * pi * std_etrace .^ 2) * exp(-(x) .^ 2 ./ (2 * std_etrace .^ 2));
-ekernel = ekernel./max(ekernel);
+ekernel = ekernel./sum(ekernel);
 ekernel_matrix = ones(hvc_units,1) * ekernel;
 
 % Initialize empty eligibility trace matrix. Each entry in this matrix is
@@ -62,7 +62,7 @@ eligibility_trace = zeros(msn_units, hvc_units);
 %% Reward kernel
 x = -4*std_rkernel:4*std_rkernel;
 rkernel = 1 / sqrt(2 * pi * std_rkernel .^ 2) * exp(-(x) .^ 2 ./ (2 * std_rkernel .^ 2));
-rkernel = rkernel ./ max(rkernel);
+rkernel = rkernel ./ sum(rkernel);
 
 %%
 extra_steps = max(length(rkernel), length(ekernel)); %%%DEBUG

@@ -1,3 +1,6 @@
+% Used on my SfN 2011 poster in the section "Hypothesis: HVCX synapses are
+% strengthened when LMAN fluctuations are correlated with reward"
+
 clear all
 close all
 
