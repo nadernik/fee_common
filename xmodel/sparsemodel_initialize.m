@@ -12,7 +12,7 @@ end
 % Initialize empty matrices for other units
 lman_input      = zeros(lman_units, motif_steps);
 lman_output     = zeros(lman_units, motif_steps, total_motifs);
-msn_output      = zeros(msn_units,  motif_steps);
+msn_output      = zeros(msn_units,  motif_steps, total_motifs);
 pallidal_output = zeros(lman_units, motif_steps, total_motifs);
 dlm_output      = zeros(lman_units, motif_steps, total_motifs);
 ra_output       = zeros(ra_units,   motif_steps, total_motifs);
