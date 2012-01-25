@@ -113,7 +113,7 @@ for motif = 1:total_motifs
             dw = over_limit*ones(1, hvc_units)*competition;
             weights_on_msn_from_hvc = weights_on_msn_from_hvc - dw;
             % Make sure these synaptic weights are not negative
-            weights_on_msn_from_hvc = max(0.1, weights_on_msn_from_hvc);
+            weights_on_msn_from_hvc = max(min_single_synaptic_weight, weights_on_msn_from_hvc);
             weights_on_msn_from_hvc = min(max_single_synaptic_weight, weights_on_msn_from_hvc);
         end
         if DEBUG_FLAG

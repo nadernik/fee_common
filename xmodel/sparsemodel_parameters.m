@@ -40,16 +40,12 @@ std_etrace = 7; % Eligibility trace
 std_rkernel = 7; % Reward
 
 % Heterosynaptic competition
-max_total_synaptic_weight = 6% + max(std_rkernel, std_etrace)/3;
+max_total_synaptic_weight = 6;
 max_single_synaptic_weight = Inf;
+min_single_synaptic_weight = 0.1;
 competition = 100 * msn_learning_rate;
 
 % The template, aka the sequence we are trying to learn.
-
-% template = zeros(1, motif_steps);
-% template(20:40) = 7;
-% template(160:180) = 7;
-
 t = linspace(0, 2*pi, motif_steps);
 template = 10*sin(t);
 

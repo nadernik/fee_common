@@ -42,6 +42,7 @@ std_rkernel = 7; % Reward
 % Heterosynaptic competition
 max_total_synaptic_weight = 6;
 max_single_synaptic_weight = Inf;
+min_single_synaptic_weight = 0.1;
 competition = 100 * msn_learning_rate;
 
 % The template, aka the sequence we are trying to learn.
