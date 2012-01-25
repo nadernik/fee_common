@@ -27,7 +27,7 @@ reward_learning_rate = 1/25; % learning rate of state value function V(s)
 
 % Other
 msn_threshold = 0;
-lman_offset = 5;
+lman_offset = 1;
 
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
