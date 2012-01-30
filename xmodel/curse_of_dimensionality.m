@@ -7,6 +7,9 @@
 close all
 clear all
 
+nsmooth = 20;
+threshold = 20;
+datapath = 'c:\stetner\data\figures\xmodel\'; % ends in filesep
 %%
 % Here we model learning to conrol one muscle while the other six muscles
 % have independent influences on the song. The influence of the six other
@@ -24,7 +27,7 @@ for extra_channels = 2.^(1:5) - 1
     extra_errors = extra_lman .^ 2;
     total_extra_error = squeeze(sum(extra_errors, 1));
     xmodel_run_extra_errors
-    filename = sprintf('c:\\stetner\\data\\figures\\xmodel\\curse_of_dimensionality_%g_%g.mat', extra_channels, nrun); 
+    filename = sprintf('%scurse_of_dimensionality_%g_%g.mat', datapath, extra_channels, nrun); 
     save(filename)
     save temp extra_channels nrun
     clear all
@@ -34,50 +37,56 @@ end
 
 %%
 clear all
-figure
-hold all
-datapath = 'c:\stetner\data\figures\xmodel\'; % ends in filesep
 files = dir([datapath 'curse_of_dimensionality_*.mat']);
-threshold = 0;
-extra_dimensions_list = 2.^(1:5) - 1;
-for run = 1:3
-for n = 1:length(extra_dimensions_list)
-    for run = 1:3
-        filename = ['c:\stetner\data\figures\xmodel\curse_of_dimensionality_' int2str(extra_dimensions_list(n))];
-        d = load(filename);
-        dimensions(n) = d.extra_channels + 1;
-        legend_labels{n} = int2str(dimensions(n));
-        extra_error_mean(n,run) = mean(d.total_extra_error(:));
-        extra_error_var(n,run) = var(d.total_extra_error(:));
-        error = squeeze(d.ra_output) - d.template' * ones(1, d.total_motifs);
-        mean_squared_error(:, n) = mean(error.^2, 1);
-        smoothed_error = smooth(mean_squared_error(:,n), 20);
-        plot(smoothed_error)
-        %     time_to_learn(n, run) = find(smoothed_error > threshold, 1, 'last');
-        clear d
-    end
+for ii = 1:length(files)
+    files(ii).name % display the name of the file we are analyzing
+    d = load([datapath files(ii).name]);
+    
+    files(ii).extra_error_mean = mean(d.total_extra_error(:));
+    files(ii).extra_error_var = var(d.total_extra_error(:));
+    
+    error = squeeze(d.ra_output) - d.template' * ones(1, d.total_motifs);
+    mse = mean(error.^2, 1);
+    temp = smooth(mse, nsmooth);
+    files(ii).smoothed_error = temp(nsmooth/2:end-nsmooth/2);
+    files(ii).time_to_learn = find(files(ii).smoothed_error < threshold, 1, 'first')+nsmooth/2;
+    
+    [ndim, nrun] = dealcell(regexp(files(ii).name, 'curse_of_dimensionality_(\d+)_(\d+)', 'tokens', 'once'));
+    files(ii).ndim = str2num(ndim);
+    files(ii).nrun = str2num(nrun);
 end
-legend(legend_labels)
+%%
+figure
+X = repmat((1:length(files(ii).smoothed_error))'+nsmooth/2,1,length(files));
+plotbyfactor(X,[files.smoothed_error],[files.ndim]+1, true)
+hold on
+plot(xlim,[threshold threshold],'--k')
 xlabel('Trials')
 ylabel('Mean Squared Error')
+title('Average over ten runs')
+
+% figure
+% scatter(dimensions, extra_error_mean)
+% xlabel('Dimensions')
+% ylabel('Average extra error')
+% 
+% figure
+% scatter(dimensions, extra_error_var)
+% xlabel('Dimensions')
+% ylabel('Variance of extra error')
+
 
 figure
-scatter(dimensions, extra_error_mean)
-xlabel('Dimensions')
-ylabel('Average extra error')
+scatter([files.ndim]+1, [files.time_to_learn], 'filled')
+set(gca, 'XScale', 'log')
+xlabel('Number of dimensions')
+ylabel('Trials to learn')
 
 figure
-scatter(dimensions, extra_error_var)
-xlabel('Dimensions')
-ylabel('Variance of extra error')
-
-
-figure
-hold on
-for run = 1:3
-scatter(dimensions, time_to_learn(:, run))
-end
-
+sembyfactor([files.time_to_learn], [files.ndim]+1)
+set(gca, 'XScale', 'log')
+xlabel('Number of dimensions')
+ylabel('Trials to learn')
 
 %%
 % plot last 20 trials
