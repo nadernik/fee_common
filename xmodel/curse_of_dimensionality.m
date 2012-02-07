@@ -8,7 +8,7 @@ close all
 clear all
 
 nsmooth = 20;
-threshold = 20;
+threshold = 3;
 datapath = 'c:\stetner\data\figures\xmodel\'; % ends in filesep
 %%
 % Here we model learning to conrol one muscle while the other six muscles
@@ -36,20 +36,20 @@ end
 end
 
 %%
-clear all
 files = dir([datapath 'curse_of_dimensionality_*.mat']);
 for ii = 1:length(files)
     files(ii).name % display the name of the file we are analyzing
-    d = load([datapath files(ii).name]);
+    load([datapath files(ii).name]);
+    xmodel_calculate_bias
     
-    files(ii).extra_error_mean = mean(d.total_extra_error(:));
-    files(ii).extra_error_var = var(d.total_extra_error(:));
+    files(ii).extra_error_mean = mean(total_extra_error(:));
+    files(ii).extra_error_var = var(total_extra_error(:));
     
-    error = squeeze(d.ra_output) - d.template' * ones(1, d.total_motifs);
+    error = bias - template' * ones(1, total_motifs);
     mse = mean(error.^2, 1);
     temp = smooth(mse, nsmooth);
     files(ii).smoothed_error = temp(nsmooth/2:end-nsmooth/2);
-    files(ii).time_to_learn = find(files(ii).smoothed_error < threshold, 1, 'first')+nsmooth/2;
+    files(ii).time_to_learn = find(files(ii).smoothed_error < threshold, 1, 'first')+nsmooth/2 - baseline_motifs;
     
     [ndim, nrun] = dealcell(regexp(files(ii).name, 'curse_of_dimensionality_(\d+)_(\d+)', 'tokens', 'once'));
     files(ii).ndim = str2num(ndim);
@@ -77,14 +77,23 @@ title('Average over ten runs')
 
 
 figure
-scatter([files.ndim]+1, [files.time_to_learn], 'filled')
-set(gca, 'XScale', 'log')
+x = [files.ndim]+1;
+y = [files.time_to_learn];
+scatter(x, y, 'filled')
+yL = ylim;
+ylim([0, yL(2)])
 xlabel('Number of dimensions')
 ylabel('Trials to learn')
 
 figure
-sembyfactor([files.time_to_learn], [files.ndim]+1)
-set(gca, 'XScale', 'log')
+stdbyfactor([files.time_to_learn], [files.ndim]+1)
+[p, S] = polyfit(x, y, 1);
+xx = linspace(1,35);
+f = polyval(p, xx);
+hold on
+plot(xx, f)
+yL = ylim;
+ylim([0, yL(2)])
 xlabel('Number of dimensions')
 ylabel('Trials to learn')
 
