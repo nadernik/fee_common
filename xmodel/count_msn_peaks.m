@@ -1,11 +1,14 @@
+function total_extrema = count_msn_peaks(msn_output)
+
 DEBUG_FLAG = 0;
 
 if DEBUG_FLAG
     figure
 end
-for m = 1:msn_units
+for m = 1:size(msn_output, 1)
     y = msn_output(m,:,end);
     sgn = sign(diff(y));
+    sgn(sgn == 0 ) = 1; % zeros are positive
     t_extrema = sgn(1:end-1) == -sgn(2:end);
     t_extrema = find(t_extrema & abs(y(2:end-1)) > 0.05)+1;
     y_extrema = y(t_extrema);
