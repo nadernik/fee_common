@@ -15,16 +15,17 @@ hitcolor = [1, 0  , 0];
 esccolor = [0, 0.7, 0];
 
 
-%% error as a function of pitch in normal singing
+%% (A) error as a function of pitch in normal singing
 rpefig.fig = figure;
 pitch = linspace(-150,150) + pitchtarget;
 pitcherror = ((pitch - pitchtarget) ./ pitchtarget .* 100).^2; % percent error squared
 
 rpefig.pitcherroraxes = subplot(5,2,1);
 plot(pitch, pitcherror);
+ylim([-50 500])
 xlabel('Pitch (Hz)')
 ylabel('Error')
-%% error as a function of pitch in conditional auditory feedback
+%% (B) error as a function of pitch in conditional auditory feedback
 caferror = pitcherror;
 caferror(pitch < cafthreshold) = caferrorvalue;
 rpefig.caferroraxes = subplot(5,2,2);
@@ -32,10 +33,11 @@ plot(pitch, pitcherror, ':')
 hold on
 plot(pitch, caferror)
 hold off
+ylim([-50 500])
 xlabel('Pitch (Hz)')
 ylabel('Error')
 title('CAF')
-%% pitch over time
+%% (C) pitch over time
 
 % generate many pitches
 fluctuations = generate_lman_noise(songlength, totalmotifs);
@@ -63,6 +65,7 @@ temp = ylim;
 ymin = temp(1);
 [nx, ny] = dsxy2figxy([caftime,caftime], [ymin,cafthreshold]);
 annotation('arrow', nx, ny+eps)
+set(gca, 'XTickLabel', [])
 ylabel('Pitch (Hz)')
 %% error over time
 
@@ -93,6 +96,7 @@ plot(errorsmooth(:,hitmotif), 'Color', hitcolor)
 xlim([0 tmax])
 hold off
 ylabel('Error')
+set(gca, 'XTickLabel', [])
 %% reward over time
 reward = -errorsmooth;
 rpefig.rewardtimeaxes = subplot(5,2,7:8);
@@ -104,6 +108,7 @@ prediction = mean(reward, 2);
 plot(prediction, 'k:')
 hold off
 ylabel('Reward')
+set(gca, 'XTickLabel', [])
 %% reward prediction error over time
 prediction = mean(reward, 2);
 rpe = reward - prediction*ones(1, totalmotifs);
