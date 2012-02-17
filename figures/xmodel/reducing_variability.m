@@ -4,12 +4,12 @@
 %%
 close all
 clear all
-for run = 1:10
+for run = 1:1
     run
     xmodel_parameters_indirect_squish
     xmodel_initialize_indirect
     xmodel_run_indirect
-    save(['C:\stetner\data\figures\xmodel\reducing_variability' int2str(run)])
+    save(['C:\stetner\data\figures\xmodel\reducing_variability_redo_' int2str(run)])
     save temp run
     clear all
     load temp
@@ -18,9 +18,9 @@ end
 example_run_file = 'C:\stetner\data\figures\xmodel\reducing_variability5.mat';
 N = 100; % number of pitch traces to show before and after learning
 histogram_bin_edges = -10:0.5:10;
-load(example_run_file)
-colors.hits = 'r';
-colors.escapes = 'g';
+% load(example_run_file)
+colors.hits = [1 .8 .8]; % light red
+colors.escapes = [.8 .8 .8]; % light gray
 colors.before = 'k';
 colors.after = 'm';
 
@@ -33,7 +33,7 @@ a(1) = subplot(4,1,1);
 hold on
 plot(squeeze(ra_output(1,:,is_before & ~is_escape)), 'Color', colors.hits)
 plot(squeeze(ra_output(1,:,is_before & is_escape)), 'Color', colors.escapes)
-plot(mean(ra_output(1,:,is_before), 3), ':', 'Color', colors.before,'LineWidth', 3)
+plot(mean(ra_output(1,:,is_before & is_escape), 3), ':', 'Color', colors.before,'LineWidth', 3)
 
 % pitch traces after learning
 a(2) = subplot(4,1,2);
