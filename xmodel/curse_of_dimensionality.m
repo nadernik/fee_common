@@ -47,9 +47,10 @@ for ii = 1:length(files)
     
     error = bias - template' * ones(1, total_motifs);
     mse = mean(error.^2, 1);
-    temp = smooth(mse, nsmooth);
+    temp = smooth(mse(baseline_motifs+1:end), nsmooth);
     files(ii).smoothed_error = temp(nsmooth/2:end-nsmooth/2);
-    files(ii).time_to_learn = find(files(ii).smoothed_error < threshold, 1, 'first')+nsmooth/2 - baseline_motifs;
+    c = polyfit((nsmooth:learning_motifs)-nsmooth, log(files(ii).smoothed_error)', 1);
+    files(ii).time_to_learn = c(1);
     
     [ndim, nrun] = dealcell(regexp(files(ii).name, 'curse_of_dimensionality_(\d+)_(\d+)', 'tokens', 'once'));
     files(ii).ndim = str2num(ndim);
@@ -86,7 +87,7 @@ xlabel('Number of dimensions')
 ylabel('Trials to learn')
 
 figure
-stdbyfactor([files.time_to_learn], [files.ndim]+1)
+sembyfactor([files.time_to_learn], [files.ndim]+1)
 [p, S] = polyfit(x, y, 1);
 xx = linspace(1,35);
 f = polyval(p, xx);
