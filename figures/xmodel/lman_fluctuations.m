@@ -129,7 +129,7 @@ xlabel('Lag (ms)')
 ylabel('Correlation (normalized)')
 % legend({b.name})
 
-%% Plot all spectrograms
+%% Plot all power spectra
 figure
 set(gca, 'ColorOrder', colors)
 hold all
@@ -186,32 +186,32 @@ text(45, -9.6, '10 ms')
 % 5% delta pitch scale bar
 fill([0 0 1 1],[-5, -10, -10, -5], 'k')
 text(3,-7,'5% \Delta pitch')
-return
+
 %% example randomly generated pitch traces
 offset     = 5;
-pitch_up   =  max(generate_lman_noise(50, total_traces) + offset,0);
-pitch_down = -max(generate_lman_noise(50, total_traces) + offset,0);
+pitch_up   =  max(generate_lman_noise_mes010(50, total_traces) + offset,0);
+pitch_down = -max(generate_lman_noise_mes010(50, total_traces) + offset,0);
 song = pitch_up + pitch_down;
 figure
 
 a(1) = subplot(1,3,1);
-plot(pitch_up,'k', 'LineWidth', 2)
+plot(pitch_up,'k', 'LineWidth', 1)
 hold on
-plot(xlim, [0 0],'k')
+plot(xlim, [0 0],'k','LineWidth', 2)
 ylim([-15, 15])
 axis off
 
 a(2) = subplot(1,3,2);
-plot(pitch_down,'k', 'LineWidth', 2)
+plot(pitch_down,'k', 'LineWidth', 1)
 hold on
-plot(xlim, [0 0], 'k')
+plot(xlim, [0 0], 'k','LineWidth', 2)
 ylim([-15, 15])
 axis off
 
 a(3) = subplot(1,3,3);
-plot(song,'k', 'LineWidth', 2)
+plot(song,'k', 'LineWidth', 1)
 hold on
-plot(xlim, [0 0],'k')
+plot(xlim, [0 0],'k','LineWidth', 2)
 ylim([-15, 15])
 axis off
 
@@ -225,22 +225,24 @@ text(5,-12,'5% \Delta pitch')
 
 %% compare power spectra of actual and simulated pitch fluctuations
 
-rows = 100;
-motifs = 1000;
+ddc = load('c:\stetner\data\pitchfluctuations\long_stacks_for_figure\mes010_yesdc.mat', 'nfft', 'fftcoefs', 'pitches');
+
+rows = size(ddc.pitches, 1);
+motifs = size(ddc.pitches, 2);
 
 e = dpss(rows, 1);
 dpss_window = e(:, 1) * ones(1, motifs);
 
-simulated_lman = generate_lman_noise(rows,motifs);
-ddc = load('c:\stetner\data\pitchfluctuations\black401_yesdc.mat', 'nfft', 'fftcoefs');
+simulated_lman = generate_lman_noise_mes010(rows,motifs);
 f2 = fft(simulated_lman .* dpss_window, ddc.nfft);
 
 figure
-plotmean95pct(abs(f2(1:ddc.nfft/2, :)), 'Color', [0 0 1], 'LineWidth', 3)
+plot(mean(abs(f2(1:ddc.nfft/2, :).^2), 2), 'Color', 'k', 'LineWidth', 3)
 hold on
-plotmean95pct(abs(ddc.fftcoefs(1:ddc.nfft/2,:)), 'Color', [0 1 0], 'LineWidth', 3)
+plot(mean(abs(ddc.fftcoefs(1:ddc.nfft/2,:).^2),2), 'Color', colors(4,:), 'LineWidth', 3)
 hold off
-
+set(gca, 'YScale', 'log')
+keyboard
 % legend('simulated', 'actual')
 title('spectra')
 xlabel('Frequency (Hz)')
