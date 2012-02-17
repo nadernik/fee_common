@@ -1,4 +1,5 @@
 for motif = 1:total_motifs
+    motif
     eligibility_trace = zeros(msn_units, motif_steps + extra_steps);
     error = zeros(1, motif_steps + extra_steps);
     steps_to_noise = 0;
@@ -8,12 +9,12 @@ for motif = 1:total_motifs
             % MSN activity is determined by input from HVC. LMAN has no
             % effect.
             msn_input = weights_on_msn_from_hvc * hvc_output(:, t);
-            msn_output(:, t, motif) = max(msn_input - msn_threshold, 0);
+            msn_output(:, t) = max(msn_input - msn_threshold, 0);
 
             
             % Each LMAN unit has a corresponding pallidal unit. The
             % pallidal unit sums the activity 
-            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, motif);
+            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t);
             pallidal_output(:, t, motif) = pallidal_input;
 
             dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, t, motif);
