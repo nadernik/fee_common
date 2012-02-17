@@ -40,6 +40,8 @@ end
 
 figure(406)
 clf
-plot(width_lman, width_learning, 'x', 'MarkerSize', 10)
+scatter(width_lman, width_learning, 'filled')
 hold on
-plot(width_lman, width_reward, '--r')
+plot(width_lman, width_reward, '-r')
+xlabel('Full Width at Half Max of LMAN Autocorrelation (ms)')
+ylabel('Full Width at Half Max of Learning (ms)')

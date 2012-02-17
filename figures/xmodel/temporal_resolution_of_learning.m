@@ -20,22 +20,21 @@ for n = randomized_order
 end
     
 %% different reward kernels
-kernel_widths = [1 5 10 15 20 30 50 100 200];
+kernel_widths = [1 5 10 15 20 30 50 100 200 300 400];
+for nrun = 1:10
 for n = 1:length(kernel_widths)
     fprintf(1, 'Run %g of %g\n', n, length(kernel_widths))
-    save temp n kernel_widths
+    save temp n kernel_widths nrun
     xmodel_parameters_caf
     std_rkernel = kernel_widths(n);
     std_etrace  = kernel_widths(n);
     xmodel_initialize
     xmodel_run
-    save(['c:\stetner\data\figures\xmodel\temporal_resolution_reward_shortnoise' int2str(n)])
+    save(['c:\stetner\data\figures\xmodel\temporal_resolution_reward_shortnoise' int2str(n) '_' int2str(nrun)])
     clear all
     load temp
 end
-    
-
-
+end
 %% (a) Limit on the precision of learning
 % Conditional auditory feedback targets a specific moment (1 ms in our
 % simulation) for pitch change. The optimal solution is to change the pitch
