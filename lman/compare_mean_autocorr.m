@@ -1,6 +1,6 @@
 clear all
 close all
-datadir = 'c:\stetner\data\pitchfluctuations';
+datadir = 'c:\stetner\data\pitchfluctuations\long_stacks_for_figure';
 datafiles = dir([datadir filesep '*_yesdc.mat']);
 figure
 axes('FontSize', 16)
