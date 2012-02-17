@@ -114,10 +114,7 @@ for motif = 1:total_motifs
 
             dw = eligibility_trace .* rpe .* msn_learning_rate;
             weights_on_msn_from_hvc = weights_on_msn_from_hvc + dw;
-            % decrement weights if over limit
-            over_limit = sum(weights_on_msn_from_hvc,2) > max_total_synaptic_weight;
-            dw = over_limit*ones(1, hvc_units)*competition;
-            weights_on_msn_from_hvc = weights_on_msn_from_hvc - dw;
+            
             % Make sure these synaptic weights are not negative
             weights_on_msn_from_hvc = max(min_single_synaptic_weight, weights_on_msn_from_hvc);
             weights_on_msn_from_hvc = min(max_single_synaptic_weight, weights_on_msn_from_hvc);
@@ -126,4 +123,25 @@ for motif = 1:total_motifs
             wtemp(:,:,t,motif) = weights_on_msn_from_hvc; %%%DEBUG
         end
     end
+    
+    if motif == 1
+        old_weights = weights_on_msn_from_hvc;
+    end
+    
+    % At the end of each motif, do some competition between 
+    % look at the change in weights over this whole motif
+    motif_dw = weights_on_msn_from_hvc - old_weights;
+    syn = 1:hvc_units;
+%     if motif > baseline_motifs
+%         keyboard
+%     end
+    for m = 1:msn_units
+        % in each neuron, find the weight that changed the most
+        [change, most_changed_syn] =  max(motif_dw(m,:));
+        % subtract off a fraction of this change from all OTHER synapses in
+        % the neuron
+        weights_on_msn_from_hvc(m, syn ~= most_changed_syn) = ...
+        weights_on_msn_from_hvc(m, syn ~= most_changed_syn) - competition * change;
+    end
+    old_weights = weights_on_msn_from_hvc;
 end

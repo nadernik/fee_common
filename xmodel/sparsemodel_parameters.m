@@ -2,7 +2,7 @@ DEBUG_FLAG = 0;
 
 % Length of simulation
 baseline_motifs = 25; % number of motifs before learning starts
-learning_motifs = 900; % number of motifs where learning happens!
+learning_motifs = 300; % number of motifs where learning happens!
 ending_motifs = 0; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
@@ -24,26 +24,25 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 10e-6; % learning rate in HVC->X synapse
+msn_learning_rate = 1e-6; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
-msn_initial_weight = 0.5;
+msn_initial_weight = 0.01;
 
 % Other
-msn_threshold = .2;
+msn_threshold = 0;
 lman_offset = 5;
 
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
 % deviation delay to peak of response
-std_etrace = 7; % Eligibility trace
-std_rkernel = 7; % Reward
+std_etrace = 1; % Eligibility trace
+std_rkernel = 1; % Reward
 
 % Heterosynaptic competition
-max_total_synaptic_weight = 6;
 max_single_synaptic_weight = Inf;
-min_single_synaptic_weight = 0.1;
-competition = 50 * msn_learning_rate;
+min_single_synaptic_weight = 0.01;
+competition = 0.9 / hvc_units;
 
 % The template, aka the sequence we are trying to learn.
 t = linspace(0, 2*pi, motif_steps);
