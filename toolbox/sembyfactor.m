@@ -1,6 +1,8 @@
 function varargout = sembyfactor(Y, F)
 %SEMBYFACTOR Standard error of the mean calculated by factors
-%   
+%   sembyfactor(Y,F)
+%   h = sembyfactor(Y,F)
+%   [levels, sem] = sembyfactor(Y,F)
 
 levels = unique(F);
 

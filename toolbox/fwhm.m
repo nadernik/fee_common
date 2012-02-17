@@ -1,4 +1,6 @@
 function width = fwhm(x)
+%FWHM Full Width at Half Maximum
+%   width = fwhm(x)
 
 DEBUG_FLAG = 0;
 
