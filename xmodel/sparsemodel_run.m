@@ -16,12 +16,12 @@ for motif = 1:total_motifs
             % MSN activity is determined by input from HVC. LMAN has no
             % effect.
             msn_input = weights_on_msn_from_hvc * hvc_output(:, t);
-            msn_output(:, t, 1) = max(msn_input - msn_threshold, 0); %DEBUG
+            msn_output(:, t, motif) = max(msn_input - msn_threshold, 0); %DEBUG
 
             
             % Each LMAN unit has a corresponding pallidal unit. The
             % pallidal unit sums the activity 
-            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, 1); %DEBUG
+            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, motif); %DEBUG
             pallidal_output(:, t, motif) = pallidal_input;
 
             dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, t, motif);
@@ -116,32 +116,32 @@ for motif = 1:total_motifs
             weights_on_msn_from_hvc = weights_on_msn_from_hvc + dw;
             
             % Make sure these synaptic weights are not negative
-            weights_on_msn_from_hvc = max(min_single_synaptic_weight, weights_on_msn_from_hvc);
-            weights_on_msn_from_hvc = min(max_single_synaptic_weight, weights_on_msn_from_hvc);
+            weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
         end
         if DEBUG_FLAG
             wtemp(:,:,t,motif) = weights_on_msn_from_hvc; %%%DEBUG
         end
     end
     
-    if motif == 1
-        old_weights = weights_on_msn_from_hvc;
+    % At the end of each motif, do heterosynaptic competition in each 
+    % medium spiny neuron
+    
+    % Count the number of time steps that each unit was "bursting" during
+    % this motif
+    time_spent_bursting = sum(msn_output(:,:,motif) > msn_burst_activity_threshold, 2);
+    
+    % If a unit has been bursting too much, decrease all of its synaptic
+    % weights by a fixed amount
+    overly_active_units = find(time_spent_bursting > msn_burst_time_threshold);
+    
+    if length(overly_active_units) > 10
+%         keyboard
     end
     
-    % At the end of each motif, do some competition between 
-    % look at the change in weights over this whole motif
-    motif_dw = weights_on_msn_from_hvc - old_weights;
-    syn = 1:hvc_units;
-%     if motif > baseline_motifs
-%         keyboard
-%     end
-    for m = 1:msn_units
-        % in each neuron, find the weight that changed the most
-        [change, most_changed_syn] =  max(motif_dw(m,:));
-        % subtract off a fraction of this change from all OTHER synapses in
-        % the neuron
-        weights_on_msn_from_hvc(m, syn ~= most_changed_syn) = ...
-        weights_on_msn_from_hvc(m, syn ~= most_changed_syn) - competition * change;
+    for m = overly_active_units
+        weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - competition_weight_decrement;
     end
-    old_weights = weights_on_msn_from_hvc;
+    
+    % Make sure these synaptic weights are not negative
+    weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
 end

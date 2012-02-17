@@ -12,7 +12,7 @@ end
 % Initialize empty matrices for other units
 lman_input      = zeros(lman_units, motif_steps);
 lman_output     = zeros(lman_units, motif_steps, total_motifs);
-msn_output      = zeros(msn_units,  motif_steps, 1); %DEBUG
+msn_output      = zeros(msn_units,  motif_steps, total_motifs);
 pallidal_output = zeros(lman_units, motif_steps, total_motifs);
 dlm_output      = zeros(lman_units, motif_steps, total_motifs);
 ra_output       = zeros(ra_units,   motif_steps, total_motifs);
@@ -32,6 +32,7 @@ weights_on_lman_from_dlm = eye(lman_units);
 
 % Topographic LMAN-X-DLM loop
 weights_on_msn_from_hvc = msn_initial_weight*rand(msn_units, hvc_units);
+winit = weights_on_msn_from_hvc;
 weights_on_msn_from_lman = zeros(msn_units, lman_units);
 weights_on_pallidus_from_msn = zeros(lman_units, msn_units);
 m = 0;
