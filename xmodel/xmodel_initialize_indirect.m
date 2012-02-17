@@ -62,13 +62,13 @@ end
 %% Eligibility trace
 x = -4*std_etrace:4*std_etrace;
 ekernel = 1 / sqrt(2 * pi * std_etrace .^ 2) * exp(-(x) .^ 2 ./ (2 * std_etrace .^ 2));
-ekernel = ekernel./max(ekernel);
+ekernel = ekernel./sum(ekernel);
 t_ekernel = 0:length(ekernel) - 1;
 
 %% Reward kernel
 x = -4*std_rkernel:4*std_rkernel;
 rkernel = 1 / sqrt(2 * pi * std_rkernel .^ 2) * exp(-(x) .^ 2 ./ (2 * std_rkernel .^ 2));
-rkernel = rkernel ./ max(rkernel);
+rkernel = rkernel ./ sum(rkernel);
 t_rkernel = 0:length(rkernel) - 1;
 
 %%
