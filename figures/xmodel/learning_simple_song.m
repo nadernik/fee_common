@@ -1,27 +1,47 @@
-close all
-clear all
-xmodel_parameters_simplesong
-xmodel_initialize
-xmodel_run
+function learning_simple_song(do_simulations)
+datapath = 'c:\stetner\data\figures\xmodel\';
 
-for motif = 1:total_motifs
-    bias(:, motif) = weights_on_ra_from_lman*weights_on_lman_from_dlm*weights_on_dlm_from_pallidus*pallidal_output(:,:,motif);
+
+if exist('do_simulations', 'var') && do_simulations
+    disp('simulating')
+    xmodel_parameters_simplesong
+    xmodel_initialize
+    xmodel_run
+    xmodel_calculate_bias
+    filename = sprintf('%slearning_simple_song%s.mat', datapath, datestr(now, 30));
+    save(filename);
 end
 
+% load latest data file
+files = dir([datapath 'learning_simple_song*.mat']);
+filename = files(end).name
+load([datapath filename])
+arrowlen = 20;
 
+plottrials = baseline_motifs + [10, 70, learning_motifs];
+colors = linspace(0.5, 0, length(plottrials))' * ones(1,3);
 figure
-plot(bias(:,end))
 hold all
-plot(template)
+for ii = 1:length(plottrials)
+    plot(bias(:,plottrials(ii)), 'Color', colors(ii,:))
+end
+plot(template, 'Color', 'b')
 
 figure
-% e = squeeze(ra_output(1,:,:)) - template' * ones(1,total_motifs);
 e = bias - template' * ones(1,total_motifs);
 mse = mean(e.^2);
 plot(mse(baseline_motifs+1:end))
+hold on
+for ii = 1:length(plottrials) % place an arrow marking each trial that was plotted in A
+    xx = plottrials(ii) * ones(1,2);
+    yy = mse(xx) + [arrowlen 0];
+   
+    [nx, ny] = dsxy2figxy(xx- baseline_motifs, yy);
+    annotation('arrow', nx, ny, 'Color', colors(ii,:))
+end
 
 figure
-imagesc(bias)
+imagesc(bias')
 
 figure
 subplot(2,1,1)
