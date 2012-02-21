@@ -15,7 +15,7 @@ ra_units = 1;
 % There are two LMAN units. One increases pitch and one decreases pitch.
 lman_units = 2; 
 % There is also one pallidal and one DLM unit for each LMAN unit
-msn_units = 100; % Medium Spiny Neurons
+msn_units = 400; % Medium Spiny Neurons
 
 % Time
 hvc_burst_shift = 4; %number of time steps in hvc burst
@@ -24,7 +24,7 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 5e-5; % learning rate in HVC->X synapse
+msn_learning_rate = 1e-5; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 msn_initial_weight = 0.01;
@@ -42,7 +42,7 @@ std_rkernel = 1; % Reward
 % Heterosynaptic competition
 msn_burst_activity_threshold = 0.9 * 0.2;
 msn_burst_time_threshold = 4;
-competition_weight_decrement = 0.005%0.02;
+competition_decrement = 0.05;
 
 % The template, aka the sequence we are trying to learn.
 t = linspace(0, 2*pi, motif_steps);

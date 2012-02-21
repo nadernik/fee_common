@@ -16,12 +16,12 @@ for motif = 1:total_motifs
             % MSN activity is determined by input from HVC. LMAN has no
             % effect.
             msn_input = weights_on_msn_from_hvc * hvc_output(:, t);
-            msn_output(:, t, motif) = max(msn_input - msn_threshold, 0); %DEBUG
+            msn_output(:, t, 1) = max(msn_input - msn_threshold, 0); %DEBUG
 
             
             % Each LMAN unit has a corresponding pallidal unit. The
             % pallidal unit sums the activity 
-            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, motif); %DEBUG
+            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, 1); %DEBUG
             pallidal_output(:, t, motif) = pallidal_input;
 
             dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, t, motif);
@@ -128,18 +128,21 @@ for motif = 1:total_motifs
     
     % Count the number of time steps that each unit was "bursting" during
     % this motif
-    time_spent_bursting = sum(msn_output(:,:,motif) > msn_burst_activity_threshold, 2);
+    time_spent_bursting = sum(msn_output(:,:,1) > msn_burst_activity_threshold, 2);
     
     % If a unit has been bursting too much, decrease all of its synaptic
     % weights by a fixed amount
     overly_active_units = find(time_spent_bursting > msn_burst_time_threshold);
     
-    if length(overly_active_units) > 10
-%         keyboard
+    if motif == 1
+        old_weights = weights_on_msn_from_hvc;
     end
-    
-    for m = overly_active_units
-        weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - competition_weight_decrement;
+        
+    %total_dw_by_unit = sum(weights_on_msn_from_hvc - old_weights,2);
+    for ii = 1:length(overly_active_units)
+        m = overly_active_units(ii);
+        f = weights_on_msn_from_hvc(m, :) ./ sum(weights_on_msn_from_hvc(m, :));
+        weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - f * competition_decrement;
     end
     
     % Make sure these synaptic weights are not negative
