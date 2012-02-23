@@ -24,13 +24,13 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 5e-5; % learning rate in HVC->X synapse
+msn_learning_rate = 2.5e-5; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 msn_initial_weight = 0.01;
 
 % Other
-msn_threshold = 0.2;
+msn_threshold = 0;
 lman_offset = 5;
 
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
@@ -41,8 +41,8 @@ std_rkernel = 1; % Reward
 
 % Heterosynaptic competition
 msn_burst_activity_threshold = 0.9 * 0.2;
-msn_burst_time_threshold = 4;
-competition_weight_decrement = 0.005%0.02;
+msn_burst_time_threshold = 7;
+competition_weight_decrement = 0;
 
 % The template, aka the sequence we are trying to learn.
 t = linspace(0, 2*pi, motif_steps);

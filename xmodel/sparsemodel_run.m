@@ -1,5 +1,5 @@
 if (DEBUG_FLAG)
-    wtemp = zeros(msn_units, hvc_units, motif_steps + extra_steps, total_motifs); %%%DEBUG
+    w_all = zeros(msn_units, hvc_units, total_motifs);
 end
 
 for motif = 1:total_motifs
@@ -118,9 +118,6 @@ for motif = 1:total_motifs
             % Make sure these synaptic weights are not negative
             weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
         end
-        if DEBUG_FLAG
-            wtemp(:,:,t,motif) = weights_on_msn_from_hvc; %%%DEBUG
-        end
     end
     
     % At the end of each motif, do heterosynaptic competition in each 
@@ -144,4 +141,5 @@ for motif = 1:total_motifs
     
     % Make sure these synaptic weights are not negative
     weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
+    w_all(:,:,motif) = weights_on_msn_from_hvc;
 end
