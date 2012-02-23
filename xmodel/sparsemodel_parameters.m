@@ -24,10 +24,10 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 2.5e-5; % learning rate in HVC->X synapse
+msn_learning_rate = 4e-4; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
-msn_initial_weight = 0.01;
+msn_initial_weight = 0.004;
 
 % Other
 msn_threshold = 0;
@@ -46,7 +46,7 @@ competition_weight_decrement = 0;
 
 % The template, aka the sequence we are trying to learn.
 t = linspace(0, 2*pi, motif_steps);
-template = 10*sin(t);
+template = 4*sin(t);
 
 % conditional auditory feedback
 caf_target_time1 = 5; % time steps

@@ -24,7 +24,7 @@ weights_on_ra_from_hvc = zeros(ra_units, hvc_units);
 
 % There are two units in LMAN. One increases RA activity and one decreases
 % RA activity. FIXME add explanation for pitch up and pitch down channels.
-weights_on_ra_from_lman = [1, -1];
+weights_on_ra_from_lman = [1, -1] ./ sqrt(2);
 
 % One-to-one connections to relay pallidal output to LMAN through DLM
 weights_on_dlm_from_pallidus = -eye(lman_units); % inhibitory
@@ -46,8 +46,12 @@ end
 %% Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
 for u = 1:lman_units
-    lman_noise(u, :, :) = generate_lman_noise(motif_steps, total_motifs);
+    z = generate_lman_noise(motif_steps, total_motifs);
+    
+    lman_noise(u, :, :) = z / std(z(:));
 end
+
+
 
 %% Eligibility trace
 x = -4*std_etrace:4*std_etrace;
