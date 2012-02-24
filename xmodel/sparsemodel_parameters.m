@@ -15,7 +15,7 @@ ra_units = 1;
 % There are two LMAN units. One increases pitch and one decreases pitch.
 lman_units = 2; 
 % There is also one pallidal and one DLM unit for each LMAN unit
-msn_units = 100; % Medium Spiny Neurons
+msn_units = 300; % Medium Spiny Neurons
 
 % Time
 hvc_burst_shift = 4; %number of time steps in hvc burst
@@ -45,8 +45,7 @@ template = 2*sin(t);
 
 % Heterosynaptic competition
 msn_burst_activity_threshold = mean(abs(template))/msn_units/2;
-msn_burst_time_threshold = 7;
-competition_weight_decrement = 0.001;
+msn_burst_time_threshold = 201;
 
 msn_initial_weight = msn_burst_activity_threshold/hvc_units;
 
