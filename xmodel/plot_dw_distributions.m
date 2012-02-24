@@ -21,7 +21,7 @@ dw_at_peak_time = squeeze(dw_all(:,h,:));
 plot(dw_at_peak_time')
 disp('Enter to continue...')
 pause
-bins = globalmin(dw_at_peak_time):.002:globalmax(dw_at_peak_time);
+bins = globalmin(dw_at_peak_time):.0005:globalmax(dw_at_peak_time);
 dw_hist_at_peak = zeros(length(bins), total_motifs-1);
 for mo = 1:total_motifs-1
     dw_hist_at_peak(:,mo) = hist(dw_at_peak_time(m_up, mo), bins);

@@ -44,8 +44,10 @@ t = linspace(0, 2*pi, motif_steps);
 template = 2*sin(t);
 
 % Heterosynaptic competition
-msn_burst_activity_threshold = .01%mean(abs(template))/msn_units/2;
-msn_burst_time_threshold = 201;
+msn_burst_activity_threshold = .005%mean(abs(template))/msn_units/2;
+msn_burst_time_threshold = 7;
+competition_strength = 12e-3;
+competition_scale = 600;
 
 msn_initial_weight = msn_burst_activity_threshold/hvc_units;
 

@@ -129,12 +129,15 @@ for motif = 1:total_motifs
     % weights by a fixed amount
     overly_active_units = find(time_spent_bursting > msn_burst_time_threshold);
     if motif > 2
-    dw = max(weights_on_msn_from_hvc - w_all(:,:,motif - 2), 0);
+    dw = weights_on_msn_from_hvc - w_all(:,:,motif - 2);
     dw_before_comp(:,:,motif) = dw;
     end
     if ~isempty(overly_active_units)
-        weights_on_msn_from_hvc(overly_active_units, :) = ...
-        weights_on_msn_from_hvc(overly_active_units, :) - mean(dw(overly_active_units,:),2)*ones(1,hvc_units);
+        for ii = 1:length(overly_active_units)
+            m = overly_active_units(ii);
+            f = exp(-competition_scale .* weights_on_msn_from_hvc(m,:));
+            weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - f .* competition_strength;
+        end
     end
     
     % Make sure these synaptic weights are not negative
@@ -142,10 +145,16 @@ for motif = 1:total_motifs
     w_all(:,:,motif) = weights_on_msn_from_hvc;
     
     % show progress
-%     xmodel_calculate_bias
+    xmodel_calculate_bias
 %     image(bias' ./ globalmax(template) .* 64)
 %     imagesc(bias')
+subplot(2,1,1)
 imagesc(weights_on_msn_from_hvc)
     title(int2str(motif))
+    subplot(2,1,2)
+    plot(template)
+    hold all
+    plot(bias(:,motif))
+    hold off
     drawnow
 end
