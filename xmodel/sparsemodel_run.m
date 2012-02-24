@@ -101,10 +101,8 @@ for motif = 1:total_motifs
 
                 L = ones(hvc_units, 1) * L_in(m,:); % past lman activity
 
-                H(:,ndx) = hvc_output(:,te(ndx)) .* ...              % past hvc
-                    (weights_on_msn_from_hvc(m,:)' * ... % activity, seen
-                    ones(1, sum(ndx))) ;          % thru synapses
-
+                H(:,ndx) = hvc_output(:,te(ndx)); % past hvc activity
+                
                 % This is the convolution! Past LMAN and HVC activities
                 % mutliplied by the kernel and summed. This gives the value
                 % of the convolution at the CURRENT time step, which is all
@@ -130,9 +128,10 @@ for motif = 1:total_motifs
     % If a unit has been bursting too much, decrease all of its synaptic
     % weights by a fixed amount
     overly_active_units = find(time_spent_bursting > msn_burst_time_threshold);
-    
+    if motif > 2
     dw = max(weights_on_msn_from_hvc - w_all(:,:,motif - 2), 0);
     dw_before_comp(:,:,motif) = dw;
+    end
     if ~isempty(overly_active_units)
         weights_on_msn_from_hvc(overly_active_units, :) = ...
         weights_on_msn_from_hvc(overly_active_units, :) - mean(dw(overly_active_units,:),2)*ones(1,hvc_units);
@@ -143,9 +142,10 @@ for motif = 1:total_motifs
     w_all(:,:,motif) = weights_on_msn_from_hvc;
     
     % show progress
-    xmodel_calculate_bias
+%     xmodel_calculate_bias
 %     image(bias' ./ globalmax(template) .* 64)
-    imagesc(bias')
+%     imagesc(bias')
+imagesc(weights_on_msn_from_hvc)
     title(int2str(motif))
     drawnow
 end

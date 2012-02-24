@@ -24,7 +24,7 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 3e-3; % learning rate in HVC->X synapse
+msn_learning_rate = 3e-3 * .005; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 
@@ -44,7 +44,7 @@ t = linspace(0, 2*pi, motif_steps);
 template = 2*sin(t);
 
 % Heterosynaptic competition
-msn_burst_activity_threshold = mean(abs(template))/msn_units/2;
+msn_burst_activity_threshold = .01%mean(abs(template))/msn_units/2;
 msn_burst_time_threshold = 201;
 
 msn_initial_weight = msn_burst_activity_threshold/hvc_units;
