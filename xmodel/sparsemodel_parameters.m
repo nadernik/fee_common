@@ -49,6 +49,9 @@ msn_burst_time_threshold = 7;
 competition_strength = 12e-3;
 competition_scale = 600;
 
+% Inhibition
+inhib_str = 5.0;
+
 msn_initial_weight = msn_burst_activity_threshold/hvc_units;
 
 % conditional auditory feedback

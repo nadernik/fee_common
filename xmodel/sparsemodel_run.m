@@ -91,10 +91,15 @@ for motif = 1:total_motifs
             te = t-(length(ekernel):-1:1);
             ndx = te > 0 & te <= motif_steps;
 
+            lman_channels = weights_on_msn_from_lman ~= 0;
+            feedback_msn_activity = lman_channels' * msn_output(:,te(ndx),motif); % size is [lman channel] x [time]
+            inhibition = lman_channels * feedback_msn_activity + msn_output(:,te(ndx),motif); % each neuron does NOT inhibit itself
+            
             % LMAN input onto each MSN for the timepoints in the past that
             % we care about, seen thru LMAN-X synapses.
             L_in = zeros(msn_units, length(te));
-            L_in(:,ndx) = weights_on_msn_from_lman * lman_output(:,te(ndx),motif);
+            L_in(:,ndx) = weights_on_msn_from_lman * lman_output(:,te(ndx),motif) - inhib_str*inhibition;
+            L_in = max(L_in, 0); % After applying inhibition, make sure that no LMAN inputs are negative
 
             H = zeros(hvc_units, length(te));
             for m = 1:msn_units
