@@ -51,6 +51,7 @@ competition_scale = 600;
 
 % Inhibition
 inhib_str = 5.0;
+lman_rand = 5;
 
 msn_initial_weight = msn_burst_activity_threshold/hvc_units;
 

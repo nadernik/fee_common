@@ -39,7 +39,7 @@ m = 0;
 msns_per_lman = floor(msn_units / lman_units);
 for ell = 1:lman_units
     m = (1:(msns_per_lman)) + msns_per_lman*(ell-1);
-    weights_on_msn_from_lman(m, ell) = exp(log(16)*rand(length(m),1) + log(0.25)); % random between 0.5 and 2
+    weights_on_msn_from_lman(m, ell) = 1;
     weights_on_pallidus_from_msn(ell, m) = -1; % inhibitory
 end
 

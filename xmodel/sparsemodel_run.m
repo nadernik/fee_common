@@ -6,7 +6,7 @@ end
 for motif = 1:total_motifs
     motif
 
-    weights_on_msn_from_lman = (2* rand(msn_units,lman_units)) .* (weights_on_msn_from_lman>0);
+    weights_on_msn_from_lman = exp(log(lman_rand^2)*rand(msn_units,lman_units) + log(1/lman_rand)) .* (weights_on_msn_from_lman>0);
     
     % Simulate network activity for one motif. Assume synaptic weights stay
     % constant during the motif

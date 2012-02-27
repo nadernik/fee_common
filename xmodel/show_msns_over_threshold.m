@@ -5,5 +5,6 @@ for m = 1:msn_units
     plot(above)
     hold off
     title(['msn unit ' int2str(m) ' is above threshold at ' int2str(sum(above)) ' timesteps'])
+    ylim([0 1.1])
     pause
 end
