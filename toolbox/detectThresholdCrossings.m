@@ -1,10 +1,17 @@
 function [leadingEdgeNdx, fallingEdgeNdx] = detectThresholdCrossings(sig, fThres, bAbove)
-%Returns indices of values above or below threshold.  LeadingEdge indices
-%are those that first cross the thres.  FallingEdge contains the indices of
-%the last value to be above the thres.
+%DETECTTHRESHOLDCROSSINGS Rising and falling edges of threshold crossings
+%   [t1 t2] = detectThresholdCrossings(v, thresh, bAbove)
+%       Returns leading (t1) and falling (t2) times when signal (v) is
+%       above threshold (thresh). If bAbove is false, the leading edge is
+%       when the signal falls below thresh. 
 
 leadingEdgeNdx = [];
 fallingEdgeNdx = [];
+sig = sig(:);
+if ~exist('bAbove', 'var')
+    bAbove = true;
+end
+
 if(bAbove)
     exceedsThres = find(sig>fThres);
 else

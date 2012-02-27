@@ -12,7 +12,7 @@ end
 % Initialize empty matrices for other units
 lman_input      = zeros(lman_units, motif_steps);
 lman_output     = zeros(lman_units, motif_steps, total_motifs);
-msn_output      = zeros(msn_units,  motif_steps, total_motifs);
+msn_output      = zeros(msn_units,  motif_steps, 1);
 pallidal_output = zeros(lman_units, motif_steps, total_motifs);
 dlm_output      = zeros(lman_units, motif_steps, total_motifs);
 ra_output       = zeros(ra_units,   motif_steps, total_motifs);
@@ -44,7 +44,7 @@ for ell = 1:lman_units
 end
 
 % Lateral inhibition across MSNs
-weights_on_msn_from_msn = -inhib_str*(ones(msn_units) + eye(msn_units));
+weights_on_msn_from_msn = -inhib_str*(ones(msn_units) - eye(msn_units));
 
 %% Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);

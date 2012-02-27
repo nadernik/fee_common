@@ -2,7 +2,7 @@ DEBUG_FLAG = 1;
 
 % Length of simulation
 baseline_motifs = 25; % number of motifs before learning starts
-learning_motifs = 500; % number of motifs where learning happens!
+learning_motifs = 1000; % number of motifs where learning happens!
 ending_motifs = 0; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
@@ -44,13 +44,13 @@ t = linspace(0, 2*pi, motif_steps);
 template = 2*sin(t);
 
 % Heterosynaptic competition
-msn_burst_activity_threshold = .005;%mean(abs(template))/msn_units/2;
-msn_burst_time_threshold = 7;
-competition_strength = 12e-3;
+msn_burst_activity_threshold = .005;
+msn_burst_time_threshold = 10;%motif_steps+1;
+competition_strength = 120e-3;
 competition_scale = 600;
 
 % Inhibition
-inhib_str = 5.0;
+inhib_str = 50.0;
 lman_rand = 5;
 
 msn_initial_weight = msn_burst_activity_threshold/hvc_units;

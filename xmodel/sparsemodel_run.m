@@ -6,6 +6,11 @@ end
 for motif = 1:total_motifs
     motif
 
+    if motif > baseline_motifs
+        inhib_str = 0.99 * inhib_str;
+        weights_on_msn_from_msn = -inhib_str*(ones(msn_units) - eye(msn_units));
+    end
+    
     weights_on_msn_from_lman = exp(log(lman_rand^2)*rand(msn_units,lman_units) + log(1/lman_rand)) .* (weights_on_msn_from_lman>0);
     
     % Simulate network activity for one motif. Assume synaptic weights stay
@@ -16,14 +21,14 @@ for motif = 1:total_motifs
     msn_input = weights_on_msn_from_hvc * hvc_output;
 
     % MSN output is threshold linear
-    msn_output(:, :, motif) = max(msn_input - msn_threshold, 0);
+    msn_output(:, :, 1) = max(msn_input - msn_threshold, 0);
 
     % MSNs project to pallidal units. There is one pallidal unit per
     % channel and it pools the activity from all MSNs in that channel. Real
     % pallidal neurons have high baseline firing rates. In the model,
     % pallidal units can have positive or negative activities which are
     % interpreted as fluctuations around this baseline.
-    pallidal_input = weights_on_pallidus_from_msn * msn_output(:, :, motif);
+    pallidal_input = weights_on_pallidus_from_msn * msn_output(:, :, 1);
     pallidal_output(:, :, motif) = pallidal_input;
 
     % Pallidal units project to DLM. This is just a relay station. Like the
@@ -80,7 +85,7 @@ for motif = 1:total_motifs
         % Eligibility trace
         H = hvc_output;
         L = weights_on_msn_from_lman * lman_output(:,:,motif);
-        I = weights_on_msn_from_msn * msn_output(:,:,motif);
+        I = weights_on_msn_from_msn * msn_output(:,:,1);
         I = max(I, -L); % make sure inhibition is not strong enough to make the quantity (L-I) negative
 
         for m = 1:msn_units
@@ -101,18 +106,14 @@ for motif = 1:total_motifs
 
     % Count the number of time steps that each unit was "bursting" during
     % this motif
-    time_spent_bursting = sum(msn_output(:,:,motif) > msn_burst_activity_threshold, 2);
-
-    % If a unit has been bursting too much, decrease all of its synaptic
-    % weights by a fixed amount
-    overly_active_units = find(time_spent_bursting > msn_burst_time_threshold);
-    if motif > 2
-        dw = weights_on_msn_from_hvc - w_all(:,:,motif - 2);
-        dw_before_comp(:,:,motif) = dw;
-    end
-    if ~isempty(overly_active_units)
-        for ii = 1:length(overly_active_units)
-            m = overly_active_units(ii);
+    for m = 1:msn_units
+        [t1, t2] = detectThresholdCrossings(msn_output(m,:,1), msn_burst_activity_threshold);
+        length_of_bursts = t2-t1;
+        number_of_bursts = length(t1);
+        % If this unit has more than one burst, or if any of its bursts are
+        % too long, then it is too active. We should decrease its synaptic
+        % weights.
+        if number_of_bursts > 1 || any(length_of_bursts > msn_burst_time_threshold)
             f = exp(-competition_scale .* weights_on_msn_from_hvc(m,:));
             weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - f .* competition_strength;
         end
