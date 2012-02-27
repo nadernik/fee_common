@@ -4,138 +4,108 @@ if (DEBUG_FLAG)
 end
 
 for motif = 1:total_motifs
-    error = zeros(1, motif_steps + extra_steps);
-    steps_to_noise = 0;
-    for t = 1:motif_steps + extra_steps
+    motif
+    % Simulate network activity for one motif. Assume synaptic weights stay
+    % constant during the motif
 
-        if t <= motif_steps
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Calculate neural activity %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
-            % MSN activity is determined by input from HVC. LMAN has no
-            % effect.
-            msn_input = weights_on_msn_from_hvc * hvc_output(:, t);
-            msn_output(:, t, motif) = max(msn_input - msn_threshold, 0); %DEBUG
+    % MSN activity is determined by input from HVC. LMAN has no
+    % effect.
+    msn_input = weights_on_msn_from_hvc * hvc_output;
 
-            
-            % Each LMAN unit has a corresponding pallidal unit. The
-            % pallidal unit sums the activity 
-            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, motif); %DEBUG
-            pallidal_output(:, t, motif) = pallidal_input;
+    % MSN output is threshold linear
+    msn_output(:, :, motif) = max(msn_input - msn_threshold, 0);
 
-            dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, t, motif);
-            dlm_output(:, t, motif) = dlm_input;
+    % MSNs project to pallidal units. There is one pallidal unit per
+    % channel and it pools the activity from all MSNs in that channel. Real
+    % pallidal neurons have high baseline firing rates. In the model,
+    % pallidal units can have positive or negative activities which are
+    % interpreted as fluctuations around this baseline.
+    pallidal_input = weights_on_pallidus_from_msn * msn_output(:, :, motif);
+    pallidal_output(:, :, motif) = pallidal_input;
 
-            % LMAN activity is the sum of intrinsic noise 
-            lman_input(:, t) = lman_noise(:,t,motif) + weights_on_lman_from_dlm * dlm_output(:, t, motif);
-            lman_output(:,t,motif) = max(lman_input(:, t) + lman_offset, 0);
+    % Pallidal units project to DLM. This is just a relay station. Like the
+    % pallidal units, DLM units can have activity that is positive or
+    % negative representing fluctuations around a high baseline firing
+    % rate.
+    dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, :, motif);
+    dlm_output(:, :, motif) = dlm_input;
 
-            % RA activity is the sum of inputs from HVC and LMAN
-            ra_input = weights_on_ra_from_hvc * hvc_output(:, t) + weights_on_ra_from_lman * lman_output(:, t, motif);
-            ra_output(:, t, motif) = ra_input;
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Conditional auditory feedback %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            if t == caf_target_time2 
-                above_threshold1 = ra_output(1, caf_target_time1, motif) > caf_pitch_threshold1;
-                below_threshold2 = ra_output(1, caf_target_time2, motif) < caf_pitch_threshold2;
-                random_hit = rand < caf_random_hit_probability;
-                if above_threshold1 || below_threshold2
-                    is_escape(motif) = false;
-                    steps_to_noise = caf_noise_duration;
-                elseif random_hit
-                    is_escape(motif) = false;
-                    is_random_hit(motif) = true;
-                    steps_to_noise = caf_noise_duration;
-                end
-            end
-            
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Instantaneous error %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            if steps_to_noise > 0
-                instantaneous_error(t) = caf_error_value;
-                steps_to_noise = steps_to_noise - 1;
-            else
-                instantaneous_error(t) = (ra_output(:, t, motif) - template(:, t)).^2;
-            end
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        end
-            
+    % LMAN activity is the sum of intrinsic noise and input from DLM. LMAN
+    % units have positive firing rates. They have a low baseline firing
+    % rate of lman_offset.
+    lman_input = lman_noise(:,:,motif) + weights_on_lman_from_dlm * dlm_output(:, :, motif);
+    lman_output(:,:,motif) = max(lman_input + lman_offset, 0);
 
-        % Convolution of instantaneous errors with kernel by "looking back"
-        % in time, just like we did for eligibility trace.
-        tr = t-(length(rkernel):-1:1);
-        e = zeros(size(rkernel));
-        ndx = tr > 0 & tr <= motif_steps;
-        e(ndx) = instantaneous_error(tr(ndx));
-        error = sum(e .* rkernel);
-        reward(t, motif) = -error;
-        rpe = reward(t, motif) - expected_reward(t, motif);
+    % RA activity is the sum of inputs from HVC and LMAN
+    ra_input = weights_on_ra_from_hvc * hvc_output + weights_on_ra_from_lman * lman_output(:, :, motif);
+    ra_output(:, :, motif) = ra_input;
 
-        %
-        %% Update expected state value
-        expected_reward(t, motif + 1) = expected_reward(t, motif) + reward_learning_rate * rpe;
+    % At the end of each motif, calculate error and do learning
 
-        %
-        %% Update synaptic weights only if we are in learning period
-        if motif > baseline_motifs && motif < (total_motifs - ending_motifs)
+    % Error is the square of the difference between the vocal output and the
+    % template
+    error = (ra_output(:, :, motif) - template).^2;
 
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            % Calculate eligibility trace %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-            % Time vector for looking backwards in time. We look back the
-            % number of steps we need to cover the length of the
-            % eligibility trace. At the edge we just copy the value of the
-            % first point of the motif.
-            te = t-(length(ekernel):-1:1);
-            ndx = te > 0 & te <= motif_steps;
-
-            lman_channels = weights_on_msn_from_lman ~= 0;
-            feedback_msn_activity = lman_channels' * msn_output(:,te(ndx),motif); % size is [lman channel] x [time]
-            inhibition = lman_channels * feedback_msn_activity + msn_output(:,te(ndx),motif); % each neuron does NOT inhibit itself
-            
-            % LMAN input onto each MSN for the timepoints in the past that
-            % we care about, seen thru LMAN-X synapses.
-            L_in = zeros(msn_units, length(te));
-            L_in(:,ndx) = weights_on_msn_from_lman * lman_output(:,te(ndx),motif) - inhib_str*inhibition;
-            L_in = max(L_in, 0); % After applying inhibition, make sure that no LMAN inputs are negative
-
-            H = zeros(hvc_units, length(te));
-            for m = 1:msn_units
-
-                L = ones(hvc_units, 1) * L_in(m,:); % past lman activity
-
-                H(:,ndx) = hvc_output(:,te(ndx)); % past hvc activity
-                
-                % This is the convolution! Past LMAN and HVC activities
-                % mutliplied by the kernel and summed. This gives the value
-                % of the convolution at the CURRENT time step, which is all
-                % we care about.
-                eligibility_trace(m,:) = sum(L .* H .* ekernel_matrix, 2);
-            end
-
-            dw = eligibility_trace .* rpe .* msn_learning_rate;
-            weights_on_msn_from_hvc = weights_on_msn_from_hvc + dw;
-            
-            % Make sure these synaptic weights are not negative
-            weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
-        end
+    % If . CAF can be turned off by setting the thresholds to NaN
+    above_threshold1 = ra_output(1, caf_target_time1, motif) > caf_pitch_threshold1;
+    below_threshold2 = ra_output(1, caf_target_time2, motif) < caf_pitch_threshold2;
+    random_hit = rand < caf_random_hit_probability;
+    if above_threshold1 || below_threshold2
+        is_escape(motif) = false;
+        error(t2+(1:caf_noise_duration)) = caf_error_level;
+    elseif random_hit
+        is_escape(motif) = false;
+        is_random_hit(motif) = true;
+        error(t2+(1:caf_noise_duration)) = caf_error_level;
     end
-    
-    % At the end of each motif, do heterosynaptic competition in each 
+
+    % Reward is the opposite of error and is convolved with the reward kernel
+    reward(:,motif) = conv(-error, rkernel);
+
+    % Reward prediction error is difference between actual and expected reward
+    rpe = reward(:,motif) -  expected_reward(:,motif);
+    rpe2 = repmat(permute(rpe,[3,2,1]), [msn_units, hvc_units, 1]);
+
+    % Update expected reward
+    if motif < total_motifs
+        expected_reward(:,motif+1) = expected_reward(:,motif) + reward_learning_rate * rpe;
+    end
+
+    % If we are in the learning period, update synaptic weights
+    if motif > baseline_motifs && motif < (total_motifs - ending_motifs)
+
+        % Eligibility trace
+        H = hvc_output;
+        L = weights_on_msn_from_lman * lman_output(:,:,motif);
+        I = weights_on_msn_from_msn * msn_output(:,:,motif);
+        I = max(I, -L); % make sure inhibition is not strong enough to make the quantity (L-I) negative
+
+        for m = 1:msn_units
+            eligibility_trace(m,:,:) = conv2(ones(hvc_units, 1) * (L(m,:)+I(m,:)) .* H, ekernel);
+        end
+
+
+        dw = sum(eligibility_trace .* rpe2 .* msn_learning_rate, 3);
+        weights_on_msn_from_hvc = weights_on_msn_from_hvc + dw;
+
+        % Make sure these synaptic weights are not negative
+        weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
+        
+    end
+
+    % At the end of each motif, do heterosynaptic competition in each
     % medium spiny neuron
-    
+
     % Count the number of time steps that each unit was "bursting" during
     % this motif
     time_spent_bursting = sum(msn_output(:,:,motif) > msn_burst_activity_threshold, 2);
-    
+
     % If a unit has been bursting too much, decrease all of its synaptic
     % weights by a fixed amount
     overly_active_units = find(time_spent_bursting > msn_burst_time_threshold);
     if motif > 2
-    dw = weights_on_msn_from_hvc - w_all(:,:,motif - 2);
-    dw_before_comp(:,:,motif) = dw;
+        dw = weights_on_msn_from_hvc - w_all(:,:,motif - 2);
+        dw_before_comp(:,:,motif) = dw;
     end
     if ~isempty(overly_active_units)
         for ii = 1:length(overly_active_units)
@@ -144,17 +114,15 @@ for motif = 1:total_motifs
             weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - f .* competition_strength;
         end
     end
-    
+
     % Make sure these synaptic weights are not negative
     weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
     w_all(:,:,motif) = weights_on_msn_from_hvc;
-    
+
     % show progress
     xmodel_calculate_bias
-%     image(bias' ./ globalmax(template) .* 64)
-%     imagesc(bias')
-subplot(2,1,1)
-imagesc(weights_on_msn_from_hvc)
+    subplot(2,1,1)
+    imagesc(weights_on_msn_from_hvc)
     title(int2str(motif))
     subplot(2,1,2)
     plot(template)

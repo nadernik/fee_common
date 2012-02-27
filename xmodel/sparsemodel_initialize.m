@@ -43,6 +43,9 @@ for ell = 1:lman_units
     weights_on_pallidus_from_msn(ell, m) = -1; % inhibitory
 end
 
+% Lateral inhibition across MSNs
+weights_on_msn_from_msn = -ones(msn_units) + eye(msn_units);
+
 %% Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
 for u = 1:lman_units
@@ -59,20 +62,20 @@ ekernel = 1 / sqrt(2 * pi * std_etrace .^ 2) * exp(-(x) .^ 2 ./ (2 * std_etrace 
 ekernel = ekernel./sum(ekernel);
 ekernel_matrix = ones(hvc_units,1) * ekernel;
 
-% Initialize empty eligibility trace matrix. Each entry in this matrix is
-% the eligibility of one HVC-X synapse. The values of this matrix change on
-% every time step.
-eligibility_trace = zeros(msn_units, hvc_units);
-
 %% Reward kernel
 x = -4*std_rkernel:4*std_rkernel;
 rkernel = 1 / sqrt(2 * pi * std_rkernel .^ 2) * exp(-(x) .^ 2 ./ (2 * std_rkernel .^ 2));
 rkernel = rkernel ./ sum(rkernel);
 
 %%
-extra_steps = max(length(rkernel), length(ekernel)); %%%DEBUG
+assert(length(rkernel) == length(ekernel))
+extra_steps = length(rkernel) - 1;
 instantaneous_error = zeros(1, motif_steps+extra_steps);
 expected_reward = zeros(motif_steps + extra_steps, total_motifs + 1);
-reward = zeros(motif_steps, total_motifs);
+reward = zeros(motif_steps + extra_steps, total_motifs);
 is_escape = true(1, total_motifs);
 is_random_hit = false(1, total_motifs);
+
+% Initialize empty eligibility trace matrix. Each entry in this matrix is
+% the eligibility of one HVC-X synapse. 
+eligibility_trace = zeros(msn_units, hvc_units, motif_steps+extra_steps);
