@@ -44,7 +44,7 @@ for ell = 1:lman_units
 end
 
 % Lateral inhibition across MSNs
-weights_on_msn_from_msn = -ones(msn_units) + eye(msn_units);
+weights_on_msn_from_msn = -inhib_str*(ones(msn_units) + eye(msn_units));
 
 %% Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
