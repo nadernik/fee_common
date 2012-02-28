@@ -47,7 +47,7 @@ template = 2*sin(t);
 msn_burst_activity_threshold = .005;
 msn_burst_time_threshold = 10;%motif_steps+1;
 competition_strength = 120e-3;
-competition_scale = 600;
+competition_scale = 177;
 
 % Inhibition
 inhib_str = 100e-4;
