@@ -1,16 +1,24 @@
 if (DEBUG_FLAG)
-    w_all = zeros(msn_units, hvc_units, total_motifs);
-    dw_before_comp = zeros(msn_units, hvc_units, total_motifs);
+    w_all    = zeros(msn_units, hvc_units, total_motifs);
+    ltp_all  = zeros(msn_units, hvc_units, total_motifs);
+    ltd_all  = zeros(msn_units, hvc_units, total_motifs);
+    comp_all = zeros(msn_units, hvc_units, total_motifs);
 end
 
 for motif = 1:total_motifs
     motif
-
-    if motif > baseline_motifs
-        inhib_str = 0.99 * inhib_str;
-        weights_on_msn_from_msn = -inhib_str*(ones(msn_units) - eye(msn_units));
-    end
     
+    % Lateral inhibition across MSNs gets 1% weaker on every motif after
+    % baseline.
+    %if motif > baseline_motifs
+        %inhib_str = 0.99 * inhib_str;
+        %weights_on_msn_from_msn = -inhib_str*(ones(msn_units) - eye(msn_units));
+    %end
+    
+    % Weights from LMAN -> MSN are randomly assigned on each motif. Weights
+    % are randomly distributed between 1/lman_rand and lman_rand with equal
+    % weight above and below 1. The topography between LMAN and MSNs is
+    % preserved.
     weights_on_msn_from_lman = exp(log(lman_rand^2)*rand(msn_units,lman_units) + log(1/lman_rand)) .* (weights_on_msn_from_lman>0);
     
     % Simulate network activity for one motif. Assume synaptic weights stay
@@ -86,16 +94,21 @@ for motif = 1:total_motifs
         H = hvc_output;
         L = weights_on_msn_from_lman * lman_output(:,:,motif);
         I = weights_on_msn_from_msn * msn_output(:,:,1);
-        I = max(I, -L); % make sure inhibition is not strong enough to make the quantity (L-I) negative
-
         for m = 1:msn_units
-            eligibility_trace(m,:,:) = conv2(ones(hvc_units, 1) * (L(m,:)+I(m,:)) .* H, ekernel);
+            eligibility_trace(m,:,:) = conv2(ones(hvc_units, 1) * L(m,:) .* H, ekernel);
+            ltd(m,:) = sum(ones(hvc_units,1) * I(m,:) .* hvc_output,2);
         end
+        f = exp(-inhibition_scale .* weights_on_msn_from_hvc);
+        ltd = f .* ltd; % Make LTD proportional to exp(-weight)
 
-
-        dw = sum(eligibility_trace .* rpe2 .* msn_learning_rate, 3);
-        weights_on_msn_from_hvc = weights_on_msn_from_hvc + dw;
-
+        ltp = sum(eligibility_trace .* rpe2 .* msn_learning_rate, 3);
+        weights_on_msn_from_hvc = weights_on_msn_from_hvc + ltp + ltd;
+        
+        if DEBUG_FLAG
+            ltp_all(:,:,motif)  = ltp;
+            ltd_all(:,:,motif)  = ltd;
+        end
+        
         % Make sure these synaptic weights are not negative
         weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
         
@@ -116,12 +129,17 @@ for motif = 1:total_motifs
         if number_of_bursts > 1 || any(length_of_bursts > msn_burst_time_threshold)
             f = exp(-competition_scale .* weights_on_msn_from_hvc(m,:));
             weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - f .* competition_strength;
+            if DEBUG_FLAG
+                comp_all(m,:,motif) = - f .* competition_strength;
+            end
         end
     end
 
     % Make sure these synaptic weights are not negative
     weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
-    w_all(:,:,motif) = weights_on_msn_from_hvc;
+    if DEBUG_FLAG
+        w_all(:,:,motif) = weights_on_msn_from_hvc;
+    end
 
     % show progress
     xmodel_calculate_bias

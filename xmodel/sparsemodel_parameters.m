@@ -1,8 +1,8 @@
-DEBUG_FLAG = 1;
+DEBUG_FLAG = 0;
 
 % Length of simulation
 baseline_motifs = 25; % number of motifs before learning starts
-learning_motifs = 1000; % number of motifs where learning happens!
+learning_motifs = 5000; % number of motifs where learning happens!
 ending_motifs = 0; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
@@ -24,7 +24,7 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 3e-3 * .005; % learning rate in HVC->X synapse
+msn_learning_rate = 6e-3 * .005; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 
@@ -50,7 +50,11 @@ competition_strength = 120e-3;
 competition_scale = 600;
 
 % Inhibition
-inhib_str = 50.0;
+inhib_str = 100e-4;
+inhibition_scale = 600;
+
+% LMAN -> MSN connections are drawn randomly on each motif. The weights are
+% distributed between 1/lman_rand and lman_rand
 lman_rand = 5;
 
 msn_initial_weight = msn_burst_activity_threshold/hvc_units;
