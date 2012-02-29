@@ -32,6 +32,10 @@ weights_on_lman_from_dlm = eye(lman_units);
 
 % Topographic LMAN-X-DLM loop
 weights_on_msn_from_hvc = msn_initial_weight*rand(msn_units, hvc_units);
+
+% weights_on_msn_from_hvc(50, 13) = 0.5; %%%DEBUG
+% weights_on_msn_from_hvc(100, 13) = 1.0; %%%DEBUG
+
 winit = weights_on_msn_from_hvc;
 weights_on_msn_from_lman = zeros(msn_units, lman_units);
 weights_on_pallidus_from_msn = zeros(lman_units, msn_units);
@@ -44,7 +48,10 @@ for ell = 1:lman_units
 end
 
 % Lateral inhibition across MSNs
-weights_on_msn_from_msn = -inhib_str*(ones(msn_units) - eye(msn_units));
+weights_on_msn_from_msn = initial_inhibition * ones(msn_units);
+% Any given MSN unit does not inhibit itself. Set the diagonal of
+% the weight matrix to zero.
+weights_on_msn_from_msn = weights_on_msn_from_msn - diag(diag(weights_on_msn_from_msn));
 
 %% Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);

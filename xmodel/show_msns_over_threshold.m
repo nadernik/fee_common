@@ -1,5 +1,5 @@
 
-show_only_msns_in_competition = true;
+show_only_msns_in_competition = false;
 
 %%
 for m = 1:msn_units
