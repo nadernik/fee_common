@@ -3,7 +3,6 @@ if (DEBUG_FLAG)
     ltp_all  = zeros(msn_units, hvc_units, total_motifs);
     ltd_all  = zeros(msn_units, hvc_units, total_motifs);
     comp_all = zeros(msn_units, hvc_units, total_motifs);
-    wi_all = zeros(1,total_motifs);
 end
 
 for motif = 1:total_motifs
@@ -99,31 +98,19 @@ for motif = 1:total_motifs
             eligibility_trace(m,:,:) = conv2(ones(hvc_units, 1) * L(m,:) .* H, ekernel);
             ltd(m,:) = sum(ones(hvc_units,1) * I(m,:) .* hvc_output,2);
         end
+        f = exp(-inhibition_scale .* weights_on_msn_from_hvc);
+        ltd = f .* ltd; % Make LTD proportional to exp(-weight)
 
         ltp = sum(eligibility_trace .* rpe2 .* msn_learning_rate, 3);
         weights_on_msn_from_hvc = weights_on_msn_from_hvc + ltp + ltd;
         
-        % Anti-Hebbian learning rule for inhibitory lateral connections
-        % between MSN units. As the covariance between a pair of MSNs
-        % increases, the connection between them becomes more inhibitory.
-        % (Foldiak 1990)
-        weights_on_msn_from_msn = weights_on_msn_from_msn - inhibition_learning_rate * cov(msn_output(:,:,1)');
-        
-        % Any given MSN unit does not inhibit itself. Set the diagonal of
-        % the weight matrix to zero.
-        weights_on_msn_from_msn = weights_on_msn_from_msn - diag(diag(weights_on_msn_from_msn));
-        
-        % Lateral connections must stay inhibitory
-        weights_on_msn_from_msn = min(weights_on_msn_from_msn, 0);
-        
         if DEBUG_FLAG
             ltp_all(:,:,motif)  = ltp;
             ltd_all(:,:,motif)  = ltd;
-            wi_all(motif) = weights_on_msn_from_msn(50,100);
         end
         
         % Make sure these synaptic weights are not negative
-        weights_on_msn_from_hvc = max(0, weights_on_msn_from_hvc);
+        weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
         
     end
 
@@ -149,7 +136,7 @@ for motif = 1:total_motifs
     end
 
     % Make sure these synaptic weights are not negative
-    weights_on_msn_from_hvc = max(0, weights_on_msn_from_hvc);
+    weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
     if DEBUG_FLAG
         w_all(:,:,motif) = weights_on_msn_from_hvc;
     end
