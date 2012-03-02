@@ -18,7 +18,7 @@ lman_units = 2;
 msn_units = 300; % Medium Spiny Neurons
 
 % Time
-hvc_burst_shift = 4; %number of time steps in hvc burst
+hvc_burst_shift = 4; % Time between starts of consecutive HVC bursts
 motif_steps = hvc_burst_shift * hvc_units; 
 % Length of motif is the length of one HVC burst times the number of HVC
 % neurons
@@ -46,12 +46,18 @@ template = 2*sin(t);
 % Heterosynaptic competition
 msn_burst_activity_threshold = .005;
 msn_burst_time_threshold = 10;%motif_steps+1;
-competition_strength = 120e-3;
-competition_scale = 177;
+competition_strength = 1e-2;
+
 
 % Inhibition
-inhib_str = 100e-4;
-inhibition_scale = 600;
+inhibition_strength = 0;%1e-2;
+
+% Synapse stability
+% Stronger synapses are more stable and less sensitive to the effects of
+% heterosynaptic competition and lateral inhibition. Stability is
+% calculated for each synapse on every motif and is equal to
+% exp(stability_factor * weight)
+stability_factor = 300;
 
 % LMAN -> MSN connections are drawn randomly on each motif. The weights are
 % distributed between 1/lman_rand and lman_rand

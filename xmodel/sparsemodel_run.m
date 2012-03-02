@@ -7,23 +7,13 @@ end
 
 for motif = 1:total_motifs
     motif
-    
-    % Lateral inhibition across MSNs gets 1% weaker on every motif after
-    % baseline.
-    %if motif > baseline_motifs
-        %inhib_str = 0.99 * inhib_str;
-        %weights_on_msn_from_msn = -inhib_str*(ones(msn_units) - eye(msn_units));
-    %end
-    
+   
     % Weights from LMAN -> MSN are randomly assigned on each motif. Weights
     % are randomly distributed between 1/lman_rand and lman_rand with equal
     % weight above and below 1. The topography between LMAN and MSNs is
     % preserved.
     weights_on_msn_from_lman = exp(log(lman_rand^2)*rand(msn_units,lman_units) + log(1/lman_rand)) .* (weights_on_msn_from_lman>0);
     
-    % Simulate network activity for one motif. Assume synaptic weights stay
-    % constant during the motif
-
     % MSN activity is determined by input from HVC. LMAN has no
     % effect.
     msn_input = weights_on_msn_from_hvc * hvc_output;
@@ -56,13 +46,15 @@ for motif = 1:total_motifs
     ra_input = weights_on_ra_from_hvc * hvc_output + weights_on_ra_from_lman * lman_output(:, :, motif);
     ra_output(:, :, motif) = ra_input;
 
-    % At the end of each motif, calculate error and do learning
+    %% At the end of each motif, calculate error and do learning
 
     % Error is the square of the difference between the vocal output and the
     % template
     error = (ra_output(:, :, motif) - template).^2;
 
-    % If . CAF can be turned off by setting the thresholds to NaN
+    % If pitch is ABOVE the threshold at time 1 or BELOW the threshold at
+    % time 2, the model receives a large error. CAF can be turned off by
+    % setting the thresholds to NaN.
     above_threshold1 = ra_output(1, caf_target_time1, motif) > caf_pitch_threshold1;
     below_threshold2 = ra_output(1, caf_target_time2, motif) < caf_pitch_threshold2;
     random_hit = rand < caf_random_hit_probability;
@@ -93,52 +85,43 @@ for motif = 1:total_motifs
         % Eligibility trace
         H = hvc_output;
         L = weights_on_msn_from_lman * lman_output(:,:,motif);
-        I = weights_on_msn_from_msn * msn_output(:,:,1);
         for m = 1:msn_units
             eligibility_trace(m,:,:) = conv2(ones(hvc_units, 1) * L(m,:) .* H, ekernel);
-            ltd(m,:) = sum(ones(hvc_units,1) * I(m,:) .* hvc_output,2);
         end
-        f = exp(-inhibition_scale .* weights_on_msn_from_hvc);
-        ltd = f .* ltd; % Make LTD proportional to exp(-weight)
+        
+        
+        % Count the number of time steps that each unit was "bursting" during
+        % this motif
+        competing_msns = false(msn_units, 1);
+        for m = 1:msn_units
+            [t1, t2] = detectThresholdCrossings(msn_output(m,:,1), msn_burst_activity_threshold);
+            length_of_bursts = t2-t1;
+            number_of_bursts = length(t1);
+            % If this unit has more than one burst, or if any of its bursts are
+            % too long, then it is too active. We should decrease its synaptic
+            % weights.
+            if number_of_bursts > 1 || any(length_of_bursts > msn_burst_time_threshold)
+                competing_msns(m) = true;
+            end
+        end
+        competition = zeros(size(weights_on_msn_from_hvc));
+        competition(competing_msns, :) = -competition_strength;
+    
+        learning = sum(eligibility_trace .* rpe2 .* msn_learning_rate, 3);
+        inhibition  = sum(weights_on_msn_from_msn * msn_output(:,:,1), 2) * ones(1,hvc_units);
+        stability = exp(stability_factor .* weights_on_msn_from_hvc);
 
-        ltp = sum(eligibility_trace .* rpe2 .* msn_learning_rate, 3);
-        weights_on_msn_from_hvc = weights_on_msn_from_hvc + ltp + ltd;
+        weights_on_msn_from_hvc = weights_on_msn_from_hvc + learning + (competition + inhibition)./stability;
         
         if DEBUG_FLAG
-            ltp_all(:,:,motif)  = ltp;
-            ltd_all(:,:,motif)  = ltd;
+            learn_all(:,:,motif)  = learning;
+            inhib_all(:,:,motif)  = inhibition  ./ stability;
+            comp_all(:,:,motif)   = competition ./ stability;
         end
         
         % Make sure these synaptic weights are not negative
-        weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
+        weights_on_msn_from_hvc = max(0, weights_on_msn_from_hvc);
         
-    end
-
-    % At the end of each motif, do heterosynaptic competition in each
-    % medium spiny neuron
-
-    % Count the number of time steps that each unit was "bursting" during
-    % this motif
-    for m = 1:msn_units
-        [t1, t2] = detectThresholdCrossings(msn_output(m,:,1), msn_burst_activity_threshold);
-        length_of_bursts = t2-t1;
-        number_of_bursts = length(t1);
-        % If this unit has more than one burst, or if any of its bursts are
-        % too long, then it is too active. We should decrease its synaptic
-        % weights.
-        if number_of_bursts > 1 || any(length_of_bursts > msn_burst_time_threshold)
-            f = exp(-competition_scale .* weights_on_msn_from_hvc(m,:));
-            weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - f .* competition_strength;
-            if DEBUG_FLAG
-                comp_all(m,:,motif) = - f .* competition_strength;
-            end
-        end
-    end
-
-    % Make sure these synaptic weights are not negative
-    weights_on_msn_from_hvc = max(winit, weights_on_msn_from_hvc);
-    if DEBUG_FLAG
-        w_all(:,:,motif) = weights_on_msn_from_hvc;
     end
 
     % show progress
