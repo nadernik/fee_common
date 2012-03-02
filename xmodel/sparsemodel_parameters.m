@@ -46,11 +46,11 @@ template = 2*sin(t);
 % Heterosynaptic competition
 msn_burst_activity_threshold = .005;
 msn_burst_time_threshold = 10;%motif_steps+1;
-competition_strength = 1e-2;
+competition_strength = 0;%1e-2;
 
 
 % Inhibition
-inhibition_strength = 0;%1e-2;
+inhibition_strength = 1e-3;
 
 % Synapse stability
 % Stronger synapses are more stable and less sensitive to the effects of

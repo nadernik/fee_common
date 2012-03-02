@@ -108,7 +108,7 @@ for motif = 1:total_motifs
         competition(competing_msns, :) = -competition_strength;
     
         learning = sum(eligibility_trace .* rpe2 .* msn_learning_rate, 3);
-        inhibition  = sum(weights_on_msn_from_msn * msn_output(:,:,1), 2) * ones(1,hvc_units);
+        inhibition  = weights_on_msn_from_msn * msn_output(:,:,1) * hvc_output';
         stability = exp(stability_factor .* weights_on_msn_from_hvc);
 
         weights_on_msn_from_hvc = weights_on_msn_from_hvc + learning + (competition + inhibition)./stability;
