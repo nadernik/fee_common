@@ -6,7 +6,7 @@ num_neurons = size(x,2);
 a = sum(x, 2); %population activity for each stimulus
 p = x ./ (a * ones(1,num_neurons));
 
-s = -sum(plogp(p), 2); % sum across neurons to give one value of sparseness for each stimulus
+s = sum(plogp(p), 2); % sum across neurons to give one value of sparseness for each stimulus
 
 function z = plogp(y)
 skip = y==0;
