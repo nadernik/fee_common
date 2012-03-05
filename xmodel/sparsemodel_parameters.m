@@ -50,7 +50,7 @@ competition_strength = 1e-2;
 
 
 % Inhibition
-inhibition_strength = 1e-3;
+inhibition_strength = 0;
 
 % Synapse stability
 % Stronger synapses are more stable and less sensitive to the effects of

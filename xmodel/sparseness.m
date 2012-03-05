@@ -1,5 +1,12 @@
 function s = sparseness(x)
-% each row is one stimulus, each column is one neuron
+%SPARSENESS Entropy measure of sparseness of neural population to stimuli
+%   SPARSENESS(X) is a vector with each element is a measure of how a
+%   population of neurons respond to each stimulus. The matrix
+%   X contains the average responses of each neuron to each stimulus. Each
+%   row in X represents one stimulus and each column represents one neuron.
+%   Activites must be non-negative. If all neurons have zero activity for
+%   a stimulus, the sparsness for that stimulus is undefined and will have
+%   the value NaN.
 num_neurons = size(x,2);
 
 % normalize population activity to 1 for each stimulus

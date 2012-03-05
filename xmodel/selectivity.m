@@ -4,7 +4,8 @@ function s = selectivity(x)
 %   single neuron responds differentially to different stimuli. The matrix
 %   X contains the average responses of each neuron to each stimulus. Each
 %   row in X represents one stimulus and each column represents one neuron.
-%   Activites must be non-negative.
+%   Activites must be non-negative. If a neuron has zero activity for all
+%   stimuli, its selectivity is undefined and will have the value NaN.
 
 % each row is one stimulus, each column is one neuron
 num_stimuli = size(x,1);
