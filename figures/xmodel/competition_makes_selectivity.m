@@ -29,10 +29,10 @@ end
 clear all;
 comp = load('c:\stetner\data\figures\xmodel\competition.mat', ...
     'weights_on_msn_from_hvc', 'msn_units', 'hvc_units', 'bias', ...
-    'template');
+    'template', 'msn_output');
 nocomp = load('c:\stetner\data\figures\xmodel\nocompetition.mat', ...
     'weights_on_msn_from_hvc', 'msn_units', 'hvc_units', 'bias', ...
-    'template');
+    'template', 'msn_output');
 
 % distribution of weights
 % figure
@@ -76,30 +76,16 @@ ylabel('MSN')
 title('Competition')
 
 %% Learning rates
-comp.mse = xmodel_calculate_mse(permute(comp.bias, [3 1 2]), comp.template);
-nocomp.mse = xmodel_calculate_mse(permute(nocomp.bias, [3 1 2]), nocomp.template);
 figure
-plot(comp.mse)
+plotmsebias(comp)
 hold all
-plot(nocomp.mse)
+plotmsebias(nocomp)
 legend({'Competition', 'No competition'})
-xlabel('Trials')
-ylabel('Mean Squared Error')
 
-return
 %% example MSNs overlayed on song and template
-msn_example_list = [1 2 3];
-
 figure
-plot(template, 'Color', [.6, .6, .6])
-hold on
-xmodel_calculate_bias
-plot(bias, 'Color', 'k')
-chsv = rgb2hsv([1 0 0]);
-sat = linspace(.5, 1, length(msn_example_list));
-
-for ii = 1:length(msn_example_list)
-    m = msn_example_list(ii);
-    c = hsv2rgb([chsv(1), sat(ii), chsv(3)]);
-    plot(msn_output(m,:,end), 'Color', c)
+mlist = [50, 80, 160];
+msn_examples(comp, mlist);
+figure
+msn_examples(nocomp, mlist);
 end
