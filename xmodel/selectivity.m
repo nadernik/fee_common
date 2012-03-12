@@ -7,12 +7,22 @@ function s = selectivity(x)
 %   Activites must be non-negative. If a neuron has zero activity for all
 %   stimuli, its selectivity is undefined and will have the value NaN.
 
+DEBUG_FLAG  = 0;
+
 % each row is one stimulus, each column is one neuron
 num_stimuli = size(x,1);
 
 % normalize population activity to 1 for each neuron
 a = sum(x, 1); %population activity for each stimulus
 p = x ./ (ones(num_stimuli,1) * a);
+
+if DEBUG_FLAG
+    for n = 1:size(x, 2);
+        plot(p(:,n))
+        ylim([0, 1])
+        pause
+    end
+end
 
 s = sum(plogp(p), 1); % sum across neurons to give one value of sparseness for each stimulus
 
