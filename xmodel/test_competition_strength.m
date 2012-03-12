@@ -36,7 +36,7 @@ for iii = 1:length(faclist)
     subplot(1,4,3)
     bins = -5:0.25:0;
     sp = sparseness(d.weights_on_msn_from_hvc');
-    meansp(iii) = mean(sp);
+    meansp(iii) = nanmean(sp);
     hist(sp, bins)
     xlabel('Sparseness')
     ylabel('Number of HVC bins')
@@ -48,7 +48,7 @@ for iii = 1:length(faclist)
     xlabel('Selectivity')
     ylabel('Number of MSNs')
     
-    pause
+    %pause
 end
 
 figure

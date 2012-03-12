@@ -2,7 +2,15 @@
 show_only_msns_in_competition = false;
 
 %%
-for m = 1:msn_units
+% msno = msn_output(:,:,end);
+% msno(msno < msn_burst_activity_threshold) = 0;
+% sel = selectivity(msno');
+% sel = selectivity_maxovertotal(weights_on_msn_from_hvc')
+o = max(0, msn_output(:,:,end) - msn_burst_activity_threshold);
+sel = selectivity_maxovertotal(o');
+[junk, ord] = sort(sel);
+for iii = 1:msn_units
+    m = ord(iii);
     
     [t1, t2] = detectThresholdCrossings(msn_output(m,:,1), msn_burst_activity_threshold);
     length_of_bursts = t2-t1;
@@ -28,6 +36,8 @@ for m = 1:msn_units
         if any(length_of_bursts > msn_burst_time_threshold)
             titlestr = [titlestr ' and a burst is too long!'];
         end
+        titlestr = [titlestr ', selectivity = ' num2str(sel(m))];
+        ylim([-0.05, 0.5])
         title(titlestr)
         pause
     end
