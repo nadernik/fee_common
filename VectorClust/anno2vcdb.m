@@ -25,6 +25,8 @@ P.Audio = true;
 P.Part = 1:1000;
 P = parseargs(P, varargin{:});
 
+exper = loadExper(birdname, expername, P.RootDir);
+
 for part = P.Part
     miscfile = annofilename(birdname, expername, ...
         'Type', 'misc', ...
@@ -90,6 +92,11 @@ for part = P.Part
     vcdb.f.sffcn{2}   = mfilename;
     vcdb.f.sfparam{2} = varargin;
     vcdb.d.sf(:,2)    = [misc.segs.segType];
+    
+    vcdb.f.sfname{3} = 'file number';
+    vcdb.f.sffcn{3} = mfilename;
+    vcdb.f.sfparam{3} = varargin;
+    vcdb.d.sf(:, 3) = extractDatafileNumber(exper, {misc.segs.key});
     
     % Other stuff
     vcdb.d.i = repmat({[]}, size(vcdb.d.v)); %FIXME

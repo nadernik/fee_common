@@ -1,0 +1,99 @@
+%% 2011-09-30
+annotate_exper('1506', '2011-09-29','edgeSyllThreshold', -11, 'triggerSyllThreshold', -6)
+vectorClust
+% 1 = escapes
+
+rules
+
+%% 2011-10-01
+annotate_exper('1506', '2011-09-30','edgeSyllThreshold', -11, 'triggerSyllThreshold', -6)
+vectorClust
+% polygons 2011-09-30.mat
+% 1 = escapes
+% 2 = hits
+
+% not enough hits!
+rules
+
+%% 2011-10-02
+annotate_exper('1506', '2011-10-01','edgeSyllThreshold', -11, 'triggerSyllThreshold', -6)
+vcQuickCluster('1506', '2011-10-01', 'c:\stetner\data\1506\polygons 2011-09-30.mat', [])
+labeledspecgram('1506', '2011-10-01')
+cafplots('1506', '2011-10-01', ...
+    'HitCluster', 2, ...
+    'EscapeCluster', 1, ...
+    'Range', [.037 .040], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 50, ...
+    'SaveVcdb', 'c:\stetner\data\1506\2011-10-01\cafplots_vcdb.mat')
+
+%% 2011-10-04
+annotate_exper('1506', '2011-10-03','edgeSyllThreshold', -11, 'triggerSyllThreshold', -6)
+vcQuickCluster('1506', '2011-10-03', 'c:\stetner\data\1506\polygons 2011-09-30.mat', [])
+labeledspecgram('1506', '2011-10-03')
+cafplots('1506', '2011-10-03', ...
+    'HitCluster', 2, ...
+    'EscapeCluster', 1, ...
+    'Range', [.037 .040], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 50, ...
+    'SaveVcdb', 'c:\stetner\data\1506\2011-10-03\cafplots_vcdb.mat')
+% maybe learned. push up farther
+
+%% 2011-10-05
+annotate_exper('1506', '2011-10-04','edgeSyllThreshold', -11, 'triggerSyllThreshold', -6)
+
+%% 2011-10-06
+annotate_exper('1506', '2011-10-05','edgeSyllThreshold', -11, 'triggerSyllThreshold', -6)
+vcQuickCluster('1506', '2011-10-05', 'c:\stetner\data\1506\polygons 2011-09-30.mat', [])
+labeledspecgram('1506', '2011-10-05')
+cafplots('1506', '2011-10-05', ...
+    'HitCluster', 2, ...
+    'EscapeCluster', 1, ...
+    'Range', [.037 .040], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 50, ...
+    'SaveVcdb', 'c:\stetner\data\1506\2011-10-05\cafplots_vcdb.mat')
+% ok, again seems to be learning. push up one more day, then reverse
+
+%% 2011-10-07
+% annotated and clustered by acqgui_overnightBatch.m
+labeledspecgram('1506', '2011-10-06')
+
+cafplots('1506', '2011-10-06', ...
+    'HitCluster', 2, ...
+    'EscapeCluster', 1, ...
+    'Range', [.037 .040], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 50, ...
+    'SaveVcdb', 'c:\stetner\data\1506\2011-10-06\cafplots_vcdb.mat')
+
+% reverse direction
+rules
+
+%% 2011-10-09
+
+% No recording on 2011-10-08 because acquisitionGui was broken.
+
+% 2011-10-07 was annotated and clustered by acqgui_overnightBatch.m
+labeledspecgram('1506', '2011-10-07')
+% labeling is not good. escapes and hits are both being labeled as "1"
+vectorClust
+% "polygons 2011-10-07.mat"
+%   1 = escapes
+%   2 = hits
+vcQuickCluster('1506', '2011-10-07', 'c:\stetner\data\1506\polygons 2011-10-07.mat', [])
+labeledspecgram('1506', '2011-10-07')
+% looks good :)
+
+cafplots('1506', '2011-10-07', ...
+    'HitCluster', 2, ...
+    'EscapeCluster', 1, ...
+    'Range', [.037 .040], ...
+    'RangeUnits', 'seconds', ...
+    'LastN', 50, ...
+    'SaveVcdb', 'c:\stetner\data\1506\2011-10-07\cafplots_vcdb.mat')
+
+% Good learning!
+% Push down again
+rules

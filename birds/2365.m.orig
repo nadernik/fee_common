@@ -87,17 +87,3 @@ Batch_song_rhythm('2365','2011-05-22',1, 1:100)
 Parse_segments
 % Looks like he is developing normally, with a motif (file 12)
 Batch_song_rhythm('2365','2011-05-27',1, 1:100)
-
-%% 2011-06-09
-
-% 2011-06-01 was day 30 post lesion
-Parse_segments
-% A lot of calls, especially at ends of bouts (e.g. file 13)
-% Good motif (e.g. file 18)
-% Threw out long strings of calls that did not have any other song-like
-% syllables (e.g. file 76)
-Batch_song_rhythm('2365','2011-06-01',1, 1:102)
-
-% 2011-06-06 was day 35 post lesion
-Parse_segments
-% good motif (e.g. file 8)

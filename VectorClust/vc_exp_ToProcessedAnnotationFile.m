@@ -268,7 +268,7 @@ try
     %save
     save(filename, 'misc', '-v6');
     aaSaveHashtable(hashfilename, hash)
-    msgbox('Export complete!') %%% TO
+    disp('Export complete!') %%% TO
 catch
     handles.output = lasterr;
 end

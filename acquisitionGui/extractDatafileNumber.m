@@ -1,7 +1,18 @@
 function num = extractDatafileNumber(exper, name)
-%Extract the datafile number from the datafile name.
+%extractDatafileNumber number of file recorded by acquisitionGui
+%
+% num = extractDatafileNumber(exper, name)
+% num is a vector of integers
+% exper is the exper data structure created by acquisitionGui. You can load
+%       this with loadExper()
+% name is a string with the name of the datafile or a cell array of strings
 
-name = name(length(exper.birdname) + length('_d') + 1:end);
-ndx = strfind(name,'_');
-name = name(1:ndx(1)-1);
-num = str2num(name);
+if ~iscell(name)
+    name = {name};
+end
+
+num = zeros(size(name));
+for k = 1:length(name)
+    u = strfind(name{k}, '_');
+    num(k) = str2num(name{k}(u(1)+2:u(2)-1));
+end

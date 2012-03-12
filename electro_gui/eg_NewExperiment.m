@@ -1,5 +1,7 @@
 function [handles ischanged] = eg_NewExperiment(handles)
 
+egfile = handles.egfile;
+
 if handles.IsUpdating == 0
     if isfield(handles,'path_name')
         dr = handles.path_name;
@@ -35,7 +37,7 @@ set(fig,'position',[(screen_size(3)-fig_w)/2 (screen_size(4)-fig_h)/2 fig_w fig_
 set(fig,'closerequestfcn',@CloseFig);
 
 % Find all loader files
-load_files = dir('egl_*.m');
+load_files = dir(egfile('egl_*.m'));
 drop_str = {};
 pop_str = {};
 pop_val = 1;
