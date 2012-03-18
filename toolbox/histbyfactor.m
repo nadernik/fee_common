@@ -30,6 +30,6 @@ switch nargout
         varargout{2} = counts;
         varargout{3} = bins;
     otherwise
-        stairs(bins, counts)
+        stairs(bins, counts, 'LineWidth', 3)
         legend(legendstr)
 end
