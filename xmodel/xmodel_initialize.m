@@ -47,7 +47,7 @@ end
 %% Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
 for u = 1:lman_units
-    lman_noise(u, :, :) = generate_lman_noise(motif_steps, total_motifs);
+    lman_noise(u, :, :) = generate_lman_noise_mes010(motif_steps, total_motifs);
 end
 
 %% Eligibility trace
