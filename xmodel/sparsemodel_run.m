@@ -4,10 +4,11 @@ if (DEBUG_FLAG)
     ltd_all  = zeros(msn_units, hvc_units, total_motifs);
     comp_all = zeros(msn_units, hvc_units, total_motifs);
 end
-
+wbh = waitbar(0, 'Running xmodel');
 for motif = 1:total_motifs
-    motif
-   
+    str = sprintf('Motif %g of %g', motif, total_motifs);
+    waitbar(motif/total_motifs, wbh, str)
+    
     % Weights from LMAN -> MSN are randomly assigned on each motif. Weights
     % are randomly distributed between 1/lman_rand and lman_rand with equal
     % weight above and below 1. The topography between LMAN and MSNs is
@@ -136,3 +137,4 @@ for motif = 1:total_motifs
     hold off
     drawnow
 end
+close(wbh)

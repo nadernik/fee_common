@@ -3,11 +3,12 @@ if (DEBUG_FLAG)
 end
 
 nl = @(H) H.*(H<Hstar) + 10.*(H>=Hstar);
-
+wbh = waitbar(0, 'Running xmodel');
 for motif = 1:total_motifs
-    motif
     error = zeros(1, motif_steps + extra_steps);
     steps_to_noise = 0;
+    str = sprintf('Motif %g of %g', motif, total_motifs);
+    waitbar(motif/total_motifs, wbh, str)
     for t = 1:motif_steps + extra_steps
 
         if t <= motif_steps
@@ -124,3 +125,4 @@ for motif = 1:total_motifs
         end
     end
 end
+close(wbh)

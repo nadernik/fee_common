@@ -1,3 +1,4 @@
+wbh = waitbar(0, 'Running xmodel');
 for motif = 1:total_motifs
     eligibility_trace = zeros(msn_units, motif_steps + extra_steps);
     error = zeros(1, motif_steps + extra_steps);
@@ -87,3 +88,4 @@ for motif = 1:total_motifs
         end
     end
 end
+close(wbh)
