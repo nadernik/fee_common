@@ -14,7 +14,7 @@ for n = randomized_order
         lman_noise(u, :, :) = generate_lman_noise_streched_spectrum(motif_steps, total_motifs, stretches(n));
     end
     xmodel_run
-    save(['c:\stetner\data\figures\xmodel\temporal_resolution_lman' int2str(n)])
+    save(['c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\' int2str(n)])
     clear all
     load temp
 end
@@ -40,7 +40,8 @@ end
 % simulation) for pitch change. The optimal solution is to change the pitch
 % at just the target time, but this is not what happens. Our model allows
 % the basal ganglia to bias 
-d = load('C:\stetner\data\figures\xmodel\temporal_resolution_reward7.mat');
+filename = 'c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\50.mat'; % example run from the middle of the range
+d = load(filename);
 N = 200;
 
 
@@ -70,7 +71,7 @@ t_hvc = -4:4;
 plot(t_hvc,hvc_burst,'y', 'LineWidth', 3)
 plot(t_acor,mean(lman_autocorrelation,2),'g', 'LineWidth', 3)
 t_reward = -4*d.std_rkernel:4*d.std_rkernel;
-plot(t_reward, reward_kernel,'Color', [1, .65, 0], 'LineWidth', 3)
+plot(t_reward, reward_kernel./max(reward_kernel),'Color', [1, .65, 0], 'LineWidth', 3)
 
 
 %%

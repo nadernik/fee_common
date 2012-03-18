@@ -1,6 +1,6 @@
 % Length of simulation
-baseline_motifs = 50; % number of motifs before learning starts
-learning_motifs = 750; % number of motifs where learning happens!
+baseline_motifs = 300; % number of motifs before learning starts
+learning_motifs = 700; % number of motifs where learning happens!
 ending_motifs = 0; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
@@ -42,7 +42,7 @@ template = zeros(1, motif_steps);
 caf_target_time1 = 5; % time steps
 caf_target_time2 = 100;
 caf_pitch_threshold1 = nan; % hits if above this
-caf_pitch_threshold2 = 2; % hits if below this
+caf_pitch_threshold2 = 1; % hits if below this
 caf_random_hit_probability = 0;
-caf_error_value = 8000;
+caf_error_value = 400;
 caf_noise_duration = 2; % time steps
