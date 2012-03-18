@@ -15,10 +15,10 @@ for run = 1:1
     load temp
 end
 %%
-example_run_file = 'C:\stetner\data\figures\xmodel\reducing_variability5.mat';
-N = 100; % number of pitch traces to show before and after learning
+example_run_file = 'C:\stetner\data\figures\xmodel\reducing_variability_redo_1.mat';
+N = 15; % number of pitch traces to show before and after learning
 histogram_bin_edges = -10:0.5:10;
-% load(example_run_file)
+load(example_run_file)
 colors.hits = [1 .8 .8]; % light red
 colors.escapes = [.8 .8 .8]; % light gray
 colors.before = 'k';

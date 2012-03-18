@@ -14,6 +14,7 @@ tmax = songlength + length(errorkernel) - 1;
 hitcolor = [1, 0  , 0];
 esccolor = [0, 0.7, 0];
 
+c = load('c:\stetner\code\figures\xmodel\xmodel_color_scheme.mat');
 
 %% (A) error as a function of pitch in normal singing
 rpefig.fig = figure;
@@ -21,7 +22,7 @@ pitch = linspace(-150,150) + pitchtarget;
 pitcherror = ((pitch - pitchtarget) ./ pitchtarget .* 100).^2; % percent error squared
 
 rpefig.pitcherroraxes = subplot(5,2,1);
-plot(pitch, pitcherror);
+plot(pitch, pitcherror, 'Color', c.vta, 'LineWidth', 3);
 ylim([-50 500])
 xlabel('Pitch (Hz)')
 ylabel('Error')
@@ -29,9 +30,9 @@ ylabel('Error')
 caferror = pitcherror;
 caferror(pitch < cafthreshold) = caferrorvalue;
 rpefig.caferroraxes = subplot(5,2,2);
-plot(pitch, pitcherror, ':')
+plot(pitch, pitcherror, ':', 'Color', c.vta)
 hold on
-plot(pitch, caferror)
+plot(pitch, caferror, 'Color', c.vta, 'LineWidth', 3)
 hold off
 ylim([-50 500])
 xlabel('Pitch (Hz)')
@@ -40,7 +41,7 @@ title('CAF')
 %% (C) pitch over time
 
 % generate many pitches
-fluctuations = generate_lman_noise(songlength, totalmotifs);
+fluctuations = generate_lman_noise_mes010(songlength, totalmotifs);
 songs = fluctuations./100 .* pitchtarget + pitchtarget; % convert percent pitch into Hz
 
 % choose one motif that escapes...
@@ -50,9 +51,9 @@ escmotif = find(songs(caftime, :) > cafthreshold, 1);
 hitmotif = find(songs(caftime, :) < cafthreshold, 1);
 
 rpefig.pitchtimeaxes = subplot(5,2,3:4);
-plot(songs(:,escmotif), 'Color', esccolor)
+plot(songs(:,escmotif), 'Color', c.escape, 'LineWidth', 3)
 hold on
-plot(songs(:,hitmotif), 'Color', hitcolor)
+plot(songs(:,hitmotif), 'Color', c.hit, 'LineWidth', 3)
 % bar marking noise
 x = [0, cafnoiseduration, cafnoiseduration, 0] + caftime;
 lims = ylim;
@@ -90,9 +91,9 @@ for motif = 1:totalmotifs
 end
 
 rpefig.errortimeaxes = subplot(5,2,5:6);
-plot(errorsmooth(:,escmotif), 'Color', esccolor)
+plot(errorsmooth(:,escmotif), 'Color', c.escape, 'LineWidth', 3)
 hold on
-plot(errorsmooth(:,hitmotif), 'Color', hitcolor)
+plot(errorsmooth(:,hitmotif), 'Color', c.hit, 'LineWidth', 3)
 xlim([0 tmax])
 hold off
 ylabel('Error')
@@ -100,12 +101,12 @@ set(gca, 'XTickLabel', [])
 %% reward over time
 reward = -errorsmooth;
 rpefig.rewardtimeaxes = subplot(5,2,7:8);
-plot(reward(:,escmotif), 'Color', esccolor)
+plot(reward(:,escmotif), 'Color', c.escape, 'LineWidth', 3)
 hold on
-plot(reward(:,hitmotif), 'Color', hitcolor)
+plot(reward(:,hitmotif), 'Color', c.hit, 'LineWidth', 3)
 xlim([0 tmax])
 prediction = mean(reward, 2);
-plot(prediction, 'k:')
+plot(prediction, 'k:', 'LineWidth', 2)
 hold off
 ylabel('Reward')
 set(gca, 'XTickLabel', [])
@@ -113,9 +114,9 @@ set(gca, 'XTickLabel', [])
 prediction = mean(reward, 2);
 rpe = reward - prediction*ones(1, totalmotifs);
 rpefig.rpetimeaxes = subplot(5,2,9:10);
-plot(rpe(:, escmotif), 'Color', esccolor)
+plot(rpe(:, escmotif), 'Color', c.escape, 'LineWidth', 3)
 hold on
-plot(rpe(:, hitmotif), 'Color', hitcolor)
+plot(rpe(:, hitmotif), 'Color', c.hit, 'LineWidth', 3)
 xlim([0 tmax])
 hold off
 ylabel('RPE')

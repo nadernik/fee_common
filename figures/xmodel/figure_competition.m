@@ -12,7 +12,7 @@ if do_simulations
     inhibition_strength = 0;
     sparsemodel_initialize
     sparsemodel_run
-    save('c:\stetner\data\figures\xmodel\competition.mat')
+    save('c:\stetner\data\figures\xmodel\competition4.mat')
 
     %% Make data without competition
     clear all
@@ -22,15 +22,15 @@ if do_simulations
     msn_learning_rate = msn_learning_rate/10;
     sparsemodel_initialize
     sparsemodel_run
-    save('c:\stetner\data\figures\xmodel\nocompetition.mat')
+    save('c:\stetner\data\figures\xmodel\nocompetition4.mat')
 end
 
 %%
 clear all;
-comp = load('c:\stetner\data\figures\xmodel\competition.mat', ...
+comp = load('c:\stetner\data\figures\xmodel\competition4.mat', ...
     'weights_on_msn_from_hvc', 'msn_units', 'hvc_units', 'bias', ...
     'template', 'msn_output');
-nocomp = load('c:\stetner\data\figures\xmodel\nocompetition.mat', ...
+nocomp = load('c:\stetner\data\figures\xmodel\nocompetition4.mat', ...
     'weights_on_msn_from_hvc', 'msn_units', 'hvc_units', 'bias', ...
     'template', 'msn_output');
 
@@ -62,15 +62,18 @@ xlabel('Sparseness')
 ylabel('Number of HVC bins')
 
 %% image of weights
+
 figure
 subplot(2,1,1)
 imagesc(nocomp.weights_on_msn_from_hvc)
+colorbar
 xlabel('HVC')
 ylabel('MSN')
 title('No Competition')
 
 subplot(2,1,2)
 imagesc(comp.weights_on_msn_from_hvc)
+colorbar
 xlabel('HVC')
 ylabel('MSN')
 title('Competition')

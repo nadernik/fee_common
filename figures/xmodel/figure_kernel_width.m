@@ -3,7 +3,7 @@
 
 kernel_widths = 2.^(0:6);
 total_runs = 10;
-datapath = 'c:\stetner\data\figures\xmodel\';
+datapath = 'c:\stetner\data\figures\xmodel\mes010\';
 
 for irun = 1:total_runs
 for ikw = 1:length(kernel_widths)
