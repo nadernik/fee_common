@@ -27,7 +27,7 @@ reward_learning_rate = 1/25; % learning rate of state value function V(s)
 
 % Other
 msn_threshold = 0;
-lman_offset = 1;
+lman_offset = 0;
 
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
@@ -36,7 +36,8 @@ std_etrace = 7; % Eligibility trace
 std_rkernel = 7; % Reward
 
 % The template, aka the sequence we are trying to learn.
-template = 20*ones(1, motif_steps);
+t = linspace(0,2*pi, motif_steps);
+template = 10*sin(t);
 
 % conditional auditory feedback
 caf_target_time1 = 5; % time steps
