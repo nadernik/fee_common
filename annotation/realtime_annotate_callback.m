@@ -1,4 +1,4 @@
-function realtime_annotate_callback(exper, last_file_annotated)
+function last_file_annotated = realtime_annotate_callback(exper, last_file_annotated, varargin)
 
 %% Segmentation parameters
 P.method = {'mixture', 'fixed'}; %Mixture using EM to fit levels for noise and sound.
@@ -34,7 +34,9 @@ P.bUse = []; %specify exactly which syllables to use. %Overrides all other selec
 P = parseargs(P,varargin{:});
 
 %%
-latest_file = getLatestDatafileNumber(exper);
+% latest_file = getLatestDatafileNumber(exper);
+%%%DEBUG
+latest_file = 302;
 filecount = 0;
 segcount = 0;
 for filenum = (last_file_annotated + 1):latest_file
@@ -44,59 +46,79 @@ for filenum = (last_file_annotated + 1):latest_file
     [audio, timeFileCreated, startTime, startSamp, names, values, info] = loadAudio(exper, filenum);
     time = extractExperFilenumTime(exper, filenum);
     filename = getExperAudioFilename(exper, filenum);
-    [syllStartTimes, syllEndTimes, noiseEst, noiseStd, soundEst, thresSyll,thresTrig, soundStd, audioLogPow] = aSAP_segSyllablesFromRawAudio(audio, info.fs);
-    
+    [syllStartTimes, syllEndTimes, noiseEst, noiseStd, soundEst, thresSyll,thresTrig, soundStd, audioLogPow] = aSAP_segSyllablesFromRawAudio(audio, info.fs, ...
+        'method', P.method, ...
+        'thresholdAbs', P.thresholdAbs, ...
+        'triggerAbs', P.triggerAbs, ...
+        'thresholdRelative', P.thresholdRelative, ...
+        'triggerRelative', P.triggerRelative, ...
+        'fMinSyllDuration' , P.fMinSyllDuration, ...
+        'fMinIntervalDuration', P.fMinIntervalDuration, ...
+        'fMaxSyllDuration', P.fMaxSyllDuration, ...
+        'audioFilt',P.audioFilt,...
+        'notchFilt', P.notchFilt, ...
+        'bDebug', P.bDebug);
+
     % annotation
     keys{filecount} = filename;
     elements{filecount}.recorder = 'Exper';%specifies acquistion gui vs SAP
     elements{filecount}.exper = exper;
     elements{filecount}.filenum = filenum;
+    
     elements{filecount}.segAbsStartTimes = time + syllStartTimes/60/60/24;
     elements{filecount}.segAbsEndTimes = time + syllEndTimes/60/60/24;
-    elements{filecount}.segFileStartNdx = syllStartTimes * info.fs;
-    elements{filecount}.segFileEndNdx = syllEndTimes * info.fs;
+    elements{filecount}.segFileStartNdx = round(syllStartTimes * info.fs + 1);
+    elements{filecount}.segFileEndNdx = round(syllEndTimes * info.fs + 1);
     elements{filecount}.segFileStartTimes = syllStartTimes;
     elements{filecount}.segFileEndTimes = syllEndTimes;
-    elements{filecount}.segType = -1;
+    elements{filecount}.segType = -ones(size(syllStartTimes)); %-1 is default segType
     elements{filecount}.fs = info.fs;
     elements{filecount}.length = length(audio);
-    elements{filecount}.segmentationMethod.method = 
-    elements{filecount}.segmentationMethod.thresholdRelative =
-    elements{filecount}.segmentationMethod.triggerRelative =
-    elements{filecount}.segmentationMethod.thresholdAbs =
-    elements{filecount}.segmentationMethod.triggerAbs =
-    elements{filecount}.segmentationMethod.fMinSyllDuration =
-    elements{filecount}.segmentationMethod.fMinIntervalDuration =
-    elements{filecount}.segmentationMethod.fMaxSyllDuration =
-    elements{filecount}.segmentationMethod.created = 
+    
+    elements{filecount}.segmentationMethod.method               = P.method;
+    elements{filecount}.segmentationMethod.thresholdRelative    = P.thresholdRelative;
+    elements{filecount}.segmentationMethod.triggerRelative      = P.triggerRelative;
+    elements{filecount}.segmentationMethod.thresholdAbs         = P.thresholdAbs;
+    elements{filecount}.segmentationMethod.triggerAbs           = P.triggerAbs;
+    elements{filecount}.segmentationMethod.fMinSyllDuration     = P.fMinSyllDuration;
+    elements{filecount}.segmentationMethod.fMinIntervalDuration = P.fMinIntervalDuration;
+    elements{filecount}.segmentationMethod.fMaxSyllDuration     = P.fMaxSyllDuration;
+    elements{filecount}.segmentationMethod.created              = now;
     
     % for each segment
     for syll = 1:length(syllStartTimes)
         segcount = segcount + 1;
+        syllAudio = audio(elements{filecount}.segFileStartNdx(syll):elements{filecount}.segFileEndNdx(syll));
         % audio
         rawaudio.segs(segcount).key = filename;
         rawaudio.segs(segcount).absStart = elements{filecount}.segAbsStartTimes(syll);
-        rawaudio.segs(segcount).audio = audio(elements{filecount}.segFileStartNdx(syll):elements{filecount}.segFileEndNdx(syll));
+        rawaudio.segs(segcount).audio = syllAudio;
         % pitch
         pitch.segs(segcount).key = filename;
         pitch.segs(segcount).absStart = elements{filecount}.segAbsStartTimes(syll);
-        pitch.segs(segcount).pitch
-        pitch.segs(segcount).pitchGoodness
-        pitch.segs(segcount).harmonicPower
-        pitch.segs(segcount).pitchTime
-        pitch.segs(segcount).entropy
+        [pi, pg, hp, pt, entropy] = estimatePitch(syllAudio, info.fs);
+        pitch.segs(segcount).pitch = pi;
+        pitch.segs(segcount).pitchGoodness = pg;
+        pitch.segs(segcount).harmonicPower = hp;
+        pitch.segs(segcount).pitchTime = pt;
+        pitch.segs(segcount).entropy = entropy;
         % misc
-        misc.segs(segcount).key
+        misc.segs(segcount).key = filename;
         misc.segs(segcount).absStart = startTime + syllStartTimes(syll)/60/60/24;
         misc.segs(segcount).duration = syllEndTimes(syll) - syllStartTimes(syll);
         misc.segs(segcount).fStartTime = syllStartTimes(syll);
         misc.segs(segcount).fEndTime = syllEndTimes(syll);
         misc.segs(segcount).segType = -1;
         misc.segs(segcount).fs = info.fs;
+        misc.segs(segcount).maskTime = [];
+        misc.segs(segcount).stimTime = [];
+        misc.segs(segcount).stimAmp = NaN;
     end
 end
 rawaudio.bRand = true(segcount, 1);
 pitch.bRand    = true(segcount, 1);
 misc.bRand     = true(segcount, 1);
-annoappend(exper, newanno, 'pitch', pitch, 'misc', misc, 'audio', rawaudio)
+newanno.elements = elements;
+newanno.keys = keys;
+annoappend(exper, newanno, pitch, misc, rawaudio)
 last_file_annotated = latest_file;

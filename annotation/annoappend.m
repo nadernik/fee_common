@@ -1,5 +1,7 @@
-function add_to_annotation_files(exper, newanno, newpitch, newmisc)
-files_to_add = length(anno);
+function annoappend(exper, newanno, newpitch, newmisc, newrawaudio)
+% ANNOAPPEND 
+
+files_to_add = length(newanno);
 newkeys = newanno.keys;
 newelements = newanno.elements;
 maxFilesPerAnnotation = 300; %FIXME
@@ -7,7 +9,7 @@ startfile = 1;
 % find the latest annotation file and load it
 part = 1;
 while true
-    annofile = get_annotation_filename(exper.birdname, exper.expername, 'part', part);
+    annofile = annofilename(exper.birdname, exper.expername, 'Part', part);
     if ~exist(annofile, 'file')
         part = part - 1;
         break
@@ -15,9 +17,10 @@ while true
         part = part + 1;
     end
 end
-annofile = get_annotation_filename(exper.birdname, exper.expername, 'part', part);
-pitchfile = get_annotation_filename(exper.birdname, exper.expername, 'part', part, 'type', 'pitch');
-miscfile = get_annotation_filename(exper.birdname, exper.expername, 'part', part, 'type', 'misc');
+annofile   = annofilename(exper.birdname, exper.expername, 'Part', part, 'Type', 'annotation');
+pitchfile  = annofilename(exper.birdname, exper.expername, 'Part', part, 'Type', 'pitch');
+miscfile   = annofilename(exper.birdname, exper.expername, 'Part', part, 'Type', 'misc');
+audiofile  = annofilename(exper.birdname, exper.expername, 'Part', part, 'Type', 'audio');
 
 
 % while we have more files to add
@@ -28,33 +31,42 @@ while files_to_add > 0
 		load(annofile); % load varaibles 'keys' and 'elements'
 		load(pitchfile) % loads variable 'pitch'
 		load(miscfile) % loads variable 'misc'
+        load(audiofile)
 	else % need to create a new annotation file
 		keys = [];
 		elements = [];
-		pitch = [];
-		misc = [];
+		pitch.segs = [];
+        pitch.bRand = [];
+        misc.segs = [];
+		misc.bRand = [];
 	end
 	
 	% Add files to annotation.
-	endfile = min(length(newkeys), startfile + maxFilesPerAnnotation);
+	endfile = min(length(newkeys), startfile + maxFilesPerAnnotation - length(keys) - 1);
 	segndx = segs_with_keys(newpitch.segs, newkeys(startfile:endfile));
 	keys     = [keys     newkeys(startfile:endfile)    ];
 	elements = [elements newelements(startfile:endfile)];
-	pitch    = [pitch    newpitch(segndx)              ];
-	misc     = [misc     newmisc(segndx)               ]; % assumes pitch and misc segs are in same order
+    pitch.segs = [pitch.segs, newpitch.segs(segndx)];
+    pitch.bRand = [pitch.bRand; newpitch.bRand(segndx)];
+    misc.segs = [misc.segs, newmisc.segs(segndx)];
+    misc.bRand = [misc.bRand; newmisc.bRand(segndx)];
+    rawaudio.segs = [rawaudio.segs, newrawaudio.segs(segndx)];
+    rawaudio.bRand = [rawaudio.bRand; newrawaudio.bRand(segndx)];
 	
 	% save files
 	save(annofile, 'keys', 'elements')
 	save(pitchfile, 'pitch')
 	save(miscfile,  'misc')
+    save(audiofile, 'rawaudio')
 	
 	% housekeeping for next iteration
 	files_to_add = files_to_add - (endfile - startfile);
 	startfile = endfile + 1;
 	part = part + 1;	
-    annofile = get_annotation_filename(exper.birdname, exper.expername, 'part', part);
-    pitchfile = get_annotation_filename(exper.birdname, exper.expername, 'part', part, 'type', 'pitch');
-    miscfile = get_annotation_filename(exper.birdname, exper.expername, 'part', part, 'type', 'misc');
+    annofile   = annofilename(exper.birdname, exper.expername, 'Part', part, 'Type', 'annotation');
+    pitchfile  = annofilename(exper.birdname, exper.expername, 'Part', part, 'Type', 'pitch');
+    miscfile   = annofilename(exper.birdname, exper.expername, 'Part', part, 'Type', 'misc');
+    audiofile  = annofilename(exper.birdname, exper.expername, 'Part', part, 'Type', 'audio');
 end
 
 function ndx = segs_with_keys(segs, keys)
