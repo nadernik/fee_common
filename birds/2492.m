@@ -192,21 +192,34 @@ annotate_exper('2492', '2011-09-25', 'triggerSyllThreshold', -6, 'edgeSyllThresh
 
 directed_files = [22:32, 38, 87, 141, 220, 278, 289, 305:306];
 
-% convert to vcdb
-vcdb = anno2vcdb('2492', '2011-09-25', 'Audio', false);
-% They should already be clustered
+% segmented and labeled manually in electro_gui
+target_syllables = {'e'};
+trange = [0.022, 0.026];
 
-% select target syllables that were sung as part of directed files
-is_directed = ismember(getsf(vcdb, 'file number'), directed_files);
-is_target = vcdb.d.icn == 1;
+load('c:\stetner\data\2492\2011-09-25\dbase directed.mat')
+directed = pitch_from_dbase(dbase, target_syllables);
+for n = 1:length(directed)
+    directed(n).mean_pitch_in_target_interval = mean(snippet(directed(n).pitch, trange, 't', directed(n).pitch_time, 'units', 'seconds'));
+end
 
+load('c:\stetner\data\2492\2011-09-25\dbase undirected.mat')
+undirected = pitch_from_dbase(dbase, target_syllables);
+for n = 1:length(undirected)
+    undirected(n).mean_pitch_in_target_interval = mean(snippet(undirected(n).pitch, trange, 't', undirected(n).pitch_time, 'units', 'seconds'));
+end
 
+figure
+hold on
+edges = 1200:5:1400;
+N = histc([undirected.mean_pitch_in_target_interval], edges);
+std(N)
+h1 = bar(edges,N/length(undirected), 'histc');
+set(h1, 'FaceColor', 'b', 'FaceAlpha', 0.5)
+N = histc([directed.mean_pitch_in_target_interval], edges);
+std(N)
+h2 = bar(edges,N/length(directed), 'histc');
+set(h2, 'FaceColor', 'r', 'FaceAlpha', 0.5)
+xlabel('Pitch (Hz)')
+ylabel('Probability')
 
-% comapre to end of the day before
-temp = load('c:\stetner\data\2492\2011-09-24\cafplots_vcdb.mat');
-yesterday = temp.handles.vcdb;
-clear temp
-sfnum = getsfnum(yesterday, 'pitchtarg');
-vcdb = feval(yesterday.f.sffcn{sfnum}, vcdb, yesterday.f.sfparam{sfnum}{:});
-
-% compare to undirected singing at the end of the day
+ttest2([undirected.mean_pitch_in_target_interval], [directed.mean_pitch_in_target_interval], .05)
