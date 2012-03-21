@@ -2,7 +2,7 @@ function test_inhibition_strength(do_simulations)
 
 inhibstrs = [0, logspace(-4,-2,11)];
 
-savefile = @(n) ['c:\stetner\data\sparsemodel_inhibition_strength_test_' int2str(n) '.mat'];
+savefile = @(n) ['c:\stetner\data\sparsemodel\inhibition_strength_test_' int2str(n) '.mat'];
 
 bins = -5:0.25:0; % for histograms of selectivity and sparseness
 
@@ -18,7 +18,7 @@ if exist('do_simulations', 'var') && (do_simulations == 1)
         
         % Run the model
         sparsemodel_parameters
-        lman_rand = 2; % At Michale's request, use a low level of randomness in LMAN-X connections
+        %lman_rand = 2; % At Michale's request, use a low level of randomness in LMAN-X connections
         inhibition_strength = inhibstrs(iii); % Different inhibition strength on every iteration
         sparsemodel_initialize
         sparsemodel_run
@@ -36,34 +36,37 @@ msecolor = @(n) mycolormap(nc(n),:);
 
 figure(111)
 d = load('c:\stetner\data\sparsemodel\lman_rand_test_5.mat', ...
-    'bias', 'template');
+    'bias', 'template', 'total_motifs', 'msn_output', 'inhibition_strength');
 h = plotmsebias(d);
 set(h, 'Color', msecolor(0));
 hold on
 
 
 for iii = 1:length(inhibstrs)
-    d = load(savefile(iii), 'weights_on_msn_from_hvc', 'bias', 'template', 'competing_msns');
+    d = load(savefile(iii), 'weights_on_msn_from_hvc', 'bias', 'template', 'competing_msns', 'total_motifs', 'msn_output', 'inhibition_strength');
 
     figure(222)
-    subplot(2,2,1)
+    subplot(2,3,1)
     weightimage(d)
-    title(savefile(iii))
+    title(num2str(d.inhibition_strength))
     
-    subplot(2,2,2)
+    subplot(2,3,2)
     [h, mse] = plotmsebias(d);
     
-    subplot(2,2,3)
+    subplot(2,3,3)
     sp = sparseness(d.weights_on_msn_from_hvc');
     hist(sp, bins)
     xlabel('Sparseness')
     avgsp(iii) = nanmean(sp);
     
-    subplot(2,2,4)
+    subplot(2,3,4)
     se = selectivity(d.weights_on_msn_from_hvc');
     hist(se, bins)
     xlabel('Selectivity')
     avgse(iii) = nanmean(se);
+    
+    subplot(2,3,5)
+    msn_examples(d, [50, 150, 250])
     
     % Count MSNs that are experiencing competition
     pctcomp(iii) = sum(d.competing_msns) / length(d.competing_msns);
@@ -79,7 +82,7 @@ for iii = 1:length(inhibstrs)
     h = plotmsebias(d);
     set(h, 'Color', msecolor(iii));
     
-    %pause
+    pause
 end
 
 %% Summary plots

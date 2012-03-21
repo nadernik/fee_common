@@ -1,6 +1,6 @@
 % Length of simulation
-baseline_motifs = 200; % number of motifs before learning starts
-learning_motifs = 1000; % number of motifs where learning happens!
+baseline_motifs = 50; % number of motifs before learning starts
+learning_motifs = 2000; % number of motifs where learning happens!
 ending_motifs = 0; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 

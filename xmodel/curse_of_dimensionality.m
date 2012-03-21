@@ -1,3 +1,4 @@
+function figure_curse_of_dimensionality(do_simulations)
 %% 
 % Larry Abbott says that models like this suffer from the curse of
 % dimensionality. The problem becomes much harder as the degrees of freedom
@@ -7,31 +8,39 @@
 close all
 clear all
 
-nsmooth = 20;
 threshold = 3;
-datapath = 'c:\stetner\data\figures\xmodel\'; % ends in filesep
+total_runs = 10;
+extra_channels_list = 2.^(1:5) - 1;
+filename = @(r, ch) sprintf('c:\\stetner\\data\\figures\\xmodel\\curse_of_dimensionality_%02.f_%02.f.mat', ch, r);
+
 %%
 % Here we model learning to conrol one muscle while the other six muscles
 % have independent influences on the song. The influence of the six other
 % muscles is modeled as six independent LMAN signals
 
-for nrun = 1:10
-for extra_channels = 2.^(1:5) - 1
-    extra_channels
-    xmodel_parameters_extra_noise
-    xmodel_initialize
-    extra_lman = zeros(extra_channels, motif_steps, total_motifs);
-    for u = 1:extra_channels
-        extra_lman(u, :, :) = generate_lman_noise(motif_steps, total_motifs);
+if exist('do_simulations', 'var') && (do_simulations == 1)
+for nrun = 1:total_runs
+    for ich = 1:length(extra_channels_list)
+        extra_channels = extra_channels_list(ich);
+        
+        % Run simulation
+        xmodel_parameters_extra_noise
+        xmodel_initialize
+        extra_lman = zeros(extra_channels, motif_steps, total_motifs);
+        for u = 1:extra_channels
+            extra_lman(u, :, :) = generate_lman_noise(motif_steps, total_motifs);
+        end
+        extra_errors = extra_lman .^ 2;
+        total_extra_error = squeeze(sum(extra_errors, 1));
+        xmodel_run_extra_errors
+        xmodel_calculate_bias
+        
+        % Save results
+        save(filename(nrun, extra_channels))
+        save temp.mat nrun ich extra_channels_list total_runs threshold filename
+        clear all
+        load temp
     end
-    extra_errors = extra_lman .^ 2;
-    total_extra_error = squeeze(sum(extra_errors, 1));
-    xmodel_run_extra_errors
-    filename = sprintf('%scurse_of_dimensionality_%g_%g.mat', datapath, extra_channels, nrun); 
-    save(filename)
-    save temp extra_channels nrun
-    clear all
-    load temp
 end
 end
 
@@ -57,6 +66,18 @@ for ii = 1:length(files)
     files(ii).nrun = str2num(nrun);
 end
 %%
+for nrun = 1:total_runs
+    for ich = 1:length(extra_channels_list)
+        extra_channels = extra_channels_list(ich);
+        
+        d = load(filename(
+clear all
+load c:\stetner\data\figures\xmodel\curse_of_dimensionality_aggregated.mat
+for ii = 1:length(files)
+    files(ii).smoothed_error = files(ii).smoothed_error(baseline_motifs:end);
+end
+    
+
 figure
 X = repmat((1:length(files(ii).smoothed_error))'+nsmooth/2,1,length(files));
 plotbyfactor(X,[files.smoothed_error],[files.ndim]+1, true)

@@ -1,32 +1,41 @@
-function learning_simple_song(do_simulations)
-datapath = 'c:\stetner\data\figures\xmodel\';
+function figure_learning_simple_song(do_simulations)
 
-
+filename = 'c:\stetner\data\figures\xmodel\learning_simple_song.mat';
+colorscheme_file = 'c:\stetner\code\figures\xmodel\xmodel_color_scheme.mat';
+arrowlen = 20;
+%% Run simulation
 if exist('do_simulations', 'var') && do_simulations
-    disp('simulating')
     xmodel_parameters_simplesong
     xmodel_initialize
     xmodel_run
     xmodel_calculate_bias
-    filename = sprintf('%slearning_simple_song%s.mat', datapath, datestr(now, 30));
     save(filename);
 end
 
-% load latest data file
-files = dir([datapath 'learning_simple_song*.mat']);
-filename = files(end).name
-load([datapath filename])
-arrowlen = 20;
+%% Load data
+d = load(filename);
+c = load(colorscheme_file);
 
-plottrials = baseline_motifs + [10, 70, learning_motifs];
+%% Plot template with song at the end of learning and example MSNs
+figure
+msn_examples(d, 5:10:d.hvc_units)
+
+
+%% Plot mean squared error
+figure
+plotmsebias(d)
+return
+
+plottrials = baseline_motifs + [10, 70, learning_motifs]; % list of example trials to show
 colors = linspace(0.5, 0, length(plottrials))' * ones(1,3);
 figure
 hold all
 for ii = 1:length(plottrials)
-    plot(bias(:,plottrials(ii)), 'Color', colors(ii,:))
+    plot(bias(:,plottrials(ii)), 'Color', c.bias)
 end
-plot(template, 'Color', 'b')
+plot(template, 'Color', c.template)
 
+%
 figure
 e = bias - template' * ones(1,total_motifs);
 mse = mean(e.^2);
@@ -39,9 +48,14 @@ for ii = 1:length(plottrials) % place an arrow marking each trial that was plott
     [nx, ny] = dsxy2figxy(xx- baseline_motifs, yy);
     annotation('arrow', nx, ny, 'Color', colors(ii,:))
 end
+xlabel('Trials')
+ylabel('Mean Squared Error')
 
+%
 figure
 imagesc(bias')
+xlabel('Time (ms)')
+ylabel('Trials')
 
 figure
 subplot(2,1,1)

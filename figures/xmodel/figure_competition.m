@@ -7,12 +7,12 @@ end
 %%
 if do_simulations
     %% Make data with competition
-    clear all
-    sparsemodel_parameters
-    inhibition_strength = 0;
-    sparsemodel_initialize
-    sparsemodel_run
-    save('c:\stetner\data\figures\xmodel\competition4.mat')
+%     clear all
+%     sparsemodel_parameters
+%     inhibition_strength = 0;
+%     sparsemodel_initialize
+%     sparsemodel_run
+%     save('c:\stetner\data\figures\xmodel\competition.mat')
 
     %% Make data without competition
     clear all
@@ -22,7 +22,7 @@ if do_simulations
     msn_learning_rate = msn_learning_rate/10;
     sparsemodel_initialize
     sparsemodel_run
-    save('c:\stetner\data\figures\xmodel\nocompetition4.mat')
+    save('c:\stetner\data\figures\xmodel\nocompetition.mat')
 end
 
 %%

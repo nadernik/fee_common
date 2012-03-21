@@ -24,7 +24,7 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 6e-3 * .005; % learning rate in HVC->X synapse
+msn_learning_rate = 1e-5; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 
@@ -36,8 +36,8 @@ lman_offset = 2;
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
 % deviation delay to peak of response
-std_etrace = 1; % Eligibility trace
-std_rkernel = 1; % Reward
+std_etrace = 50/4; % Eligibility trace
+std_rkernel = 50/4; % Reward
 
 % The template, aka the sequence we are trying to learn.
 t = linspace(0, 2*pi, motif_steps);
@@ -61,7 +61,7 @@ stability_factor = 300;
 
 % LMAN -> MSN connections are drawn randomly on each motif. The weights are
 % distributed between 1/lman_rand and lman_rand
-lman_rand = 5;
+lman_rand = 10;
 
 msn_initial_weight = msn_burst_activity_threshold/hvc_units;
 
