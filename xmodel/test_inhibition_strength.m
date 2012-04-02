@@ -1,6 +1,7 @@
 function test_inhibition_strength(do_simulations)
 
-inhibstrs = [0, logspace(-4,-2,11)];
+inhibstrs = [0 logspace(-6,-4, 5) logspace(-4, -2, 11)];
+inhibstrs = inhibstrs([1:5,7:end]);
 
 savefile = @(n) ['c:\stetner\data\sparsemodel\inhibition_strength_test_' int2str(n) '.mat'];
 
