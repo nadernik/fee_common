@@ -8,7 +8,7 @@ motifs_between_fluctuations = 30;
 fluctuation_time = 13; % ms
 fluctuation_sd = 2; % ms
 fluctuation_amplitude = 5;
-chosen_motif = 721;
+chosen_motif = 541;
 
 %% Generate data if requested
 % If argument is omitted, skip the simulations. Only do simulations is the
