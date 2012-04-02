@@ -1,7 +1,7 @@
 % Length of simulation
-baseline_motifs = 50; % number of motifs before learning starts
+baseline_motifs = 500; % number of motifs before learning starts
 learning_motifs = 2000; % number of motifs where learning happens!
-ending_motifs = 0; % number of motifs without learning at end of sim
+ending_motifs = 500; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
 % Size of the network
@@ -22,7 +22,7 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 3e-4; % learning rate in HVC->X synapse
+msn_learning_rate = 5e-4; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 % Other

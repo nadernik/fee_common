@@ -5,7 +5,7 @@ function figure_reducing_variability(do_simulations)
 datafile = 'C:\stetner\data\figures\xmodel\reducing_variability.mat';
 colorfile = 'C:\stetner\code\figures\xmodel\xmodel_color_scheme.mat';
 N = 25; % number of pitch traces to show before and after learning
-bin_centers = -19.5:1:19.5;
+bin_centers = -4.5:1:4.5;
 
 %%
 if exist('do_simulations', 'var') && (do_simulations == 1)
@@ -58,10 +58,12 @@ xlim([0 d.motif_steps])
 
 %% Histogram of pitch at target time before and after learning
 figure
-counts = hist(squeeze(d.ra_output(1,d.caf_target_time2,is_before)),bin_centers);
-stairs(bin_centers, counts/sum(counts), ':k','LineWidth', 3)
+is_baseline = (1:d.total_motifs) <= d.baseline_motifs;
+is_ending = (d.total_motifs:-1:1) <= d.ending_motifs;
+counts = hist(squeeze(d.ra_output(1,d.caf_target_time2,is_baseline)),bin_centers);
+stairs(bin_centers, counts/sum(counts),'LineWidth', 3, 'Color', [.7 .7 .7])
 hold on
-counts = hist(squeeze(d.ra_output(1,d.caf_target_time2,is_after)),bin_centers);
-stairs(bin_centers, counts/sum(counts), '-k','LineWidth', 3)
+counts = hist(squeeze(d.ra_output(1,d.caf_target_time2,is_ending)),bin_centers);
+stairs(bin_centers, counts/sum(counts),'LineWidth', 3, 'Color', [0 0 0])
 xlabel('Pitch')
 ylabel('Probability')
