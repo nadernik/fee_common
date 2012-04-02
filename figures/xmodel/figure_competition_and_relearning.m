@@ -37,9 +37,10 @@ weightimage(nocomp)
 
 %% Show template, bias, and example MSNs after relearning
 figure
-mlist = [50, 80, 160];
+mlist = [47, 75, 274];
 msn_examples(comp, mlist);
 figure
+mlist = [48, 64, 295];
 msn_examples(nocomp, mlist);
 
 %% Show learning rates during relearning

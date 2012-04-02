@@ -7,19 +7,16 @@ end
 %%
 if do_simulations
     %% Make data with competition
-%     clear all
-%     sparsemodel_parameters
-%     inhibition_strength = 0;
-%     sparsemodel_initialize
-%     sparsemodel_run
-%     save('c:\stetner\data\figures\xmodel\competition.mat')
+    clear all
+    sparsemodel_parameters
+    sparsemodel_initialize
+    sparsemodel_run
+    save('c:\stetner\data\figures\xmodel\competition.mat')
 
     %% Make data without competition
     clear all
     sparsemodel_parameters
-    inhibition_strength = 0;
     competition_strength = 0; % turn off competition
-    msn_learning_rate = msn_learning_rate/10;
     sparsemodel_initialize
     sparsemodel_run
     save('c:\stetner\data\figures\xmodel\nocompetition.mat')
@@ -27,12 +24,12 @@ end
 
 %%
 clear all;
-comp = load('c:\stetner\data\figures\xmodel\competition4.mat', ...
+comp = load('c:\stetner\data\figures\xmodel\competition.mat', ...
     'weights_on_msn_from_hvc', 'msn_units', 'hvc_units', 'bias', ...
-    'template', 'msn_output');
-nocomp = load('c:\stetner\data\figures\xmodel\nocompetition4.mat', ...
+    'template', 'msn_output', 'total_motifs');
+nocomp = load('c:\stetner\data\figures\xmodel\nocompetition.mat', ...
     'weights_on_msn_from_hvc', 'msn_units', 'hvc_units', 'bias', ...
-    'template', 'msn_output');
+    'template', 'msn_output', 'total_motifs');
 
 % distribution of weights
 % figure
@@ -87,8 +84,9 @@ legend({'Competition', 'No competition'})
 
 %% example MSNs overlayed on song and template
 figure
-mlist = [50, 80, 160];
+mlist = [47, 75, 274];
 msn_examples(comp, mlist);
 figure
+mlist = [48, 64, 295];
 msn_examples(nocomp, mlist);
 end
