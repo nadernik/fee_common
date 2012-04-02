@@ -32,12 +32,11 @@ lman_offset = 0;
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
 % deviation delay to peak of response
-std_etrace = 7; % Eligibility trace
-std_rkernel = 7; % Reward
+std_etrace = 12.5; % Eligibility trace
+std_rkernel = 12.5; % Reward
 
 % The template, aka the sequence we are trying to learn.
-t = linspace(0,2*pi, motif_steps);
-template = 10*sin(t);
+template = 10*ones(1,motif_steps);
 
 % conditional auditory feedback
 caf_target_time1 = 5; % time steps
