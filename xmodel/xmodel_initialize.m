@@ -12,7 +12,7 @@ end
 % Initialize empty matrices for other units
 lman_input      = zeros(lman_units, motif_steps);
 lman_output     = zeros(lman_units, motif_steps, total_motifs);
-msn_output      = zeros(msn_units,  motif_steps, total_motifs);
+msn_output      = zeros(msn_units,  motif_steps);
 pallidal_output = zeros(lman_units, motif_steps);
 dlm_output      = zeros(lman_units, motif_steps, total_motifs);
 ra_output       = zeros(ra_units,   motif_steps, total_motifs);
@@ -47,19 +47,19 @@ end
 %% Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
 for u = 1:lman_units
-    lman_noise(u, :, :) = generate_lman_noise(motif_steps, total_motifs);
+    lman_noise(u, :, :) = generate_lman_noise_mes010(motif_steps, total_motifs);
 end
 
 %% Eligibility trace
 x = -4*std_etrace:4*std_etrace;
 ekernel = 1 / sqrt(2 * pi * std_etrace .^ 2) * exp(-(x) .^ 2 ./ (2 * std_etrace .^ 2));
-ekernel = ekernel./max(ekernel);
+ekernel = ekernel./sum(ekernel);
 t_ekernel = 0:length(ekernel) - 1;
 
 %% Reward kernel
 x = -4*std_rkernel:4*std_rkernel;
 rkernel = 1 / sqrt(2 * pi * std_rkernel .^ 2) * exp(-(x) .^ 2 ./ (2 * std_rkernel .^ 2));
-rkernel = rkernel ./ max(rkernel);
+rkernel = rkernel ./ sum(rkernel);
 t_rkernel = 0:length(rkernel) - 1;
 
 %%

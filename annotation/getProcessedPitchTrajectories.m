@@ -4,7 +4,7 @@ function [pitchTraj, absTime, syllType, dura] = getProcessedPitchTrajectories(bi
 	%To get files
 	P.experNames = []; %pass single or cell of experNames
 	P.prefix = 'all';
-	P.rootdir = 'c:\aadata\AuditoryFeedback\';
+	P.rootdir = 'c:\stetner\data\';
 	%To select syllables
 	P.targetSyll = [];
 	P.timeRanges = [];

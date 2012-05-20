@@ -1,5 +1,8 @@
 function [audio, timeFileCreated, startTime, startSamp, names, values, info] = loadAudio(exper,num,whichSamples)
-%Find datafile num in the appropriate experiment folder.  Then open it.
+%LOADAUDIO Loads audio from a file in created by acquisitionGui experiment
+%
+%
+%[audio, timeFileCreated, startTime, startSamp, names, values, info] = loadAudio(exper,num,whichSamples)
 
 if(~exist('whichSamples','var'))
     whichSamples = [];

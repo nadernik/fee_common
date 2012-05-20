@@ -1,3 +1,4 @@
+wbh = waitbar(0, 'Running xmodel');
 for motif = 1:total_motifs
     eligibility_trace = zeros(msn_units, motif_steps + extra_steps);
     error = zeros(1, motif_steps + extra_steps);
@@ -8,12 +9,12 @@ for motif = 1:total_motifs
             % MSN activity is determined by input from HVC. LMAN has no
             % effect.
             msn_input = weights_on_msn_from_hvc * hvc_output(:, t);
-            msn_output(:, t, motif) = max(msn_input - msn_threshold, 0);
+            msn_output(:, t) = max(msn_input - msn_threshold, 0);
 
             
             % Each LMAN unit has a corresponding pallidal unit. The
             % pallidal unit sums the activity 
-            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t, motif);
+            pallidal_input = weights_on_pallidus_from_msn * msn_output(:, t);
             pallidal_output(:, t, motif) = pallidal_input;
 
             dlm_input = weights_on_dlm_from_pallidus * pallidal_output(:, t, motif);
@@ -21,7 +22,7 @@ for motif = 1:total_motifs
 
             % LMAN activity is the sum of intrinsic noise 
             lman_input(:, t) = lman_noise(:,t,motif) + weights_on_lman_from_dlm * dlm_output(:, t, motif);
-            lman_output(:,t,motif) = lman_input(:, t);
+            lman_output(:,t,motif) = max(lman_input(:, t)+lman_offset, 0);
 
             % RA activity is the sum of inputs from HVC and LMAN
             ra_input = weights_on_ra_from_hvc * hvc_output(:, t) + weights_on_ra_from_lman * lman_output(:, t, motif);
@@ -57,7 +58,8 @@ for motif = 1:total_motifs
                 instantaneous_error = caf_error_value;
                 steps_to_noise = steps_to_noise - 1;
             else
-                instantaneous_error = (ra_output(:, t, motif) - template(:, t)).^2 + total_extra_error(t, motif);
+                
+                instantaneous_error = 1/sqrt(extra_channels + 1) .* ((ra_output(:, t, motif) - template(:, t)).^2 + total_extra_error(t, motif));
             end
             error(t + t_rkernel) = error(t + t_rkernel) + instantaneous_error * rkernel;
         end
@@ -86,3 +88,4 @@ for motif = 1:total_motifs
         end
     end
 end
+close(wbh)

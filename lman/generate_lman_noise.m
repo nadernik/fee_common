@@ -28,11 +28,17 @@ frequency_domain_filter = mean(abs(d.fftcoefs), 2) * ones(1, cols);
 e = dpss(rows, 1);
 dpss_window = e(:, 1) * ones(1, cols);
 
-white_noise = randn(rows, cols); % zero mean gaussian white noise
+% Generate zero mean Gaussian white noise
+white_noise = randn(rows, cols);
+
+% Take Fourier Transform of white noise and normalize
 white_noise_fft = fft(white_noise, nfft);
 white_noise_fft = white_noise_fft ./ mean(mean(abs(white_noise_fft)));
 
+% Filter transformed noise by multiplying in the frequency domain.
 filtered_noise_fft = white_noise_fft .* frequency_domain_filter;
+
+% Inverse Fourier transform to get filtered noise in the time domain.
 filtered_noise_ifft = ifft(filtered_noise_fft);
 filtered_noise = real(filtered_noise_ifft(1:rows, :));
 

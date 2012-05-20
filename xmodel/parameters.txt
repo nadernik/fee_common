@@ -1,0 +1,24 @@
+Area X model parameters
+
+Purpose: Describe each of the parameters in the Area X model, give a sensible range of values, and explain how they affect the behavior of the model
+
+Parameters
+-----------------------------------------------
+learning_motifs
+
+
+Description: 
+
+
+
+Typical values:
+
+-----------------------------------------
+hvc overlap
+Description: Together these parameters determine the length of the song and the coverage of the song by HVC 
+msn_learning_rate
+reward_learning_rate
+std_etrace
+std_reward_kernel
+caf_error_value
+caf_noise_duration
