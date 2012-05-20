@@ -43,6 +43,7 @@ expernames{9} = '2011-05-03';
 targetsyllables{9} = 1;
 timewindows{9} = [.02 .05];
 
+%% Analyze pitch fluctuations (this takes a long time!)
 for n = 1:length(birdnames)
     disp(birdnames{n})
     savefile = ['C:\stetner\data\pitchfluctuations\long_stacks_for_figure\' birdnames{n} '_yesdc'];
@@ -52,3 +53,14 @@ for n = 1:length(birdnames)
     %pause
     close all
 end
+
+%% How many renditions of syllables were used for each bird?
+for n = 1:length(birdnames)
+    savefile = ['C:\stetner\data\pitchfluctuations\long_stacks_for_figure\' birdnames{n} '_yesdc'];
+try
+    load(savefile, 'pitches')
+    N.(['b' birdnames{n}]) = size(pitches,2);
+catch
+end
+end
+N

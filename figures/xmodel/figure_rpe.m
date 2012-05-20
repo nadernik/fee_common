@@ -91,9 +91,9 @@ for motif = 1:totalmotifs
 end
 
 rpefig.errortimeaxes = subplot(5,2,5:6);
-plot(errorsmooth(:,escmotif), 'Color', c.escape, 'LineWidth', 3)
+plot(errorraw(:,escmotif), 'Color', c.escape, 'LineWidth', 3)
 hold on
-plot(errorsmooth(:,hitmotif), 'Color', c.hit, 'LineWidth', 3)
+plot(errorraw(:,hitmotif), 'Color', c.hit, 'LineWidth', 3)
 xlim([0 tmax])
 hold off
 ylabel('Error')

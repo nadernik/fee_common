@@ -32,17 +32,18 @@ is_baseline = (1:d.total_motifs) <= d.baseline_motifs;
 baseline_escapes = squeeze(d.ra_output(1,:,is_baseline &  d.is_escape));
 baseline_hits    = squeeze(d.ra_output(1,:,is_baseline & ~d.is_escape));
 
-% example escapes
-escmotif = randsample(size(baseline_escapes,2), num_traces);
-plot(baseline_escapes(:,escmotif), 'Color', c.escape)
-
 % example hits
 hold on
-hitmotif = randsample(size(baseline_hits,2), num_traces);
+hitmotif = size(baseline_hits,2) - (0:num_traces-1);%randsample(size(baseline_hits,2), num_traces);
 plot(baseline_hits(:,hitmotif), 'Color', c.hit)
+
+% example escapes
+escmotif = size(baseline_escapes,2) - (0:num_traces-1);%randsample(size(baseline_escapes,2), num_traces);
+plot(baseline_escapes(:,escmotif), 'Color', c.escape)
 
 % average of baseline escapes
 avg_of_baseline_escapes = mean(baseline_escapes, 2);
+fprintf('There are a total of %g baseline escapes and %g baseline hits.\n', size(baseline_escapes,2), size(baseline_hits, 2))
 plot(avg_of_baseline_escapes, 'Color', c.escape, 'LineWidth', 3)
 xlim([1 (d.motif_steps + d.extra_steps)])
 set(gca, 'XTick', [])
@@ -80,21 +81,26 @@ figure
 t = (1:d.motif_steps) - d.caf_target_time2;
 plot(t, d.bias(:,end)./max(d.bias(:,end)), 'Color', c.bias, 'LineWidth', 3)
 hold on
+fprintf('Full width at half maximum of bias after learning is %g ms.\n', fwhm(d.bias(:,end)))
 
 % hvc burst
 hvc_burst = d.hvc_output(1, 1:9);
 t = 1:length(hvc_burst);
 t = t-mean(t);
 plot(t, hvc_burst./max(hvc_burst), 'Color', c.hvc, 'LineWidth', 3)
+fprintf('Full width at half maximum of HVC burst is %g ms.\n', fwhm(hvc_burst))
 
 % average of baseline escapes
 t = (1:d.motif_steps) - d.caf_target_time2;
 plot(t, avg_of_baseline_escapes./max(avg_of_baseline_escapes), 'Color', c.escape, 'LineWidth', 3)
+fprintf('Full width at half maximum of average of baseline escapes is %g ms.\n', fwhm(avg_of_baseline_escapes))
 
 % reward kernel
 t = 1:length(d.rkernel);
 t = t-mean(t);
 plot(t, d.rkernel./max(d.rkernel), 'Color', c.vta, 'LineWidth', 3)
+fprintf('Full width at half maximum of reward kernel is %g ms.\n', fwhm(d.rkernel))
+
 set(gca, 'FontSize', 16)
 xlabel('Time from CAF target (ms)')
 legend({'Learning', 'HVC burst', 'Baseline escapes', 'Reward kernel'})

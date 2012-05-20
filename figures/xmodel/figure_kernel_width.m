@@ -51,6 +51,6 @@ ylabel('Mean Squared Error')
 figure
 ttl = ttl - baseline_motifs;
 sem = std(ttl, 1) / sqrt(total_runs);
-errorbar(4*kernel_widths, mean(ttl,1), sem)
-xlabel('Delay to peak reward (ms)')
+errorbar(kernel_widths, mean(ttl,1), sem)
+xlabel('Reward kernel S.D. (ms)')
 ylabel('Motifs to learn')

@@ -40,8 +40,9 @@ end
 plot(squeeze(d.ra_output(1,:,is_after & d.is_escape)), 'Color', c.escape)
 
 %% show direct and indirect pathway activity, pitch up neuron only
-direct_pathway_activity = squeeze(  mean(sum(d.direct_msn_output(:, :, end-N+1:end), 1), 3)  );
-indirect_pathway_activity = squeeze(  mean(sum(d.indirect_msn_output(:, :, end-N+1:end), 1), 3)  );
+up_neurons = d.weights_on_direct_msn_from_lman(:,1) > 0;
+direct_pathway_activity   = squeeze(  mean(sum(d.direct_msn_output(  up_neurons, :, end), 1), 3)  );
+indirect_pathway_activity = squeeze(  mean(sum(d.indirect_msn_output(up_neurons, :, end), 1), 3)  );
 ylo = min(min(direct_pathway_activity), min(indirect_pathway_activity));
 yhi = max(max(direct_pathway_activity), max(indirect_pathway_activity));
 
@@ -60,10 +61,14 @@ xlim([0 d.motif_steps])
 figure
 is_baseline = (1:d.total_motifs) <= d.baseline_motifs;
 is_ending = (d.total_motifs:-1:1) <= d.ending_motifs;
-counts = hist(squeeze(d.ra_output(1,d.caf_target_time2,is_baseline)),bin_centers);
+pitch_before = squeeze(d.ra_output(1,d.caf_target_time2,is_baseline));
+counts = hist(pitch_before, bin_centers);
 stairs(bin_centers, counts/sum(counts),'LineWidth', 3, 'Color', [.7 .7 .7])
 hold on
-counts = hist(squeeze(d.ra_output(1,d.caf_target_time2,is_ending)),bin_centers);
+pitch_after = squeeze(d.ra_output(1,d.caf_target_time2,is_ending));
+counts = hist(pitch_after,bin_centers);
 stairs(bin_centers, counts/sum(counts),'LineWidth', 3, 'Color', [0 0 0])
 xlabel('Pitch')
 ylabel('Probability')
+
+fprintf('Standard deviation of pitch is %g before and %g after learning.\n', std(pitch_before), std(pitch_after))
