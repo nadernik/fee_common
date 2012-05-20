@@ -1066,13 +1066,13 @@ filtered_noise_fft = white_noise_fft .* frequency_domain_filter;
 
 % Inverse Fourier transform to get filtered noise in the time domain.
 filtered_noise_ifft = ifft(filtered_noise_fft);
-filtered_noise = real(filtered_noise_ifft(1:rows, :));
+filtered_noise = filtered_noise_ifft(1:rows, :);
 
 % Rescale to compensate for dpss window that was used to calculate
 % the frequency domain filter (this is hidden pitchfluctuations.m) and for
 % the length of the noise
 scale_factor = (1 ./ mean(dpss_window(:,1)));
-dc_std = .35;
+dc_std = 0;%.35;
 extra_dc = ones(rows, 1) * (randn(1, cols) .* dc_std);
 final_noise = filtered_noise .* scale_factor + extra_dc;
 
@@ -1099,9 +1099,9 @@ if debugging
     % Spectra
     figure
     f2 = fft(final_noise .* dpss_window, nfft);
-    plot(mean(abs(f2(1:ddc.nfft/2, :)), 2))
+    loglog(mean(abs(f2(1:ddc.nfft/2, :)), 2))
     hold all
-    plot(mean(abs(ddc.fftcoefs(1:ddc.nfft/2,:)), 2))
+    loglog(mean(abs(ddc.fftcoefs(1:ddc.nfft/2,:)), 2))
     legend('simulated', 'actual')
     title('spectra')
     xlabel('Frequency (Hz)')
