@@ -1,4 +1,4 @@
-function [Freq,P_amp,P_syll,P_on] = Actual_spectrum(dbase,params,fileNum);
+function [Freq,P_amp,P_syll,P_on] = Actual_spectrum(dbase,params,fileNum)
 %%% calculate song rhythm from actual data
 %%% Tatsuo Okubo
 %%% 2011/01/21

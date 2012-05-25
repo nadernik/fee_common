@@ -37,7 +37,8 @@ for c = C % array of files to be analyzed
     BoutTimes{c} = TempBoutTimes(BoutDurationNdx,:);
     BoutTimes_abs{c} = repmat(dbase.Times(c),size(BoutTimes{c}))+BoutTimes{c}/dbase.Fs/24/60/60;
     BoutDurationFile{c} = BoutDuration;
-    
+        
+    %% deselect syllables outside bout
     for k = 1:size(dbase.SegmentTimes{c},1)
         SyllableOnset = dbase.SegmentTimes{c}(k,1);
         SyllableOffset = dbase.SegmentTimes{c}(k,2);

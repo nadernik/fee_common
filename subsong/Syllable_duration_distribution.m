@@ -33,13 +33,13 @@ for c = C % for all the files
                 end
             end
         end
-        
+
     end
 end
 
 durs = durs(:,2)-durs(:,1); % calculating duration (samples)
 durs = durs/dbase.Fs*1000; % converting duration to miliseconds
-% GOF_DA = judge_bird_TO(durs);
+GOF_DA = judge_bird_TO(durs);
 handles.durs = durs; % save in handles
 handles.gaps = gaps;
 
@@ -98,7 +98,7 @@ if ~isempty(durs) % duration is not empty
     plot(x,y,'k','linewidth',1); % x-axis is the value in between the edges
 end
 plot(x,z,'r','linewidth',2);
-legend('data',['ML estimate using ',num2str(a),'-',num2str(b),' ms'])
+%legend('data',['ML estimate using ',num2str(a),'-',num2str(b),' ms'])
 xlim([0 lst(end)]);
 ylabel('Probability density (s^{-1})','fontsize',12);
 title(['Time constant: ', num2str(tau*1000,3),' ms'],'fontsize',14);
@@ -110,8 +110,9 @@ if ~isempty(durs) % duration is not empty
 end
 plot(x,z,'r','linewidth',2);
 set(gca,'yscale','log');
-legend('data',['ML estimate using ',num2str(a),'-',num2str(b),' ms'])
+%legend('data',['ML estimate using ',num2str(a),'-',num2str(b),' ms'])
 xlim([0 lst(end)]);
+xlabel('Syllable duration (ms)','fontsize',12);
 ylabel('Probability density (s^{-1})','fontsize',12);
 title(['Goodness-of-fit: ', num2str(GOF,2)],'fontsize',14);
 
@@ -135,11 +136,43 @@ ylabel('Probability density (s^{-1})','fontsize',12);
 box off
 
 %% save data and figures (TO DO: separate the save part)
-PathName = ['c:\stetner\data\' birdName];
 FileName = [birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.mat'];
-save([PathName,filesep,FileName],'lst','lst2','durs','gaps','GOF','tau');
-saveas(20,[PathName, filesep, birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.fig'],'fig');
-close(19);
-close(20);
+switch Category
+    case 1 % subsong
+        PathName = 'Z:\Data\Song_rhythm\Subsong';
+    case 2 % early plastic song
+        PathName = 'Z:\Data\Song_rhythm\Early_plastic_song';
+    case 3 % HVC lesion
+        PathName = 'Z:\Data\Song_rhythm\HVC_lesion';
+    case 4 % LMAN inactivation
+        PathName = 'Z:\Data\Song_rhythm\LMAN_inactivation';
+    case 5 % LMAN inactivation
+        PathName = 'Z:\Data\Song_rhythm\HVC_cooling';
+    case 6 % LMAN inactivation
+        PathName = 'Z:\Data\Song_rhythm\LMAN_cooling';
+    case 7 % LMAN inactivation
+        PathName = 'Z:\Data\Song_rhythm\Development';
+    case 8 % Late plastic song
+        PathName = 'Z:\Data\Song_rhythm\Late_plastic_song';
+    case 9 % X lesion
+        PathName = 'Z:\Data\Song_rhythm\X_lesion';
+end
+
+if Category==7 | Category==9
+    if exist([PathName,filesep,birdName])
+        save([PathName,filesep,birdName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau');
+    else % make new directory for the bird
+        mkdir(PathName,birdName);
+        save([PathName,filesep,birdName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau');
+    end
+    cd([PathName,filesep,birdName]);
+else
+    save([PathName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau'); % save .mat
+    cd(PathName)
+end
+
+saveas(20,[birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.fig'],'fig');
+%close(19);
+%close(20);
 dbase.durs = durs;
 dbase.gaps = gaps;
