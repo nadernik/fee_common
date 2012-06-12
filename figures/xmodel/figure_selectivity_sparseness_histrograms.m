@@ -1,52 +1,33 @@
-bins = -6:0.5:0.5;
+% Compare the selectivity and sparseness of MSN population before and after
+% learning
 
-% Nothing
-d0 = load('c:\stetner\data\figures\xmodel\no_competition_nor_inhibition.mat');
+bins = -6:0.5:0.5; % bin centers for histogram
 
-% with competition only
-dc = load('c:\stetner\data\figures\xmodel\inhibition_no.mat');
+selectivity_pre   = selectivity(d.initial_weights');
+selectivity_post = selectivity(d.weights_on_msn_from_hvc');
 
-% with inhibition only
-di = load('c:\stetner\data\figures\xmodel\nocompetition.mat');
+selectivity_pre_probability  = hist(selectivity_pre,  bins) / d.msn_units;
+selectivity_post_probability = hist(selectivity_post, bins) / d.msn_units;
 
+sparseness_pre  = sparseness(d0.initial_weights');
+sparseness_post = sparseness(d.weights_on_msn_from_hvc');
 
-
-se0 = selectivity(d0.weights_on_msn_from_hvc');
-sec = selectivity(dc.weights_on_msn_from_hvc');
-sei = selectivity(di.weights_on_msn_from_hvc');
-
-se0norm = hist(se0, bins) / d0.msn_units;
-secnorm = hist(sec, bins) / dc.msn_units;
-seinorm = hist(sei, bins) / di.msn_units;
-
-sp0 = sparseness(d0.weights_on_msn_from_hvc');
-spc = sparseness(dc.weights_on_msn_from_hvc');
-spi = sparseness(di.weights_on_msn_from_hvc');
-
-sp0norm = hist(sp0, bins) / d0.hvc_units;
-spcnorm = hist(spc, bins) / dc.hvc_units;
-spinorm = hist(spi, bins) / di.hvc_units;
+sparseness_pre_probability  = hist(sparseness_pre,  bins) / d.hvc_units;
+sparseness_post_probability = hist(sparseness_post, bins) / d.hvc_units;
 
 figure
 subplot(1,2,1)
-stairs(bins, se0norm, ':k', 'LineWidth', 3)
+stairs(bins, selectivity_pre_probability, 'Color', [.7 .7 .7], 'LineWidth', 3)
 hold on
-stairs(bins, secnorm, '-k', 'LineWidth', 3)
-title('Selectivity, nothing vs. competition only')
-subplot(1,2,2)
-stairs(bins, sp0norm, ':k', 'LineWidth', 3)
-hold on
-stairs(bins, spcnorm, '-k', 'LineWidth', 3)
-title('Sparseness, nothing vs. competition only')
+stairs(bins, selectivity_post_probability, 'Color', [0 0 0], 'LineWidth', 3)
+xlabel('Selectivity')
+ylabel('Probability')
+legend({'Before learning', 'After learning'})
 
-figure
-subplot(1,2,1)
-stairs(bins, se0norm, ':k', 'LineWidth', 3)
-hold on
-stairs(bins, seinorm, '-k', 'LineWidth', 3)
-title('Selectivity, nothing vs. inhibition only')
 subplot(1,2,2)
-stairs(bins, sp0norm, ':k', 'LineWidth', 3)
+stairs(bins, sparseness_pre_probability, 'Color', [.7 .7 .7], 'LineWidth', 3)
 hold on
-stairs(bins, spinorm, '-k', 'LineWidth', 3)
-title('Sparseness, nothing vs. inhibition only')
+stairs(bins, sparseness_post_probability, 'Color', [0 0 0], 'LineWidth', 3)
+xlabel('Sparseness')
+ylabel('Probability')
+legend({'Before learning', 'After learning'})
