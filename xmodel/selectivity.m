@@ -26,6 +26,13 @@ end
 
 s = sum(plogp(p), 1); % sum across neurons to give one value of sparseness for each stimulus
 
+pmn = ones(num_stimuli, 1) / num_stimuli;
+pmx = [zeros(num_stimuli - 1, 1); 1];
+mx = sum(plogp(pmx), 1);
+mn = sum(plogp(pmn), 1);
+
+s = (s - mn) / (mx - mn);
+
 function z = plogp(y)
 skip = y==0;
 z = zeros(size(y)); % if probability is zero, set p*log(p) to zero. even tho 0*log(0) is indeterminate, its limit is zero

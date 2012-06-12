@@ -15,6 +15,13 @@ p = x ./ (a * ones(1,num_neurons));
 
 s = sum(plogp(p), 2); % sum across neurons to give one value of sparseness for each stimulus
 
+pmn = ones(1, num_neurons) / num_neurons;
+pmx = [zeros(1, num_neurons - 1), 1];
+mx = sum(plogp(pmx), 2);
+mn = sum(plogp(pmn), 2);
+
+s = (s - mn) / (mx - mn);
+
 function z = plogp(y)
 skip = y==0;
 z = zeros(size(y));
