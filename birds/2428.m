@@ -58,3 +58,56 @@ Batch_song_rhythm('2428','2011-06-03', 1, 1:125)
 % 6/8
 Parse_segments
 Batch_song_rhythm('2428','2011-06-08', 1, 1:100)
+
+%% 2012-05-28
+bird_dir = 'c:\stetner\data\mman lesion\2428';
+start_day = datenum(2011, 06, 03);
+end_day = start_day + 9;
+
+for day = start_day:end_day
+    data_dir = fullfile(bird_dir, datestr(day, 'yyyy-mm-dd'));
+    bouts_dir = fullfile(data_dir, 'bouts');
+    if exist(bouts_dir, 'dir')
+        fprintf('%s already exists. Skipping to next day...\n', bouts_dir)
+    else
+        fprintf('Now detecting bouts in %s...\n', data_dir)
+        load(fullfile(data_dir, 'exper.mat'), 'exper')
+        Bout_detect_TO(data_dir, exper.audioCh, [])
+    end
+end
+
+%%
+% 2011-06-03 already done
+% 2011-06-04 1:150
+% 2011-06-05 1:150
+% 2011-06-06 1:155
+% 2011-06-07 1:150
+% 2011-06-08 already done
+% 2011-06-09 1:150
+% 2011-06-10 1:150
+% 2011-06-11 1:150
+% 2011-06-12 1:150
+
+%%
+
+bird_dir = 'c:\stetner\data\mman lesion\2428';
+dbase_file = 'bouts\analysis_selected.mat';
+category = 10; % for Batch_song_rhythm.m
+
+% Find directories for this bird
+d = subdirs(bird_dir);
+for ii = 1:length(d)
+    filename = fullfile(bird_dir, d(ii).name, dbase_file);
+    eg_repair_dbase_dir(filename)
+    switch d(ii).name
+        case '2011-06-03'
+            filenums = 1:125;
+            Batch_song_rhythm(filename, category, filenums)
+        case '2011-06-08'
+            filenums = 1:100;
+            Batch_song_rhythm(filename, category, filenums)
+        otherwise
+            filenums = 1:150;
+            Batch_song_rhythm(filename, category, filenums)
+    end
+end
