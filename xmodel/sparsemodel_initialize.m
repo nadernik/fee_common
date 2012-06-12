@@ -48,7 +48,7 @@ weights_on_msn_from_msn = -inhibition_strength*(ones(msn_units) - eye(msn_units)
 %% Generate intrinsic noise in LMAN
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
 for u = 1:lman_units
-    z = generate_lman_noise(motif_steps, total_motifs);
+    z = generate_lman_noise_mes010(motif_steps, total_motifs);
     
     lman_noise(u, :, :) = z / std(z(:));
 end
