@@ -45,8 +45,12 @@ for n = 1:length(kernel_widths)
 end
 
 figure
-scatter(width_reward, width_learning, 100, '.')
+scatter(width_reward, width_learning, 500, '.')
 hold on
 plot(xlim, mean(width_lman)*ones(2,1),'-k')
+set(gca, 'FontSize', 16)
 xlabel('Reward width (ms)')
 ylabel('Learning width (ms)')
+setticklimx([0,40])
+setticklimy([0, 20])
+keyboard

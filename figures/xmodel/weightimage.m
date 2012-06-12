@@ -10,3 +10,5 @@ fieldname = sprintf('weights_on_%s_from_%s', onto, from);
 imagesc(d.(fieldname))
 xlabel(from)
 ylabel(onto)
+set(gca, 'XTick', [], 'YTick', [])
+axis square

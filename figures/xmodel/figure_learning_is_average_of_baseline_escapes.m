@@ -1,6 +1,6 @@
 function figure_learning_is_average_of_baseline_escapes(do_simulations)
 
-datafile = 'c:\stetner\data\figures\xmodel\caf2.mat';
+datafile = 'c:\stetner\data\figures\xmodel\caf3.mat';
 colorscheme = 'C:\stetner\code\figures\xmodel\xmodel_color_scheme.mat';
 num_traces = 10;
 
@@ -67,12 +67,23 @@ ylabel('RPE')
 
 %% Bias before and after learning
 figure
-plot(d.bias(:,1), '--', 'Color', c.bias, 'LineWidth', 3)
+% normalize so that the max of the bias after learning is 1.
+Z = max(d.bias(:,end)); % normalization constant
+plot(d.bias(:,1)/Z, ':', 'Color', c.bias, 'LineWidth', 3)
 hold on
-plot(d.bias(:,end), 'Color', c.bias, 'LineWidth', 3)
+plot(d.bias(:,end)/Z, 'Color', c.bias, 'LineWidth', 3)
 set(gca, 'FontSize', 16)
 xlabel('Time (ms)')
 
+% Full width at half maximum of bias after learning
+[width, xw] = fwhm(d.bias(:,end));
+y = [0.5, 0.5];
+[fx, fy] = dsxy2figxy(xw, y);
+annotation('doublearrow',fx,fy)
+str = sprintf('%.1f ms', width);
+text(xw(2)+width, 0.5, str);
+
+set(gca, 'YTick', [0 1])
 %% Plot bias after learning on top of HVC burst, average of basline
 %% escapes, and reward kernel
 
@@ -101,6 +112,6 @@ t = t-mean(t);
 plot(t, d.rkernel./max(d.rkernel), 'Color', c.vta, 'LineWidth', 3)
 fprintf('Full width at half maximum of reward kernel is %g ms.\n', fwhm(d.rkernel))
 
-set(gca, 'FontSize', 16)
+set(gca, 'FontSize', 16, 'YTick', [0 1])
 xlabel('Time from CAF target (ms)')
 legend({'Learning', 'HVC burst', 'Baseline escapes', 'Reward kernel'})
