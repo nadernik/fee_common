@@ -34,32 +34,21 @@ switch Category
         Title = 'Late plastic song';
     case 9
         PathName = 'Z:\Data\Song_rhythm\X_lesion';
-        Title = '';        
+        Title = '';  
+    case 10
+        PathName = 'c:\stetner\data\mman lesion';
+        Title = 'MMAN Lesion';
+    otherwise
+        error('Unknown category')
 end
 
-%% extract birdName, folderName from the fileName
-Idx = strfind(fileName,'\');
-if strfind(fileName,'subsong_HVC\Final_data_set')
-    Idx = strfind(fileName,'to');
-    birdName = fileName(Idx(1):Idx(1)+5);
-    folder = fileName(Idx(1)+7:Idx(1)+17);
-    load(fileName)
-elseif strcmp(fileName(1),'Z') || strcmp(fileName(1),'z') % TO database
-    birdName = fileName(Idx(3)+1:Idx(4)-1);
-    folder = fileName(Idx(4)+1:Idx(5)-1);
-    load(fileName);
-else % DA database
-    birdName = fileName(Idx(2)+1:Idx(3)-1);
-    folder = fileName(Idx(3)+1:Idx(4)-1);
-    load(fileName);
-    
-    if strfind(dbase.PathName,'z:')
-        dbase.PathName = strrep(dbase.PathName,'z:','Y:');
-    elseif strfind(dbase.PathName,'Z:')
-        dbase.PathName = strrep(dbase.PathName,'Z:','Y:');
-    end
+%% extract birdName from the fileName
+if strcmpi(PathName, fileName(1:length(PathName))) % if fileName starts with PathName
+    [birdName, junk] = strtok(fileName(length(PathName)+1:end),'\');
+else
+    error('Cannot determine bird name')
 end
-
+load(fileName)
 Date = datevec(dbase.Times(1)); % get experiment date
 
 %% Select syllables within bout, syllable duration distribution

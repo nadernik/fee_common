@@ -156,6 +156,10 @@ switch Category
         PathName = 'Z:\Data\Song_rhythm\Late_plastic_song';
     case 9 % X lesion
         PathName = 'Z:\Data\Song_rhythm\X_lesion';
+    case 10 % MMAN lesion
+        PathName = 'c:\stetner\data\mman lesion';
+    otherwise
+        error('Unknown category')
 end
 
 if Category==7 | Category==9

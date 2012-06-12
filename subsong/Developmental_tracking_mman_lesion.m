@@ -3,11 +3,11 @@
 %%% Tatsuo Okubo
 %%% 2011/06/26
 
-birdList = {'to2223','to2241','to2253','to2313','to2352','to2403'};
-datadir = 'c:\stetner\data\rhythmicity development (TO)';
+birdList = {'2296', '2303', '2423', '2428'};
+datadir = 'c:\stetner\data\mman lesion\rhythmicity development';
 
-%Color = ['k','b','g','c','m','r'];
-Color = ['k','k','k','k','k','k'];
+Color = ['k','b','g','c'];
+% Color = ['k','k','k','k','k','k'];
 
 %% Peak Amp
 figure(60); clf; hold on

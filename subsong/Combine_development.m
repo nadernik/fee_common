@@ -4,13 +4,13 @@
 %%% 2011/06/26
 
 clear;
-birdName = 'to2458'; % for development
-Thres_day = [2011,6,16]; % first day where GOF > 2
+birdName = '2303'; % for development
+Thres_day = [2011,4,2]; % first day where GOF > 2
+indir = 'C:\stetner\data\mman lesion';
+outdir = 'C:\stetner\data\mman lesion\rhythmicity development';
 
 %%
-PathName = ['Z:\Data\Song_rhythm\Development\',birdName];
-cd(PathName);
-List = dir('*song_rhythm.mat'); % find all song_rhythm files
+List = dir(fullfile(indir, [birdName '*song_rhythm.mat'])); % find all song_rhythm files
 % initialize
 P_syll_pop = [];
 P_ratio_pop = [];
@@ -24,7 +24,7 @@ Date_sort = [];
 for i=1:length(List) % for all the days within the folder
     i
     List(i).name
-    load(List(i).name); % load song_rhythm.mat
+    load(fullfile(indir, List(i).name)); % load song_rhythm.mat
     
     PeakAmp_temp(i) = Stats.PeakAmp;
     PeakFreq_temp(i) = Stats.PeakFreq;
@@ -47,7 +47,6 @@ Sig = Sig_temp(I);
 MSE = MSE_temp(I);
 
 %% save as .mat
-cd('Z:\Data\Song_rhythm\Development');
 FileName = [birdName,'_development.mat'];
-save(FileName,'Abs_date','Rel_date','PeakAmp','PeakFreq','Sig','MSE');
+save(fullfile(outdir, FileName),'Abs_date','Rel_date','PeakAmp','PeakFreq','Sig','MSE');
 %msgbox('Done')
