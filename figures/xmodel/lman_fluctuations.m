@@ -44,7 +44,7 @@ c = colormap;
 colors = c(round(linspace(1,64,length(b))),:);
 %% Load all data
 for ii = 1:length(b)
-    try
+    %try
     pitchfluctuations_data_file = sprintf('c:\\stetner\\data\\pitchfluctuations\\long_stacks_for_figure\\%s_yesdc.mat', b(ii).name)
     load(pitchfluctuations_data_file, 'P')
     
@@ -108,9 +108,9 @@ for ii = 1:length(b)
     b(ii).freq = freq;
     b(ii).freqpower = mean(freqpower,2);
     
-    catch
+    %catch
         keyboard
-    end
+    %end
 end
 
 % reorder by value of autocorrleation at longest lag
@@ -243,7 +243,7 @@ plot(mean(abs(ddc.fftcoefs(1:ddc.nfft/2,:).^2),2), 'Color', colors(4,:), 'LineWi
 hold off
 set(gca, 'YScale', 'log')
 keyboard
-% legend('simulated', 'actual')
+legend('Model', 'Bird')
 title('spectra')
 xlabel('Frequency (Hz)')
 ylabel('Magnitude')
