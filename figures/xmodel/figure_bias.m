@@ -28,13 +28,17 @@ clear all
 load c:\stetner\data\xmodel\bias.mat
 c = load('c:\stetner\code\figures\xmodel\xmodel_color_scheme.mat');
 
-%%%%%%%%%% Parameters %%%%%%%%%%
-units_to_plot = 1:2:hvc_units; %
-dy = 2;                        %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Parameters %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+units_to_plot = 1:2:hvc_units; % which hvc units to show
+num_motifs = 5; % number of motifs to display
+dy = 2; % distance between traces on y axis
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-figure
-for motif = 1:total_motifs
+while true
+    
+    % select motifs to plot
+    selected_motifs = randsample(total_motifs, num_motifs);
+    
     hold on
     y0 = 0;
 
@@ -48,23 +52,31 @@ for motif = 1:total_motifs
     % msn activity for the msns that project to 1st lman unit
     for m = units_to_plot
         if weights_on_msn_from_lman(m,1) > 0
-            plot(squeeze(msn_output(m,:,motif))/ ...
+            plot(squeeze(msn_output(m,:,selected_motifs))/ ...
                 weights_on_msn_from_hvc(strong_unit,strong_unit) - y0, ...
                 'Color', c.msn, 'LineWidth', 3)
             y0 = y0+dy;
         end
     end
 
-    % lman activity of 1st lman unit
+    % lman activity of 1st lman unit (pitch up channel)
     y0 = y0+2*dy;
-    plot(squeeze((lman_output(1,:,motif)) - lman_offset)/strength*3 - y0, ...
+    plot(squeeze((lman_output(1,:,selected_motifs)) - lman_offset)/strength*3 - y0, ...
         'Color', c.lman, 'LineWidth', 3)
+    
+    % pitch
+    y0 = y0 + 5*dy;
+    plot(squeeze((ra_output(1,:,selected_motifs)))/strength*3 - y0, 'Color', c.template, 'LineWidth', 3)
+    
 
-    set(gca, 'YTick', [-27, -18, -4])
-    set(gca, 'YTickLabel', {'LMAN', 'MSN', 'HVC'})
+    set(gca, 'YTick', [-38, -27, -18, -4])
+    set(gca, 'YTickLabel', {'Pitch', 'LMAN+', 'MSN', 'HVC'})
     set(gca, 'FontSize', 16)
     xlabel('Time (ms)')
-    fprintf('Motif %03.f of %03.f (Enter for next)\n',motif,total_motifs)
+    disp(['Motifs: ' num2str(sort(selected_motifs')) '. [Enter] for another random set of motifs.'])
+    ylim([-y0-2*dy, dy])
+    xlim([0 40])
+    
     pause
     clf
 end
