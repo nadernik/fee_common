@@ -1,6 +1,6 @@
 function varargout = plotmsebias(d)
 mse = xmodel_calculate_mse(permute(d.bias, [3 1 2]), d.template);
-h = plot(mse, 'LineWidth', 3);
+h = semilogy(mse, 'LineWidth', 3);
 set(gca, 'FontSize', 16)
 xlabel('Trials')
 ylabel('Mean Squared Error')
