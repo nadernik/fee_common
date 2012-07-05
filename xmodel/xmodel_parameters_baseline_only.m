@@ -1,11 +1,11 @@
 % Length of simulation
-baseline_motifs = 1000; % number of motifs before learning starts
+baseline_motifs = 5000; % number of motifs before learning starts
 learning_motifs = 0; % number of motifs where learning happens!
 ending_motifs = 0; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
 % Size of the network
-hvc_units = 10; % number of units in hvc - change this to control length of song
+hvc_units = 50; % number of units in hvc - change this to control length of song
 
 % There is one RA unit representing the output of the system. It might be
 % better to think of it as "pitch"
@@ -22,27 +22,27 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 1e-7; % learning rate in HVC->X synapse
-reward_learning_rate = 1/25; % learning rate of state value function V(s)
+msn_learning_rate = 1e-5; % learning rate in HVC->X synapse
+reward_learning_rate = .2; % learning rate of state value function V(s)
 
 % Other
 msn_threshold = 0;
-lman_offset = 0;
+lman_offset = 5;
 
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
 % deviation delay to peak of response
-std_etrace = 12.5; % Eligibility trace
-std_rkernel = 12.5; % Reward
+std_etrace = 20; % Eligibility trace
+std_rkernel = 20; % Reward
 
 % The template, aka the sequence we are trying to learn.
-template = 5 * ones(1, motif_steps);
+template = zeros(1, motif_steps);
 
 % conditional auditory feedback
-caf_target_time1 = 1; % time steps
-caf_target_time2 = 1;
+caf_target_time1 = 5; % time steps
+caf_target_time2 = 100;
 caf_pitch_threshold1 = nan; % hits if above this
 caf_pitch_threshold2 = nan; % hits if below this
 caf_random_hit_probability = 0;
-caf_error_value = 800;
-caf_noise_duration = 20; % time steps
+caf_error_value = 400;
+caf_noise_duration = 2; % time steps

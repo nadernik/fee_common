@@ -22,7 +22,7 @@ motif_steps = hvc_burst_shift * hvc_units;
 % neurons
 
 % Learning rates
-msn_learning_rate = 1e-5; % learning rate in HVC->X synapse
+msn_learning_rate = 5e-4; % learning rate in HVC->X synapse
 reward_learning_rate = .2; % learning rate of state value function V(s)
 
 % Other
