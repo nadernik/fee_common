@@ -28,7 +28,7 @@ weights_on_ra_from_lman = [1, -1] ./ sqrt(2);
 
 % One-to-one connections to relay pallidal output to LMAN through DLM
 weights_on_dlm_from_pallidus = -eye(lman_units); % inhibitory
-weights_on_lman_from_dlm = eye(lman_units);
+weights_on_lman_from_dlm = zeros(lman_units);%eye(lman_units); %%%%DEBUG!
 
 % Topographic LMAN-X-DLM loop
 weights_on_msn_from_hvc = msn_initial_weight*rand(msn_units, hvc_units);
