@@ -123,6 +123,8 @@ for motif = 1:total_motifs
         % Make sure these synaptic weights are not negative
         weights_on_msn_from_hvc = max(0, weights_on_msn_from_hvc);
         
+        f = weights_on_msn_from_hvc(m, :) ./ sum(weights_on_msn_from_hvc(m, :));
+        weights_on_msn_from_hvc(m, :) = weights_on_msn_from_hvc(m, :) - f * competition_decrement;
     end
 
     % show progress
