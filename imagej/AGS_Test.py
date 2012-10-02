@@ -24,5 +24,12 @@ print zs.get_filename(x=10, y=2)
 #zs.stitch_grid()
 #zs.imp_stitched.show()
 
-mydir = os.path.join('c:', 'stetner', 'data', 'tracing', '1807-hvcx', 'right2col1row2')
+mydir = os.path.join('c:\\stetner', 'data', 'tracing', '1807-hvcx', 'right2col1row2')
+print mydir
 ps = AGS.PrairieSeries(dirname=mydir)
+print ps.fn_tmpl
+print ps.get_filename(cycle=1)
+print ps.get_filename(cycle=2, z=1)
+ps.set_z(30)
+imp = ps.get_patch(cycle=44)
+imp.show()

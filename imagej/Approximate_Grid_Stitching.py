@@ -1,6 +1,6 @@
 import os.path
 import re
-from ij import IJ
+from ij import IJ, ImagePlus
 from ij.gui import Roi
 from plugin.Stitching_Pairwise import performPairWiseStitching
 from mpicbg.stitching import StitchingParameters
@@ -31,12 +31,34 @@ class StitchableGrid():
         self.dyy = dyy
         self.dxy = dxy
         self.dyx = dyx
+        
+    def xycoords(self, ix, iy):
+        x = ix * self.dxx + iy * self.dxy
+        y = iy * self.dyy + ix * self.dyx
+        return (x, y)
+        
+    def stitch_coordinates(self):
+        params = StitchableGrid.default_params
+        params.computeOverlap = False
+        for iy in range(self.ny):
+            for ix in range(self.nx):
+                if iy == 0 and ix == 0:
+                    self.imp_stitched = self.get_patch(x=0, y=0)
+                else:
+                    (x, y) = self.xycoords(ix, iy)
+                    params.xOffset = x
+                    params.yOffset = y
+                    self.pairwise_stitch(self.get_patch(x=ix, y=iy), params)
+                    self.imp_stitched.show()
+                    
+    
+    def pairwise_stitch(self, imp_to_add, params):
+        performPairWiseStitching(self.imp_stitched, imp_to_add, params)
+        self.imp_stitched = IJ.getImage()
+        self.imp_stitched.hide()
 
     def stitch_grid(self):
-        # Estimate dxx and dyx by stitching horizontal neighbors
-        # Estimate dxy and dyy by stitching vertical neighbors
-        # Remove outliers
-        
+        params = StitchableGrid.default_params
         stitched = self.get_patch(x=0, y=0)
         for iy in range(self.ny):
             if iy == 0:
@@ -78,7 +100,6 @@ class StitchableGrid():
         params.computeOverlap =  (self.max_xcorr(imp_to_add) >= 
                                   StitchableGrid.xcorr_threshold)
         # overwrites default params! this is not ideal
-            
         performPairWiseStitching(self.imp_stitched, imp_to_add, params)
         self.imp_stitched = IJ.getImage()
         self.imp_stitched.hide()
@@ -109,7 +130,22 @@ class StitchableGrid():
 
         # Stitch images
         self.stitch_approx(imp_to_add, self.dxx, self.dyy)
-
+    
+    def stitch_coordinates(self):
+        params = StitchableGrid.default_params
+        params.computeOverlap = False
+        for iy in range(self.ny):
+            for ix in range(self.nx):
+                if iy == 0 and ix == 0:
+                    self.imp_stitched = self.get_patch(x=0, y=0)
+                else:
+                    (x, y) = self.xycoords(ix, iy)
+                    params.xOffset = x
+                    if ix == 0:
+                        params.yOffset = self.dyy
+                    else:
+                        params.yOffset = 0
+                    self.pairwise_stitch(self.get_patch(x=ix, y=iy), params)
 
 ###############################################################################
 
@@ -142,29 +178,32 @@ class ZeissSeries(StitchableGrid):
         return y * self.nx + x
 
 class PrairieSeries(StitchableGrid):
-    def __init__(self, nx=1, ny=1, dxx=0, dyy=0, dxy=0, dyx=0, dirname=''):
+    def __init__(self, nx=1, ny=1, dxx=0, dyy=0, 
+                 dxy=0, dyx=0, dirname='', nz=1):
         StitchableGrid.__init__(self, nx, ny, dxx, dyy, dxy, dyx)
+        self.nz = nz
         if os.path.isdir(dirname):
 		    self.set_dir(dirname)
         self.get_patch = self.patch_function(0)
     
     def set_dir(self, dirname):
-        # get the name of one tif file
+        self.dirname = dirname
         allfiles = os.listdir(dirname)
         # ZSeries-08212012-1940-226_Cycle001_CurrentSettings_Ch1_000011.tif
         m = None
         try:
-            while m is not None
+            while m is None:
                 filename = allfiles.pop()
-                m = re.match('(.+)_Cycle(\d+)(.+)(\d+).tif', filename)
-        except:
+                m = re.match('(.+)_Cycle(\d+)(.+)_(\d+).tif', filename)
+        except IndexError:
             print 'Unknown filename format'
             raise
         
         # make filename templtae
-        cyc = '%0' + len(m.group(2)) + '.f' # replace cycle with field
-        z   = '%0' + len(m.group(4)) + '.f' # replace z with field
-        self.fn_tmpl = m.group(1) + '_Cycle' + cyc + m.group(3) + z + '.tif'
+        cyc = '%0' + str(len(m.group(2))) + '.f' # replace cycle with field
+        z   = '%0' + str(len(m.group(4))) + '.f' # replace z with field
+        self.fn_tmpl = (m.group(1) + '_Cycle' + cyc + 
+                        m.group(3) + '_' + z + '.tif')
         
     
     def get_filename(self, x=-1, y=-1, cycle=0, z=0):
@@ -174,14 +213,29 @@ class PrairieSeries(StitchableGrid):
         # function arguments are zero-based indexed but files are indexed starting at 1
         fn = self.fn_tmpl % (cycle + 1, z + 1)
         return os.path.join(self.dirname, fn)
-        
+    
+    def set_z(self, z):
+        self.get_patch = self.patch_function(z)
+    
+    def stitch_coordinates(self):
+        self.stitched_zstack = None
+        for iz in range(self.nz):
+            print 'starting z %g' % iz
+            self.set_z(iz)
+            StitchableGrid.stitch_coordinates(self)
+            if self.stitched_zstack is None:
+                self.stitched_zstack = self.imp_stitched.createEmptyStack()
+            self.stitched_zstack.addSlice(str(iz), 
+                                          self.imp_stitched.getProcessor())
+        self.imp_stitched = ImagePlus('Stitched Image', self.stitched_zstack)
+    
     def stitch_grid():
         # override parent to stitch each z
         # parent will call self.get_patch(x, y, cycle) to get each image. 
         # Create a function that returns the proper image in the current z.
         self.stitched_zstack = None
         for z in range(self.nz):
-            self.get_patch = self.patch_function(z)
+            self.set_z(z)
             StitchableGrid.stitch_grid()
             if self.stitched_zstack is None:
                 self.imp_stitched_zstack = self.imp_stitched.createEmptyStack()
@@ -189,8 +243,9 @@ class PrairieSeries(StitchableGrid):
         self.imp_stitched = ImagePlus('Stitched Image', self.stitched_zstack)
         
     def patch_function(self, z):
-        def get_patch(self, x=-1, y=-1, cycle=0):
-            return IJ.openImage(self.get_filename(x, y, cycle, z))
+        def get_patch(x=-1, y=-1, cycle=0):
+            filename = self.get_filename(x, y, cycle, z)
+            return IJ.openImage(filename)
         return get_patch
         
     def xy2cycle(self, x, y):
