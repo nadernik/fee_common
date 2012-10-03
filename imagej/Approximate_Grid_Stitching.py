@@ -263,3 +263,34 @@ class PrairieSeries(StitchableGrid):
         # ROI in top right part of old image
         roi1 = Roi(xOffset, 0, self.dxx, imp2.height)
         imp1.setRoi(roi1)
+    
+    def patchZStack(self, x=-1, y=-1, cycle=0):
+        imp = IJ.openImage(self.getFileName(x, y, cycle, 0))
+        imp.close()
+        stk = imp.createEmptyStack()
+        for z in range(self.nz):
+            filename = self.getFileName(x, y, cycle, z)
+            imp = IJ.openImage(filename)
+            stk.addSlice(os.path.basename(filename), imp.getProcessor())
+            imp.close()
+        return ImagePlus('Patch', stk)
+    
+    def stitchOneCol(self, ix, params):
+        impCol = self.patchZStack(x=ix, y=0)
+        for iy in range(1, self.ny):
+            newimp = self.patchZStack(x=ix, y=iy)
+            performPairWiseStitching(impCol, newimp, params)
+            impColNew = IJ.getImage()
+            #impCol.close()
+            impCol = impColNew
+            #impCol.hide()
+        return impCol
+    
+    def stitchByCols(self):
+        params = self.defaultStitchingParams()
+        params.computeOverlap = True
+        params.dimensionality = 3
+        self.impStitched = self.stitchOneCol(0, params)
+        for col in range(1, self.nx):
+            impCol = self.stitchOneCol(col, params)
+            self.stitchPairwise(impCol, params)

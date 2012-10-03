@@ -22,6 +22,16 @@ ps = AGS.PrairieSeries(nx=nx, ny=ny, nz=nz, dxx=dxx, dyy=dyy, dyx=dyx, dxy=dxy, 
 #ps.stitch_coordinates()
 #ps.imp_stitched.show()
 
-ps.setZ(23)
-AGS.StitchableGrid.stitchAbsolute(ps)
-ps.impStitched.show()
+#ps.setZ(23)
+#AGS.StitchableGrid.stitchAbsolute(ps)
+#ps.impStitched.show()
+
+
+#imp.show()
+params = ps.defaultStitchingParams()
+params.computeOverlap = True
+params.dimensionality = 3
+ps.patchZStack(x=4, y=2).show()
+ps.patchZStack(x=4, y=3).show()
+imp = ps.stitchOneCol(4, params)
+imp.show()
