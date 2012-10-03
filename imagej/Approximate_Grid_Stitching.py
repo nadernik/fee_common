@@ -7,22 +7,6 @@ from mpicbg.stitching import StitchingParameters
 from mpicbg.stitching.PairWiseStitchingImgLib import stitchPairwise
 
 class StitchableGrid():
-
-    default_params = StitchingParameters()
-    default_params.dimensionality = 2
-    default_params.fusionMethod = 3 # Max Intensity
-    default_params.fusedName = "FusedImage"
-    default_params.checkPeaks = 5 # This is the default when using the GUI
-    default_params.computeOverlap = True
-    default_params.subpixelAccuracy = True
-    default_params.xOffset = 0
-    default_params.yOffset = 0
-    default_params.zOffset = 0
-    default_params.channel1 = 1
-    default_params.channel2 = 1
-    default_params.timeSelect = 0 # No timeseries
-    
-    xcorr_threshold = 0.1
     
     def __init__(self, nx, ny, dxx, dyy, dxy, dyx):
         self.nx = nx
@@ -31,144 +15,133 @@ class StitchableGrid():
         self.dyy = dyy
         self.dxy = dxy
         self.dyx = dyx
+        self.crossCorrThreshold = 0.1
+
+    def defaultStitchingParams(self):
+        params = StitchingParameters()
+        params.dimensionality = 2
+        params.fusionMethod = 3 # Max Intensity
+        params.fusedName = "FusedImage"
+        params.checkPeaks = 5 # This is the default when using the GUI
+        params.computeOverlap = True
+        params.subpixelAccuracy = True
+        params.xOffset = 0
+        params.yOffset = 0
+        params.zOffset = 0
+        params.channel1 = 1
+        params.channel2 = 1
+        params.timeSelect = 0 # No timeseries
+        return params
         
-    def xycoords(self, ix, iy):
-        x = ix * self.dxx + iy * self.dxy
-        y = iy * self.dyy + ix * self.dyx
-        return (x, y)
-        
-    def stitch_coordinates(self):
-        params = StitchableGrid.default_params
+    def xyOffsetsAbsolute(self, ix, iy):
+        xOffset = ix * self.dxx + iy * self.dxy
+        yOffset = iy * self.dyy + ix * self.dyx
+        return (xOffset, yOffset)
+    
+    def xyOffsetsApproximate(self, imp2):
+        """This function is slow because it computes the cross correlation 
+        between images."""
+        params = self.defaultStitchingParams()
+        params.computeOverlap = True
+        imp1 = self.impStitched
+        result = stitchPairwise(imp1, imp2, imp1.getRoi(), imp2.getRoi(), 
+                                1, 1, params)
+        xOffset = result.getOffset(0)
+        yOffset = result.getOffset(1)
+        crossCorrelation = result.getCrossCorrelation()
+        return (xOffset, yOffset, crossCorrelation)
+
+    def stitchPairwise(self, newimp, params):
+        performPairWiseStitching(self.impStitched, newimp, params)
+        self.impStitched = IJ.getImage()
+        self.impStitched.hide()
+    
+    def stitchAbsolute(self):
+        """Stitch based on absolute positions determined by grid"""
+        params = self.defaultStitchingParams()
         params.computeOverlap = False
         for iy in range(self.ny):
             for ix in range(self.nx):
                 if iy == 0 and ix == 0:
-                    self.imp_stitched = self.get_patch(x=0, y=0)
+                    self.impStitched = self.getPatch(x=0, y=0)
                 else:
-                    (x, y) = self.xycoords(ix, iy)
+                    (x, y) = self.xyOffsetsAbsolute(ix, iy)
                     params.xOffset = x
                     params.yOffset = y
-                    self.pairwise_stitch(self.get_patch(x=ix, y=iy), params)
-                    self.imp_stitched.show()
+                    self.stitchPairwise(self.getPatch(x=ix, y=iy), params)
+                    self.impStitched.show()
                     
-    
-    def pairwise_stitch(self, imp_to_add, params):
-        performPairWiseStitching(self.imp_stitched, imp_to_add, params)
-        self.imp_stitched = IJ.getImage()
-        self.imp_stitched.hide()
-
-    def stitch_grid(self):
-        params = StitchableGrid.default_params
-        stitched = self.get_patch(x=0, y=0)
-        for iy in range(self.ny):
-            if iy == 0:
-                # For the very first image, don't stitch it to anything
-                self.imp_stitched = self.get_patch(x=0, y=0)
-            else: 
-                # For the first image in rows 1+, stitch it in at the bottom of the 
-                # existing image.
-                self.add_below(self.get_patch(x=0, y=iy))
-                
-            for ix in range(1, self.nx):
-                # For each additional image in this row, stitch it in to the right of 
-                # the image we just added
-                self.add_right(self.get_patch(x=ix, y=iy))
-    
-    def max_xcorr(self, imp2):
-        imp1 = self.imp_stitched
-        result = stitchPairwise(imp1, imp2, 
-            imp1.getRoi(), imp2.getRoi(), 1, 1, StitchableGrid.default_params)
-        return result.getCrossCorrelation()
-    
-    def stitch_approx(self, imp_to_add, x, y):
-        """Stitch images by cross-correlation (if good match) or coordinates.
+    def stitchApproximate(self):
+        """Stitch by trying to find best match that is close to the grid.
+        The image is stitched in rows. x is incremented from 0 to nx then y is 
+        incremented and the process repeats. """
         
-        Tries to stitch new image to existing self.imp_stitched. Uses the 
-        coordinates that maximize the cross-correlation if the max value of 
-        the cross-correlation is at least xcorr_threshold. Otherwise, 
-        stitches by coordinates."""
-        
-        # This doesn't work. Might be related to this old issue:
-        # http://bugs.jython.org/issue1551...but
-        ##BROKEN## params = copy.copy(StitchableGrid.default_params)
-        params = StitchableGrid.default_params
-        params
-        
-        # Only use best fit if the max correlation is over threshold
-        ##BROKEN## params.computeOverlap = (self.max_xcorr(imp_to_add) >= 
-        ##BROKEN##                          StitchableGrid.xcorr_threshold)
-        params.computeOverlap =  (self.max_xcorr(imp_to_add) >= 
-                                  StitchableGrid.xcorr_threshold)
-        # overwrites default params! this is not ideal
-        performPairWiseStitching(self.imp_stitched, imp_to_add, params)
-        self.imp_stitched = IJ.getImage()
-        self.imp_stitched.hide()
-    
-    def add_below(self, imp_to_add):
-        imp_old = self.imp_stitched
-        
-        # ROI on the top of new image
-        roi_add = Roi(0, 0, imp_to_add.width, self.dyy)
-        imp_to_add.setRoi(roi_add)
-
-        # ROI on the bottom left corner of existing image
-        roi_old = Roi(0, imp_old.height - self.dyy, imp_to_add.width, self.dyy)
-        imp_old.setRoi(roi_old)
-        
-        self.stitch_approx(imp_to_add, self.dxx, self.dyy)
-
-    def add_right(self, imp_to_add):
-        imp_old = self.imp_stitched
-        # ROI on the left of new image
-        roi_add = Roi(0, 0, self.dxx, imp_to_add.height)
-        imp_to_add.setRoi(roi_add)
-
-        # ROI on the right of old image
-        roi_old = Roi(imp_old.width - self.dxx, imp_old.height - imp_to_add.height, 
-                      self.dxx, imp_to_add.height)
-        imp_old.setRoi(roi_old)
-
-        # Stitch images
-        self.stitch_approx(imp_to_add, self.dxx, self.dyy)
-    
-    def stitch_coordinates(self):
-        params = StitchableGrid.default_params
+        params = self.defaultStitchingParams()
         params.computeOverlap = False
+        
         for iy in range(self.ny):
             for ix in range(self.nx):
-                if iy == 0 and ix == 0:
-                    self.imp_stitched = self.get_patch(x=0, y=0)
+                newimp = self.getPatch(x=ix, y=iy)
+                xAbs, yAbs = self.xyOffsetsAbsolute(ix, iy)
+                if iy == 0 and ix == 0: # First image (0th image in 0th row)
+                    self.impStitched = newimp
+                    continue # no need to stitch the first image to anything
+                elif ix == 0: # First image in rows 1+
+                    pass #self.setRoiNewRow(newimp)
                 else:
-                    (x, y) = self.xycoords(ix, iy)
-                    params.xOffset = x
-                    if ix == 0:
-                        params.yOffset = self.dyy
-                    else:
-                        params.yOffset = 0
-                    self.pairwise_stitch(self.get_patch(x=ix, y=iy), params)
+                    pass #self.setRoiContinueRow(newimp, xAbs)
+                
+                xApx, yApx, crossCorr = self.xyOffsetsApproximate(newimp)
+                
+                if crossCorr > self.crossCorrThreshold:
+                    params.xOffset = xApx
+                    params.yOffset = yApx
+                else:
+                    params.xOffset = xAbs
+                    params.yOffset = yAbs
+                self.stitchPairwise(newimp, params)
+                self.impStitched.show()
+    
+    def setRoiNewRow(self, imp2):
+        imp1 = self.impStitched
+        
+        # ROI on the top of new image
+        roi2 = Roi(0, 0, imp2.width, self.dyy)
+        imp2.setRoi(roi2)
 
-###############################################################################
+        # ROI on the bottom left corner of existing image
+        roi1 = Roi(0, imp1.height - self.dyy, imp2.width, self.dyy)
+        imp1.setRoi(roi1)
+    def setRoiContinueRow(self, imp2, xOffset):
+        imp1 = self.impStitched
+        # ROI on the left of new image
+        roi2 = Roi(0, 0, self.dxx, imp2.height)
+        imp2.setRoi(roi2)
+
+        # ROI on the right of old image
+        roi1 = Roi(xOffset, imp1.height - imp2.height, self.dxx, imp2.height)
+        imp1.setRoi(roi1)
 
 class ZeissSeries(StitchableGrid):
     def __init__(self, nx=1, ny=1, dxx=0, dyy=0, dxy=0, dyx=0, dirname=''):
         StitchableGrid.__init__(self, nx, ny, dxx, dyy, dxy, dyx)
         if os.path.isdir(dirname):
-		    self.set_dir(dirname)
+		    self.setDir(dirname)
     
-    def set_dir(self, dirname):
+    def setDir(self, dirname):
         self.dirname = dirname
         basename = os.path.basename(os.path.normpath(dirname))
-        self.base_filename = basename[:-len('.tif_Files')]
+        self.baseFileName = basename[:-len('.tif_Files')]
 
-    def get_filename(self, x=-1, y=-1, cycle=0):
+    def getFileName(self, x=-1, y=-1, cycle=0):
         if x >= 0 and y >= 0:
             # x and y (if provided) override cycle number
             cycle = self.xy2cycle(x, y)
-        filename = self.base_filename + '_p%03.f.tif' % cycle
+        filename = self.baseFileName + '_p%03.f.tif' % cycle
         return os.path.join(self.dirname, filename)
         
-    def get_patch(self, x=-1, y=-1, cycle=0):
-        return IJ.openImage(self.get_filename(x, y, cycle))
+    def getPatch(self, x=-1, y=-1, cycle=0):
+        return IJ.openImage(self.getFileName(x, y, cycle))
         
     def xy2cycle(self, x, y):
         if x >= self.nx:
@@ -180,13 +153,14 @@ class ZeissSeries(StitchableGrid):
 class PrairieSeries(StitchableGrid):
     def __init__(self, nx=1, ny=1, dxx=0, dyy=0, 
                  dxy=0, dyx=0, dirname='', nz=1):
+        assert dyy <= 0
         StitchableGrid.__init__(self, nx, ny, dxx, dyy, dxy, dyx)
         self.nz = nz
         if os.path.isdir(dirname):
-		    self.set_dir(dirname)
-        self.get_patch = self.patch_function(0)
+		    self.setDir(dirname)
+        self.getPatch = self.patchFunction(0)
     
-    def set_dir(self, dirname):
+    def setDir(self, dirname):
         self.dirname = dirname
         allfiles = os.listdir(dirname)
         # ZSeries-08212012-1940-226_Cycle001_CurrentSettings_Ch1_000011.tif
@@ -206,7 +180,7 @@ class PrairieSeries(StitchableGrid):
                         m.group(3) + '_' + z + '.tif')
         
     
-    def get_filename(self, x=-1, y=-1, cycle=0, z=0):
+    def getFileName(self, x=-1, y=-1, cycle=0, z=0):
         if x >= 0 and y >= 0:
             # x and y (if provided) override cycle number
             cycle = self.xy2cycle(x, y)
@@ -214,39 +188,37 @@ class PrairieSeries(StitchableGrid):
         fn = self.fn_tmpl % (cycle + 1, z + 1)
         return os.path.join(self.dirname, fn)
     
-    def set_z(self, z):
-        self.get_patch = self.patch_function(z)
+    def setZ(self, z):
+        self.getPatch = self.patchFunction(z)
     
-    def stitch_coordinates(self):
-        self.stitched_zstack = None
+    def stitchAbsolute(self):
+        self.stitchedZStack = None
         for iz in range(self.nz):
             print 'starting z %g' % iz
-            self.set_z(iz)
-            StitchableGrid.stitch_coordinates(self)
-            if self.stitched_zstack is None:
-                self.stitched_zstack = self.imp_stitched.createEmptyStack()
-            self.stitched_zstack.addSlice(str(iz), 
-                                          self.imp_stitched.getProcessor())
-        self.imp_stitched = ImagePlus('Stitched Image', self.stitched_zstack)
+            self.setZ(iz)
+            StitchableGrid.stitchAbsolute(self)
+            if self.stitchedZStack is None:
+                self.stitchedZStack = self.impStitched.createEmptyStack()
+            self.stitchedZStack.addSlice(str(iz), 
+                                          self.impStitched.getProcessor())
+        self.impStitched = ImagePlus('Stitched Image', self.stitchedZStack)
     
-    def stitch_grid():
-        # override parent to stitch each z
-        # parent will call self.get_patch(x, y, cycle) to get each image. 
-        # Create a function that returns the proper image in the current z.
-        self.stitched_zstack = None
-        for z in range(self.nz):
-            self.set_z(z)
-            StitchableGrid.stitch_grid()
-            if self.stitched_zstack is None:
-                self.imp_stitched_zstack = self.imp_stitched.createEmptyStack()
-            self.stitched_zstack.addSlice(z, self.imp_stitched.getProcessor())
-        self.imp_stitched = ImagePlus('Stitched Image', self.stitched_zstack)
+    def stitchApproximate():
+        self.stitchedZStack = None
+        for iz in range(self.nz):
+            self.setZ(iz)
+            StitchableGrid.stitchApproximate(self)
+            if self.stitchedZStack is None:
+                self.impstitchedZStack = self.impStitched.createEmptyStack()
+            self.stitchedZStack.addSlice(str(iz), 
+                                          self.impStitched.getProcessor())
+        self.impStitched = ImagePlus('Stitched Image', self.stitchedZStack)
         
-    def patch_function(self, z):
-        def get_patch(x=-1, y=-1, cycle=0):
-            filename = self.get_filename(x, y, cycle, z)
+    def patchFunction(self, z):
+        def getPatch(x=-1, y=-1, cycle=0):
+            filename = self.getFileName(x, y, cycle, z)
             return IJ.openImage(filename)
-        return get_patch
+        return getPatch
         
     def xy2cycle(self, x, y):
         if x >= self.nx:
@@ -254,3 +226,40 @@ class PrairieSeries(StitchableGrid):
         if y >= self.ny:
             raise IndexError('y too high')
         return y * self.nx + x
+    
+    def xyOffsetsAbsolute(self, ix, iy):
+        """Override parent because in PrairieSeries, new rows are added to the 
+        TOP of the image. The coordinates are always relative to the top right 
+        corner of the image, so after we add the first image in a new row, we 
+        no longer need to account for the yOffset between rows (dyy). Note that
+        the offsets computed here only work when we iterate over x, then over 
+        y."""
+        
+        xOffset = ix * self.dxx + iy * self.dxy
+        if ix == 0: # if new row
+            yOffset = self.dyy
+        else:
+            yOffset = self.dyx
+        return (xOffset, yOffset)
+        
+    def setRoiNewRow(self, imp2):
+        imp1 = self.impStitched
+        
+        # ROI on top of old image
+        roi1 = Roi(0, 0, imp2.width, -self.dyy)
+        imp1.setRoi(roi1)
+        
+        # ROI on bottom of new image
+        roi2 = Roi(0, imp2.height + self.dyy, imp2.width, self.dyy)
+        imp2.setRoi(roi2)
+    
+    def setRoiContinueRow(self, imp2, xOffset):
+        imp1 = self.impStitched
+        
+        # ROI on Left side of new image
+        roi2 = Roi(0, 0, self.dxx, imp2.height)
+        imp2.setRoi(roi2)
+        
+        # ROI in top right part of old image
+        roi1 = Roi(xOffset, 0, self.dxx, imp2.height)
+        imp1.setRoi(roi1)
