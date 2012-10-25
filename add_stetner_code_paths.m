@@ -14,7 +14,7 @@ if verbosity > 1
 end
 
 ffn = mfilename('fullpath');
-[code_dir, junk1, junk2, junk3] = fileparts(ffn);
+[code_dir, junk1, junk2] = fileparts(ffn);
     
 subdirs = {'acquisitionGui', 'annotation', 'caf', 'CAFGUI', 'daq', 'electro_gui', 'lman', 'subsong', 'toolbox', 'VectorClust', 'xmodel'};
 
