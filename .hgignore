@@ -2,3 +2,4 @@ syntax: glob
 *.asv
 defaults_*.m
 *.mat
+*.pyc
