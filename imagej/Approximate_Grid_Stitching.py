@@ -2,6 +2,7 @@ import os.path
 import re
 from ij import IJ, ImagePlus
 from ij.gui import Roi
+import ij.plugin.ZProjector
 from plugin.Stitching_Pairwise import performPairWiseStitching
 from mpicbg.stitching import StitchingParameters
 from mpicbg.stitching.PairWiseStitchingImgLib import stitchPairwise
@@ -265,6 +266,7 @@ class PrairieSeries(StitchableGrid):
         imp1.setRoi(roi1)
     
     def patchZStack(self, x=-1, y=-1, cycle=0):
+    	"""Z Stack of one cycle in the series"""
         imp = IJ.openImage(self.getFileName(x, y, cycle, 0))
         imp.close()
         stk = imp.createEmptyStack()
@@ -274,6 +276,14 @@ class PrairieSeries(StitchableGrid):
             stk.addSlice(os.path.basename(filename), imp.getProcessor())
             imp.close()
         return ImagePlus('Patch', stk)
+    
+    def patchMIP(self, x=-1, y=-1, cycle=0):
+        """Maximum intensity projection of one cycle in the series"""
+        imp = self.patchZStack(x, y, cycle)
+        zp = ij.plugin.ZProjector(imp)
+        zp.setMethod(1) #Max Intensity
+        zp.doProjection()
+        return zp.getProjection()
     
     def stitchOneCol(self, ix, params):
         impCol = self.patchZStack(x=ix, y=0)

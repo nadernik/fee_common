@@ -3,3 +3,4 @@ syntax: glob
 defaults_*.m
 *.mat
 *.pyc
+*.orig
