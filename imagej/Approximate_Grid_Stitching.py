@@ -6,6 +6,7 @@ import ij.plugin.ZProjector
 from plugin.Stitching_Pairwise import performPairWiseStitching
 from mpicbg.stitching import StitchingParameters
 from mpicbg.stitching.PairWiseStitchingImgLib import stitchPairwise
+from itertools import izip
 
 class StitchableGrid():
     
@@ -275,7 +276,9 @@ class PrairieSeries(StitchableGrid):
             imp = IJ.openImage(filename)
             stk.addSlice(os.path.basename(filename), imp.getProcessor())
             imp.close()
-        return ImagePlus('Patch', stk)
+        stkimp = ImagePlus('Patch', stk)
+        stkimp.setTitle(filename)
+        return stkimp
     
     def patchMIP(self, x=-1, y=-1, cycle=0):
         """Maximum intensity projection of one cycle in the series"""
@@ -285,14 +288,18 @@ class PrairieSeries(StitchableGrid):
         zp.doProjection()
         return zp.getProjection()
     
-    def stitchOneCol(self, ix, params):
+    def stitchOneCol(self, ix, params, saveIntermediates=False):
         impCol = self.patchZStack(x=ix, y=0)
-        for iy in range(1, self.ny):
+        title = 'Column %g Rows' % ix
+        for iy in range(self.ny):
             newimp = self.patchZStack(x=ix, y=iy)
             performPairWiseStitching(impCol, newimp, params)
             impColNew = IJ.getImage()
-            #impCol.close()
+            if not saveIntermediates:
+                impCol.close()
             impCol = impColNew
+            title = '%s %g' % (title, iy)
+            impCol.setTitle(title)
             #impCol.hide()
         return impCol
     
@@ -304,3 +311,72 @@ class PrairieSeries(StitchableGrid):
         for col in range(1, self.nx):
             impCol = self.stitchOneCol(col, params)
             self.stitchPairwise(impCol, params)
+    
+    def allMIPs(self):
+        for iy in range(self.ny):
+            for ix in range(self.nx):
+                yield self.patchMIP(x=ix, y=iy)
+
+    def allZStacks(self):
+        for iy in range(self.ny):
+            for ix in range(self.nx):
+                yield self.patchZStack(x=ix, y=iy)
+
+def stitchSequentialWithRoi(imps, rois1, rois2):
+    params = StitchingParameters()
+    params.dimensionality = 3
+    params.fusionMethod = 3 # Max Intensity
+    params.fusedName = "FusedImage"
+    params.checkPeaks = 5 # This is the default when using the GUI
+    params.computeOverlap = True
+    params.subpixelAccuracy = True
+    params.xOffset = 0
+    params.yOffset = 0
+    params.zOffset = 0
+    params.channel1 = 1
+    params.channel2 = 1
+    params.timeSelect = 0 # No timeseries
+    stitched = None
+    i = 0;
+    for (imp, roi1, roi2) in izip(imps, rois1, rois2):
+        if stitched is None:
+            stitched = imp
+        else:
+            # stiched image should already have roi2 set from last loop
+            # set roi1 on new image
+            imp.setRoi(roi1)
+            # find the best offsets based on crosscorrelation inside the ROIs
+            params.computeOverlap = True
+            result = stitchPairwise(stitched, imp, stitched.getRoi(), 
+                                    imp.getRoi(), 1, 1, params)
+            
+            # stitch using the offsets
+            params.computeOverlap = False
+            params.xOffset = result.getOffset(0)
+            params.yOffset = result.getOffset(1)
+            params.zOffset = result.getOffset(2)
+            performPairWiseStitching(stitched, imp, params)
+            stitched.close() # close old stitched image
+            stitched = IJ.getImage() # replace with new stitched image
+            stitched.hide()
+            IJ.save(stitched, 'c:\\temp\\colscombined%g.tif' % i)
+            i = i + 1
+            
+        # set roi on stitched image
+        if roi2 is not None:
+            stitched.setRoi(shiftRoi(roi2, params.xOffset, params.yOffset))
+    return stitched
+
+
+def shiftRoi(oldRoi, dx, dy):
+    """Return a new region of interest with top right corner shifted but the 
+    same width and height."""
+    if dx < 0:
+        dx = 0
+    if dy < 0:
+        dy = 0
+	oldX   = oldRoi.getBounds().getX()
+	oldY   = oldRoi.getBounds().getY()
+	width  = oldRoi.getBounds().getWidth()
+	height = oldRoi.getBounds().getHeight()
+	return Roi(oldX + dx, oldY + dy, width, height)
