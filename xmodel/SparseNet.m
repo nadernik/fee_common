@@ -31,7 +31,7 @@ classdef SparseNet
             for iter = 1:obj.niter
                 obj = obj.ffstep(iter);
                 obj = obj.wupdate(iter);
-                obj = obj.homeostasis(iter);
+                %obj = obj.homeostasis(iter);
             end
         end
         
@@ -55,11 +55,10 @@ classdef SparseNet
         end
         
         function obj = homeostasis(obj, iter)
-            % For each MSN that didn't have exactly one spike, adjust its
-            % threshold so there would have been exactly one spike.
+            % If a neuron spikes more than once in this trial, decrease the
+            % strength of all its synapses by a fixed amount
             numspikes = sum(obj.msnout(:,:,iter), 2);
-            ndx = numspikes ~= 1; 
-            obj.thspike(ndx) = max(obj.msnin(ndx,:,iter), [], 2);
+            obj.w = obj.w - obj.learnrate ./ 10 .* (numspikes > 1) * ones(1,obj.nhvc);
         end
         
         function wimage(obj)

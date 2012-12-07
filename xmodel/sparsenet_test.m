@@ -1,7 +1,8 @@
 close all
 clear all
-
-sn = SparseNet([-.25, -.25, 1, -.25, -.25], 0.005); 
+stdp = -0.2 * ones(1, 21);
+stdp(11) = 1;
+sn = SparseNet(stdp, 0.01); 
 sn = sn.simulate();
 
 %% Weights
