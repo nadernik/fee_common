@@ -6,10 +6,11 @@ classdef SparseNet
         nhvc = 10; % number of hvc units
         nmsn = 100; % number of msn units
         thspike
-        niter = 1e3;
+        niter = 1e4;
         stdp
         learnrate %learning rate
         w
+        winit = 0.1;
         hvcout
         msnout
         msnin
@@ -23,7 +24,7 @@ classdef SparseNet
             obj.hvcout = eye(obj.nhvc);
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.msnin = zeros(size(obj.msnout));
-            obj.w = zeros(obj.nmsn,obj.nhvc);
+            obj.w = obj.winit * ones(obj.nmsn,obj.nhvc);
             obj.thspike = 0.95 * ones(obj.nmsn,1); % threshold for spiking
         end
         
@@ -36,29 +37,29 @@ classdef SparseNet
         end
         
         function obj = ffstep(obj, iter)
-            obj.msnin(:,:,iter) = rand(obj.nmsn,obj.nhvc) + obj.w * obj.hvcout;
+            % MSN activity only depends on HVC input
+            obj.msnin(:,:,iter) = obj.w * obj.hvcout;
             obj.msnout(:,:,iter) = obj.msnin(:,:,iter) >= (obj.thspike * ones(1,obj.nhvc));
         end
         
         function obj = wupdate(obj, iter)
+            % Modified STDP: use LMAN*MSN instead of spike. 
+            % For now, each MSN gets a different random signal from LMAN.
             dw = zeros(size(obj.w));
+            lman = double(rand(obj.nmsn, obj.nhvc) > 0.5);
             for imsn = 1:obj.nmsn
-                % convolve with stdp kernel and chop off the edges
-                temp = conv(obj.msnout(imsn,:,iter), obj.stdp);
+                temp = conv(lman(imsn,:), obj.stdp);
                 ndrop = (length(obj.stdp) - 1) / 2;
                 elig = temp(ndrop+1:end-ndrop);
-                
-                dw(imsn,:) = elig * obj.hvcout; % ones and zeros
+                dw(imsn,:) = elig .* obj.msnin(imsn,:,iter); % ones and zeros
             end
+            
             obj.w = obj.w + obj.learnrate .* dw;
             obj.w = max(0, obj.w); % weights must be nonnegative
         end
         
         function obj = homeostasis(obj, iter)
-            % If a neuron spikes more than once in this trial, decrease the
-            % strength of all its synapses by a fixed amount
-            numspikes = sum(obj.msnout(:,:,iter), 2);
-            obj.w = obj.w - obj.learnrate ./ 10 .* (numspikes > 1) * ones(1,obj.nhvc);
+            warning('Homeostasis not implemented')
         end
         
         function wimage(obj)

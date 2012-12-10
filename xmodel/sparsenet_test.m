@@ -1,21 +1,31 @@
 close all
 clear all
-stdp = -0.2 * ones(1, 21);
-stdp(11) = 1;
-sn = SparseNet(stdp, 0.01); 
-sn = sn.simulate();
+Lrate = 0.01;
+dmin = .1;
+dmax = .11;
+dsteps = 20;
+d = linspace(dmin, dmax, dsteps);
+for id = 1:dsteps
+    fprintf('Run %g of %g\n',id,dsteps)
+    stdp = -d(id) * ones(1, 21);
+    stdp(11) = 1;
+    sn = SparseNet(stdp, Lrate);
+    sn = sn.simulate();
+    nburst = sum(sn.msnout(:,:,end), 2);
+    bins = 0:sn.nhvc;
+    Y(:,id) = hist(nburst,bins);
+end
 
-%% Weights
-figure(1)
+imagesc(Y)
+
+%%
+stdp = -0.1074 * ones(1, 21);
+stdp(11) = 1;
+sn = SparseNet(stdp, Lrate);
+sn = sn.simulate();
 sn.wimage();
 
-%% Sparsness on last motif
-figure(2)
-numspikes = sum(sn.msnout(:,:,end), 2);
-hist(numspikes)
-
-%% Stability
-figure(3)
+figure
 for i = 1:sn.nmsn
     sn.msnimage(i);
     pause
