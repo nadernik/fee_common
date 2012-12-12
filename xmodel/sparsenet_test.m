@@ -1,32 +1,36 @@
+%% Parameter tuning
 close all
 clear all
-Lrate = 0.01;
-dmin = .1;
-dmax = .11;
-dsteps = 20;
-d = linspace(dmin, dmax, dsteps);
-for id = 1:dsteps
-    fprintf('Run %g of %g\n',id,dsteps)
-    stdp = -d(id) * ones(1, 21);
-    stdp(11) = 1;
-    sn = SparseNet(stdp, Lrate);
-    sn = sn.simulate();
-    nburst = sum(sn.msnout(:,:,end), 2);
-    bins = 0:sn.nhvc;
-    Y(:,id) = hist(nburst,bins);
+LTPrate = 7.5e-2;
+rates = linspace(0, 1e-1, 20);
+
+allmsnout = zeros(20,10,1e3,length(rates));
+
+for i = 1:length(rates)
+    fprintf('Run %g\n', i)
+    LTDrate = rates(i);
+    sn = SparseNet(LTPrate, LTDrate);
+    sn.simulate();
+    allmsnout(:,:,:,i) = sn.msnout;
 end
 
-imagesc(Y)
+%% Parameter tuning (see results)
+for i = 1:length(rates)
+    for j = 1:size(allmsnout,1)
+        image(squeeze(allmsnout(j,:,:,i))' * 64)
+        title(sprintf('LTPrate = %g    MSN %g', rates(i), j))
+        pause
+    end
+end
 
-%%
-stdp = -0.1074 * ones(1, 21);
-stdp(11) = 1;
-sn = SparseNet(stdp, Lrate);
-sn = sn.simulate();
-sn.wimage();
-
-figure
+%% Run with good parameters
+close all
+clear all
+LTPrate = 7.5e-2;
+LTDrate = 5.0e-3;
+sn = SparseNet(LTPrate, LTDrate);
+sn.simulate();
 for i = 1:sn.nmsn
-    sn.msnimage(i);
+    sn.msnimage(i)
     pause
 end
