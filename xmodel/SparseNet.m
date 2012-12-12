@@ -6,8 +6,8 @@ classdef SparseNet < handle
         nhvc = 10; % number of hvc units
         nmsn = 20; % number of msn units
         winit = 0.5;
-        
         niter = 1e4;
+        
         LTPrate % learning rate for Long-Term Potentiation
         LTDrate % learning rate for Long-Term Depression
         w
@@ -15,30 +15,41 @@ classdef SparseNet < handle
         msnout
         lman
         msnin
-        thspike = 1.4; % threshold for spiking
+        thspike = .95; % threshold for spiking
+        template
+        rexp
+        rperate = 0.2;
     end
     
     methods
         function obj = SparseNet(LTPrate, LTDrate)
             obj.LTPrate = LTPrate;
             obj.LTDrate = LTDrate;
+            obj.init()
+        end
+        
+        function init(obj)
             obj.hvcout = eye(obj.nhvc);
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.msnin = zeros(size(obj.msnout));
             obj.w = obj.winit * ones(obj.nmsn,obj.nhvc);
+            obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 2;
+            obj.rexp = zeros(1, obj.nhvc);
+            disp('Initialized')
         end
         
         function simulate(obj)
             for iter = 1:obj.niter
                 obj.ffstep(iter);
                 obj.wupdate(iter);
+                obj.rexpupdate(iter);
             end
         end
         
         function ffstep(obj, iter)
             % MSN activity depends on HVC input and randomness (from lman)
             common = ones(obj.nmsn, 1) * rand(1, obj.nhvc);
-            obj.lman = 0.6*common + 0.4*rand(obj.nmsn, obj.nhvc);
+            obj.lman = 0.99*common + 0.01*rand(obj.nmsn, obj.nhvc);
             obj.msnin(:,:,iter) = obj.w * obj.hvcout + obj.lman;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, obj.msnin(:,:,iter) - obj.thspike);
@@ -52,7 +63,7 @@ classdef SparseNet < handle
                 % strengthened. Eligible synapses are strengthened if a
                 % reward is given.
                 elig = (ones(obj.nhvc, 1) * obj.msnout(i,:,iter)) .* obj.hvcout';
-                LTP = obj.reward(iter) * elig; 
+                LTP = obj.rpe(iter) * elig; 
                 
                 % Long-term depression: Whenever an MSN is active, HVC weights
                 % onto that MSN are weakened unless they were active too.
@@ -65,18 +76,14 @@ classdef SparseNet < handle
             obj.w = max(0, obj.w); % weights must be nonnegative
         end
         
-        function r = reward(obj, iter)
-            r = zeros(1, obj.nhvc);
-            if mean(obj.lman(:,3)) > 0.5
-                r(3) = 1;
-            else
-                r(3) = -1;
-            end
-            if mean(obj.lman(:,7)) > 0.5
-                r(7) = 1;
-            else
-                r(7) = -1;
-            end
+        function d = rpe(obj, iter)
+            r = -(sum(obj.msnout(:,:,iter), 1) - obj.template).^2;
+            d = r - obj.rexp;
+            assert(all(size(d) == [1, obj.nhvc]))
+        end
+        
+        function rexpupdate(obj, iter)
+            obj.rexp = obj.rexp + obj.rperate * obj.rpe(iter);
         end
             
         
@@ -92,6 +99,13 @@ classdef SparseNet < handle
             xlabel('Time')
             ylabel('Trial')
             title(sprintf('MSN %g output', imsn))
+        end
+        
+        function outvstemplate(obj, iter)
+            plot(sum(obj.msnout(:,:,iter),1))
+            hold all
+            plot(obj.template)
+            hold off
         end
             
     end
