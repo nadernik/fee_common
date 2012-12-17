@@ -23,7 +23,7 @@ if nargin > 0 && do_simulations == 1
         xmodel_parameters_caf
         caf_pitch_threshold2 = 0; % MAKE SURE YOU DO THIS FOR THE NORMAL RUN TOO!!!!!!
         xmodel_initialize_ra_to_dlm
-        xmodel_run_ra_to_dlm_fast
+        xmodel_run_ra_to_dlm_slow
 
         file_name = sprintf('dlm_efference_copy_%03.f', ra_noise_amplitude*100);
         save(fullfile(data_dir, file_name))

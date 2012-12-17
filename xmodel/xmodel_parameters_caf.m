@@ -1,7 +1,7 @@
 % Length of simulation
-baseline_motifs = 300; % number of motifs before learning starts
-learning_motifs = 700; % number of motifs where learning happens!
-ending_motifs = 0; % number of motifs without learning at end of sim
+baseline_motifs = 200; % number of motifs before learning starts
+learning_motifs = 800; % number of motifs where learning happens!
+ending_motifs = 200; % number of motifs without learning at end of sim
 total_motifs = baseline_motifs + learning_motifs + ending_motifs;
 
 % Size of the network
@@ -32,17 +32,17 @@ lman_offset = 5;
 % Synaptic eligibility trace and reward signal are both Gaussians with 4
 % standard deviations before and after the mean. That puts a 4 standard
 % deviation delay to peak of response
-std_etrace = 20; % Eligibility trace
-std_rkernel = 20; % Reward
+std_etrace = 6; % Eligibility trace
+std_rkernel = 6; % Reward
 
 % The template, aka the sequence we are trying to learn.
 template = zeros(1, motif_steps);
 
 % conditional auditory feedback
-caf_target_time1 = 5; % time steps
+caf_target_time1 = 100; % time steps
 caf_target_time2 = 100;
 caf_pitch_threshold1 = nan; % hits if above this
-caf_pitch_threshold2 = 1; % hits if below this
+caf_pitch_threshold2 = 0; % hits if below this
 caf_random_hit_probability = 0;
 caf_error_value = 400;
 caf_noise_duration = 2; % time steps
