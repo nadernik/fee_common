@@ -14,6 +14,7 @@ classdef SparseNet < handle
         rperate = 0.2;  % learning rate for predicted reward
         tinhib  = 0.5;  % INHIBition, Tonic
         winit   = 0.5;  % initial hvc weights        
+        istr = 1;
         
         % Model output
         wH
@@ -37,7 +38,9 @@ classdef SparseNet < handle
             obj.wH = obj.winit * rand(obj.nmsn,obj.nhvc);
             obj.template = 10*sin(linspace(0,2*pi,obj.nhvc)) + 20;
             obj.rexp = zeros(obj.nhvc, obj.niter);
-            obj.noise = rand(obj.nhvc, obj.niter);
+            %obj.noise = generate_lman_noise_mes010(obj.nhvc, obj.niter) + 5;
+            %obj.noise = randn(obj.nhvc, obj.niter)*1.3134 + 5;
+            obj.noise = rand(obj.nhvc, obj.niter)*10;
         end
         
         function simulate(obj)
@@ -49,12 +52,13 @@ classdef SparseNet < handle
         end
         
         function ffstep(obj, iter)
+            iter
             % MSN activity depends on HVC input and noise (from lman)
             msnin = obj.wH * obj.hvcout + ...
                 ones(obj.nmsn,1) * obj.noise(:,iter)' - obj.tinhib;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, msnin);
-            obj.lmanout(:,iter) = sum(obj.msnout(:,:,iter), 1)' + ...
+            obj.lmanout(:,iter) = mean(obj.msnout(:,:,iter), 1)' + ...
                 obj.noise(:,iter);
         end
         
@@ -91,7 +95,7 @@ classdef SparseNet < handle
         end
         
         function inhib = allinhib(obj, iter)
-            inhib = obj.tinhib + sum(obj.msnout(:,:,iter), 1);
+            inhib = obj.tinhib + obj.istr * mean(obj.msnout(:,:,iter), 1);
             %inhib = zeros(size(inhib)); %FIXME
         end
         
