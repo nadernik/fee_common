@@ -1,18 +1,18 @@
-% %% Run with good parameters
 close all
 clear all
 sn = SparseNet();
-sn.niter = 200;
-sn.tinhib = 6;
-sn.LTPrate = 5e-4%1e-3;
-sn.LTDrate = 1e-3%1e-4;
-sn.winit = 10;
-sn.istr = 1;
-sn.nhvc = 10;
-sn.nmsn = 20;
+sn.niter = 5e3;
+sn.tinhib = 1;
+sn.niter = 1000;
+sn.LTPrate = 3.5e-4;
+sn.nhvc = 100;
+sn.nmsn = 500;
+sn.LTDrate = 1.0e-3;
+sn.tinhib = 1;
 sn.init()
 sn.simulate()
 
+clf
 clf
 subplot(1,3,1)
 sn.wimage

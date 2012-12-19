@@ -38,13 +38,15 @@ classdef SparseNet < handle
             obj.wH = obj.winit * rand(obj.nmsn,obj.nhvc);
             obj.template = 10*sin(linspace(0,2*pi,obj.nhvc)) + 20;
             obj.rexp = zeros(obj.nhvc, obj.niter);
-            %obj.noise = generate_lman_noise_mes010(obj.nhvc, obj.niter) + 5;
-            %obj.noise = randn(obj.nhvc, obj.niter)*1.3134 + 5;
-            obj.noise = rand(obj.nhvc, obj.niter)*10;
+            %obj.noise = rand(obj.nhvc, obj.niter);
+            %obj.noise = max(0,randn(obj.nhvc, obj.niter)/8+.5);
+            z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
+            obj.noise = max(0, z./std(z(:))/8+0.5);
         end
         
         function simulate(obj)
             for iter = 1:obj.niter
+                iter
                 obj.ffstep(iter);
                 obj.wupdate(iter);
                 obj.rexpupdate(iter);
