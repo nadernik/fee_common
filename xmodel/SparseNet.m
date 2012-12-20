@@ -12,13 +12,14 @@ classdef SparseNet < handle
         LTPrate = 8e-3; % learning rate for Long-Term Potentiation
         LTDrate = 5e-4; % learning rate for Long-Term Depression
         rperate = 0.2;  % learning rate for predicted reward
-        tinhib  = 0.5;  % INHIBition, Tonic on learning
         tinhib2 = 0; % tonic inhibition on msn output
-        winit   = 0.5;  % initial hvc weights        
+        winit   = 0.5;  % initial hvc weights
         istr = 1;
         
         % Model output
         wH
+        wL
+        tonicinhib
         hvcout
         msnout
         lmanout
@@ -38,10 +39,12 @@ classdef SparseNet < handle
             obj.lmanout = zeros(obj.nhvc, obj.niter);
             obj.wH = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
+            obj.wL = randn(obj.nmsn, 1) / 5 + 1;
             obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
             obj.rexp = zeros(obj.nhvc, obj.niter);
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = max(0, z./std(z(:))/8+0.5);
+            obj.tonicinhib = zeros(obj.nmsn, obj.niter);
         end
         
         function simulate(obj)
@@ -65,7 +68,8 @@ classdef SparseNet < handle
         end
         
         function v = vpost(obj, imsn, iter)
-            v = obj.lmanout(:,iter)' - obj.allinhib(iter) + ...
+            v = obj.wL(imsn) * obj.lmanout(:,iter)' - ...
+                obj.allinhib(imsn, iter) + ...
                 obj.wH(imsn,:,iter) * obj.hvcout;
             v = max(0, v);
         end
@@ -73,21 +77,28 @@ classdef SparseNet < handle
         function wupdate(obj, iter)
             dw = zeros(obj.nmsn, obj.nhvc);           
             for i = 1:obj.nmsn
-                % Long-term potentiation: Whenever an MSN is active, HVC
-                % inputs that are also active are eligibile to be
-                % strengthened. Eligible synapses are strengthened if a
-                % reward is given.
-                elig = (ones(obj.nhvc, 1) * obj.vpost(i,iter)) .* obj.hvcout';
-                LTP = obj.rpe(iter) * elig; 
-                
-                % Long-term depression: Whenever an MSN is active, HVC weights
-                % onto that MSN are weakened unless they were active too.
-                LTD = obj.vpost(i,iter) * (1 - obj.hvcout)';
-                
-                dw(i,:) = obj.LTPrate * LTP - obj.LTDrate * LTD;
+                dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter);
+                dI = mean(obj.vpost(i,iter)) - obj.tonicinhib(i,iter);
+                obj.tonicinhib(i,iter+1) = obj.tonicinhib(i,iter) + ...
+                    obj.rperate * dI;
             end
-
+            
             obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
+        end
+        
+        function dw = LTP(obj, imsn, iter)
+            % Long-term potentiation: Whenever an MSN is active, HVC
+            % inputs that are also active are eligibile to be
+            % strengthened. Eligible synapses are strengthened if a
+            % reward is given.
+            elig = (ones(obj.nhvc, 1) * obj.vpost(imsn,iter)) .* obj.hvcout';
+            dw = obj.LTPrate * obj.rpe(iter) * elig;
+        end
+        
+        function dw = LTD(obj, imsn, iter)
+            % Long-term depression: Whenever an MSN is active, HVC weights
+            % onto that MSN are weakened unless they were active too.
+            dw = obj.LTDrate * obj.vpost(imsn,iter) * (1 - obj.hvcout)';
         end
         
         function d = rpe(obj, iter)
@@ -95,8 +106,8 @@ classdef SparseNet < handle
             assert(all(size(d) == [1, obj.nhvc]))
         end
         
-        function inhib = allinhib(obj, iter)
-            inhib = obj.tinhib + obj.istr * sum(obj.msnout(:,:,iter), 1);
+        function I = allinhib(obj, imsn, iter)
+            I = obj.tonicinhib(imsn,iter) + obj.istr * sum(obj.msnout(:,:,iter), 1);
         end
         
         function r = reward(obj, iter)
@@ -143,6 +154,14 @@ classdef SparseNet < handle
                 title(int2str(iter))
                 drawnow
             end
+        end
+        
+        function imagemsn(obj, name, imsn)
+            Y = zeros(obj.nhvc, obj.niter);
+            for iter = 1:obj.niter
+                Y(:,iter) = obj.(name)(imsn, iter);
+            end
+            imagesc(Y');
         end
             
     end

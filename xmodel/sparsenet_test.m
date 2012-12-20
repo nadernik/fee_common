@@ -1,20 +1,6 @@
 %%
 close all
 clear all
-%%
-snew = SparseNet();
-
-snew.nhvc = 100;
-snew.nmsn = 100;
-snew.niter = 2000;
-
-snew.LTPrate = 1e-2;
-snew.LTDrate = 1e-5;
-snew.tinhib = .6;
-snew.winit = 0.005;
-
-snew.init()
-snew.simulate()
 
 %%
 sold = SparseNet();
@@ -24,32 +10,16 @@ sold.nmsn = 100;
 sold.niter = 2000;
 
 sold.LTPrate = 1e-1;
-sold.LTDrate = 1e-2;
-sold.tinhib = 1;
+sold.LTDrate = 1e-4;
+% sold.tinhib = 1;
 sold.tinhib2 = 1;
 sold.winit = 0.5;
 
 sold.init()
 sold.simulate()
 
+sn = sold;
 
-%%
-snew = SparseNet();
-
-snew.nhvc = 100;
-snew.nmsn = 100;
-snew.niter = 2000;
-
-snew.LTPrate = 1e-2;
-snew.LTDrate = 1e-4;
-snew.tinhib = 0;
-snew.winit = 0.5;
-
-snew.init()
-snew.template = snew.template + 29;
-snew.simulate()
-
-sn =snew;
 %%
 figure
 clf
