@@ -12,7 +12,8 @@ classdef SparseNet < handle
         LTPrate = 8e-3; % learning rate for Long-Term Potentiation
         LTDrate = 5e-4; % learning rate for Long-Term Depression
         rperate = 0.2;  % learning rate for predicted reward
-        tinhib  = 0.5;  % INHIBition, Tonic
+        tinhib  = 0.5;  % INHIBition, Tonic on learning
+        tinhib2 = 0; % tonic inhibition on msn output
         winit   = 0.5;  % initial hvc weights        
         istr = 1;
         
@@ -35,27 +36,28 @@ classdef SparseNet < handle
             obj.hvcout = eye(obj.nhvc);
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.lmanout = zeros(obj.nhvc, obj.niter);
-            obj.wH = obj.winit * rand(obj.nmsn,obj.nhvc);
+            obj.wH = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
             obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
             obj.rexp = zeros(obj.nhvc, obj.niter);
-            %obj.noise = rand(obj.nhvc, obj.niter);
-            %obj.noise = max(0,randn(obj.nhvc, obj.niter)/8+.5);
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = max(0, z./std(z(:))/8+0.5);
         end
         
         function simulate(obj)
             for iter = 1:obj.niter
-                iter
+                disp(iter) %FIXME
                 obj.ffstep(iter);
-                obj.wupdate(iter);
-                obj.rexpupdate(iter);
+                if iter < obj.niter
+                    obj.wupdate(iter);
+                    obj.rexpupdate(iter);
+                end
             end
         end
         
         function ffstep(obj, iter)
             % MSN activity depends on HVC input and noise (from lman)
-            msnin = obj.wH * obj.hvcout - obj.tinhib;
+            msnin = obj.wH(:,:,iter) * obj.hvcout - obj.tinhib2;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, msnin);
             obj.lmanout(:,iter) = sum(obj.msnout(:,:,iter), 1)' + ...
@@ -64,12 +66,12 @@ classdef SparseNet < handle
         
         function v = vpost(obj, imsn, iter)
             v = obj.lmanout(:,iter)' - obj.allinhib(iter) + ...
-                obj.wH(imsn,:) * obj.hvcout;
+                obj.wH(imsn,:,iter) * obj.hvcout;
             v = max(0, v);
         end
         
         function wupdate(obj, iter)
-            dw = zeros(size(obj.wH));           
+            dw = zeros(obj.nmsn, obj.nhvc);           
             for i = 1:obj.nmsn
                 % Long-term potentiation: Whenever an MSN is active, HVC
                 % inputs that are also active are eligibile to be
@@ -85,8 +87,7 @@ classdef SparseNet < handle
                 dw(i,:) = obj.LTPrate * LTP - obj.LTDrate * LTD;
             end
 
-            obj.wH = obj.wH + dw;
-            obj.wH = max(0, obj.wH); % weights must be nonnegative
+            obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
         end
         
         function d = rpe(obj, iter)
@@ -96,7 +97,6 @@ classdef SparseNet < handle
         
         function inhib = allinhib(obj, iter)
             inhib = obj.tinhib + obj.istr * sum(obj.msnout(:,:,iter), 1);
-            %inhib = zeros(size(inhib)); %FIXME
         end
         
         function r = reward(obj, iter)
@@ -111,13 +111,13 @@ classdef SparseNet < handle
         end
             
         
-        function wimage(obj)
+        function wimage(obj, iter)
             tmax = nan(obj.nmsn, 1);
             for i = 1:obj.nmsn
-                [~, tmax(i)] = max(obj.wH(i,:));
+                [~, tmax(i)] = max(obj.wH(i,:, iter));
             end
             [~, ord] = sort(tmax);
-            imagesc(obj.wH(ord,:))
+            imagesc(obj.wH(ord,:, iter))
             title('Weights on MSN from HVC')
             xlabel('HVC unit')
             ylabel('MSN unit')
@@ -135,6 +135,14 @@ classdef SparseNet < handle
             hold all
             plot(obj.template)
             hold off
+        end
+        
+        function moview(obj)
+            for iter = 1:obj.niter
+                imagesc(obj.wH(:,:,iter))
+                title(int2str(iter))
+                drawnow
+            end
         end
             
     end
