@@ -71,14 +71,13 @@ classdef SparseNet < handle
             v = obj.wL(imsn) * obj.lmanout(:,iter)' - ...
                 obj.allinhib(imsn, iter) + ...
                 obj.wH(imsn,:,iter) * obj.hvcout;
-            v = max(0, v);
         end
         
         function wupdate(obj, iter)
             dw = zeros(obj.nmsn, obj.nhvc);           
             for i = 1:obj.nmsn
                 dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter);
-                dI = mean(obj.vpost(i,iter)) - obj.tonicinhib(i,iter);
+                dI = mean(obj.vpost(i,iter));% - obj.tonicinhib(i,iter);
                 obj.tonicinhib(i,iter+1) = obj.tonicinhib(i,iter) + ...
                     obj.rperate * dI;
             end
@@ -91,14 +90,16 @@ classdef SparseNet < handle
             % inputs that are also active are eligibile to be
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
-            elig = (ones(obj.nhvc, 1) * obj.vpost(imsn,iter)) .* obj.hvcout';
+            vp = max(0, obj.vpost(imsn,iter));
+            elig = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
             dw = obj.LTPrate * obj.rpe(iter) * elig;
         end
         
         function dw = LTD(obj, imsn, iter)
             % Long-term depression: Whenever an MSN is active, HVC weights
             % onto that MSN are weakened unless they were active too.
-            dw = obj.LTDrate * obj.vpost(imsn,iter) * (1 - obj.hvcout)';
+            vp = max(0, obj.vpost(imsn,iter));
+            dw = obj.LTDrate * vp * (1 - obj.hvcout)';
         end
         
         function d = rpe(obj, iter)

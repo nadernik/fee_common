@@ -10,7 +10,7 @@ sold.nmsn = 100;
 sold.niter = 2000;
 
 sold.LTPrate = 1e-1;
-sold.LTDrate = 1e-4;
+sold.LTDrate = 0;%1e-2;
 % sold.tinhib = 1;
 sold.tinhib2 = 1;
 sold.winit = 0.5;
