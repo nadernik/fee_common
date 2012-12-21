@@ -14,6 +14,8 @@ classdef SparseNet < handle
         rperate = 0.2;  % learning rate for predicted reward
         tinhib2 = 0; % tonic inhibition on msn output
         winit   = 0.5;  % initial hvc weights
+        lmanoffset = 0.5;
+        lmanstd = 1/8;
         istr = 1;
         
         % Model output
@@ -43,7 +45,7 @@ classdef SparseNet < handle
             obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
             obj.rexp = zeros(obj.nhvc, obj.niter);
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
-            obj.noise = max(0, z./std(z(:))/8+0.5);
+            obj.noise = max(0, z./std(z(:))*obj.lmanstd+obj.lmanoffset);
             obj.tonicinhib = zeros(obj.nmsn, obj.niter);
         end
         
@@ -79,7 +81,7 @@ classdef SparseNet < handle
                 dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter);
                 dI = mean(obj.vpost(i,iter));% - obj.tonicinhib(i,iter);
                 obj.tonicinhib(i,iter+1) = obj.tonicinhib(i,iter) + ...
-                    obj.rperate * dI;
+                    0 * dI;
             end
             
             obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
@@ -98,8 +100,7 @@ classdef SparseNet < handle
         function dw = LTD(obj, imsn, iter)
             % Long-term depression: Whenever an MSN is active, HVC weights
             % onto that MSN are weakened unless they were active too.
-            vp = max(0, obj.vpost(imsn,iter));
-            dw = obj.LTDrate * vp * (1 - obj.hvcout)';
+            dw = obj.LTDrate * obj.msnout(imsn,:,iter) * (1 - obj.hvcout)';
         end
         
         function d = rpe(obj, iter)
@@ -143,7 +144,8 @@ classdef SparseNet < handle
         end
         
         function outvstemplate(obj, iter)
-            plot(sum(obj.msnout(:,:,iter),1))
+            Y = sum(obj.msnout(:,:,iter),1) + obj.lmanoffset;
+            plot(Y)
             hold all
             plot(obj.template)
             hold off

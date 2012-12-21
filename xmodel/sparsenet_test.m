@@ -10,12 +10,13 @@ sold.nmsn = 100;
 sold.niter = 2000;
 
 sold.LTPrate = 1e-1;
-sold.LTDrate = 0;%1e-2;
+sold.LTDrate = 1e-2;
 % sold.tinhib = 1;
 sold.tinhib2 = 1;
 sold.winit = 0.5;
 
 sold.init()
+sold.tonicinhib(:,1) = .9;
 sold.simulate()
 
 sn = sold;
