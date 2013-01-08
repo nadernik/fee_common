@@ -7,7 +7,7 @@
 % hold all
 % plot(sn.tonicinhib(imsn,:))
 
-% 37 didnt work
+%%
 imsn = 71;
 for iter = 1:sn.niter
     subplot(4,1,1)
@@ -37,5 +37,11 @@ for iter = 1:sn.niter
     ylim([-0.05, 0.05])
     hold off
     
+    pause
+end
+
+%%
+for iter = 70:sn.niter
+    sn.outvstemplate(iter)
     pause
 end

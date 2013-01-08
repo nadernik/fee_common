@@ -5,15 +5,15 @@ clear all
 %%
 sold = SparseNet();
 
-sold.nhvc = 100;
+sold.nhvc = 50;
 sold.nmsn = 100;
-sold.niter = 2000;
+sold.niter = 600;
 
-sold.LTPrate = 1e-1;
-sold.LTDrate = 1e-2;
+sold.LTPrate = 5e-3;
+sold.LTDrate = 1e-4;
 % sold.tinhib = 1;
 sold.tinhib2 = 1;
-sold.winit = 0.5;
+sold.winit = 0.1;
 
 sold.init()
 sold.tonicinhib(:,1) = .9;

@@ -19,6 +19,7 @@ classdef SparseNet < handle
         istr = 1;
         
         % Model output
+        songlen
         wH
         wL
         tonicinhib
@@ -36,15 +37,23 @@ classdef SparseNet < handle
         end
         
         function init(obj)
+            obj.songlen = 1*obj.nhvc; %fIXME
             obj.hvcout = eye(obj.nhvc);
-            obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
-            obj.lmanout = zeros(obj.nhvc, obj.niter);
+            obj.hvcout = zeros(obj.nhvc, obj.songlen);
+            t_burst = 1:9;
+            sinburst = sin((t_burst-1)/8*pi).^2;
+            for u = 1:obj.nhvc
+                obj.hvcout(u, t_burst) = sinburst;
+                t_burst = modnonzero(t_burst + 1, obj.songlen); %FIXME
+            end
+            obj.msnout = zeros(obj.nmsn, obj.songlen, obj.niter);
+            obj.lmanout = zeros(obj.songlen, obj.niter);
             obj.wH = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
             obj.wL = randn(obj.nmsn, 1) / 5 + 1;
-            obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
-            obj.rexp = zeros(obj.nhvc, obj.niter);
-            z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
+            obj.template = sin(linspace(0,2*pi,obj.songlen)) + 1;
+            obj.rexp = zeros(obj.songlen, obj.niter);
+            z = generate_lman_noise_mes010(obj.songlen, obj.niter);
             obj.noise = max(0, z./std(z(:))*obj.lmanstd+obj.lmanoffset);
             obj.tonicinhib = zeros(obj.nmsn, obj.niter);
         end
@@ -93,8 +102,8 @@ classdef SparseNet < handle
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
             vp = max(0, obj.vpost(imsn,iter));
-            elig = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
-            dw = obj.LTPrate * obj.rpe(iter) * elig;
+            elig = (ones(obj.nhvc, 1) * vp) .* obj.hvcout;
+            dw = obj.LTPrate * obj.rpe(iter) * elig';
         end
         
         function dw = LTD(obj, imsn, iter)
@@ -105,7 +114,7 @@ classdef SparseNet < handle
         
         function d = rpe(obj, iter)
             d = obj.reward(iter)' - obj.rexp(:,iter)';
-            assert(all(size(d) == [1, obj.nhvc]))
+            assert(all(size(d) == [1, obj.songlen]))
         end
         
         function I = allinhib(obj, imsn, iter)
@@ -123,6 +132,73 @@ classdef SparseNet < handle
             end
         end
             
+        
+        function r = rewardall(obj)
+            r = zeros(obj.songlen,obj.niter);
+            for iter = 1:obj.niter
+                r(:,iter) = obj.reward(iter);
+            end
+        end
+        
+        function d = LTPall(obj, selmode, selval)
+            switch selmode
+                case 'msn'
+                    d = zeros(obj.nhvc, obj.niter);
+                    for iter = 1:obj.niter
+                        d(:,iter) = obj.LTP(selval, iter);
+                    end
+                case 'iter'
+                    d = zeros(obj.nmsn, obj.nhvc);
+                    for imsn = 1:obj.nmsn
+                        d(imsn,:) = obj.LTP(imsn, selval);
+                    end
+                case 'hvc'
+                    d = zeros(obj.nmsn, obj.niter);
+                    for imsn = 1:obj.nmsn
+                        for iter = 1:obj.niter
+                            temp = obj.LTP(imsn, iter);
+                            d(imsn, iter) = temp(selval);
+                        end
+                    end
+            end
+        end
+        
+        function d = LTDall(obj, selmode, selval)
+            switch selmode
+                case 'msn'
+                    d = zeros(obj.nhvc, obj.niter);
+                    for iter = 1:obj.niter
+                        d(:,iter) = obj.LTD(selval, iter);
+                    end
+                case 'iter'
+                    d = zeros(obj.nmsn, obj.nhvc);
+                    for imsn = 1:obj.nmsn
+                        d(imsn,:) = obj.LTD(imsn, selval);
+                    end
+                case 'hvc'
+                    d = zeros(obj.nmsn, obj.niter);
+                    for imsn = 1:obj.nmsn
+                        for iter = 1:obj.niter
+                            temp = obj.LTD(imsn, iter);
+                            d(imsn, iter) = temp(selval);
+                        end
+                    end
+            end
+        end
+        
+        function y = msnoutall(obj, selmode, selval)
+            switch selmode
+                case 'msn'
+                    imsn = selval;
+                    y = squeeze(obj.msnout(imsn,:,:));
+                case 't'
+                    t = selval;
+                    y = squeeze(obj.msnout(:,t,:));
+                case 'iter'
+                    iter = selval;
+                    y = squeeze(obj.msnout(:,:,iter));
+            end
+        end
         
         function wimage(obj, iter)
             tmax = nan(obj.nmsn, 1);
@@ -149,6 +225,8 @@ classdef SparseNet < handle
             hold all
             plot(obj.template)
             hold off
+            legend({'Model output', 'Template'})
+            title(sprintf('Motif %g', iter))
         end
         
         function moview(obj)
