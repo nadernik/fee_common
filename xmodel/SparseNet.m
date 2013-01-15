@@ -17,6 +17,7 @@ classdef SparseNet < handle
         lmanoffset = 0.5;
         lmanstd = 1/8;
         istr = 1;
+        hvcburstlen = 3;
         
         % Model output
         wH
@@ -36,7 +37,17 @@ classdef SparseNet < handle
         end
         
         function init(obj)
-            obj.hvcout = eye(obj.nhvc);
+            %obj.hvcout = eye(obj.nhvc);
+            obj.hvcout = zeros(obj.nhvc);
+            assert(mod(obj.hvcburstlen, 2) == 1)
+            assert(obj.hvcburstlen >= 3)
+            tburst = modnonzero((1:obj.hvcburstlen)-(obj.hvcburstlen+1)/2 + 1, obj.nhvc);
+            t = linspace(0, pi, obj.hvcburstlen);
+            hvcburst = sin(t).^2;
+            for ihvc = 1:obj.nhvc
+                obj.hvcout(ihvc,tburst) = hvcburst;
+                tburst = modnonzero(tburst + 1, obj.nhvc);
+            end
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.lmanout = zeros(obj.nhvc, obj.niter);
             obj.wH = zeros(obj.nmsn, obj.nhvc, obj.niter);
