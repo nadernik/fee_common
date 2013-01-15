@@ -34,6 +34,10 @@ hold off
 ltp = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
     ltp(:,iter) = sn.LTP(imsn, iter);
+    plot(ltp(:,iter))
+    title(sprintf('LTP for MSN %g on trial %g', imsn, iter))
+    ylim([-.1, .1])
+    pause
 end
 imagesc(ltp')
 xlabel('HVC')
@@ -258,4 +262,13 @@ hold off
 legend(h, legendstr, 'Location', 'NorthWest')
 ylabel('Weight')
 xlabel('Trial')
+
+%% RPE*LMAN one trial at a time
+for iter = 1:sn.niter
+    plot(sn.rpe(iter))
+    xlabel('Time (ms)')
+    ylabel('Reward Prediction Error')
+    title(sprintf('Trial %g', iter))
+    pause
+end
 

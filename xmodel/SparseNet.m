@@ -68,6 +68,7 @@ classdef SparseNet < handle
         end
         
         function simulate(obj)
+            r = nan(1,obj.niter); %FIXME
             for iter = 1:obj.niter
                 disp(iter) %FIXME
                 obj.ffstep(iter);
@@ -75,6 +76,29 @@ classdef SparseNet < handle
                     obj.wupdate(iter);
                     obj.rexpupdate(iter);
                 end
+                
+                
+                %%%FIXME
+                clf
+                subplot(1,3,1)
+                obj.wimage(iter)
+                subplot(1,3,2)
+                obj.outvstemplate(iter)
+                xlabel('Time (ms)')
+                ylabel('Pitch')
+                legend('Learned Song', 'Template')
+                ylim([0 4])
+                subplot(1,3,3)
+                r(iter) = -sum(obj.reward(iter));
+                plot(r)
+                ylim([0 100])
+                xlim([0 obj.niter])
+                xlabel('Trial')
+                ylabel('Mean squared error')
+                title(sprintf('Trial %g', iter))
+                drawnow
+                %%%%%%%%%%%
+                
             end
         end
         

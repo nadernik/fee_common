@@ -9,11 +9,11 @@ sold.nhvc = 100;
 sold.nmsn = 100;
 sold.niter = 1000;
 
-sold.LTPrate = 1e-1;
-sold.LTDrate = 1e-2;
+sold.LTPrate = 9e-2;
+sold.LTDrate = 3e-3;
 % sold.tinhib = 1;
-sold.tinhib2 = 1;
-sold.winit = 0.5;
+sold.tinhib2 = 1/3;
+sold.winit = 0.5/3;
 sold.hvcburstlen = 3;
 sold.kernelstd = 1/8;
 
