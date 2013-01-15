@@ -44,6 +44,7 @@ classdef SparseNet < handle
             tburst = modnonzero((1:obj.hvcburstlen)-(obj.hvcburstlen+1)/2 + 1, obj.nhvc);
             t = linspace(0, pi, obj.hvcburstlen);
             hvcburst = sin(t).^2;
+            hvcburst = hvcburst ./ sum(hvcburst);
             for ihvc = 1:obj.nhvc
                 obj.hvcout(ihvc,tburst) = hvcburst;
                 tburst = modnonzero(tburst + 1, obj.nhvc);
@@ -111,7 +112,7 @@ classdef SparseNet < handle
         function dw = LTD(obj, imsn, iter)
             % Long-term depression: Whenever an MSN is active, HVC weights
             % onto that MSN are weakened unless they were active too.
-            dw = obj.LTDrate * obj.msnout(imsn,:,iter) * (1 - obj.hvcout)';
+            dw = obj.LTDrate * obj.msnout(imsn,:,iter) * (max(obj.hvcout(:)) - obj.hvcout)';
         end
         
         function d = rpe(obj, iter)

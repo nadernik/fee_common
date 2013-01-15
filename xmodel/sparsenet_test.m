@@ -14,10 +14,16 @@ sold.LTDrate = 1e-2;
 % sold.tinhib = 1;
 sold.tinhib2 = 1;
 sold.winit = 0.5;
-sold.hvcburstlen = 3;
+sold.hvcburstlen = 5;
 
 sold.init()
 sold.tonicinhib(:,1) = 0.9;
+ 
+% temp = load('works_3.mat');
+% sold.wH(:,:,1) = 2 * temp.sn.wH(:,:,end);
+% sold.rexp(:,1) = temp.sn.rexp(:,end);
+clear temp
+
 sold.simulate()
 
 sn = sold;

@@ -1,6 +1,6 @@
 %% Choose MSN and HVC synapse of interest
-imsn = 42;
-ihvc = 25;
+imsn = 94;
+ihvc = 21;
 
 %% MSN input relative to threshold on first iteration
 bins = linspace(0,1.5,25);
@@ -89,17 +89,30 @@ plot(squeeze(sum(sn.msnout(:,:,iter) > 0, 1)))
 
 %% LTP for all synapses from a single HVC neuron
 iters = 1:sn.niter;
-p = zeros(sn.nmsn, length(iters));
+ihvc1 = 20;
+ihvc2 = 21;
+p1 = zeros(sn.nmsn, length(iters));
+p2 = zeros(sn.nmsn, length(iters));
 for ii = 1:length(iters)
-    iter = iters(ii);
+    iter = iters(ii)
     for imsn = 1:sn.nmsn
         temp = sn.LTP(imsn, iter);
-        p(imsn,ii) = temp(ihvc);
+        p1(imsn,ii) = temp(ihvc1);
+        p2(imsn,ii) = temp(ihvc2);
     end
 end
-imagesc(p')
+subplot(1,2,1)
+imagesc(p1')
 xlabel('MSN')
 ylabel('Trial')
+title(sprintf('LTP for synapses from HVC unit %g', ihvc1))
+
+subplot(1,2,2)
+imagesc(p2')
+xlabel('MSN')
+ylabel('Trial')
+title(sprintf('LTP for synapses from HVC unit %g', ihvc2))
+
 
 %% Vpost for a single MSN
 vpost = zeros(sn.nhvc, sn.niter);
@@ -160,6 +173,12 @@ imagesc(squeeze(max(sn.wH, [], 1))')
 xlabel('HVC')
 ylabel('Trial')
 
+%% List of MSNs active at a particular time
+iter = sn.niter;
+imsn = find(sn.msnout(:,ihvc,iter) > 0);
+fprintf('MSNs active on time step %g on trial %g: ', ihvc, iter)
+disp(imsn')
+
 %% Histogram of LTP values
 bins = linspace(-0.05, 0.05, 20);
 for iter = 1:sn.niter
@@ -216,3 +235,27 @@ for iter = 1:sn.niter
     ylabel('Mean squared error')
     pause
 end
+
+%% LTD one motif at a time
+
+% get order of weights from last motif
+
+%% Select weights 
+ihvc = [20, 21];
+clf
+hold on
+co = get(gca,'ColorOrder');
+for ii = 1:length(ihvc)
+    % all active msns at this time
+    imsn = find(sn.msnout(:,ihvc(ii),end)>0);
+    
+    % plot weights
+    temp = plot(squeeze(sn.wH(imsn, ihvc(ii), :))', 'Color', co(ii,:));
+    h(ii) = temp(1);
+    legendstr{ii} = sprintf('HVC %g', ihvc(ii));
+end
+hold off
+legend(h, legendstr, 'Location', 'NorthWest')
+ylabel('Weight')
+xlabel('Trial')
+
