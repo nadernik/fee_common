@@ -18,6 +18,7 @@ classdef SparseNet < handle
         lmanstd = 1/8;
         istr = 1;
         hvcburstlen = 3;
+        kernelstd = 6;
         
         % Model output
         wH
@@ -29,6 +30,7 @@ classdef SparseNet < handle
         noise
         template
         rexp
+        kernel
     end
     
     methods
@@ -55,10 +57,14 @@ classdef SparseNet < handle
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
             obj.wL = randn(obj.nmsn, 1) / 5 + 1;
             obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
-            obj.rexp = zeros(obj.nhvc, obj.niter);
+            obj.rexp = zeros(obj.nhvc + 8*obj.kernelstd - 1, obj.niter);
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = max(0, z./std(z(:))*obj.lmanstd+obj.lmanoffset);
             obj.tonicinhib = zeros(obj.nmsn, obj.niter);
+            
+            x = linspace(-4,4,8*obj.kernelstd);
+            k = normpdf(x)'; % Gaussian, column vector
+            obj.kernel = k./sum(k);
         end
         
         function simulate(obj)
@@ -105,8 +111,11 @@ classdef SparseNet < handle
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
             vp = max(0, obj.vpost(imsn,iter));
-            elig = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
-            dw = obj.LTPrate * obj.rpe(iter) * elig;
+            e = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
+            % blur eligibility trace in time (across rows)
+            assert(iscolumn(obj.kernel)) % kernel must be column vector
+            etrace = conv2(e, obj.kernel);
+            dw = obj.LTPrate * obj.rpe(iter) * etrace;
         end
         
         function dw = LTD(obj, imsn, iter)
@@ -116,8 +125,8 @@ classdef SparseNet < handle
         end
         
         function d = rpe(obj, iter)
-            d = obj.reward(iter)' - obj.rexp(:,iter)';
-            assert(all(size(d) == [1, obj.nhvc]))
+            x = obj.reward(iter)';
+            d = conv(x, obj.kernel) - obj.rexp(:,iter)';
         end
         
         function I = allinhib(obj, imsn, iter)
