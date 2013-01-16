@@ -2,32 +2,32 @@
 close all
 clear all
 
-%%
-sold = SparseNet();
 
-sold.nhvc = 100;
-sold.nmsn = 100;
-sold.niter = 1000;
+sn = SparseNet();
 
-sold.LTPrate = 9e-2;
-sold.LTDrate = 3e-3;
-% sold.tinhib = 1;
-sold.tinhib2 = 1/3;
-sold.winit = 0.5/3;
-sold.hvcburstlen = 3;
-sold.kernelstd = 1/8;
+sn.nhvc = 100;
+sn.nmsn = 100;
+sn.niter = 1000;
 
-sold.init()
-sold.tonicinhib(:,1) = 0.9;
- 
-% temp = load('works_3.mat');
-% sold.wH(:,:,1) = 2 * temp.sn.wH(:,:,end);
-% sold.rexp(:,1) = temp.sn.rexp(:,end);
-% clear temp
+sn.hvcburstlen = 3;
+sn.kernelstd = 1/8;
 
-sold.simulate()
+template = 0.5 * sin(linspace(0,2*pi,sn.nhvc)) + 0.5;
 
-sn = sold;
+sn.lmanstd    = 0.25 * max(template);
+sn.lmanoffset = 2    * sn.lmanstd;
+sn.winit      = 1    * sn.lmanstd;
+sn.msnthresh  = 1    * sn.winit; % MSN threshold
+sn.wLstd      = 0.2; %standard deviation of LMAN weights
+sn.istr       = sn.lmanoffset + 2 * sn.lmanstd;
+
+sn.LTPrate = 1e-1;
+sn.LTDrate = 5e-2;
+
+sn.init()
+sn.template = template;
+
+sn.simulate()
 
 %%
 figure

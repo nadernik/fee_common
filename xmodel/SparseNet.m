@@ -9,21 +9,22 @@ classdef SparseNet < handle
         niter = 1e4;
         
         % Tweakable parameters
-        LTPrate = 8e-3; % learning rate for Long-Term Potentiation
-        LTDrate = 5e-4; % learning rate for Long-Term Depression
+        LTPrate = 1;% learning rate for Long-Term Potentiation
+        LTDrate = 1;% learning rate for Long-Term Depression
         rperate = 0.2;  % learning rate for predicted reward
-        tinhib2 = 0; % tonic inhibition on msn output
-        winit   = 0.5;  % initial hvc weights
-        lmanoffset = 0.5;
-        lmanstd = 1/8;
+        msnthresh = 1; % tonic inhibition on msn output
+        winit =1; % initial hvc weights
+        lmanoffset = 1;
+        lmanstd = 1;
         istr = 1;
         hvcburstlen = 3;
-        kernelstd = 6;
+        kernelstd = 1/8;
+        wLstd = 1;
         
         % Model output
         wH
         wL
-        tonicinhib
+        msninhib
         hvcout
         msnout
         lmanout
@@ -39,7 +40,6 @@ classdef SparseNet < handle
         end
         
         function init(obj)
-            %obj.hvcout = eye(obj.nhvc);
             obj.hvcout = zeros(obj.nhvc);
             assert(mod(obj.hvcburstlen, 2) == 1)
             assert(obj.hvcburstlen >= 3)
@@ -55,12 +55,18 @@ classdef SparseNet < handle
             obj.lmanout = zeros(obj.nhvc, obj.niter);
             obj.wH = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
-            obj.wL = randn(obj.nmsn, 1) / 5 + 1;
+            
+            % LMAN weights are normally distributed around 1 with a
+            % standard deviation given by obj.wLstd
+            obj.wL = randn(obj.nmsn, 1) * obj.wLstd + 1;
+            
             obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
             obj.rexp = zeros(obj.nhvc + 8*obj.kernelstd - 1, obj.niter);
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = max(0, z./std(z(:))*obj.lmanstd+obj.lmanoffset);
-            obj.tonicinhib = zeros(obj.nmsn, obj.niter);
+            
+            
+            obj.msninhib = obj.wL * obj.istr;
             
             x = linspace(-4,4,8*obj.kernelstd);
             k = normpdf(x)'; % Gaussian, column vector
@@ -104,7 +110,7 @@ classdef SparseNet < handle
         
         function ffstep(obj, iter)
             % MSN activity depends on HVC input and noise (from lman)
-            msnin = obj.wH(:,:,iter) * obj.hvcout - obj.tinhib2;
+            msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, msnin);
             obj.lmanout(:,iter) = sum(obj.msnout(:,:,iter), 1)' + ...
@@ -121,9 +127,6 @@ classdef SparseNet < handle
             dw = zeros(obj.nmsn, obj.nhvc);           
             for i = 1:obj.nmsn
                 dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter);
-                dI = mean(obj.vpost(i,iter));% - obj.tonicinhib(i,iter);
-                obj.tonicinhib(i,iter+1) = obj.tonicinhib(i,iter) + ...
-                    0 * dI;
             end
             
             obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
@@ -154,7 +157,7 @@ classdef SparseNet < handle
         end
         
         function I = allinhib(obj, imsn, iter)
-            I = obj.tonicinhib(imsn,iter) + obj.istr * sum(obj.msnout(:,:,iter), 1);
+            I = obj.msninhib(imsn) + sum(obj.msnout(:,:,iter), 1);
         end
         
         function r = reward(obj, iter)

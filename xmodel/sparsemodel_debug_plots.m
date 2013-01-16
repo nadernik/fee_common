@@ -118,7 +118,7 @@ ylabel('Trial')
 title(sprintf('LTP for synapses from HVC unit %g', ihvc2))
 
 
-%% Vpost for a single MSN
+%% Vpost for a single MSN at all times and trials
 vpost = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
     vpost(:,iter) = sn.vpost(imsn,iter);
@@ -128,9 +128,20 @@ ylabel('Trial')
 xlabel('time')
 title(sprintf('V_p_o_s_t for MSN %g', imsn))
 
-%% Vpost for a single MSN on the first iteration
+%% Vpost for a single MSN at a single time across trials
+vpost = zeros(1, sn.niter);
+for iter = 1:sn.niter
+    temp = sn.vpost(imsn,iter);
+    vpost(iter) = temp(ihvc);
+end
+plot(vpost')
+ylabel('Trial')
+xlabel('time')
+title(sprintf('V_p_o_s_t for MSN %g', imsn))
+
+%% Vpost for a single MSN on the last iteration
 clf
-plot(sn.vpost(imsn, 1))
+plot(sn.vpost(imsn, sn.niter))
 xlabel('Time')
 ylabel('V_p_o_s_t')
 title(sprintf('MSN %g on first iteration', imsn))
@@ -272,3 +283,82 @@ for iter = 1:sn.niter
     pause
 end
 
+%% RPE for one time across trials
+e = zeros(1, sn.niter);
+for iter = 1:sn.niter
+    temp = sn.rpe(iter);
+    e(iter) = temp(ihvc);
+end
+plot(e)
+xlabel('Trial')
+ylabel('Reward Prediction Error')
+title(sprintf('Time %g', ihvc))
+
+%% Reward and expected reward at a single time across trials
+for iter = 1:sn.niter
+    temp = sn.reward(iter);
+    r(iter) = temp(ihvc);
+end
+plot(r, 'Color', [.7 .7 .7])
+hold all
+plot(sn.rexp(ihvc,:), 'Color', [0 0 0])
+
+%% Compare LTP
+iters = [881, 746:880];
+ltp = zeros(length(iters), 1);
+rpe = zeros(length(iters), 1);
+vpost = zeros(length(iters), 1);
+noise = zeros(length(iters), 1);
+lman = zeros(length(iters), 1);
+
+for ii = 1:length(iters)
+    iter = iters(ii);
+    
+    temp = sn.LTP(imsn, iter);
+    ltp(ii) = temp(ihvc);
+    
+    temp = sn.rpe(iter);
+    rpe(ii) = temp(ihvc);
+    
+    temp = max(0, sn.vpost(imsn, iter));
+    vpost(ii) = temp(ihvc);
+    
+    noise(ii) = sn.noise(ihvc,iter);
+    
+    lman(ii) = sn.lmanout(ihvc,iter);
+end
+    
+Y = [ltp(1) / mean(abs(ltp(2:end)))
+     rpe(1) / mean(abs(rpe(2:end)))
+     vpost(1) / mean(vpost(2:end))
+     noise(1) / mean(abs(noise(2:end)))];
+
+bar(Y)
+set(gca, 'XTickLabel', {'LTP', 'RPE', 'Vpost', 'Noise'})
+ylabel('Factor higher than mean')
+
+subplot(3,2,1)
+hist(ltp(2:end))
+line(ltp(1)*ones(2,1), ylim)
+title('LTP')
+
+subplot(3,2,2)
+hist(rpe(2:end))
+line(rpe(1)*ones(2,1), ylim)
+title('RPE')
+
+subplot(3,2,3)
+hist(vpost(2:end))
+line(vpost(1)*ones(2,1), ylim)
+title('Vpost')
+
+subplot(3,2,4)
+hist(noise(2:end))
+line(noise(1)*ones(2,1), ylim)
+title('Noise')
+
+subplot(3,2,5)
+hist(lman(2:end))
+line(lman(1)*ones(2,1), ylim)
+line(sn.template(ihvc)*ones(2,1), ylim, 'Color', 'r')
+title('LMAN output')
