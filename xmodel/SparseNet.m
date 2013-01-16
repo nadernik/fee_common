@@ -63,7 +63,7 @@ classdef SparseNet < handle
             obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
             obj.rexp = zeros(obj.nhvc + 8*obj.kernelstd - 1, obj.niter);
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
-            obj.noise = max(0, z./std(z(:))*obj.lmanstd+obj.lmanoffset);
+            obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
             
             
             obj.msninhib = obj.wL * obj.istr;
@@ -113,8 +113,8 @@ classdef SparseNet < handle
             msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, msnin);
-            obj.lmanout(:,iter) = sum(obj.msnout(:,:,iter), 1)' + ...
-                obj.noise(:,iter);
+            obj.lmanout(:,iter) = max(0, sum(obj.msnout(:,:,iter), 1)' + ...
+                obj.noise(:,iter));
         end
         
         function v = vpost(obj, imsn, iter)
@@ -157,7 +157,7 @@ classdef SparseNet < handle
         end
         
         function I = allinhib(obj, imsn, iter)
-            I = obj.msninhib(imsn) + sum(obj.msnout(:,:,iter), 1);
+            I = obj.msninhib(imsn) + sum(obj.msnout((1:obj.nmsn)~=imsn,:,iter), 1);
         end
         
         function r = reward(obj, iter)

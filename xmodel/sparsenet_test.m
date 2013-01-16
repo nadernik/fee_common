@@ -12,8 +12,10 @@ sn.niter = 1000;
 sn.hvcburstlen = 3;
 sn.kernelstd = 1/8;
 
+% Choose maximum template value = 1.
 template = 0.5 * sin(linspace(0,2*pi,sn.nhvc)) + 0.5;
 
+% Choose LMAN fluctuations to have standard deviation = 1/4 of template
 sn.lmanstd    = 0.25 * max(template);
 sn.lmanoffset = 2    * sn.lmanstd;
 sn.winit      = 1    * sn.lmanstd;
@@ -26,6 +28,7 @@ sn.LTDrate = 5e-2;
 
 sn.init()
 sn.template = template;
+% sn.wH = diag(max(0,sn.template-sn.lmanoffset + sn.msnthresh)); %FIXME
 
 sn.simulate()
 

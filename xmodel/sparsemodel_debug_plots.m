@@ -1,6 +1,6 @@
 %% Choose MSN and HVC synapse of interest
-imsn = 94;
-ihvc = 21;
+imsn = 3;
+ihvc = 26;
 
 %% MSN input relative to threshold on first iteration
 bins = linspace(0,1.5,25);
@@ -31,13 +31,16 @@ title('MSN input on first iteration (all neurons and times)')
 hold off
 
 %% LTP in a single MSN over all synapses and motifs
+plot_every = false;
 ltp = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
-    ltp(:,iter) = sn.LTP(imsn, iter);
-    plot(ltp(:,iter))
-    title(sprintf('LTP for MSN %g on trial %g', imsn, iter))
-    ylim([-.1, .1])
-    pause
+    ltp(:,iter) = sn.LTD(imsn, iter);
+    if plot_every
+        plot(ltp(:,iter))
+        title(sprintf('LTP for MSN %g on trial %g', imsn, iter))
+        ylim([-.1, .1])
+        pause
+    end
 end
 imagesc(ltp')
 xlabel('HVC')
@@ -179,6 +182,27 @@ xlabel('MSN output')
 ylabel('Count')
 title(sprintf('MSN output on first iteration\nMean = %g SD = %g', mean(y(:)), std(y(:))))
 
+%% Histogram of LTP values
+bins = linspace(-0.05, 0.05, 20);
+for iter = 1:sn.niter
+    p = zeros(sn.nmsn, sn.nhvc);
+    for imsn = 1:sn.nmsn
+        p(imsn,:) = sn.LTP(imsn, iter);
+    end
+    hist(p(:), bins)
+    title(sprintf('LTP for all HVC-X neurons on trial %g\nSD = %g\n[Enter] to continue...', iter, std(p(:))))
+    xlim([-.06, .06])
+    pause
+end
+
+%% Histogram of RPE
+rpe = zeros(sn.niter,1);
+for iter = 1:sn.niter
+    temp = sn.rpe(iter);
+    rpe(iter) = temp(ihvc);
+end
+hist(rpe)
+
 %% HVC-X weights for a single MSN for all synapses over time
 iters = 1:100;
 imagesc(squeeze(sn.wH(imsn,:,iters))')
@@ -193,19 +217,6 @@ iter = sn.niter;
 imsn = find(sn.msnout(:,ihvc,iter) > 0);
 fprintf('MSNs active on time step %g on trial %g: ', ihvc, iter)
 disp(imsn')
-
-%% Histogram of LTP values
-bins = linspace(-0.05, 0.05, 20);
-for iter = 1:sn.niter
-    p = zeros(sn.nmsn, sn.nhvc);
-    for imsn = 1:sn.nmsn
-        p(imsn,:) = sn.LTP(imsn, iter);
-    end
-    hist(p(:), bins)
-    title(sprintf('LTP for all HVC-X neurons on trial %g\nSD = %g\n[Enter] to continue...', iter, std(p(:))))
-    xlim([-.06, .06])
-    pause
-end
 
 %% Standard deviation of LTP values
 iters = 1:30;
@@ -304,7 +315,7 @@ hold all
 plot(sn.rexp(ihvc,:), 'Color', [0 0 0])
 
 %% Compare LTP
-iters = [881, 746:880];
+iters = 1:sn.niter;
 ltp = zeros(length(iters), 1);
 rpe = zeros(length(iters), 1);
 vpost = zeros(length(iters), 1);
@@ -320,7 +331,7 @@ for ii = 1:length(iters)
     temp = sn.rpe(iter);
     rpe(ii) = temp(ihvc);
     
-    temp = max(0, sn.vpost(imsn, iter));
+    temp = sn.vpost(imsn, iter);
     vpost(ii) = temp(ihvc);
     
     noise(ii) = sn.noise(ihvc,iter);
@@ -362,3 +373,43 @@ hist(lman(2:end))
 line(lman(1)*ones(2,1), ylim)
 line(sn.template(ihvc)*ones(2,1), ylim, 'Color', 'r')
 title('LMAN output')
+
+%% Three sigma events
+iters = find(abs(sn.noise(ihvc,:)) >= 3*sn.lmanstd);
+fprintf('There are %g three-sigma events at time %g across %g trials.\n', length(iters), ihvc, sn.niter)
+ltp = zeros(length(iters), 1);
+rpe = zeros(length(iters), 1);
+vpost = zeros(length(iters), 1);
+noise = zeros(length(iters), 1);
+lman = zeros(length(iters), 1);
+reward = zeros(length(iters), 1);
+for ii = 1:length(iters)
+    iter = iters(ii);
+    
+    temp = sn.LTP(imsn, iter);
+    ltp(ii) = temp(ihvc);
+    
+    temp = sn.rpe(iter);
+    rpe(ii) = temp(ihvc);
+    
+    temp = sn.reward(iter);
+    reward(ii) = temp(ihvc);
+    
+    temp = max(0, sn.vpost(imsn, iter));
+    vpost(ii) = temp(ihvc);
+    
+    noise(ii) = sn.noise(ihvc,iter);
+    
+    lman(ii) = sn.lmanout(ihvc,iter);
+end    
+
+% scatter(lman, ltp)
+% scatter(lman, vpost)
+% line(sn.template(ihvc)*ones(2,1), ylim, 'Color', 'r')
+ndx = rpe > 0;
+scatter(iters(ndx), vpost(ndx), 50, [.5 0 0])
+ndx = rpe < 0
+hold on
+scatter(iters(ndx), vpost(ndx), 50, [0 .5 0])
+hold off
+
