@@ -74,9 +74,9 @@ classdef SparseNet < handle
         end
         
         function simulate(obj)
-            r = nan(1,obj.niter); %FIXME
+%             r = nan(1,obj.niter); %FIXME
             for iter = 1:obj.niter
-                disp(iter) %FIXME
+%                 disp(iter) %FIXME
                 obj.ffstep(iter);
                 if iter < obj.niter
                     obj.wupdate(iter);
@@ -84,26 +84,26 @@ classdef SparseNet < handle
                 end
                 
                 
-                %%%FIXME
-                clf
-                subplot(1,3,1)
-                obj.wimage(iter)
-                subplot(1,3,2)
-                obj.outvstemplate(iter)
-                xlabel('Time (ms)')
-                ylabel('Pitch')
-                legend('Learned Song', 'Template')
-                ylim([0 4])
-                subplot(1,3,3)
-                r(iter) = -sum(obj.reward(iter));
-                plot(r)
-                ylim([0 100])
-                xlim([0 obj.niter])
-                xlabel('Trial')
-                ylabel('Mean squared error')
-                title(sprintf('Trial %g', iter))
-                drawnow
-                %%%%%%%%%%%
+%                 %%%FIXME
+%                 clf
+%                 subplot(1,3,1)
+%                 obj.wimage(iter)
+%                 subplot(1,3,2)
+%                 obj.outvstemplate(iter)
+%                 xlabel('Time (ms)')
+%                 ylabel('Pitch')
+%                 legend('Learned Song', 'Template')
+%                 ylim([0 4])
+%                 subplot(1,3,3)
+%                 r(iter) = -sum(obj.reward(iter));
+%                 plot(r)
+%                 ylim([0 100])
+%                 xlim([0 obj.niter])
+%                 xlabel('Trial')
+%                 ylabel('Mean squared error')
+%                 title(sprintf('Trial %g', iter))
+%                 drawnow
+%                 %%%%%%%%%%%
                 
             end
         end
@@ -166,9 +166,16 @@ classdef SparseNet < handle
         
         function rexpupdate(obj, iter)
             if iter < obj.niter
+%                 obj.rexp(:,iter+1) = -(obj.bias(iter+1) - obj.template).^2;
                 obj.rexp(:,iter+1) = obj.rexp(:,iter) + ...
                     obj.rperate .* obj.rpe(iter)';
             end
+        end
+        
+        function b = bias(obj, iter)
+            msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
+            mout = max(0, msnin);
+            b = obj.lmanoffset + sum(mout, 1);
         end
             
         
@@ -191,12 +198,15 @@ classdef SparseNet < handle
             title(sprintf('MSN %g output', imsn))
         end
         
-        function outvstemplate(obj, iter)
+        function plotbiasvstemplate(obj, iter)
             Y = sum(obj.msnout(:,:,iter),1) + obj.lmanoffset;
             plot(Y)
             hold all
             plot(obj.template)
             hold off
+            legend({'Bias', 'Template'})
+            xlabel('Time (ms)')
+            ylabel('Output')
         end
         
         function moview(obj)
@@ -213,6 +223,19 @@ classdef SparseNet < handle
                 Y(:,iter) = obj.(name)(imsn, iter);
             end
             imagesc(Y');
+        end
+        
+        function plotmse(obj)
+            % Plot the mean squared error between the bias and template,
+            % across trials.
+            mse = zeros(1,obj.niter);
+            for iter = 1:obj.niter
+                mse(iter) = mean((obj.bias(iter) - obj.template).^2);
+            end
+            plot(mse)
+            xlim([1 obj.niter])
+            xlabel('Trial')
+            ylabel('Mean Squared Error')
         end
             
     end

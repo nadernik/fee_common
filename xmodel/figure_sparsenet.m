@@ -1,78 +1,71 @@
-close all
-clear all
-datadir = 'c:\stetner\data\sparsenet';
+datadir = 'c:\stetner\data\sparsenet\';
+conditions = {'yesltd_yesinhib'
+              'yesltd_noinhib'
+              'noltd_yesinhib'
+              'noltd_noinhib'};
 
+%% Run simulations
+for ic = 1:length(conditions)
+    clear sn
+    
+    %% Create the network
+    switch conditions{ic}
+        case 'yesltd_yesinhib'
+            sn = SparseNet();
+        case 'yesltd_noinhib'
+            sn = SparseNet_noinhib();
+        case 'noltd_yesinhib'
+            sn = SparseNet_noltd();
+        case 'noltd_noinhib'
+            sn = SparseNet_noltd_noinhib();
+        otherwise
+            error('Unknown condition')
+    end
+    
+    %% Set parameters
+    sn.nhvc = 100;
+    sn.nmsn = 100;
+    sn.niter = 1000;
+    
+    sn.hvcburstlen = 3;
+    sn.kernelstd = 1/8;
+    
+    % Choose maximum template value = 1.
+    template = 0.5 * sin(linspace(0,2*pi,sn.nhvc)) + 0.5;
+    
+    sn.lmanstd    = 0.25 * max(template);
+    sn.lmanoffset = 2    * sn.lmanstd;
+    sn.winit      = 1    * sn.lmanstd;
+    sn.msnthresh  = 1    * sn.winit; % MSN threshold
+    sn.wLstd      = 0.2; %standard deviation of LMAN weights
+    sn.istr       = sn.lmanoffset + 2 * sn.lmanstd;
+    
+    sn.LTPrate = 1e-1;
+    sn.LTDrate = 5e-2;
+    
+    sn.init()
+    sn.template = template;
+    
+    %% Run
+    sn.simulate()
+    
+    %% Save
+    save(fullfile(datadir, conditions{ic}));
+end        
 
-%%
-sn = SparseNet();
-sn.niter = 5e3;
-sn.tinhib = 1;
-sn.niter = 5e3;
-sn.LTPrate = 3.5e-4;
-sn.nmsn = 100;
-
-%%
-disp('yes ltd yes inhib')
-sn.LTDrate = 1.0e-3;
-sn.tinhib = 1;
-sn.init()
-sn.simulate()
-save(fullfile(datadir, 'yesltd_yesinhib.mat'), 'sn');
-
-%%
-disp('No ltd yes inhib')
-sn.LTDrate = 0;
-sn.tinhib = 1;
-sn.init()
-sn.simulate()
-save(fullfile(datadir, 'noltd_yesinhib.mat'), 'sn');
-
-%%
-disp('No ltd no inhib')
-sn.LTDrate = 0;
-sn.tinhib = 0;
-sn.init()
-sn.simulate()
-save(fullfile(datadir, 'noltd_noinhib.mat'), 'sn');
-
-%%
-clear sn
-load(fullfile(datadir, 'yesltd_yesinhib.mat'), 'sn');
-figure(2)
-clf
-subplot(2,3,1)
-sn.wimage
-subplot(2,3,2)
-lastsongs = sn.lmanout(:,end-100:end);
-learning = mean(lastsongs, 2);
-plot(learning)
-hold all
-plot(sn.template)
-ylim([0, 40])
-xlabel('Time (ms)')
-ylabel('Pitch')
-legend('Learned Song', 'Template')
-subplot(2,3,3)
-plot(-sum(sn.rexp, 1))
-xlabel('Trial')
-ylabel('Mean squared error')
-
-%%
-clear sn
-load(fullfile(datadir, 'noltd_yesinhib.mat'), 'sn');
-subplot(2,3,4)
-sn.wimage
-subplot(2,3,5)
-lastsongs = sn.lmanout(:,end-100:end);
-learning = mean(lastsongs, 2);
-plot(learning)
-hold all
-plot(sn.template)
-ylim([0, 40])
-xlabel('Time (ms)')
-ylabel('Pitch')
-legend('Learned Song', 'Template')
-subplot(2,3,6)
-plot(-sum(sn.rexp, 1))
-xlabel('Trial')
-ylabel('Mean squared error')
+%% Plot results
+for ic = 1:length(conditions)
+    clear sn
+    figure
+    load(fullfile(datadir, conditions{ic}))
+    
+    subplot(1,3,1)
+    sn.wimage(sn.niter)
+    
+    subplot(1,3,2)
+    sn.plotbiasvstemplate(sn.niter)
+    title(conditions{ic})
+    
+    subplot(1,3,3)
+    sn.plotmse()
+end 

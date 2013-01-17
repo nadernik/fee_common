@@ -406,9 +406,9 @@ end
 % scatter(lman, ltp)
 % scatter(lman, vpost)
 % line(sn.template(ihvc)*ones(2,1), ylim, 'Color', 'r')
-ndx = rpe > 0;
+ndx = rpe < 0;
 scatter(iters(ndx), vpost(ndx), 50, [.5 0 0])
-ndx = rpe < 0
+ndx = rpe > 0;
 hold on
 scatter(iters(ndx), vpost(ndx), 50, [0 .5 0])
 hold off

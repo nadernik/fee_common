@@ -24,7 +24,7 @@ sn.wLstd      = 0.2; %standard deviation of LMAN weights
 sn.istr       = sn.lmanoffset + 2 * sn.lmanstd;
 
 sn.LTPrate = 1e-1;
-sn.LTDrate = 5e-2;
+sn.LTDrate = 0%5e-2;
 
 sn.init()
 sn.template = template;
@@ -48,6 +48,9 @@ xlabel('Time (ms)')
 ylabel('Pitch')
 legend('Learned Song', 'Template')
 subplot(1,3,3)
-plot(-sum(sn.rexp, 1))
+for iter = 1:sn.niter
+    r(iter) = sum((sn.bias(iter) - template).^2);
+end
+plot(r)
 xlabel('Trial')
 ylabel('Mean squared error')
