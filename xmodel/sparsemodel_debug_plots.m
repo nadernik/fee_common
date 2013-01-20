@@ -91,7 +91,7 @@ linkaxes(axh, 'x')
 plot(squeeze(sum(sn.msnout(:,ihvc,:) > 0, 1)))
 
 %% Number of MSNs on at each time on the last trial
-iter = sn.niter;
+iter = 300;
 plot(squeeze(sum(sn.msnout(:,:,iter) > 0, 1)))
 
 %% LTP for all synapses from a single HVC neuron
@@ -315,7 +315,7 @@ hold all
 plot(sn.rexp(ihvc,:), 'Color', [0 0 0])
 
 %% Compare LTP
-iters = 1:sn.niter;
+iters = [496, 400:495];
 ltp = zeros(length(iters), 1);
 rpe = zeros(length(iters), 1);
 vpost = zeros(length(iters), 1);
@@ -413,3 +413,35 @@ hold on
 scatter(iters(ndx), vpost(ndx), 50, [0 .5 0])
 hold off
 
+%% LMAN output and RPE at a single time across trials
+iters = 1:530;
+lman = sn.lmanout(ihvc,iters);
+w = squeeze(sn.wH(imsn, ihvc, iters));
+rpe = zeros(1,length(iters));
+vpost = zeros(1,length(iters));
+ltp = zeros(1,length(iters));
+ltd = zeros(1,length(iters));
+for ii = 1:length(iters)
+    temp = sn.rpe(iters(ii));
+    rpe(ii) = temp(ihvc);
+    temp = sn.vpost(imsn, iters(ii));
+    vpost(ii) = temp(ihvc);
+    temp = sn.LTP(imsn, iters(ii));
+    ltp(ii) = temp(ihvc);
+    temp = sn.LTD(imsn, iters(ii));
+    ltd(ii) = temp(ihvc);
+end
+plot(iters, vpost, 'LineWidth', 3, 'Color', 'b')
+hold all
+plot(iters, rpe, 'LineWidth', 3, 'Color', 'r')
+plot(iters, lman, 'LineWidth', 3, 'Color', 'k')
+plot(iters, w, 'LineWidth', 3, 'Color', [0.5, 0.5, 0])
+
+hold off
+legend({'Vpost', 'RPE', 'LMAN', 'Weight'})
+line(xlim, ones(2,1)*sn.template(ihvc), 'Color', 'k')
+xlabel('Trial')
+
+%% Number of MSNs active during each trial
+msnisactive = squeeze(sum(sn.msnout, 2)) > 0;
+plot(sum(msnisactive,1))

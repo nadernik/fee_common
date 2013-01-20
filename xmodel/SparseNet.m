@@ -25,6 +25,7 @@ classdef SparseNet < handle
         wH
         wL
         msninhib
+        latinhib
         hvcout
         msnout
         lmanout
@@ -53,7 +54,7 @@ classdef SparseNet < handle
             end
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.lmanout = zeros(obj.nhvc, obj.niter);
-            obj.wH = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            obj.wH = nan(obj.nmsn, obj.nhvc, obj.niter);
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
             
             % LMAN weights are normally distributed around 1 with a
@@ -74,7 +75,6 @@ classdef SparseNet < handle
         end
         
         function simulate(obj)
-%             r = nan(1,obj.niter); %FIXME
             for iter = 1:obj.niter
 %                 disp(iter) %FIXME
                 obj.ffstep(iter);
@@ -85,24 +85,19 @@ classdef SparseNet < handle
                 
                 
 %                 %%%FIXME
-%                 clf
-%                 subplot(1,3,1)
-%                 obj.wimage(iter)
-%                 subplot(1,3,2)
-%                 obj.outvstemplate(iter)
-%                 xlabel('Time (ms)')
-%                 ylabel('Pitch')
-%                 legend('Learned Song', 'Template')
-%                 ylim([0 4])
-%                 subplot(1,3,3)
-%                 r(iter) = -sum(obj.reward(iter));
-%                 plot(r)
-%                 ylim([0 100])
-%                 xlim([0 obj.niter])
-%                 xlabel('Trial')
-%                 ylabel('Mean squared error')
-%                 title(sprintf('Trial %g', iter))
-%                 drawnow
+                clf
+                subplot(1,3,1)
+                obj.wimage(iter)
+                subplot(1,3,2)
+                obj.plotbiasvstemplate(iter)
+                xlabel('Time (ms)')
+                ylabel('Pitch')
+                legend('Learned Song', 'Template')
+                ylim([0 4])
+                subplot(1,3,3)
+                obj.plotmse()
+                title(sprintf('Trial %g', iter))
+                drawnow
 %                 %%%%%%%%%%%
                 
             end
@@ -157,11 +152,11 @@ classdef SparseNet < handle
         end
         
         function I = allinhib(obj, imsn, iter)
-            I = obj.msninhib(imsn) + sum(obj.msnout((1:obj.nmsn)~=imsn,:,iter), 1);
+            I = obj.msninhib(imsn) + obj.latinhib * sum(obj.msnout((1:obj.nmsn)~=imsn,:,iter), 1);
         end
         
         function r = reward(obj, iter)
-            r = -(obj.lmanout(:,iter) - obj.template').^2;
+            r = -abs(obj.lmanout(:,iter) - obj.template');
         end
         
         function rexpupdate(obj, iter)
