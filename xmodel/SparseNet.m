@@ -20,6 +20,7 @@ classdef SparseNet < handle
         hvcburstlen = 3;
         kernelstd = 1/8;
         wLstd = 1;
+        plearn = 1;
         
         % Model output
         wH
@@ -33,6 +34,7 @@ classdef SparseNet < handle
         template
         rexp
         kernel
+        randlearn
     end
     
     methods
@@ -66,6 +68,7 @@ classdef SparseNet < handle
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
             
+            obj.randlearn = rand(obj.nmsn, obj.niter) < obj.plearn;
             
             obj.msninhib = obj.wL * obj.istr;
             
@@ -137,7 +140,7 @@ classdef SparseNet < handle
             % blur eligibility trace in time (across rows)
             assert(iscolumn(obj.kernel)) % kernel must be column vector
             etrace = conv2(e, obj.kernel);
-            dw = obj.LTPrate * obj.rpe(iter) * etrace;
+            dw = obj.LTPrate * obj.rpe(iter) * etrace .* obj.randlearn(imsn, iter);
         end
         
         function dw = LTD(obj, imsn, iter)
@@ -229,6 +232,8 @@ classdef SparseNet < handle
             end
             plot(mse)
             xlim([1 obj.niter])
+            YL = ylim;
+            ylim([0, YL(2)])
             xlabel('Trial')
             ylabel('Mean Squared Error')
         end
