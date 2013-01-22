@@ -85,19 +85,19 @@ classdef SparseNet < handle
                 
                 
 %                 %%%FIXME
-                clf
-                subplot(1,3,1)
-                obj.wimage(iter)
-                subplot(1,3,2)
-                obj.plotbiasvstemplate(iter)
-                xlabel('Time (ms)')
-                ylabel('Pitch')
-                legend('Learned Song', 'Template')
-                ylim([0 4])
-                subplot(1,3,3)
-                obj.plotmse()
-                title(sprintf('Trial %g', iter))
-                drawnow
+%                 clf
+%                 subplot(1,3,1)
+%                 obj.wimage(iter)
+%                 subplot(1,3,2)
+%                 obj.plotbiasvstemplate(iter)
+%                 xlabel('Time (ms)')
+%                 ylabel('Pitch')
+%                 legend('Learned Song', 'Template')
+%                 ylim([0 4])
+%                 subplot(1,3,3)
+%                 obj.plotmse()
+%                 title(sprintf('Trial %g', iter))
+%                 drawnow
 %                 %%%%%%%%%%%
                 
             end

@@ -87,12 +87,36 @@ ylabel('LMAN output')
 
 linkaxes(axh, 'x')
 
-%% Number of MSNs on at a particular time
-plot(squeeze(sum(sn.msnout(:,ihvc,:) > 0, 1)))
+%% Number of MSNs active
+nactivemsn = squeeze(sum(sn.msnout > 0, 1));
+iter = sn.niter;
 
-%% Number of MSNs on at each time on the last trial
-iter = 300;
-plot(squeeze(sum(sn.msnout(:,:,iter) > 0, 1)))
+subplot(1,3,1)
+plot(nactivemsn(ihvc,:)')
+xlabel('Trial')
+ylabel('Active MSNs')
+title(['Number of active MSNs at time ', int2str(ihvc)])
+if length(ihvc) > 1
+    legend(arrayfun(@int2str, ihvc, 'UniformOutput', 0))
+end
+
+subplot(1,3,2)
+plot(nactivemsn(:,iter))
+xlabel('Time')
+ylabel('Active MSNs')
+title(sprintf('Number of active MSNs on trial %g', iter))
+
+subplot(1,3,3)
+hist(nactivemsn(:,iter), 0:max(nactivemsn(:,iter)))
+xlabel('Number of active MSNs')
+ylabel('Number of time steps')
+axis tight
+
+% Check for multiple MSNs turning on simultaneously
+dn = diff(nactivemsn, 1, 2);
+
+
+
 
 %% LTP for all synapses from a single HVC neuron
 iters = 1:sn.niter;
@@ -133,9 +157,11 @@ title(sprintf('V_p_o_s_t for MSN %g', imsn))
 
 %% Vpost for a single MSN at a single time across trials
 vpost = zeros(1, sn.niter);
-for iter = 1:sn.niter
-    temp = sn.vpost(imsn,iter);
-    vpost(iter) = temp(ihvc);
+for mm = 1:length(imsn)
+    for iter = 1:sn.niter
+        temp = sn.vpost(imsn(mm),iter);
+        vpost(iter) = temp(ihvc);
+    end
 end
 plot(vpost')
 ylabel('Trial')
@@ -262,21 +288,22 @@ for iter = 1:sn.niter
     pause
 end
 
-%% LTD one motif at a time
-
-% get order of weights from last motif
-
-%% Select weights 
-ihvc = [20, 21];
+%% Weights of active MSNs
+ihvc = 28:29;
+iters = 1:200;
 clf
 hold on
 co = get(gca,'ColorOrder');
+h = nan(1,length(ihvc));
+legendstr = cell(1,length(ihvc));
 for ii = 1:length(ihvc)
-    % all active msns at this time
-    imsn = find(sn.msnout(:,ihvc(ii),end)>0);
+    % all active msns at this time on the last trial
+    mask = sn.msnout(:,ihvc(ii),iters) > 0;
     
     % plot weights
-    temp = plot(squeeze(sn.wH(imsn, ihvc(ii), :))', 'Color', co(ii,:));
+    w = sn.wH(:, ihvc(ii), iters); % MSN x Trial
+    w(~mask) = nan;
+    temp = plot(iters, squeeze(w)', 'Color', co(ii,:));
     h(ii) = temp(1);
     legendstr{ii} = sprintf('HVC %g', ihvc(ii));
 end
@@ -445,3 +472,30 @@ xlabel('Trial')
 %% Number of MSNs active during each trial
 msnisactive = squeeze(sum(sn.msnout, 2)) > 0;
 plot(sum(msnisactive,1))
+
+%% Error at each time in motif over trials, colored by # of msns active on final motif
+clf
+bias = zeros(sn.nhvc, sn.niter);
+err = zeros(sn.nhvc, sn.niter);
+nactivemsn = sum(sn.msnout(:,:,end) > 0, 1);
+for iter = 1:sn.niter
+    bias(:,iter) = sn.bias(iter);
+    err(:,iter) = bias(:,iter) - template';
+end
+cm = colormap;
+ic = floor(interp1([0, max(nactivemsn)], [1, size(cm,1)], 0:max(nactivemsn)));
+hold on
+legendh=[];
+legendstr={};
+for n = 1:max(nactivemsn)
+    t = nactivemsn == n;
+    if sum(t)>0
+        h = plot(err(t,:)', 'Color', cm(ic(n+1),:));
+        legendh(end+1) = h(1);
+        legendstr{end+1} = int2str(n);
+    end
+end
+legend(legendh, legendstr)
+xlabel('Trial')
+ylabel('Error')
+hold off
