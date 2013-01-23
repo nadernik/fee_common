@@ -33,6 +33,7 @@ classdef SparseNet < handle
         template
         rexp
         kernel
+        wdecay
     end
     
     methods
@@ -85,19 +86,19 @@ classdef SparseNet < handle
                 
                 
 %                 %%%FIXME
-%                 clf
-%                 subplot(1,3,1)
-%                 obj.wimage(iter)
-%                 subplot(1,3,2)
-%                 obj.plotbiasvstemplate(iter)
-%                 xlabel('Time (ms)')
-%                 ylabel('Pitch')
-%                 legend('Learned Song', 'Template')
-%                 ylim([0 4])
-%                 subplot(1,3,3)
-%                 obj.plotmse()
-%                 title(sprintf('Trial %g', iter))
-%                 drawnow
+                clf
+                subplot(1,3,1)
+                obj.wimage(iter)
+                subplot(1,3,2)
+                obj.plotbiasvstemplate(iter)
+                xlabel('Time (ms)')
+                ylabel('Pitch')
+                legend('Learned Song', 'Template')
+                ylim([0 4])
+                subplot(1,3,3)
+                obj.plotmse()
+                title(sprintf('Trial %g', iter))
+                drawnow
 %                 %%%%%%%%%%%
                 
             end
@@ -121,7 +122,7 @@ classdef SparseNet < handle
         function wupdate(obj, iter)
             dw = zeros(obj.nmsn, obj.nhvc);           
             for i = 1:obj.nmsn
-                dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter);
+                dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter) - obj.wdecay;
             end
             
             obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative

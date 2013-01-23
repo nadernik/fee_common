@@ -31,6 +31,8 @@ sn.latinhib   = 1*f; % down from 3
 sn.LTPrate = .5e-1*(f-1); % down from 2e-1 with lateral inhibition of 3
 sn.LTDrate = 5e-2/f;
 
+sn.wdecay = 1e-4;
+
 sn.init()
 sn.template = template;
 % sn.wH = diag(max(0,sn.template-sn.lmanoffset + sn.msnthresh)); %FIXME
