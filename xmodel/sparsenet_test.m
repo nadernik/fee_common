@@ -2,10 +2,6 @@
 close all
 clear all
 
-f = 6;
-
-
-
 sn = SparseNet();
 
 sn.nhvc = 100;
@@ -26,12 +22,12 @@ sn.winit      = 1    * sn.lmanstd;
 sn.msnthresh  = 1    * sn.winit; % MSN threshold
 sn.wLstd      = 0.2; %standard deviation of LMAN weights
 sn.istr       = sn.lmanoffset + 1.5 * sn.lmanstd;
-sn.latinhib   = 1*f; % down from 3
+sn.latinhib   = 6; % down from 3
 
-sn.LTPrate = .5e-1*(f-1); % down from 2e-1 with lateral inhibition of 3
-sn.LTDrate = 5e-2/f;
+sn.LTPrate = 0.2; % down from 2e-1 with lateral inhibition of 3
+sn.LTDrate = 0.008;
 
-sn.wdecay = 1e-4;
+sn.pinhib = 0.75;
 
 sn.init()
 sn.template = template;

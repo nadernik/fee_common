@@ -20,12 +20,14 @@ classdef SparseNet < handle
         hvcburstlen = 3;
         kernelstd = 1/8;
         wLstd = 1;
+        pinhib = 1; % Probability of one MSN inhibting another
+        latinhib = 1;
         
         % Model output
         wH
         wL
+        wI
         msninhib
-        latinhib
         hvcout
         msnout
         lmanout
@@ -33,7 +35,6 @@ classdef SparseNet < handle
         template
         rexp
         kernel
-        wdecay
     end
     
     methods
@@ -67,6 +68,10 @@ classdef SparseNet < handle
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
             
+            % Lateral inhibition weights
+            obj.wI = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
+            obj.wI = obj.wI & ~eye(obj.nmsn); % make sure no MSN inhibits itself
+            obj.wI = obj.latinhib * obj.wI; % scale based on inhibition strength parameter
             
             obj.msninhib = obj.wL * obj.istr;
             
@@ -122,7 +127,7 @@ classdef SparseNet < handle
         function wupdate(obj, iter)
             dw = zeros(obj.nmsn, obj.nhvc);           
             for i = 1:obj.nmsn
-                dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter) - obj.wdecay;
+                dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter);
             end
             
             obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
@@ -152,8 +157,17 @@ classdef SparseNet < handle
             d = conv(x, obj.kernel) - obj.rexp(:,iter)';
         end
         
-        function I = allinhib(obj, imsn, iter)
-            I = obj.msninhib(imsn) + obj.latinhib * sum(obj.msnout((1:obj.nmsn)~=imsn,:,iter), 1);
+        function I = allinhib(obj, imsn, newiter)
+            persistent iter
+            persistent Iall
+            if isempty(iter)
+                iter = -1;
+            end
+            if newiter ~= iter
+                iter = newiter;
+                Iall = obj.wI * obj.msnout(:,:,iter);
+            end
+            I = obj.msninhib(imsn) + Iall(imsn,:);
         end
         
         function r = reward(obj, iter)

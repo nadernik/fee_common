@@ -229,9 +229,16 @@ for iter = 1:sn.niter
 end
 hist(rpe)
 
-%% HVC-X weights for a single MSN for all synapses over time
+%% Weights for a single MSN for all synapses over time
 iters = 1:100;
 imagesc(squeeze(sn.wH(imsn,:,iters))')
+
+%% Weights from a single HVC neuron over trials
+iters = 1:sn.niter;
+imagesc(1:sn.nmsn, iters, squeeze(sn.wH(:,ihvc,:))')
+xlabel('MSN')
+ylabel('Trial')
+title(sprintf('Weights from HVC unit %g', ihvc))
 
 %% Maximum MSN weight from each HVC neuron on each trial
 imagesc(squeeze(max(sn.wH, [], 1))')
@@ -289,8 +296,8 @@ for iter = 1:sn.niter
 end
 
 %% Weights of active MSNs
-ihvc = 28:29;
-iters = 1:200;
+ihvc = 32:33;
+iters = 1:sn.niter;
 clf
 hold on
 co = get(gca,'ColorOrder');
