@@ -34,7 +34,7 @@ hold off
 plot_every = false;
 ltp = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
-    ltp(:,iter) = sn.LTD(imsn, iter);
+    ltp(:,iter) = sn.LTP(imsn, iter);
     if plot_every
         plot(ltp(:,iter))
         title(sprintf('LTP for MSN %g on trial %g', imsn, iter))
@@ -240,6 +240,30 @@ xlabel('MSN')
 ylabel('Trial')
 title(sprintf('Weights from HVC unit %g', ihvc))
 
+%% Weights of active MSNs
+ihvc = 45;
+iters = 1:sn.niter;
+clf
+hold on
+co = get(gca,'ColorOrder');
+h = nan(1,length(ihvc));
+legendstr = cell(1,length(ihvc));
+for ii = 1:length(ihvc)
+    % all active msns at this time on the last trial
+    mask = sn.msnout(:,ihvc(ii),iters) > 0;
+    
+    % plot weights
+    w = sn.wH(:, ihvc(ii), iters); % MSN x Trial
+    w(~mask) = nan;
+    temp = plot(iters, squeeze(w)', 'Color', co(ii,:));
+    h(ii) = temp(1);
+    legendstr{ii} = sprintf('HVC %g', ihvc(ii));
+end
+hold off
+legend(h, legendstr, 'Location', 'NorthWest')
+ylabel('Weight')
+xlabel('Trial')
+
 %% Maximum MSN weight from each HVC neuron on each trial
 imagesc(squeeze(max(sn.wH, [], 1))')
 xlabel('HVC')
@@ -275,49 +299,17 @@ ylabel('Output')
 legend({'LMAN output', 'Template'})
 
 %% sparsenet_test.m plots for each motif
-for iter = 1:sn.niter
+iters = 400:600;
+for ii = 1:length(iters)
+    clf
     subplot(1,3,1)
-    sn.wimage(iter)
+    sn.wimage(iters(ii))
     subplot(1,3,2)
-    sn.outvstemplate(iter)
-    hold on
-    plot(sn.template)
-    hold off
-    ylim([0, 5])
-    xlabel('Time (ms)')
-    ylabel('Pitch')
-    legend('Learned Song', 'Template')
-    title(sprintf('Motif %g', iter))
+    sn.plotbiasvstemplate(iters(ii))
     subplot(1,3,3)
-    plot(-sum(sn.rexp, 1))
-    xlabel('Trial')
-    ylabel('Mean squared error')
+    sn.plotmse();
     pause
 end
-
-%% Weights of active MSNs
-ihvc = 32:33;
-iters = 1:sn.niter;
-clf
-hold on
-co = get(gca,'ColorOrder');
-h = nan(1,length(ihvc));
-legendstr = cell(1,length(ihvc));
-for ii = 1:length(ihvc)
-    % all active msns at this time on the last trial
-    mask = sn.msnout(:,ihvc(ii),iters) > 0;
-    
-    % plot weights
-    w = sn.wH(:, ihvc(ii), iters); % MSN x Trial
-    w(~mask) = nan;
-    temp = plot(iters, squeeze(w)', 'Color', co(ii,:));
-    h(ii) = temp(1);
-    legendstr{ii} = sprintf('HVC %g', ihvc(ii));
-end
-hold off
-legend(h, legendstr, 'Location', 'NorthWest')
-ylabel('Weight')
-xlabel('Trial')
 
 %% RPE*LMAN one trial at a time
 for iter = 1:sn.niter
