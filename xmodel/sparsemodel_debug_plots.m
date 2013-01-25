@@ -56,8 +56,8 @@ for iter = 1:sn.niter
     ltd(iter) = temp(ihvc);
 end
 plot(ltp)
-hold all
-plot(ltd)
+% hold all
+% plot(ltd)
 hold off
 xlabel('Trial')
 ylabel('LTP or LTD')
@@ -162,6 +162,27 @@ for imsn = 1:sn.nmsn
     pause
 end
 
+%% MSN output on a single motif
+dosort = true;
+iter = sn.niter;
+assert(isscalar(iter))
+if dosort
+    tmax = nan(sn.nmsn, 1);
+    for i = 1:sn.nmsn
+        [~, tmax(i)] = max(sn.wH(i,:, iter));
+    end
+    [~, ord] = sort(tmax);
+    w = sn.wH(ord,:,iter);
+else
+    w = sn.wH(:,:,iter);
+end
+imagesc(w)
+cm = colormap('jet');
+cm(1,:) = 0;
+colormap(cm);
+xlabel('Time')
+ylabel('MSN')
+title(sprintf('MSN output on motif %g', iter))
 %% MSNs active at a particular time (list)
 iter = sn.niter;
 imsn = find(sn.msnout(:,ihvc,iter) > 0);
@@ -204,6 +225,32 @@ scatter(nactivemsn, err)
 xlabel('Number of active MSNs')
 ylabel('Difference between bias and template')
 title(sprintf('Trial %g', iter))
+
+%% Timescales of the simulation
+clf
+% HVC burst
+y = sn.hvcout(10,:);
+[ymax,t0] = max(y);
+t = (1:length(y)) - t0;
+plot(t, y/ymax, 'LineWidth', 3)
+hold all
+% Reward kernel
+y = sn.kernel;
+[ymax,t0] = max(y);
+t = (1:length(y)) - t0;
+plot(t, y/ymax, 'LineWidth', 3)
+% LMAN autocorrelation
+maxlag = 50;
+acorr = zeros(maxlag*2+1, sn.niter);
+for iter = 1:sn.niter
+    [c, lags] = xcorr(sn.noise(:, iter), maxlag, 'unbiased');
+    acorr(:, iter) = c / max(c);
+end
+t = -maxlag:maxlag;
+plot(t,mean(acorr,2), 'LineWidth', 3)
+legend('HVC', 'Reward', 'LMAN')
+xlim([-20, 20])
+ylim([0, 1])
 
 %% Vpost for a single MSN at all times and trials
 vpost = zeros(sn.nhvc, sn.niter);
@@ -504,7 +551,7 @@ ylabel('Error')
 hold off
 
 %% Compare learning rates
-filenames = {'delay8_bad', 'delay8_bad2', 'delay8_3', 'ltprate_2'};
+filenames = {'hvcreward_unmatched', 'ltdhigher2'};
 N = length(filenames);
 for n = 1:N
     load(filenames{n}, 'sn')
