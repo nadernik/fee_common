@@ -57,7 +57,7 @@ classdef SparseNet < handle
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.lmanout = zeros(obj.nhvc, obj.niter);
             obj.wH = nan(obj.nmsn, obj.nhvc, obj.niter);
-            obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
+            obj.wH(:,:,1) = obj.winit ;%FIXME* rand(obj.nmsn,obj.nhvc);
             
             % LMAN weights are normally distributed around 1 with a
             % standard deviation given by obj.wLstd
@@ -154,7 +154,7 @@ classdef SparseNet < handle
         
         function d = rpe(obj, iter)
             x = obj.reward(iter)';
-            d = conv(x, obj.kernel) - obj.rexp(:,iter)';
+            d = conv(x, obj.kernel)' - obj.rexp(:,iter)';
         end
         
         function I = allinhib(obj, imsn, newiter)
