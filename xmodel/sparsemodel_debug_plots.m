@@ -1,34 +1,31 @@
-%% Choose MSN and HVC synapse of interest
-imsn = 3;
-ihvc = 26;
-
-%% MSN input relative to threshold on first iteration
-bins = linspace(0,1.5,25);
-hin = sn.wH(:,:,1) * sn.hvcout;
-thresh = sn.tinhib2;
-
-hist(hin(:), bins)
-hold on
-plot(ones(2,1)*sn.tinhib2, ylim, 'r')
-xlim([bins(1), bins(end)])
-xlabel('Input from HVC to MSN')
-ylabel('Count')
-xt = get(gca,'XTick');
-xtL = get(gca, 'XTickLabel');
-if size(xtL,2) < 6
-    xtL(:,end+1:6) = ' ';
+%% LMAN output and RPE at a single time across trials
+iters = 1:530;
+lman = sn.lmanout(ihvc,iters);
+w = squeeze(sn.wH(imsn, ihvc, iters));
+rpe = zeros(1,length(iters));
+vpost = zeros(1,length(iters));
+ltp = zeros(1,length(iters));
+ltd = zeros(1,length(iters));
+for ii = 1:length(iters)
+    temp = sn.rpe(iters(ii));
+    rpe(ii) = temp(ihvc);
+    temp = sn.vpost(imsn, iters(ii));
+    vpost(ii) = temp(ihvc);
+    temp = sn.LTP(imsn, iters(ii));
+    ltp(ii) = temp(ihvc);
+    temp = sn.LTD(imsn, iters(ii));
+    ltd(ii) = temp(ihvc);
 end
-if any(xt == sn.tinhib2)
-    xtL(xt == sn.tinhib2, :) = 'Thresh';
-else
-    xtL(end+1,:) = 'Thresh';
-    xt(end+1) = sn.tinhib2;
-    [xt, ndx] = sort(xt);
-    xtL = xtL(ndx,:);
-end
-set(gca, 'XTick', xt, 'XTickLabel', xtL)
-title('MSN input on first iteration (all neurons and times)')
+plot(iters, vpost, 'LineWidth', 3, 'Color', 'b')
+hold all
+plot(iters, rpe, 'LineWidth', 3, 'Color', 'r')
+plot(iters, lman, 'LineWidth', 3, 'Color', 'k')
+plot(iters, w, 'LineWidth', 3, 'Color', [0.5, 0.5, 0])
+
 hold off
+legend({'Vpost', 'RPE', 'LMAN', 'Weight'})
+line(xlim, ones(2,1)*sn.template(ihvc), 'Color', 'k')
+xlabel('Trial')
 
 %% LTP in a single MSN over all synapses and motifs
 plot_every = false;
@@ -87,6 +84,90 @@ ylabel('LMAN output')
 
 linkaxes(axh, 'x')
 
+%% LTP for all synapses from a single HVC neuron
+iters = 1:sn.niter;
+ihvc1 = 20;
+ihvc2 = 21;
+p1 = zeros(sn.nmsn, length(iters));
+p2 = zeros(sn.nmsn, length(iters));
+for ii = 1:length(iters)
+    iter = iters(ii)
+    for imsn = 1:sn.nmsn
+        temp = sn.LTP(imsn, iter);
+        p1(imsn,ii) = temp(ihvc1);
+        p2(imsn,ii) = temp(ihvc2);
+    end
+end
+subplot(1,2,1)
+imagesc(p1')
+xlabel('MSN')
+ylabel('Trial')
+title(sprintf('LTP for synapses from HVC unit %g', ihvc1))
+
+subplot(1,2,2)
+imagesc(p2')
+xlabel('MSN')
+ylabel('Trial')
+title(sprintf('LTP for synapses from HVC unit %g', ihvc2))
+
+%% MSN input relative to threshold on first iteration
+bins = linspace(0,1.5,25);
+hin = sn.wH(:,:,1) * sn.hvcout;
+thresh = sn.tinhib2;
+
+hist(hin(:), bins)
+hold on
+plot(ones(2,1)*sn.tinhib2, ylim, 'r')
+xlim([bins(1), bins(end)])
+xlabel('Input from HVC to MSN')
+ylabel('Count')
+xt = get(gca,'XTick');
+xtL = get(gca, 'XTickLabel');
+if size(xtL,2) < 6
+    xtL(:,end+1:6) = ' ';
+end
+if any(xt == sn.tinhib2)
+    xtL(xt == sn.tinhib2, :) = 'Thresh';
+else
+    xtL(end+1,:) = 'Thresh';
+    xt(end+1) = sn.tinhib2;
+    [xt, ndx] = sort(xt);
+    xtL = xtL(ndx,:);
+end
+set(gca, 'XTick', xt, 'XTickLabel', xtL)
+title('MSN input on first iteration (all neurons and times)')
+hold off
+
+%% MSN output at a single time
+ihvc = [28, 29];
+clf
+co = get(gca, 'ColorOrder');
+h = zeros(1,length(ihvc));
+for ii = 1:length(ihvc)
+    temp = plot(squeeze(sn.msnout(:,ihvc(ii),:))', 'Color', co(ii,:));
+    h(ii) = temp(1);
+    hold on
+end
+legend(h, arrayfun(@int2str, ihvc, 'UniformOutput', 0))
+
+%% MSN output for a single MSN
+cm = colormap(jet);
+cm(1,:) = 0;
+for imsn = 1:sn.nmsn
+    imagesc(squeeze(sn.msnout(imsn,:,:))')
+    xlabel('Time')
+    ylabel('Trial')
+    title(sprintf('Output for MSN %g', imsn))
+    colormap(cm)
+    pause
+end
+
+%% MSNs active at a particular time (list)
+iter = sn.niter;
+imsn = find(sn.msnout(:,ihvc,iter) > 0);
+fprintf('MSNs active on time step %g on trial %g: ', ihvc, iter)
+disp(imsn')
+
 %% Number of MSNs active
 nactivemsn = squeeze(sum(sn.msnout > 0, 1));
 iter = sn.niter;
@@ -115,35 +196,14 @@ axis tight
 % Check for multiple MSNs turning on simultaneously
 dn = diff(nactivemsn, 1, 2);
 
-
-
-
-%% LTP for all synapses from a single HVC neuron
-iters = 1:sn.niter;
-ihvc1 = 20;
-ihvc2 = 21;
-p1 = zeros(sn.nmsn, length(iters));
-p2 = zeros(sn.nmsn, length(iters));
-for ii = 1:length(iters)
-    iter = iters(ii)
-    for imsn = 1:sn.nmsn
-        temp = sn.LTP(imsn, iter);
-        p1(imsn,ii) = temp(ihvc1);
-        p2(imsn,ii) = temp(ihvc2);
-    end
-end
-subplot(1,2,1)
-imagesc(p1')
-xlabel('MSN')
-ylabel('Trial')
-title(sprintf('LTP for synapses from HVC unit %g', ihvc1))
-
-subplot(1,2,2)
-imagesc(p2')
-xlabel('MSN')
-ylabel('Trial')
-title(sprintf('LTP for synapses from HVC unit %g', ihvc2))
-
+%% Number of MSNs active vs. error
+iter = sn.niter;
+nactivemsn = sum(sn.msnout(:,:,iter) > 0, 1);
+err = sn.bias(iter) - sn.template;
+scatter(nactivemsn, err)
+xlabel('Number of active MSNs')
+ylabel('Difference between bias and template')
+title(sprintf('Trial %g', iter))
 
 %% Vpost for a single MSN at all times and trials
 vpost = zeros(sn.nhvc, sn.niter);
@@ -174,6 +234,17 @@ plot(sn.vpost(imsn, sn.niter))
 xlabel('Time')
 ylabel('V_p_o_s_t')
 title(sprintf('MSN %g on first iteration', imsn))
+
+%% Weights for a single MSN for all synapses over time
+iters = 1:100;
+imagesc(squeeze(sn.wH(imsn,:,iters))')
+
+%% Weights from a single HVC neuron over trials
+iters = 1:sn.niter;
+imagesc(1:sn.nmsn, iters, squeeze(sn.wH(:,ihvc,:))')
+xlabel('MSN')
+ylabel('Trial')
+title(sprintf('Weights from HVC unit %g', ihvc))
 
 %% Histogram of Vpost for all MSNs on the first iteration
 
@@ -229,28 +300,6 @@ for iter = 1:sn.niter
 end
 hist(rpe)
 
-%% Weights for a single MSN for all synapses over time
-iters = 1:100;
-imagesc(squeeze(sn.wH(imsn,:,iters))')
-
-%% Weights from a single HVC neuron over trials
-iters = 1:sn.niter;
-imagesc(1:sn.nmsn, iters, squeeze(sn.wH(:,ihvc,:))')
-xlabel('MSN')
-ylabel('Trial')
-title(sprintf('Weights from HVC unit %g', ihvc))
-
-%% Maximum MSN weight from each HVC neuron on each trial
-imagesc(squeeze(max(sn.wH, [], 1))')
-xlabel('HVC')
-ylabel('Trial')
-
-%% List of MSNs active at a particular time
-iter = sn.niter;
-imsn = find(sn.msnout(:,ihvc,iter) > 0);
-fprintf('MSNs active on time step %g on trial %g: ', ihvc, iter)
-disp(imsn')
-
 %% Standard deviation of LTP values
 iters = 1:30;
 p = zeros(sn.nhvc*sn.nmsn*length(iters), 1);
@@ -273,27 +322,6 @@ hold off
 xlabel('Trials')
 ylabel('Output')
 legend({'LMAN output', 'Template'})
-
-%% sparsenet_test.m plots for each motif
-for iter = 1:sn.niter
-    subplot(1,3,1)
-    sn.wimage(iter)
-    subplot(1,3,2)
-    sn.outvstemplate(iter)
-    hold on
-    plot(sn.template)
-    hold off
-    ylim([0, 5])
-    xlabel('Time (ms)')
-    ylabel('Pitch')
-    legend('Learned Song', 'Template')
-    title(sprintf('Motif %g', iter))
-    subplot(1,3,3)
-    plot(-sum(sn.rexp, 1))
-    xlabel('Trial')
-    ylabel('Mean squared error')
-    pause
-end
 
 %% Weights of active MSNs
 ihvc = 32:33;
@@ -447,38 +475,6 @@ hold on
 scatter(iters(ndx), vpost(ndx), 50, [0 .5 0])
 hold off
 
-%% LMAN output and RPE at a single time across trials
-iters = 1:530;
-lman = sn.lmanout(ihvc,iters);
-w = squeeze(sn.wH(imsn, ihvc, iters));
-rpe = zeros(1,length(iters));
-vpost = zeros(1,length(iters));
-ltp = zeros(1,length(iters));
-ltd = zeros(1,length(iters));
-for ii = 1:length(iters)
-    temp = sn.rpe(iters(ii));
-    rpe(ii) = temp(ihvc);
-    temp = sn.vpost(imsn, iters(ii));
-    vpost(ii) = temp(ihvc);
-    temp = sn.LTP(imsn, iters(ii));
-    ltp(ii) = temp(ihvc);
-    temp = sn.LTD(imsn, iters(ii));
-    ltd(ii) = temp(ihvc);
-end
-plot(iters, vpost, 'LineWidth', 3, 'Color', 'b')
-hold all
-plot(iters, rpe, 'LineWidth', 3, 'Color', 'r')
-plot(iters, lman, 'LineWidth', 3, 'Color', 'k')
-plot(iters, w, 'LineWidth', 3, 'Color', [0.5, 0.5, 0])
-
-hold off
-legend({'Vpost', 'RPE', 'LMAN', 'Weight'})
-line(xlim, ones(2,1)*sn.template(ihvc), 'Color', 'k')
-xlabel('Trial')
-
-%% Number of MSNs active during each trial
-msnisactive = squeeze(sum(sn.msnout, 2)) > 0;
-plot(sum(msnisactive,1))
 
 %% Error at each time in motif over trials, colored by # of msns active on final motif
 clf
@@ -505,4 +501,21 @@ end
 legend(legendh, legendstr)
 xlabel('Trial')
 ylabel('Error')
+hold off
+
+%% Compare learning rates
+filenames = {'delay8_bad', 'delay8_bad2', 'delay8_3', 'ltprate_2'};
+N = length(filenames);
+for n = 1:N
+    load(filenames{n}, 'sn')
+    subplot(N+1, 1, n)
+    sn.plotbiasvstemplate(sn.niter)
+    title(filenames(n))
+    subplot(N+1, 1, N+1)
+    sn.plotmse()
+    set(gca, 'YScale', 'log')
+    hold all
+    clear sn
+end
+legend(filenames)
 hold off
