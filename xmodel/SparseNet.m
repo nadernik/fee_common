@@ -16,7 +16,8 @@ classdef SparseNet < handle
         winit =1; % initial hvc weights
         lmanoffset = 1;
         lmanstd = 1;
-        istr = 1;
+        v0offset = 0;
+        v0decay = 0;
         hvcburstlen = 3;
         kernelstd = 1/8;
         wLstd = 1;
@@ -27,7 +28,7 @@ classdef SparseNet < handle
         wH
         wL
         wI
-        msninhib
+        v0
         hvcout
         msnout
         lmanout
@@ -56,8 +57,9 @@ classdef SparseNet < handle
             end
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.lmanout = zeros(obj.nhvc, obj.niter);
+            obj.v0 = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.wH = nan(obj.nmsn, obj.nhvc, obj.niter);
-            obj.wH(:,:,1) = obj.winit ;%FIXME* rand(obj.nmsn,obj.nhvc);
+            obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
             
             % LMAN weights are normally distributed around 1 with a
             % standard deviation given by obj.wLstd
@@ -72,9 +74,7 @@ classdef SparseNet < handle
             obj.wI = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
             obj.wI = obj.wI & ~eye(obj.nmsn); % make sure no MSN inhibits itself
             obj.wI = obj.latinhib * obj.wI; % scale based on inhibition strength parameter
-            
-            obj.msninhib = obj.wL * obj.istr;
-            
+                        
             x = linspace(-4,4,8*obj.kernelstd);
             k = normpdf(x)'; % Gaussian, column vector
             obj.kernel = k./sum(k);
@@ -82,29 +82,22 @@ classdef SparseNet < handle
         
         function simulate(obj)
             for iter = 1:obj.niter
-%                 disp(iter) %FIXME
+                disp(iter) %FIXME
                 obj.ffstep(iter);
                 if iter < obj.niter
                     obj.wupdate(iter);
                     obj.rexpupdate(iter);
                 end
-                
-                
-%                 %%%FIXME
-%                 clf
-%                 subplot(1,3,1)
-%                 obj.wimage(iter)
-%                 subplot(1,3,2)
-%                 obj.plotbiasvstemplate(iter)
-%                 xlabel('Time (ms)')
-%                 ylabel('Pitch')
-%                 legend('Learned Song', 'Template')
-%                 ylim([0 4])
-%                 subplot(1,3,3)
-%                 obj.plotmse()
-%                 title(sprintf('Trial %g', iter))
-%                 drawnow
-%                 %%%%%%%%%%%
+                if mod(iter,10) == 0
+                    subplot(1,3,1)
+                    obj.wimage(iter)
+                    subplot(1,3,2)
+                    obj.plotbiasvstemplate(iter)
+                    title(int2str(iter))
+                    subplot(1,3,3)
+                    obj.plotmse();
+                    drawnow
+                end
                 
             end
         end
@@ -119,15 +112,34 @@ classdef SparseNet < handle
         end
         
         function v = vpost(obj, imsn, iter)
-            v = obj.wL(imsn) * obj.lmanout(:,iter)' - ...
-                obj.allinhib(imsn, iter) + ...
-                obj.wH(imsn,:,iter) * obj.hvcout;
+            v = (obj.wL(imsn)        * obj.lmanout(:,iter)' + ...
+                 obj.wH(imsn,:,iter) * obj.hvcout) ./ ...
+                 (1 + obj.allinhib(imsn, iter));
+        end
+        
+        function v0update(obj, iter)
+            for imsn = 1:obj.nmsn
+                % v0 starts out where it was at the end of the last motif.
+                if iter > 1
+                    obj.v0(imsn,1,iter) = obj.v0(imsn,end,iter-1);
+                end
+                
+                vp = obj.vpost(imsn,iter);
+                for t = 2:length(vp)
+                    if vp(t) > (obj.v0(imsn,t-1,iter) + obj.v0offset)
+                        obj.v0(imsn,t,iter) = vp(t) - obj.v0offset;
+                    else
+                        obj.v0(imsn,t,iter) = obj.v0(imsn,t-1,iter) * (1 - obj.v0decay);
+                    end
+                end
+            end
         end
         
         function wupdate(obj, iter)
-            dw = zeros(obj.nmsn, obj.nhvc);           
+            dw = zeros(obj.nmsn, obj.nhvc);
+            obj.v0update(iter);
             for i = 1:obj.nmsn
-                dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter);
+                dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter)';
             end
             
             obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
@@ -138,7 +150,7 @@ classdef SparseNet < handle
             % inputs that are also active are eligibile to be
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
-            vp = max(0, obj.vpost(imsn,iter));
+            vp = obj.vpost(imsn,iter) - obj.v0(imsn,:,iter);
             e = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
             % blur eligibility trace in time (across rows)
             assert(iscolumn(obj.kernel)) % kernel must be column vector
@@ -147,14 +159,14 @@ classdef SparseNet < handle
         end
         
         function dw = LTD(obj, imsn, iter)
-            % Long-term depression: Whenever an MSN is active, HVC weights
-            % onto that MSN are weakened unless they were active too.
-            dw = obj.LTDrate * obj.msnout(imsn,:,iter) * (max(obj.hvcout(:)) - obj.hvcout)';
+            % Long-term depression
+            vp = obj.vpost(imsn,iter) - obj.v0(imsn,:,iter);
+            dw = obj.LTDrate * obj.hvcout * vp';
         end
         
         function d = rpe(obj, iter)
             x = obj.reward(iter)';
-            d = conv(x, obj.kernel)' - obj.rexp(:,iter)';
+            d = conv(x, obj.kernel) - obj.rexp(:,iter)';
         end
         
         function I = allinhib(obj, imsn, newiter)
@@ -167,7 +179,7 @@ classdef SparseNet < handle
                 iter = newiter;
                 Iall = obj.wI * obj.msnout(:,:,iter);
             end
-            I = obj.msninhib(imsn) + Iall(imsn,:);
+            I = Iall(imsn,:);
         end
         
         function r = reward(obj, iter)
@@ -176,7 +188,6 @@ classdef SparseNet < handle
         
         function rexpupdate(obj, iter)
             if iter < obj.niter
-%                 obj.rexp(:,iter+1) = -(obj.bias(iter+1) - obj.template).^2;
                 obj.rexp(:,iter+1) = obj.rexp(:,iter) + ...
                     obj.rperate .* obj.rpe(iter)';
             end
@@ -251,4 +262,3 @@ classdef SparseNet < handle
     end
     
 end
-

@@ -257,7 +257,8 @@ vpost = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
     vpost(:,iter) = sn.vpost(imsn,iter);
 end
-imagesc(vpost')
+%imagesc(vpost')
+plot(vpost)
 ylabel('Trial')
 xlabel('time')
 title(sprintf('V_p_o_s_t for MSN %g', imsn))
@@ -283,7 +284,7 @@ ylabel('V_p_o_s_t')
 title(sprintf('MSN %g on first iteration', imsn))
 
 %% Weights for a single MSN for all synapses over time
-iters = 1:100;
+iters = 1:sn.niter;
 imagesc(squeeze(sn.wH(imsn,:,iters))')
 
 %% Weights from a single HVC neuron over trials
@@ -422,6 +423,7 @@ end
 plot(r, 'Color', [.7 .7 .7])
 hold all
 plot(sn.rexp(ihvc,:), 'Color', [0 0 0])
+legend({'Reward', 'Expected Reward'})
 
 %% Compare LTP
 iters = [496, 400:495];
@@ -566,3 +568,51 @@ for n = 1:N
 end
 legend(filenames)
 hold off
+
+%% V0 for a single MSN across all times and trials
+for iter = 1:50:sn.niter
+    plot(sn.vpost(imsn,iter), 'k', 'LineWidth', 2)
+    hold on
+    plot(sn.v0(imsn,:,iter), 'r', 'LineWidth', 2)
+    hold off
+    ylabel('V')
+    xlabel('Time')
+    
+    title(sprintf('MSN %g on trial %g\n[Enter] for next...', imsn, iter))
+    legend({'Vpost', 'V_0'}, 'Location', 'NorthWest')
+    ylim([0 3])
+    pause
+end
+
+%% V_0 for a single MSN at a single time acros trials
+clf
+plot(squeeze(sn.v0(imsn,ihvc,:)))
+xlabel('Trial')
+ylabel('V_0')
+title(sprintf('MSN %g at time %g', imsn, ihvc))
+
+%% (Vpost - V_0) on each iter
+iters = 450:460;
+for i = 1:length(iters)
+    v = zeros(sn.nmsn, sn.nhvc);
+    for imsn = 1:sn.nmsn
+        v(imsn,:) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,:,iters(i));
+    end
+    plot(v(188,:))
+    title(sprintf('(Vpost - V_0) for trial %g', iters(i)))
+    xlabel('Time')
+    ylabel('MSN')
+    pause
+end
+
+%% (Vpost - V_0) vs lman noise
+clf
+v = zeros(size(sn.lmanout));
+for iter = 1:sn.niter
+    v(:,iter) = sn.vpost(imsn,iter) - sn.v0(imsn,:,iter);
+end
+% scatter(sn.noise(:), v(:))
+scatter(sn.noise(ihvc,:), v(ihvc,:))
+xlabel('Noise')
+ylabel('V_p_o_s_t - V_0')
+title(sprintf('MSN %g, LMAN weight %g', imsn, sn.wL(imsn)))
