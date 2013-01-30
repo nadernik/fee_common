@@ -57,7 +57,7 @@ classdef SparseNet < handle
             end
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.lmanout = zeros(obj.nhvc, obj.niter);
-            obj.v0 = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            obj.v0 = zeros(obj.nmsn, obj.niter);
             obj.wH = nan(obj.nmsn, obj.nhvc, obj.niter);
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
             
@@ -119,18 +119,11 @@ classdef SparseNet < handle
         
         function v0update(obj, iter)
             for imsn = 1:obj.nmsn
-                % v0 starts out where it was at the end of the last motif.
-                if iter > 1
-                    obj.v0(imsn,1,iter) = obj.v0(imsn,end,iter-1);
-                end
-                
-                vp = obj.vpost(imsn,iter);
-                for t = 2:length(vp)
-                    if vp(t) > (obj.v0(imsn,t-1,iter) + obj.v0offset)
-                        obj.v0(imsn,t,iter) = vp(t) - obj.v0offset;
-                    else
-                        obj.v0(imsn,t,iter) = obj.v0(imsn,t-1,iter) * (1 - obj.v0decay);
-                    end
+                vp = obj.vpost(imsn, iter);
+                if max(vp) > (obj.v0(imsn,iter) + obj.v0offset)
+                    obj.v0(imsn, iter+1) = max(vp) - obj.v0offset;
+                else
+                    obj.v0(imsn, iter+1) = obj.v0(imsn, iter) * (1-obj.v0decay);
                 end
             end
         end
@@ -150,7 +143,7 @@ classdef SparseNet < handle
             % inputs that are also active are eligibile to be
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
-            vp = obj.vpost(imsn,iter) - obj.v0(imsn,:,iter);
+            vp = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
             e = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
             % blur eligibility trace in time (across rows)
             assert(iscolumn(obj.kernel)) % kernel must be column vector
@@ -160,7 +153,7 @@ classdef SparseNet < handle
         
         function dw = LTD(obj, imsn, iter)
             % Long-term depression
-            vp = obj.vpost(imsn,iter) - obj.v0(imsn,:,iter);
+            vp = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
             dw = obj.LTDrate * obj.hvcout * vp';
         end
         

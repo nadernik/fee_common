@@ -570,10 +570,10 @@ legend(filenames)
 hold off
 
 %% V0 for a single MSN across all times and trials
-for iter = 1:50:sn.niter
+for iter = 1:sn.niter
     plot(sn.vpost(imsn,iter), 'k', 'LineWidth', 2)
     hold on
-    plot(sn.v0(imsn,:,iter), 'r', 'LineWidth', 2)
+    plot(ones(sn.nhvc,1) * sn.v0(imsn,iter), 'r', 'LineWidth', 2)
     hold off
     ylabel('V')
     xlabel('Time')
@@ -584,9 +584,9 @@ for iter = 1:50:sn.niter
     pause
 end
 
-%% V_0 for a single MSN at a single time acros trials
+%% V_0 for a single MSN across trials
 clf
-plot(squeeze(sn.v0(imsn,ihvc,:)))
+plot(squeeze(sn.v0(imsn,:)))
 xlabel('Trial')
 ylabel('V_0')
 title(sprintf('MSN %g at time %g', imsn, ihvc))
@@ -596,7 +596,7 @@ iters = 450:460;
 for i = 1:length(iters)
     v = zeros(sn.nmsn, sn.nhvc);
     for imsn = 1:sn.nmsn
-        v(imsn,:) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,:,iters(i));
+        v(imsn,:) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
     end
     plot(v(188,:))
     title(sprintf('(Vpost - V_0) for trial %g', iters(i)))
@@ -609,7 +609,7 @@ end
 clf
 v = zeros(size(sn.lmanout));
 for iter = 1:sn.niter
-    v(:,iter) = sn.vpost(imsn,iter) - sn.v0(imsn,:,iter);
+    v(:,iter) = sn.vpost(imsn,iter) - sn.v0(imsn,iter);
 end
 % scatter(sn.noise(:), v(:))
 scatter(sn.noise(ihvc,:), v(ihvc,:))
