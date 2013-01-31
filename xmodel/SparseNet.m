@@ -23,6 +23,7 @@ classdef SparseNet < handle
         wLstd = 1;
         pinhib = 1; % Probability of one MSN inhibting another
         latinhib = 1;
+        MICHALE_IS_WATCHING = false;
         
         % Model output
         wH
@@ -88,7 +89,7 @@ classdef SparseNet < handle
                     obj.wupdate(iter);
                     obj.rexpupdate(iter);
                 end
-                if mod(iter,10) == 0
+                if obj.MICHALE_IS_WATCHING && mod(iter,10) == 0
                     subplot(1,3,1)
                     obj.wimage(iter)
                     subplot(1,3,2)
@@ -113,8 +114,8 @@ classdef SparseNet < handle
         
         function v = vpost(obj, imsn, iter)
             v = (obj.wL(imsn)        * obj.lmanout(:,iter)' + ...
-                 obj.wH(imsn,:,iter) * obj.hvcout) ./ ...
-                 (1 + obj.allinhib(imsn, iter));
+                 obj.wH(imsn,:,iter) * obj.hvcout) - ...
+                 (obj.allinhib(imsn, iter));
         end
         
         function v0update(obj, iter)
@@ -132,7 +133,7 @@ classdef SparseNet < handle
             dw = zeros(obj.nmsn, obj.nhvc);
             obj.v0update(iter);
             for i = 1:obj.nmsn
-                dw(i,:) = obj.LTP(i, iter) - obj.LTD(i,iter)';
+                dw(i,:) = obj.LTP(i, iter) + obj.LTD(i,iter)';
             end
             
             obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
@@ -144,6 +145,7 @@ classdef SparseNet < handle
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
             vp = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
+            vp = max(vp, 0);
             e = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
             % blur eligibility trace in time (across rows)
             assert(iscolumn(obj.kernel)) % kernel must be column vector
@@ -155,6 +157,7 @@ classdef SparseNet < handle
             % Long-term depression
             vp = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
             dw = obj.LTDrate * obj.hvcout * vp';
+            dw = min(0,dw); % LTD must be negative
         end
         
         function d = rpe(obj, iter)

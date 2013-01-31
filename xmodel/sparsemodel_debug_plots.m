@@ -30,19 +30,31 @@ xlabel('Trial')
 %% LTP in a single MSN over all synapses and motifs
 plot_every = false;
 ltp = zeros(sn.nhvc, sn.niter);
+ltd = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
-    ltp(:,iter) = sn.LTD(imsn, iter);
+    ltp(:,iter) = sn.LTP(imsn, iter);
+    ltd(:,iter) = sn.LTD(imsn, iter);
     if plot_every
-        plot(ltp(:,iter))
+        plot(ltp(:,iter), 'r')
+        hold on
+        plot(ltd(:,iter), 'b')
         title(sprintf('LTP for MSN %g on trial %g', imsn, iter))
         ylim([-.1, .1])
         pause
     end
 end
+clf
+subplot(2,1,1)
 imagesc(ltp')
 xlabel('HVC')
 ylabel('Trial')
 title(sprintf('LTP for MSN %g', imsn))
+subplot(2,1,2)
+imagesc(ltd')
+xlabel('HVC')
+ylabel('Trial')
+title(sprintf('LTD for MSN %g', imsn))
+
 
 %% LTP and LTD for a single HVC-X synapse
 clf
@@ -56,12 +68,12 @@ for iter = 1:sn.niter
     ltd(iter) = temp(ihvc);
 end
 plot(ltp)
-% hold all
-% plot(ltd)
+hold all
+plot(ltd)
 hold off
 xlabel('Trial')
 ylabel('LTP or LTD')
-% legend({'LTP', 'LTD'})
+legend({'LTP', 'LTD'})
 title(sprintf('LTP and LTD for weight onto MSN %g from HVC neuron %g', imsn, ihvc))
 
 axh(2) = subplot(4,1,2);
@@ -570,7 +582,7 @@ legend(filenames)
 hold off
 
 %% V0 for a single MSN across all times and trials
-for iter = 1:sn.niter
+for iter = 400:sn.niter
     plot(sn.vpost(imsn,iter), 'k', 'LineWidth', 2)
     hold on
     plot(ones(sn.nhvc,1) * sn.v0(imsn,iter), 'r', 'LineWidth', 2)
@@ -592,13 +604,13 @@ ylabel('V_0')
 title(sprintf('MSN %g at time %g', imsn, ihvc))
 
 %% (Vpost - V_0) on each iter
-iters = 450:460;
+iters = 1:sn.niter;
 for i = 1:length(iters)
     v = zeros(sn.nmsn, sn.nhvc);
     for imsn = 1:sn.nmsn
         v(imsn,:) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
     end
-    plot(v(188,:))
+    plot(v(1,:))
     title(sprintf('(Vpost - V_0) for trial %g', iters(i)))
     xlabel('Time')
     ylabel('MSN')
@@ -616,3 +628,29 @@ scatter(sn.noise(ihvc,:), v(ihvc,:))
 xlabel('Noise')
 ylabel('V_p_o_s_t - V_0')
 title(sprintf('MSN %g, LMAN weight %g', imsn, sn.wL(imsn)))
+
+%%
+iters = 800:sn.niter;
+imsn = 2;
+for i = 1:length(iters)
+    vp(:,i) = sn.vpost(2,iter) - sn.v0(2,iter);
+end
+
+%% (Vpost - V_0) and change in weight
+clf
+iters = 200:sn.niter;
+for i = 1:length(iters)
+    v = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
+    p = sn.LTP(imsn, iters(i));
+    d = sn.LTD(imsn, iters(i));
+    plot(v/max(abs(v)), 'k', 'LineWidth', 2)
+    hold on
+    plot(p/max(abs(p)), 'g', 'LineWidth', 2)
+    plot(d/max(abs(p)), 'r', 'LineWidth', 2)
+    hold off
+    title(sprintf('MSN %g on trial %g', imsn, iters(i)))
+    legend({'V_p_o_s_t - V_0', 'LTP', 'LTD'})
+    pause
+end
+
+%% 

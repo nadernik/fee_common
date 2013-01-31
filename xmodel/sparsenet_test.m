@@ -4,6 +4,8 @@ clear all
 
 sn = SparseNet();
 
+sn.MICHALE_IS_WATCHING = true;
+
 sn.nhvc = 100;
 sn.nmsn = 200;
 sn.niter = 1000;
@@ -23,11 +25,11 @@ sn.msnthresh  = 1    * sn.winit; % MSN threshold
 sn.wLstd      = 0.2; %standard deviation of LMAN weights
 
 sn.v0offset   = 3    * sn.lmanstd;
-sn.v0decay    = 1e-3;
+sn.v0decay    = 1e-1;
 sn.latinhib   = 1;
 
-sn.LTPrate = .2e-1;
-sn.LTDrate = 1e-10;%1e-3;
+sn.LTPrate = 2e-2;
+sn.LTDrate = 1e-3;
 
 sn.pinhib = 0.75;
 
@@ -40,15 +42,16 @@ sn.simulate()
 y = [repmat([-1, -1, -1, 1 1 1], 1, 400) repmat([-1, -1, 1 1], 1, 200), repmat([-1, 1], 1, 200)];
 sound(y)
 %%
-for iter = 1:sn.niter
+iter = sn.niter
+% for iter = 1:sn.niter
 subplot(1,3,1)
 sn.wimage(iter)
 subplot(1,3,2)
 sn.plotbiasvstemplate(iter)
 title(int2str(iter))
 subplot(1,3,3)
-if iter == 1
+% if iter == 1
     sn.plotmse();
-end
-drawnow
-end
+% end
+% drawnow
+% end
