@@ -638,7 +638,7 @@ end
 
 %% (Vpost - V_0) and change in weight
 clf
-iters = 200:sn.niter;
+iters = 900:sn.niter;
 for i = 1:length(iters)
     v = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
     p = sn.LTP(imsn, iters(i));

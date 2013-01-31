@@ -26,10 +26,10 @@ sn.wLstd      = 0.2; %standard deviation of LMAN weights
 
 sn.v0offset   = 3    * sn.lmanstd;
 sn.v0decay    = 1e-1;
-sn.latinhib   = 1;
+sn.latinhib   = 2;
 
-sn.LTPrate = 2e-2;
-sn.LTDrate = 1e-3;
+sn.LTPrate = 8e-2;
+sn.LTDrate = 10e-3;
 
 sn.pinhib = 0.75;
 
@@ -42,16 +42,18 @@ sn.simulate()
 y = [repmat([-1, -1, -1, 1 1 1], 1, 400) repmat([-1, -1, 1 1], 1, 200), repmat([-1, 1], 1, 200)];
 sound(y)
 %%
-iter = sn.niter
-% for iter = 1:sn.niter
-subplot(1,3,1)
-sn.wimage(iter)
-subplot(1,3,2)
-sn.plotbiasvstemplate(iter)
-title(int2str(iter))
-subplot(1,3,3)
-% if iter == 1
+if ~sn.MICHALE_IS_WATCHING
+    iter = sn.niter
+    % for iter = 1:sn.niter
+    subplot(1,3,1)
+    sn.wimage(iter)
+    subplot(1,3,2)
+    sn.plotbiasvstemplate(iter)
+    title(int2str(iter))
+    subplot(1,3,3)
+    % if iter == 1
     sn.plotmse();
-% end
-% drawnow
-% end
+    % end
+    % drawnow
+    % end
+end

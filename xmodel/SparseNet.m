@@ -90,13 +90,15 @@ classdef SparseNet < handle
                     obj.rexpupdate(iter);
                 end
                 if obj.MICHALE_IS_WATCHING && mod(iter,10) == 0
-                    subplot(1,3,1)
+                    subplot(2,3,[1 4])
                     obj.wimage(iter)
-                    subplot(1,3,2)
+                    subplot(2,3,[2 5])
                     obj.plotbiasvstemplate(iter)
                     title(int2str(iter))
-                    subplot(1,3,3)
+                    subplot(2,3,3)
                     obj.plotmse();
+                    subplot(2,3,6)
+                    obj.plotvdw(1,iter)
                     drawnow
                 end
                 
@@ -133,7 +135,7 @@ classdef SparseNet < handle
             dw = zeros(obj.nmsn, obj.nhvc);
             obj.v0update(iter);
             for i = 1:obj.nmsn
-                dw(i,:) = obj.LTP(i, iter) + obj.LTD(i,iter)';
+                dw(i,:) = obj.LTP(i, iter) + obj.LTD(i,iter);
             end
             
             obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
@@ -155,9 +157,7 @@ classdef SparseNet < handle
         
         function dw = LTD(obj, imsn, iter)
             % Long-term depression
-            vp = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
-            dw = obj.LTDrate * obj.hvcout * vp';
-            dw = min(0,dw); % LTD must be negative
+            dw = -obj.LTDrate * obj.msnout(imsn,:,iter) * (obj.hvcout == 0)';
         end
         
         function d = rpe(obj, iter)
@@ -251,8 +251,22 @@ classdef SparseNet < handle
             end
             plot(mse)
             xlim([1 obj.niter])
+            ylim([0, mse(1)*1.1])
             xlabel('Trial')
             ylabel('Mean Squared Error')
+        end
+        
+        function plotvdw(obj, imsn, iter)
+            v = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
+            p = obj.LTP(imsn, iter);
+            d = obj.LTD(imsn, iter);
+            plot(v/max(abs(v)), 'k', 'LineWidth', 2)
+            hold on
+            plot(p/max(abs(p)), 'g', 'LineWidth', 2)
+            plot(d/max(abs(p)), 'r', 'LineWidth', 2)
+            hold off
+            title(sprintf('MSN %g on trial %g', imsn, iter))
+            legend({'V_p_o_s_t - V_0', 'LTP', 'LTD'})
         end
             
     end
