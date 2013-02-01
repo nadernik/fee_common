@@ -8,17 +8,18 @@ sn.MICHALE_IS_WATCHING = true;
 
 sn.nhvc = 100;
 sn.nmsn = 200;
-sn.niter = 1000;
+sn.niter = 5000;
 
 sn.hvcburstlen = 13; % set to 3 for hvc bursts to be impulses
-sn.kernelstd = 8; % set to 1/8 for instantaneous rewards
+sn.kernelstd = 1/8;%8; % set to 1/8 for instantaneous rewards
 
 % Choose maximum template value = 1.
-template = 0.5 * sin(linspace(0,2*pi,sn.nhvc)) + 0.5;
+maxtemplate = 1;
 
+% template = [zeros(1,ceil(sn.hvcburstlen/2)), template, zeros(1,floor(sn.hvcburstlen/2))];
 
 % Choose LMAN fluctuations to have standard deviation = 1/4 of template
-sn.lmanstd    = 0.1 * max(template);
+sn.lmanstd    = 0.05 * maxtemplate;
 sn.lmanoffset = 2    * sn.lmanstd;
 sn.winit      = 1    * sn.lmanstd;
 sn.msnthresh  = 1    * sn.winit; % MSN threshold
@@ -28,15 +29,21 @@ sn.v0offset   = 3    * sn.lmanstd;
 sn.v0decay    = 1e-1;
 sn.latinhib   = 2;
 
-sn.LTPrate = 8e-2;
-sn.LTDrate = 10e-3;
+sn.LTPrate = 4e-2;
+sn.LTDrate = 5e-3;
 
 sn.pinhib = 0.75;
 
 sn.init()
+
+template = -cos(linspace(0,2*pi,sn.nhvc));
+mintemplate = sn.lmanoffset;
+% scale
+template = (maxtemplate - mintemplate) / (max(template) - min(template)) * template;
+% shift
+template = template - min(template) + mintemplate;
 sn.template = template;
 % sn.wH(1,floor(sn.nhvc/2),1) = 1;
-
 sn.simulate()
 
 y = [repmat([-1, -1, -1, 1 1 1], 1, 400) repmat([-1, -1, 1 1], 1, 200), repmat([-1, 1], 1, 200)];

@@ -4,9 +4,9 @@ classdef SparseNet < handle
     
     properties
         % Size of the simulation
-        nhvc = 10; % number of hvc units
-        nmsn = 20; % number of msn units
-        niter = 1e4;
+        nhvc = 100; % number of hvc units
+        nmsn = 200; % number of msn units
+        niter = 1000;
         
         % Tweakable parameters
         LTPrate = 1;% learning rate for Long-Term Potentiation
@@ -48,13 +48,15 @@ classdef SparseNet < handle
             obj.hvcout = zeros(obj.nhvc);
             assert(mod(obj.hvcburstlen, 2) == 1)
             assert(obj.hvcburstlen >= 3)
-            tburst = modnonzero((1:obj.hvcburstlen)-(obj.hvcburstlen+1)/2 + 1, obj.nhvc);
+            tburst = (1:obj.hvcburstlen)-(obj.hvcburstlen+1)/2 + 1;
+            mask = tburst > 0 & tburst <= obj.nhvc;
             t = linspace(0, pi, obj.hvcburstlen);
             hvcburst = sin(t).^2;
             hvcburst = hvcburst ./ sum(hvcburst);
             for ihvc = 1:obj.nhvc
-                obj.hvcout(ihvc,tburst) = hvcburst;
-                tburst = modnonzero(tburst + 1, obj.nhvc);
+                obj.hvcout(ihvc,tburst(mask)) = hvcburst(mask);
+                tburst = tburst + 1;
+                mask = tburst > 0 & tburst <= obj.nhvc;
             end
             obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.lmanout = zeros(obj.nhvc, obj.niter);
@@ -65,9 +67,9 @@ classdef SparseNet < handle
             % LMAN weights are normally distributed around 1 with a
             % standard deviation given by obj.wLstd
             obj.wL = randn(obj.nmsn, 1) * obj.wLstd + 1;
-            
             obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
             obj.rexp = zeros(obj.nhvc + 8*obj.kernelstd - 1, obj.niter);
+            
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
             
@@ -79,11 +81,15 @@ classdef SparseNet < handle
             x = linspace(-4,4,8*obj.kernelstd);
             k = normpdf(x)'; % Gaussian, column vector
             obj.kernel = k./sum(k);
+            
+            
+            r = -abs(obj.lmanoffset - obj.template');
+            sn.rexp(:,1) = conv(r, obj.kernel);
         end
         
         function simulate(obj)
             for iter = 1:obj.niter
-                disp(iter) %FIXME
+%                 disp(iter) %FIXME
                 obj.ffstep(iter);
                 if iter < obj.niter
                     obj.wupdate(iter);
@@ -96,7 +102,7 @@ classdef SparseNet < handle
                     obj.plotbiasvstemplate(iter)
                     title(int2str(iter))
                     subplot(2,3,3)
-                    obj.plotmse();
+                    %obj.plotmse();
                     subplot(2,3,6)
                     obj.plotvdw(1,iter)
                     drawnow
@@ -104,6 +110,30 @@ classdef SparseNet < handle
                 
             end
         end
+        
+        function reinit(obj)
+            obj.msnout = nan(obj.nmsn, obj.nhvc, obj.niter);
+            obj.lmanout = nan(obj.nhvc, obj.niter);
+            z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
+            obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
+            
+            obj.v0(:,1) = obj.v0(:,end);
+            obj.v0(:,2:end) = nan;
+            
+            obj.wH(:,:,1) = obj.wH(:,:,end);
+            obj.wH(:,:,2:end) = nan;
+            
+            obj.rexp(:,1) = obj.rexp(:,end);
+            obj.rexp(:,2:end) = nan;
+            
+            % Preserved:
+            % hvcout
+            % wL
+            % template
+            % wI
+            % kernel
+        end
+            
         
         function ffstep(obj, iter)
             % MSN activity depends on HVC input and noise (from lman)
@@ -138,7 +168,7 @@ classdef SparseNet < handle
                 dw(i,:) = obj.LTP(i, iter) + obj.LTD(i,iter);
             end
             
-            obj.wH(:,:,iter+1) = max(0, obj.wH(:,:,iter) + dw); % weights must be nonnegative
+            obj.wH(:,:,iter+1) = max(0, 0.9999*obj.wH(:,:,iter) + dw); % weights must be nonnegative
         end
         
         function dw = LTP(obj, imsn, iter)
@@ -147,7 +177,7 @@ classdef SparseNet < handle
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
             vp = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
-            vp = max(vp, 0);
+%             vp = max(vp, 0);
             e = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
             % blur eligibility trace in time (across rows)
             assert(iscolumn(obj.kernel)) % kernel must be column vector

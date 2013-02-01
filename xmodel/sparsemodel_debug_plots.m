@@ -1,3 +1,15 @@
+%% Bias at a single time across trials
+t = 1:100;
+iters = 1:sn.niter;
+b = zeros(length(iters), length(t));
+for i = 1:length(iters)
+    temp = sn.bias(iters(i));
+    b(i,:) = temp(t);
+end
+plot(b)
+bn = b ./ (ones(sn.niter,1) * sn.template);
+plot(bn)
+
 %% LMAN output and RPE at a single time across trials
 iters = 1:530;
 lman = sn.lmanout(ihvc,iters);
@@ -58,14 +70,20 @@ title(sprintf('LTD for MSN %g', imsn))
 
 %% LTP and LTD for a single HVC-X synapse
 clf
-axh(1) = subplot(4,1,1);
+axh(1) = subplot(6,1,1);
 ltp = zeros(1, sn.niter);
 ltd = zeros(1, sn.niter);
+vp = zeros(1, sn.niter);
+rpe = zeros(1, sn.niter);
 for iter = 1:sn.niter
     temp = sn.LTP(imsn, iter);
     ltp(iter) = temp(ihvc);
     temp = sn.LTD(imsn, iter);
     ltd(iter) = temp(ihvc);
+    temp = sn.vpost(imsn, iter) - sn.v0(imsn, iter);
+    vp(iter) = temp(ihvc);
+    temp = sn.rpe(iter);
+    rpe(iter) = temp(ihvc);
 end
 plot(ltp)
 hold all
@@ -76,23 +94,37 @@ ylabel('LTP or LTD')
 legend({'LTP', 'LTD'})
 title(sprintf('LTP and LTD for weight onto MSN %g from HVC neuron %g', imsn, ihvc))
 
-axh(2) = subplot(4,1,2);
+axh(2) = subplot(6,1,2);
 plot(squeeze(sn.wH(imsn,ihvc,:)))
 xlabel('Trial')
 ylabel('Weight')
 
-axh(3) = subplot(4,1,3);
+axh(3) = subplot(6,1,3);
 plot(squeeze(sn.msnout(imsn, ihvc, :)))
 hold all
 plot(squeeze(sum(sn.msnout(:,ihvc,:), 1)))
 ylabel('MSN output')
 
-axh(4) = subplot(4,1,4);
+axh(4) = subplot(6,1,4);
 plot(sn.lmanout(ihvc,:))
 hold all
 plot([1, sn.niter], ones(1,2) * sn.template(ihvc))
 hold off
 ylabel('LMAN output')
+
+axh(5) = subplot(6,1,5);
+plot(vp)
+hold on
+plot(xlim, [0 0])
+hold off
+ylabel('V_p_o_s_t - V_0')
+
+axh(6) = subplot(6,1,6);
+plot(rpe)
+hold on
+plot(xlim, [0 0])
+hold off
+ylabel('RPE')
 
 linkaxes(axh, 'x')
 
@@ -605,7 +637,7 @@ title(sprintf('MSN %g at time %g', imsn, ihvc))
 
 %% (Vpost - V_0) on each iter
 iters = 1:sn.niter;
-for i = 1:length(iters)
+for i = 1:50:length(iters)
     v = zeros(sn.nmsn, sn.nhvc);
     for imsn = 1:sn.nmsn
         v(imsn,:) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
@@ -613,8 +645,10 @@ for i = 1:length(iters)
     plot(v(1,:))
     title(sprintf('(Vpost - V_0) for trial %g', iters(i)))
     xlabel('Time')
-    ylabel('MSN')
+    ylabel('V')
+    ylim([-0.3, 0.3])
     pause
+    
 end
 
 %% (Vpost - V_0) vs lman noise
@@ -629,17 +663,120 @@ xlabel('Noise')
 ylabel('V_p_o_s_t - V_0')
 title(sprintf('MSN %g, LMAN weight %g', imsn, sn.wL(imsn)))
 
-%%
-iters = 800:sn.niter;
-imsn = 2;
+%% (Vpost - V_0) vs RPE
+% Only use with instantaneous reward
+% Paramters
+%   t     = vector
+%   iters = vector
+%   imsn  = scalar
+
+v = zeros(length(t),length(iters));
+d = zeros(length(t),length(iters));
+legendstr = cell(1,length(t));
 for i = 1:length(iters)
-    vp(:,i) = sn.vpost(2,iter) - sn.v0(2,iter);
+    temp = sn.vpost(imsn, iters(i)) - sn.v0(iters(i));
+    v(:,i) = temp(t);
+    temp = sn.rpe(iters(i));
+    d(:,i) = temp(t);
+end
+for k = 1:length(t)
+    scatter(v(k,:),d(k,:))
+    if k == 1
+        hold all
+    end
+    legendstr{k} = sprintf('Time %g', t(k));
+    fprintf('Correlation of (Vpost-V0) with RPE at time %g = %g\n', t(k), corr(v(k,:)', d(k,:)'))
+end
+legend(legendstr)
+xlabel('V_p_o_s_t - V_0')
+ylabel('RPE')
+title(sprintf('MSN %g', imsn))
+hold off
+
+%% LMAN noise vs RPE
+% Use only with instantaneous reward
+% Parameters: 
+%   t     = [vector]
+%   iters = [vector]
+clf
+z = sn.noise(t, iters) - sn.lmanoffset;
+d = zeros(length(t),length(iters));
+for i = 1:length(iters)
+    temp = sn.rpe(iters(i));
+    d(:,i) = temp(t);
+end
+legendstr = cell(1,length(t));
+for k = 1:length(t)
+    scatter(z(k,:),d(k,:))
+    if k == 1
+        hold all
+    end
+    legendstr{k} = sprintf('Time %g', t(k));
+    fprintf('Correlation of noise with RPE at time %g = %g\n', t(k), corr(z(k,:)', d(k,:)'))
+end
+legend(legendstr)
+xlabel('LMAN noise')
+ylabel('RPE')
+hold off
+
+%% LMAN noise vs change in bias
+% t
+% iters
+z = sn.noise(t, iters(1:end-1));
+b = zeros(sn.nhvc, length(iters));
+for i = 1:length(iters)
+    b(:,i) = sn.bias(iters(i));
+end
+db = diff(b(t,:),1,2); % difference along iterations
+for k = 1:length(t)
+    scatter(z(k,:),db(k,:))
+    if k == 1
+        hold all
+    end
+    legendstr{k} = sprintf('Time %g', t(k));
+    fprintf('Correlation of noise with change in bias at time %g = %g\n', t(k), corr(z(k,:)', db(k,:)'))
+end
+xlabel('LMAN noise')
+ylabel('Change in bias')
+legend(legendstr)
+
+%% LMAN noise vs change in weights
+z = sn.noise(t, iters(1:end-1));
+dw = diff(sn.wH(:,t,iters), 1, 3);
+
+for k = 1:length(t)
+    clf
+    msnlist = find(sn.wH(:,t(k),end)>eps);
+    for imsn = msnlist'
+        scatter(z(k,:), squeeze(dw(imsn,k,:)))
+        xlabel('LMAN noise')
+        ylabel('Change in weight')
+        title(sprintf('Time %g, MSN %g, weight %g', t(k), imsn, sn.wH(imsn,t(k),end)))
+        pause
+    end
+end
+
+%% LMAN noise vs LTP
+% imsn
+% t
+z = sn.noise(t, iters(1:end-1)) - sn.lmanoffset;
+dw = diff(sn.wH(:,t,iters), 1, 3);
+
+for k = 1:length(t)
+    clf
+    msnlist = find(sn.wH(:,t(k),end)>eps);
+    for imsn = msnlist'
+        scatter(z(k,:), squeeze(dw(imsn,k,:)))
+        xlabel('LMAN noise')
+        ylabel('Change in weight')
+        title(sprintf('Time %g, MSN %g, weight %g', t(k), imsn, sn.wH(imsn,t(k),end)))
+        pause
+    end
 end
 
 %% (Vpost - V_0) and change in weight
 clf
-iters = 900:sn.niter;
-for i = 1:length(iters)
+for i = 1:50:length(iters)
     v = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
     p = sn.LTP(imsn, iters(i));
     d = sn.LTD(imsn, iters(i));
@@ -650,7 +787,69 @@ for i = 1:length(iters)
     hold off
     title(sprintf('MSN %g on trial %g', imsn, iters(i)))
     legend({'V_p_o_s_t - V_0', 'LTP', 'LTD'})
+    ylim([-1.5, 1.5])
     pause
 end
 
 %% 
+t = 25;
+iters = 800:1000;
+msnlist = find(sn.msnout(:,t,end) > eps);
+for imsn = msnlist'
+    plot(iters,squeeze(sn.msnout(imsn,t,iters)))
+    title(sprintf('MSN %g', imsn))
+    ylim([0, .1])
+    pause
+end
+
+%% MICHALE IS WATCHING
+for iter = 1:10:sn.niter
+    subplot(2,3,[1 4])
+    sn.wimage(iter)
+    subplot(2,3,[2 5])
+    sn.plotbiasvstemplate(iter)
+    title(int2str(iter))
+    subplot(2,3,3)
+    %sn.plotmse();
+    subplot(2,3,6)
+    sn.plotvdw(1,iter)
+    drawnow
+end
+
+%% Histogram of vpost for a single neuron
+% iters [vector]
+% t [vector]
+% imsn [scalar]
+ratio = zeros(1,sn.nmsn);
+for imsn = 1:sn.nmsn
+vp = zeros(length(iters), length(t));
+r = zeros(length(iters), length(t));
+for i = 1:length(iters)
+    vtemp = sn.vpost(imsn, iters(i)) - sn.v0(imsn,iters(i));
+    rtemp = sn.rpe(iters(i));
+    vp(i,:) = vtemp(t);
+    r(i,:) = rtemp(t);    
+end
+% % bins = linspace(-.01, 0.04, 40);
+% bins = linspace(-0.05, 0.2, 40);
+% c = {'b', 'r'};
+% for n = 1:length(t)
+% %     stairs(bins, cumsum(hist(vp(:,n).*r(:,n), bins)), 'LineWidth', 3)
+% scatter(vp(:,n), r(:,n), [], c{n})
+%     if n == 1
+%         hold all
+%     end
+% end
+% hold off
+pr = mean(vp.*r);
+ratio(imsn) = pr(2) / pr(1);
+end
+plot(ratio)
+    
+    
+%%
+mi = zeros(sn.nhvc, length(iters));
+for i = 1:length(iters)
+    mi(:,i) = sn.wH(imsn,:,iters(i)) * sn.hvcout;
+end
+plot(mi)
