@@ -1,5 +1,5 @@
 %% Bias at a single time across trials
-t = 1:100;
+% t [vector]
 iters = 1:sn.niter;
 b = zeros(length(iters), length(t));
 for i = 1:length(iters)
@@ -40,6 +40,7 @@ line(xlim, ones(2,1)*sn.template(ihvc), 'Color', 'k')
 xlabel('Trial')
 
 %% LTP in a single MSN over all synapses and motifs
+% imsn [scalar]
 plot_every = false;
 ltp = zeros(sn.nhvc, sn.niter);
 ltd = zeros(sn.nhvc, sn.niter);
@@ -69,22 +70,26 @@ title(sprintf('LTD for MSN %g', imsn))
 
 
 %% LTP and LTD for a single HVC-X synapse
+% imsn [scalar]
+% ihvc [scalar]
+% iters [vector]
 clf
-axh(1) = subplot(6,1,1);
-ltp = zeros(1, sn.niter);
-ltd = zeros(1, sn.niter);
-vp = zeros(1, sn.niter);
-rpe = zeros(1, sn.niter);
-for iter = 1:sn.niter
-    temp = sn.LTP(imsn, iter);
-    ltp(iter) = temp(ihvc);
-    temp = sn.LTD(imsn, iter);
-    ltd(iter) = temp(ihvc);
-    temp = sn.vpost(imsn, iter) - sn.v0(imsn, iter);
-    vp(iter) = temp(ihvc);
-    temp = sn.rpe(iter);
-    rpe(iter) = temp(ihvc);
+ltp = zeros(1, length(iters));
+ltd = zeros(1, length(iters));
+vp  = zeros(1, length(iters));
+rpe = zeros(1, length(iters));
+for i = 1:length(iters)
+    temp = sn.LTP(imsn, iters(i));
+    ltp(i) = temp(ihvc);
+    temp = sn.LTD(imsn, iters(i));
+    ltd(i) = temp(ihvc);
+    temp = sn.vpost(imsn, iters(i)) - sn.v0(imsn, iters(i));
+    vp(i) = temp(ihvc);
+    temp = sn.rpe(iters(i));
+    rpe(i) = temp(ihvc);
 end
+
+axh(1) = subplot(6,1,1);
 plot(ltp)
 hold all
 plot(ltd)
@@ -234,16 +239,17 @@ fprintf('MSNs active on time step %g on trial %g: ', ihvc, iter)
 disp(imsn')
 
 %% Number of MSNs active
-nactivemsn = squeeze(sum(sn.msnout > 0, 1));
-iter = sn.niter;
+% t [vector]
+% iter [scalar]
 
+nactivemsn = squeeze(sum(sn.msnout > 0, 1));
 subplot(1,3,1)
-plot(nactivemsn(ihvc,:)')
+plot(nactivemsn(t,:)')
 xlabel('Trial')
 ylabel('Active MSNs')
-title(['Number of active MSNs at time ', int2str(ihvc)])
-if length(ihvc) > 1
-    legend(arrayfun(@int2str, ihvc, 'UniformOutput', 0))
+title(['Number of active MSNs at time ', int2str(t)])
+if length(t) > 1
+    legend(arrayfun(@int2str, t, 'UniformOutput', 0))
 end
 
 subplot(1,3,2)
@@ -776,7 +782,7 @@ end
 
 %% (Vpost - V_0) and change in weight
 clf
-for i = 1:50:length(iters)
+for i = 1:length(iters)
     v = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
     p = sn.LTP(imsn, iters(i));
     d = sn.LTD(imsn, iters(i));
@@ -853,3 +859,25 @@ for i = 1:length(iters)
     mi(:,i) = sn.wH(imsn,:,iters(i)) * sn.hvcout;
 end
 plot(mi)
+
+%% Sum of weights
+% iters [vector]
+wmax = globalmax(sum(sn.wH(:,:,iters),1));
+for i = 1:length(iters)
+    plot(sum(sn.wH(:,:,iters(i))))
+    ylim([0 wmax])
+    title(sprintf('Trial %g', iters(i)))
+    xlabel('Time')
+    ylabel('\Sigma Weight')
+    pause
+end
+
+%% Weight image unsorted
+% iters [vector]
+iters = 2300:2500;
+wmax = 1.1 * globalmax(sn.wH(:,:,iters(1)));
+for i = 1:length(iters)
+    image(sn.wH(:,:,iters(i)) ./ wmax .* 64)
+    title(sprintf('Trial %g', iters(i)))
+    pause
+end

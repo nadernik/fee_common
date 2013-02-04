@@ -34,7 +34,7 @@ classdef SparseNet < handle
         msnout
         lmanout
         noise
-        template
+        template = nan;
         rexp
         kernel
     end
@@ -67,8 +67,9 @@ classdef SparseNet < handle
             % LMAN weights are normally distributed around 1 with a
             % standard deviation given by obj.wLstd
             obj.wL = randn(obj.nmsn, 1) * obj.wLstd + 1;
-            obj.template = sin(linspace(0,2*pi,obj.nhvc)) + 1;
-            obj.rexp = zeros(obj.nhvc + 8*obj.kernelstd - 1, obj.niter);
+            
+            obj.rexp = zeros(obj.nhvc, obj.niter);
+            obj.rexp(:,1) = -abs(obj.template-obj.lmanoffset);
             
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
@@ -177,12 +178,12 @@ classdef SparseNet < handle
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
             vp = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
-%             vp = max(vp, 0);
             e = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
             % blur eligibility trace in time (across rows)
             assert(iscolumn(obj.kernel)) % kernel must be column vector
-            etrace = conv2(e, obj.kernel);
-            dw = obj.LTPrate * obj.rpe(iter) * etrace;
+            etrace   = conv2(e, obj.kernel);
+            dopamine = conv(obj.rpe(iter), obj.kernel);
+            dw = obj.LTPrate * dopamine' * etrace;
         end
         
         function dw = LTD(obj, imsn, iter)
@@ -191,8 +192,7 @@ classdef SparseNet < handle
         end
         
         function d = rpe(obj, iter)
-            x = obj.reward(iter)';
-            d = conv(x, obj.kernel) - obj.rexp(:,iter)';
+            d = obj.reward(iter) - obj.rexp(:,iter);
         end
         
         function I = allinhib(obj, imsn, newiter)
@@ -215,7 +215,7 @@ classdef SparseNet < handle
         function rexpupdate(obj, iter)
             if iter < obj.niter
                 obj.rexp(:,iter+1) = obj.rexp(:,iter) + ...
-                    obj.rperate .* obj.rpe(iter)';
+                    obj.rperate .* obj.rpe(iter);
             end
         end
         
