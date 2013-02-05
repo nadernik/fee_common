@@ -7,8 +7,8 @@ sn = SparseNet();
 sn.MICHALE_IS_WATCHING = true;
 
 sn.nhvc = 100;
-sn.nmsn = 200;
-sn.niter = 10000;
+sn.nmsn = 100;
+sn.niter = 5000;
 
 sn.hvcburstlen = 13; % set to 3 for hvc bursts to be impulses
 sn.kernelstd = 1/8;%8; % set to 1/8 for instantaneous rewards
@@ -27,12 +27,11 @@ sn.wLstd      = 0.2; %standard deviation of LMAN weights
 
 sn.v0offset   = 3    * sn.lmanstd;
 sn.v0decay    = 1e-1;
-sn.latinhib   = 2;
 
-sn.LTPrate = 8e-2;
-sn.LTDrate = 10e-3;
-
-sn.pinhib = 0.75;
+sn.latinhib = 2;
+sn.LTPrate  = 0.08;
+sn.LTDrate  = 0;
+sn.pinhib   = 0.75;
 
 template = -cos(linspace(0,2*pi,sn.nhvc));
 mintemplate = sn.lmanoffset;

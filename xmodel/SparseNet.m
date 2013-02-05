@@ -105,7 +105,7 @@ classdef SparseNet < handle
                     subplot(2,3,3)
                     %obj.plotmse();
                     subplot(2,3,6)
-                    obj.plotvdw(1,iter)
+                    obj.plotvdw(50,iter)
                     drawnow
                 end
                 

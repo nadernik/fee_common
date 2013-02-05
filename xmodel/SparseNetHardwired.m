@@ -22,10 +22,10 @@ classdef SparseNetHardwired < SparseNet
                 warning(msgid, 'LTD rate set to zero.')
                 obj.LTDrate = 0;
             end
-            if obj.msnthresh  ~= 0
-                warning(msgid, 'MSN threshold set to zero.')
-                obj.msnthresh = 0;
-            end
+%             if obj.msnthresh  ~= 0
+%                 warning(msgid, 'MSN threshold set to zero.')
+%                 obj.msnthresh = 0;
+%             end
             if obj.wLstd  ~= 0
                 warning(msgid, 'LMAN weight variance set to zero.')
                 obj.wLstd = 0;

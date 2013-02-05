@@ -134,17 +134,23 @@ ylabel('RPE')
 linkaxes(axh, 'x')
 
 %% LTP for all synapses from a single HVC neuron
-iters = 1:sn.niter;
-ihvc1 = 20;
-ihvc2 = 21;
+iters = 1:500;
+ihvc1 = 47;
+ihvc2 = 62;
 p1 = zeros(sn.nmsn, length(iters));
 p2 = zeros(sn.nmsn, length(iters));
+d1 = zeros(sn.nmsn, length(iters));
+d2 =zeros(sn.nmsn, length(iters));
 for ii = 1:length(iters)
     iter = iters(ii)
     for imsn = 1:sn.nmsn
         temp = sn.LTP(imsn, iter);
         p1(imsn,ii) = temp(ihvc1);
         p2(imsn,ii) = temp(ihvc2);
+        
+        temp = sn.LTD(imsn, iter);
+        d1(imsn,ii) = temp(ihvc1);
+        d2(imsn,ii) = temp(ihvc2);
     end
 end
 subplot(1,2,1)
@@ -639,7 +645,7 @@ clf
 plot(squeeze(sn.v0(imsn,:)))
 xlabel('Trial')
 ylabel('V_0')
-title(sprintf('MSN %g at time %g', imsn, ihvc))
+title(sprintf('MSN %g', imsn))
 
 %% (Vpost - V_0) on each iter
 iters = 1:sn.niter;
@@ -874,10 +880,65 @@ end
 
 %% Weight image unsorted
 % iters [vector]
-iters = 2300:2500;
 wmax = 1.1 * globalmax(sn.wH(:,:,iters(1)));
 for i = 1:length(iters)
     image(sn.wH(:,:,iters(i)) ./ wmax .* 64)
     title(sprintf('Trial %g', iters(i)))
     pause
 end
+
+%% All weight profiles, aligned at peak
+% iter [scalar]
+clf
+tt = 1:sn.nhvc;
+for m = 90:100
+    w = sn.wH(m,:,iter);
+    [wmax, tpk] = max(w);
+    plot(tt-tpk, w/wmax)
+    if true %m == 1
+        hold all
+    end
+end
+hold off
+xlim([-10, 10])
+
+%% LTD components
+% imsn [scalar]
+% ihvc [vector]
+% iter [scalar]
+a(1) = subplot(4,1,1);
+M = sn.msnout(imsn,:,iter);
+plot(M)
+ylabel('MSN output')
+a(2) = subplot(4,1,2);
+H = sn.hvcout(ihvc,:);
+ph = plot(H);
+ylabel('HVC output')
+xlabel('Time')
+a(3) = subplot(4,1,3);
+plot((ones(length(ihvc),1)*M) .* (H == 0))
+a(4) = subplot(4,1,4);
+ltd = sn.LTD(imsn, iter);
+plot(ltd)
+hold on
+for n = 1
+    c = get(ph, 'Color');
+    scatter(ihvc(n), ltd(ihvc(n)), 50, c, 'filled')    
+end
+hold off
+xlabel('HVC neuron')
+ylabel('LTD')
+linkaxes(a, 'x')
+
+%% Noise * RPE
+% iters [vector]
+% t [vector]
+rpe = zeros(length(t), length(iters));
+for i = 1:length(iters)
+    temp = sn.rpe(iters(i));
+    rpe(:,i) = temp(t);
+end
+noise = sn.noise(t,iters);
+plot(iters, cumsum(rpe .* noise))
+xlabel('Trial')
+    

@@ -7,7 +7,7 @@ sn.MICHALE_IS_WATCHING = false;
 
 sn.nhvc = 100;
 sn.nmsn = 200;
-sn.niter = 1000;
+sn.niter = 2000;
 
 sn.hvcburstlen = 13;
 sn.kernelstd   = 1/8;
