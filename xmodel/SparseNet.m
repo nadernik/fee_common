@@ -75,10 +75,14 @@ classdef SparseNet < handle
             obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
             
             % Lateral inhibition weights
-            obj.wI = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
-            obj.wI = obj.wI & ~eye(obj.nmsn); % make sure no MSN inhibits itself
-            obj.wI = obj.latinhib * obj.wI; % scale based on inhibition strength parameter
-                        
+            wii1 = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
+            wii2 = wii1 & ~eye(obj.nmsn); % make sure no MSN inhibits itself
+            %obj.wI = obj.latinhib * obj.wI; % scale based on inhibition strength parameter
+            clear wii3
+            for imsn = 1:obj.nmsn
+                wii3(imsn,:) = obj.wL(imsn) * double(wii2(imsn,:));
+            end
+            obj.wI = wii3;
             x = linspace(-4,4,8*obj.kernelstd);
             k = normpdf(x)'; % Gaussian, column vector
             obj.kernel = k./sum(k);
@@ -177,7 +181,7 @@ classdef SparseNet < handle
             % inputs that are also active are eligibile to be
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
-            vp = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
+            vp = max(0, obj.vpost(imsn,iter) - obj.v0(imsn,iter));
             e = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
             % blur eligibility trace in time (across rows)
             assert(iscolumn(obj.kernel)) % kernel must be column vector

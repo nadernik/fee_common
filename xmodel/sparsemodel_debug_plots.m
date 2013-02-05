@@ -340,8 +340,9 @@ ylabel('V_p_o_s_t')
 title(sprintf('MSN %g on first iteration', imsn))
 
 %% Weights for a single MSN for all synapses over time
-iters = 1:sn.niter;
+% iters [vector]
 imagesc(squeeze(sn.wH(imsn,:,iters))')
+title(
 
 %% Weights from a single HVC neuron over trials
 iters = 1:sn.niter;
@@ -942,3 +943,54 @@ noise = sn.noise(t,iters);
 plot(iters, cumsum(rpe .* noise))
 xlabel('Trial')
     
+
+%% Bias - Template
+% iters [vector]
+db = zeros(length(sn.template), length(iters));
+for i = 1:length(iters)
+    db(:,i) = sn.bias(iters(i)) - sn.template;
+end
+imagesc(1:sn.nhvc,iters,db')
+xlabel('Time')
+ylabel('Trial')
+    
+%%
+% iter [scalar]
+b = sn.bias(iter) - sn.template;
+omax = zeros(sn.nmsn,1);
+tmax = zeros(sn.nmsn,1);
+for m = 1:sn.nmsn
+    out = sn.msnout(m,:,iter);
+    [omax(m), tmax(m)] = max(out);
+%     plot(out)
+%     title(int2str(m))
+%     ylim([0, 0.4])
+%     pause
+end
+bins = 1:sn.nhvc;
+N = hist(tmax,bins);
+N(1)=nan;
+plot(b/max(b))
+hold all
+plot(N/max(N))
+hold off
+
+%% Bias and LTP
+% iters [vector]
+% imsn [scalar]
+clear a
+for i = 1:length(iters)
+    bias = sn.bias(iters(i));
+    ltp = sn.LTP(imsn,iters(i));
+    a(1) = subplot(2,1,1);
+    plot(bias)
+    hold on
+    title(int2str(iters(i)))
+    grid on
+    a(2) = subplot(2,1,2);
+    plot(ltp)
+    grid on
+    linkaxes(a, 'x')
+    hold on
+    pause
+end

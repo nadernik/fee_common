@@ -11,7 +11,7 @@ sn.nmsn = 100;
 sn.niter = 5000;
 
 sn.hvcburstlen = 13; % set to 3 for hvc bursts to be impulses
-sn.kernelstd = 1/8;%8; % set to 1/8 for instantaneous rewards
+sn.kernelstd = .125;%8; % set to 1/8 for instantaneous rewards
 
 % Choose maximum template value = 1.
 maxtemplate = 1;
@@ -28,17 +28,12 @@ sn.wLstd      = 0.2; %standard deviation of LMAN weights
 sn.v0offset   = 3    * sn.lmanstd;
 sn.v0decay    = 1e-1;
 
-sn.latinhib = 2;
-sn.LTPrate  = 0.08;
-sn.LTDrate  = 0;
+sn.latinhib = 1;
+sn.LTPrate  = 0.03;
+sn.LTDrate  = 0.0001;
 sn.pinhib   = 0.75;
 
-template = -cos(linspace(0,2*pi,sn.nhvc));
-mintemplate = sn.lmanoffset;
-% scale
-template = (maxtemplate - mintemplate) / (max(template) - min(template)) * template;
-% shift
-template = template - min(template) + mintemplate;
+template = [zeros(1,20), (ones(1,60)-sn.lmanoffset), zeros(1,20)] + sn.lmanoffset;
 sn.template = template;
 
 sn.init()

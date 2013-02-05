@@ -3,7 +3,7 @@ clear all
 
 sn = SparseNetHardwired();
 
-sn.MICHALE_IS_WATCHING = false;
+sn.MICHALE_IS_WATCHING = true;
 
 sn.nhvc = 100;
 sn.nmsn = 200;

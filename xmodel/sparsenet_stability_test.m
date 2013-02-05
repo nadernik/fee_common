@@ -8,7 +8,7 @@ old = load('c:\stetner\data\xmodel\hardwired.mat');
 
 sn = SparseNet();
 sn.MICHALE_IS_WATCHING = true;
-sn.niter = 1000;
+sn.niter = 600;
 
 % Copy parameters from old simulation
 sn.nhvc        = old.sn.nhvc;
@@ -26,8 +26,8 @@ sn.template    = old.sn.template;
 % Set some parameters differently
 sn.msnthresh = 1 * sn.winit;
 sn.latinhib  = 1.5;
-sn.LTPrate   = 0.08;
-sn.LTDrate   = 0.001;
+sn.LTPrate   = 0.3;
+sn.LTDrate   = 0.0001;
 sn.pinhib    = 1;
 
 % Initialize
