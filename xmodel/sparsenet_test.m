@@ -7,8 +7,8 @@ sn = SparseNet();
 sn.MICHALE_IS_WATCHING = true;
 
 sn.nhvc = 100;
-sn.nmsn = 100;
-sn.niter = 5000;
+sn.nmsn = 300;
+sn.niter = 300;
 
 sn.hvcburstlen = 13; % set to 3 for hvc bursts to be impulses
 sn.kernelstd = .125;%8; % set to 1/8 for instantaneous rewards
@@ -23,14 +23,14 @@ sn.lmanstd    = 0.05 * maxtemplate;
 sn.lmanoffset = 2    * sn.lmanstd;
 sn.winit      = 1    * sn.lmanstd;
 sn.msnthresh  = 1    * sn.winit; % MSN threshold
-sn.wLstd      = 0.2; %standard deviation of LMAN weights
+sn.wLstd      = 0.1; %standard deviation of LMAN weights
 
 sn.v0offset   = 3    * sn.lmanstd;
 sn.v0decay    = 1e-1;
 
-sn.latinhib = 1;
-sn.LTPrate  = 0.03;
-sn.LTDrate  = 0.0001;
+sn.latinhib = 4;
+sn.LTPrate  = 0.1;
+sn.LTDrate  = 0.1;
 sn.pinhib   = 0.75;
 
 template = [zeros(1,20), (ones(1,60)-sn.lmanoffset), zeros(1,20)] + sn.lmanoffset;
@@ -40,7 +40,7 @@ sn.init()
 sn.simulate()
 
 y = [repmat([-1, -1, -1, 1 1 1], 1, 400) repmat([-1, -1, 1 1], 1, 200), repmat([-1, 1], 1, 200)];
-sound(y)
+% sound(y)
 %%
 if ~sn.MICHALE_IS_WATCHING
     iter = sn.niter

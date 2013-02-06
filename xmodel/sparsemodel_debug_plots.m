@@ -994,3 +994,10 @@ for i = 1:length(iters)
     hold on
     pause
 end
+
+%% 
+vp = zeros(sn.nhvc, length(iters));
+for i = 1:length(iters)
+    vp(:,i) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
+end
+

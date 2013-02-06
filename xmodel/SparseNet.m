@@ -77,12 +77,7 @@ classdef SparseNet < handle
             % Lateral inhibition weights
             wii1 = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
             wii2 = wii1 & ~eye(obj.nmsn); % make sure no MSN inhibits itself
-            %obj.wI = obj.latinhib * obj.wI; % scale based on inhibition strength parameter
-            clear wii3
-            for imsn = 1:obj.nmsn
-                wii3(imsn,:) = obj.wL(imsn) * double(wii2(imsn,:));
-            end
-            obj.wI = wii3;
+            obj.wI = obj.latinhib * wii2; % scale based on inhibition strength parameter
             x = linspace(-4,4,8*obj.kernelstd);
             k = normpdf(x)'; % Gaussian, column vector
             obj.kernel = k./sum(k);
@@ -242,12 +237,28 @@ classdef SparseNet < handle
             ylabel('MSN unit')
         end
         
-        function msnimage(obj, imsn)
-            image(squeeze(obj.msnout(imsn,:,:))' * 64)
-            xlabel('Time')
-            ylabel('Trial')
-            title(sprintf('MSN %g output', imsn))
+        function imagemsnout(obj, iter, dosort)
+            % imagemsnout(obj, iter, dosort)
+            %   imagesc of msn output on a given iteration. If dosort is 
+            if ~exist('dosort', 'var')
+                dosort = true;
+            end
+            if dosort == true
+                tmax = nan(obj.nmsn, 1);
+                for i = 1:obj.nmsn
+                    [~, tmax(i)] = max(obj.msnout(i,:, iter));
+                end
+                [~, ord] = sort(tmax);
+                w = obj.msnout(ord,:,iter);
+            else
+                w = obj.msnout(:,:,iter);
+            end
+            imagesc(w)
+            xlabel('HVC neuron')
+            ylabel('MSN')
+            title(sprintf('MSN output on trial %g', iter))
         end
+                
         
         function plotbiasvstemplate(obj, iter)
             Y = sum(obj.msnout(:,:,iter),1) + obj.lmanoffset;
@@ -268,13 +279,8 @@ classdef SparseNet < handle
             end
         end
         
-        function imagemsn(obj, name, imsn)
-            Y = zeros(obj.nhvc, obj.niter);
-            for iter = 1:obj.niter
-                Y(:,iter) = obj.(name)(imsn, iter);
-            end
-            imagesc(Y');
-        end
+        
+            
         
         function plotmse(obj)
             % Plot the mean squared error between the bias and template,
