@@ -8,7 +8,7 @@ sn.MICHALE_IS_WATCHING = true;
 
 sn.nhvc = 100;
 sn.nmsn = 300;
-sn.niter = 300;
+sn.niter = 3000;
 
 sn.hvcburstlen = 13; % set to 3 for hvc bursts to be impulses
 sn.kernelstd = .125;%8; % set to 1/8 for instantaneous rewards
@@ -21,16 +21,16 @@ maxtemplate = 1;
 % Choose LMAN fluctuations to have standard deviation = 1/4 of template
 sn.lmanstd    = 0.05 * maxtemplate;
 sn.lmanoffset = 2    * sn.lmanstd;
-sn.winit      = 1    * sn.lmanstd;
+sn.winit      = 0.1  * sn.lmanstd;
 sn.msnthresh  = 1    * sn.winit; % MSN threshold
 sn.wLstd      = 0.1; %standard deviation of LMAN weights
 
 sn.v0offset   = 3    * sn.lmanstd;
 sn.v0decay    = 1e-1;
 
-sn.latinhib = 4;
-sn.LTPrate  = 0.1;
-sn.LTDrate  = 0.1;
+sn.latinhib = 0.0005;
+sn.LTPrate  = 0.05;
+sn.LTDrate  = 2e-6;
 sn.pinhib   = 0.75;
 
 template = [zeros(1,20), (ones(1,60)-sn.lmanoffset), zeros(1,20)] + sn.lmanoffset;

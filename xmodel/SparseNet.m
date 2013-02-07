@@ -97,7 +97,7 @@ classdef SparseNet < handle
                 end
                 if obj.MICHALE_IS_WATCHING && mod(iter,10) == 0
                     subplot(2,3,[1 4])
-                    obj.wimage(iter)
+                    obj.imagemsnout(iter)
                     subplot(2,3,[2 5])
                     obj.plotbiasvstemplate(iter)
                     title(int2str(iter))
@@ -111,27 +111,28 @@ classdef SparseNet < handle
             end
         end
         
-        function reinit(obj)
-            obj.msnout = nan(obj.nmsn, obj.nhvc, obj.niter);
-            obj.lmanout = nan(obj.nhvc, obj.niter);
-            z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
-            obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
+        function reinit(obj, iter)
+            % Reinitializes the model and sets the initial conditions to
+            % the state at the specified iteration.
             
-            obj.v0(:,1) = obj.v0(:,end);
-            obj.v0(:,2:end) = nan;
+            % Save the state of the model on trial 'iter'
+            saved.v0   = obj.v0(:,iter);
+            saved.wH   = obj.wH(:,:,iter);
+            saved.rexp = obj.rexp(:,iter);
             
-            obj.wH(:,:,1) = obj.wH(:,:,end);
-            obj.wH(:,:,2:end) = nan;
+            % Save the randomly generated things
+            saved.wL   = obj.wL;
+            saved.wI   = obj.wI;
             
-            obj.rexp(:,1) = obj.rexp(:,end);
-            obj.rexp(:,2:end) = nan;
+            % Re-initialize
+            obj.init()
             
-            % Preserved:
-            % hvcout
-            % wL
-            % template
-            % wI
-            % kernel
+            % Set initial state to the saved state
+            obj.v0(:,1)   = saved.v0;
+            obj.wH(:,:,1) = saved.wH;
+            obj.rexp(:,1) = saved.rexp;
+            obj.wL        = saved.wL;
+            obj.wI        = saved.wI;
         end
             
         
@@ -145,20 +146,17 @@ classdef SparseNet < handle
         end
         
         function v = vpost(obj, imsn, iter)
-            v = (obj.wL(imsn)        * obj.lmanout(:,iter)' + ...
-                 obj.wH(imsn,:,iter) * obj.hvcout) - ...
-                 (obj.allinhib(imsn, iter));
+            % v = vpost(obj, imsn, iter)
+            %
+            % Post-synaptic depolarization used in learning rule (see LTP).
+            % The learning rule is roughly (Vpost - V0) * HVC * RPE.
+            L = obj.wL(imsn) * (obj.noise(:,iter)' - obj.lmanoffset);
+            I = obj.inhib(imsn,iter);
+            v = L - I;
         end
         
         function v0update(obj, iter)
-            for imsn = 1:obj.nmsn
-                vp = obj.vpost(imsn, iter);
-                if max(vp) > (obj.v0(imsn,iter) + obj.v0offset)
-                    obj.v0(imsn, iter+1) = max(vp) - obj.v0offset;
-                else
-                    obj.v0(imsn, iter+1) = obj.v0(imsn, iter) * (1-obj.v0decay);
-                end
-            end
+            % Intentionally left blank
         end
         
         function wupdate(obj, iter)
@@ -168,7 +166,7 @@ classdef SparseNet < handle
                 dw(i,:) = obj.LTP(i, iter) + obj.LTD(i,iter);
             end
             
-            obj.wH(:,:,iter+1) = max(0, 0.9999*obj.wH(:,:,iter) + dw); % weights must be nonnegative
+            obj.wH(:,:,iter+1) = obj.wH(:,:,iter) + dw; % weights must be nonnegative
         end
         
         function dw = LTP(obj, imsn, iter)
@@ -187,14 +185,16 @@ classdef SparseNet < handle
         
         function dw = LTD(obj, imsn, iter)
             % Long-term depression
-            dw = -obj.LTDrate * obj.msnout(imsn,:,iter) * (obj.hvcout == 0)';
+            msnactive = obj.msnout(imsn,:,iter) > 0;
+            hvcactive = obj.hvcout > 0;
+            dw = -obj.LTDrate * msnactive * (~hvcactive)';
         end
         
         function d = rpe(obj, iter)
             d = obj.reward(iter) - obj.rexp(:,iter);
         end
         
-        function I = allinhib(obj, imsn, newiter)
+        function I = inhib(obj, imsn, newiter)
             persistent iter
             persistent Iall
             if isempty(iter)
@@ -202,7 +202,7 @@ classdef SparseNet < handle
             end
             if newiter ~= iter
                 iter = newiter;
-                Iall = obj.wI * obj.msnout(:,:,iter);
+                Iall = obj.wI * (obj.msnout(:,:,iter) > 0);
             end
             I = Iall(imsn,:);
         end

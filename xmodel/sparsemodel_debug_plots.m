@@ -816,7 +816,7 @@ for imsn = msnlist'
 end
 
 %% MICHALE IS WATCHING
-for iter = 1:10:sn.niter
+for iter = 1:1:sn.niter
     subplot(2,3,[1 4])
     sn.wimage(iter)
     subplot(2,3,[2 5])
@@ -827,6 +827,7 @@ for iter = 1:10:sn.niter
     subplot(2,3,6)
     sn.plotvdw(1,iter)
     drawnow
+    pause
 end
 
 %% Histogram of vpost for a single neuron
@@ -948,7 +949,7 @@ xlabel('Trial')
 % iters [vector]
 db = zeros(length(sn.template), length(iters));
 for i = 1:length(iters)
-    db(:,i) = sn.bias(iters(i)) - sn.template;
+    db(:,i) = sn.bias(iters(i));
 end
 imagesc(1:sn.nhvc,iters,db')
 xlabel('Time')
@@ -972,7 +973,7 @@ N = hist(tmax,bins);
 N(1)=nan;
 plot(b/max(b))
 hold all
-plot(N/max(N))
+plot(N)
 hold off
 
 %% Bias and LTP
@@ -1000,4 +1001,23 @@ vp = zeros(sn.nhvc, length(iters));
 for i = 1:length(iters)
     vp(:,i) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
 end
+
+%% Calibrate LTD for fixed values
+%load lastscalinginhib sn
+iter = 50;
+isactive = sn.msnout(:,:,iter) > 0;
+tactive = sum(isactive, 2);% number of timesteps where each MSN is active
+nactive = sum(isactive, 1); % number of MSNs active at each timestep
+ltd   = zeros(sn.nmsn,1);
+inhib = zeros(sn.nmsn,1);
+for imsn = 1:sn.nmsn
+    ltd(imsn) = min(sn.LTD(imsn, iter));
+    inhib(imsn) = max(sn.allinhib(imsn, iter));
+end
+fprintf('On average, each MSN is active on %g timesteps and LTD is %g\n', mean(tactive), mean(ltd))
+fprintf('New value for LTD/timestep is %g\n', mean(ltd)/mean(tactive))
+fprintf('On average, there are %g MSNs active on each timestep and inhibition is %g\n', mean(nactive), mean(inhib))
+fprintf('New value for inhibtion/timestep is %g\n', mean(inhib)/mean(nactive))
+
+
 
