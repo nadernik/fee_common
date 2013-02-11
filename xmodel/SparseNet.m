@@ -165,7 +165,7 @@ classdef SparseNet < handle
             %
             % Post-synaptic depolarization used in learning rule (see LTP).
             % The learning rule is roughly (Vpost - V0) * HVC * RPE.
-            L = obj.wL(imsn) * (obj.noise(:,iter)' - obj.lmanoffset);
+            L = obj.wL(imsn) * (obj.noise(:,iter)');
             I = obj.inhib(imsn,iter);
             v = L - I;
         end
