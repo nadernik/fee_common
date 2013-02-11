@@ -165,20 +165,21 @@ classdef SparseNet < handle
             %
             % Post-synaptic depolarization used in learning rule (see LTP).
             % The learning rule is roughly (Vpost - V0) * HVC * RPE.
-            L = obj.wL(imsn) * (obj.lmanout(:,iter)');
+            L = obj.wL(imsn) * (obj.lmanout(:,iter)') + ...
+                obj.wH(imsn,:,iter) * obj.hvcout;
             I = obj.inhib(imsn,iter);
             v = L - I;
         end
         
         function v0update(obj, iter)
-            for imsn = 1:obj.nmsn
-                vp = obj.vpost(imsn, iter);
-                if max(vp) > (obj.v0(imsn,iter) + obj.v0offset)
-                    obj.v0(imsn, iter+1) = max(vp) - obj.v0offset;
-                else
-                    obj.v0(imsn, iter+1) = obj.v0(imsn, iter) * (1-obj.v0decay);
-                end
-            end
+%             for imsn = 1:obj.nmsn
+%                 vp = obj.vpost(imsn, iter);
+%                 if max(vp) > (obj.v0(imsn,iter) + obj.v0offset)
+%                     obj.v0(imsn, iter+1) = max(vp) - obj.v0offset;
+%                 else
+%                     obj.v0(imsn, iter+1) = obj.v0(imsn, iter) * (1-obj.v0decay);
+%                 end
+%             end
         end
         
         function wupdate(obj, iter)
@@ -197,7 +198,9 @@ classdef SparseNet < handle
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
             vp = max(0, obj.vpost(imsn,iter) - obj.v0(imsn,iter));
-            e = (ones(obj.nhvc, 1) * vp) .* obj.hvcout';
+            L = ones(obj.nhvc,1) * vp;
+            H = obj.hvcout';
+            e = L .* H;
             % blur eligibility trace in time (across rows)
             assert(iscolumn(obj.kernel)) % kernel must be column vector
             etrace   = conv2(e, obj.kernel);

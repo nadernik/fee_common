@@ -8,7 +8,7 @@ sn.MICHALE_IS_WATCHING = true;
 
 sn.nhvc  =  100;
 sn.nmsn  =  300;
-sn.niter = 3000;
+sn.niter = 15000;
 
 sn.hvcburstlen = 11; % Width of HVC burst
 sn.kernelstd   =  0; % Standard deviation of Gaussian dopamine kernel
@@ -25,8 +25,8 @@ sn.v0offset   = 3    * sn.lmanstd;  % v0 will always be this
 
 sn.v0decay    = 1e-1; % FIXME how does this scale?
 
-sn.latinhib = 0.005; % FIXME how does this scale?
-sn.LTPrate  = 0.01;   % FIXME how does this scale?
+sn.latinhib = 0.0005; % FIXME how does this scale?
+sn.LTPrate  = 0.001;   % FIXME how does this scale?
 sn.LTDrate  = 2e-6;   % FIXME how does this scale?
 sn.pinhib   = 0.75;   % FIXME how does this scale?
 
