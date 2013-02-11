@@ -9,7 +9,7 @@ sn.nhvc = 100;
 sn.nmsn = 200;
 sn.niter = 2000;
 
-sn.hvcburstlen = 13;
+sn.hvcburstlen = 11;
 sn.kernelstd   = 1/8;
 
 

@@ -818,7 +818,7 @@ end
 %% MICHALE IS WATCHING
 for iter = 1:1:sn.niter
     subplot(2,3,[1 4])
-    sn.wimage(iter)
+    sn.imagemsnout(iter)
     subplot(2,3,[2 5])
     sn.plotbiasvstemplate(iter)
     title(int2str(iter))
@@ -827,7 +827,7 @@ for iter = 1:1:sn.niter
     subplot(2,3,6)
     sn.plotvdw(1,iter)
     drawnow
-    pause
+    %pause
 end
 
 %% Histogram of vpost for a single neuron

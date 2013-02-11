@@ -9,20 +9,21 @@ classdef SparseNet < handle
         niter = 1000;
         
         % Tweakable parameters
-        LTPrate = 1;% learning rate for Long-Term Potentiation
-        LTDrate = 1;% learning rate for Long-Term Depression
-        rperate = 0.2;  % learning rate for predicted reward
-        msnthresh = 1; % tonic inhibition on msn output
-        winit =1; % initial hvc weights
-        lmanoffset = 1;
-        lmanstd = 1;
-        v0offset = 0;
-        v0decay = 0;
-        hvcburstlen = 3;
-        kernelstd = 1/8;
-        wLstd = 1;
-        pinhib = 1; % Probability of one MSN inhibting another
-        latinhib = 1;
+        LTPrate     = 1;% learning rate for Long-Term Potentiation
+        LTDrate     = 1;% learning rate for Long-Term Depression
+        rperate     = 0.2;  % learning rate for predicted reward
+        msnthresh   = 1; % tonic inhibition on msn output
+        winit       = 1; % initial hvc weights
+        lmanoffset  = 1;
+        lmanstd     = 1;
+        hvcburstlen = 1; % width of HVC burst
+        kernelstd   = 0; % standard deviation of Gaussian kernel that blurs reward and eligibility traces
+        wLstd       = 1;
+        pinhib      = 1; % Probability of one MSN inhibting another
+        latinhib    = 1; % Strength of lateral inhibition
+        v0offset    = 0;
+        v0decay     = 0;
+        
         MICHALE_IS_WATCHING = false;
         
         % Model output
@@ -45,30 +46,43 @@ classdef SparseNet < handle
         end
         
         function init(obj)
-            obj.hvcout = zeros(obj.nhvc);
-            assert(mod(obj.hvcburstlen, 2) == 1)
-            assert(obj.hvcburstlen >= 3)
-            tburst = (1:obj.hvcburstlen)-(obj.hvcburstlen+1)/2 + 1;
-            mask = tburst > 0 & tburst <= obj.nhvc;
-            t = linspace(0, pi, obj.hvcburstlen);
-            hvcburst = sin(t).^2;
+            
+            % Initialize empty matrices
+            obj.hvcout  = zeros(obj.nhvc);
+            obj.msnout  = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            obj.lmanout =   nan(obj.nhvc, obj.niter);
+            obj.v0      = zeros(obj.nmsn, obj.niter);
+            obj.rexp    = zeros(obj.nhvc, obj.niter);
+            obj.wH      = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            
+            % Check to make sure HVC burst width parameter is odd 
+            if mod(obj.hvcburstlen, 2) == 0
+                obj.hvcburstlen = obj.hvcburstlen + 1;
+                warning('SparseNet:badParameter', 'HVC burst length set to %g because it must be odd.', obj.hvcburstlen)
+            end
+            
+            % HVC burst is one period of sine squared, scaled so that its
+            % area is unity.
+            BL = obj.hvcburstlen + 2; % add 2 to burst length because the first and last points of the burst will be zero
+            t = linspace(0, pi, BL);
+            hvcburst = sin(t).^2; 
             hvcburst = hvcburst ./ sum(hvcburst);
+            
+            tburst = (1:BL)-(BL+1)/2 + 1; % first burst is centered on t=1            
             for ihvc = 1:obj.nhvc
+                mask = tburst > 0 & tburst <= obj.nhvc; % chop off parts of the burst that extend outside the song
                 obj.hvcout(ihvc,tburst(mask)) = hvcburst(mask);
                 tburst = tburst + 1;
-                mask = tburst > 0 & tburst <= obj.nhvc;
             end
-            obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
-            obj.lmanout = zeros(obj.nhvc, obj.niter);
-            obj.v0 = zeros(obj.nmsn, obj.niter);
-            obj.wH = nan(obj.nmsn, obj.nhvc, obj.niter);
+            
+            % HVC-MSN weights
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
             
             % LMAN weights are normally distributed around 1 with a
             % standard deviation given by obj.wLstd
             obj.wL = randn(obj.nmsn, 1) * obj.wLstd + 1;
             
-            obj.rexp = zeros(obj.nhvc, obj.niter);
+            % Expected reward is error between bias and template
             obj.rexp(:,1) = -abs(obj.template-obj.lmanoffset);
             
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
@@ -78,7 +92,9 @@ classdef SparseNet < handle
             wii1 = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
             wii2 = wii1 & ~eye(obj.nmsn); % make sure no MSN inhibits itself
             obj.wI = obj.latinhib * wii2; % scale based on inhibition strength parameter
-            x = linspace(-4,4,8*obj.kernelstd);
+            
+            % Kernel for dopamine and eligibility traces
+            x = linspace(-4,4,8*obj.kernelstd + 1);
             k = normpdf(x)'; % Gaussian, column vector
             obj.kernel = k./sum(k);
             
@@ -89,12 +105,12 @@ classdef SparseNet < handle
         
         function simulate(obj)
             for iter = 1:obj.niter
-%                 disp(iter) %FIXME
                 obj.ffstep(iter);
                 if iter < obj.niter
                     obj.wupdate(iter);
                     obj.rexpupdate(iter);
                 end
+                
                 if obj.MICHALE_IS_WATCHING && mod(iter,10) == 0
                     subplot(2,3,[1 4])
                     obj.imagemsnout(iter)
@@ -107,7 +123,6 @@ classdef SparseNet < handle
                     obj.plotvdw(50,iter)
                     drawnow
                 end
-                
             end
         end
         

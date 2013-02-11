@@ -6,37 +6,42 @@ sn = SparseNet();
 
 sn.MICHALE_IS_WATCHING = true;
 
-sn.nhvc = 100;
-sn.nmsn = 300;
+sn.nhvc  =  100;
+sn.nmsn  =  300;
 sn.niter = 3000;
 
-sn.hvcburstlen = 13; % set to 3 for hvc bursts to be impulses
-sn.kernelstd = .125;%8; % set to 1/8 for instantaneous rewards
+sn.hvcburstlen = 11; % Width of HVC burst
+sn.kernelstd   =  0; % Standard deviation of Gaussian dopamine kernel
 
-% Choose maximum template value = 1.
-maxtemplate = 1;
+maxtemplate   = 1;   % maximum template value (this is arbitrary)
+sn.wLstd      = 0.1; % standard deviation of LMAN weights
 
-% template = [zeros(1,ceil(sn.hvcburstlen/2)), template, zeros(1,floor(sn.hvcburstlen/2))];
+% Derived parameters
+sn.lmanstd    = 0.05 * maxtemplate; % Standard deviation of LMAN noise
+sn.lmanoffset = 2    * sn.lmanstd;  % Mean of LMAN noise
+sn.winit      = 0.1  * sn.lmanstd;  % Maximum initial HVC-MSN weight
+sn.msnthresh  = 1    * sn.winit;    % Threshold for MSN output
+sn.v0offset   = 3    * sn.lmanstd;  % v0 will always be this 
 
-% Choose LMAN fluctuations to have standard deviation = 1/4 of template
-sn.lmanstd    = 0.05 * maxtemplate;
-sn.lmanoffset = 2    * sn.lmanstd;
-sn.winit      = 0.1  * sn.lmanstd;
-sn.msnthresh  = 1    * sn.winit; % MSN threshold
-sn.wLstd      = 0.1; %standard deviation of LMAN weights
+sn.v0decay    = 1e-1; % FIXME how does this scale?
 
-sn.v0offset   = 3    * sn.lmanstd;
-sn.v0decay    = 1e-1;
+sn.latinhib = 0.0005; % FIXME how does this scale?
+sn.LTPrate  = 0.05;   % FIXME how does this scale?
+sn.LTDrate  = 2e-6;   % FIXME how does this scale?
+sn.pinhib   = 0.75;   % FIXME how does this scale?
 
-sn.latinhib = 0.0005;
-sn.LTPrate  = 0.05;
-sn.LTDrate  = 2e-6;
-sn.pinhib   = 0.75;
+% Square template
+% sn.template = [zeros(1,20), (ones(1,60)-sn.lmanoffset), zeros(1,20)] + sn.lmanoffset;
 
-template = [zeros(1,20), (ones(1,60)-sn.lmanoffset), zeros(1,20)] + sn.lmanoffset;
-sn.template = template;
+% Cosine template
+a = (maxtemplate - sn.lmanoffset)/2;
+b = sn.lmanoffset + a;
+t = linspace(0,4*pi,sn.nhvc);
+sn.template = -a*cos(t) + b;
 
 sn.init()
+% plot(sn.hvcout(50,:))
+% return
 sn.simulate()
 
 y = [repmat([-1, -1, -1, 1 1 1], 1, 400) repmat([-1, -1, 1 1], 1, 200), repmat([-1, 1], 1, 200)];
