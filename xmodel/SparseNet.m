@@ -191,7 +191,7 @@ classdef SparseNet < handle
                 dw(i,:) = obj.LTP(i, iter) + obj.LTD(i,iter);
             end
             
-            obj.wH(:,:,iter+1) = obj.wH(:,:,iter) + dw; % weights must be nonnegative
+            obj.wH(:,:,iter+1) = max(0,obj.wH(:,:,iter) + dw); % weights must be nonnegative
         end
         
         function dw = LTP(obj, imsn, iter)
