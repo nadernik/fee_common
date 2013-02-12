@@ -4,8 +4,8 @@ classdef SparseNet < handle
     
     properties
         % Size of the simulation
-        nhvc = 100; % number of hvc units
-        nmsn = 200; % number of msn units
+        nhvc  =  100; % number of hvc units
+        nmsn  =  200; % number of msn units
         niter = 1000;
         
         % Tweakable parameters
@@ -86,7 +86,7 @@ classdef SparseNet < handle
             obj.rexp(:,1) = -abs(obj.template-obj.lmanoffset);
             
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
-            obj.noise = z./std(z(:))*obj.lmanstd+obj.lmanoffset;
+            obj.noise = z./std(z(:))*obj.lmanstd;
             
             % Lateral inhibition weights
             wii1 = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
@@ -156,8 +156,10 @@ classdef SparseNet < handle
             msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, msnin);
-            obj.lmanout(:,iter) = max(0, sum(obj.msnout(:,:,iter), 1)' + ...
-                obj.noise(:,iter));
+            
+            bias = sum(obj.msnout(:,:,iter), 1)';
+            lmanin = obj.lmanoffset + obj.noise(:,iter) + bias;
+            obj.lmanout(:,iter) = max(0, lmanin);
         end
         
         function v = vpost(obj, imsn, iter)
