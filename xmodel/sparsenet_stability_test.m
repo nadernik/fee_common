@@ -19,8 +19,6 @@ sn.lmanstd     = old.sn.lmanstd;
 sn.lmanoffset  = old.sn.lmanoffset;
 sn.winit       = old.sn.winit;
 sn.wLstd       = old.sn.wLstd;
-sn.v0offset    = old.sn.v0offset;
-sn.v0decay     = old.sn.v0decay;
 sn.template    = old.sn.template;
 
 % Set some parameters differently
@@ -38,15 +36,6 @@ sn.init()
 sn.wH(:,:,1) = old.sn.wH(:,:,end);
 sn.rexp(:,1) = -abs(sn.bias(1) - sn.template);
 sn.wL = old.sn.wL;
-
-H = sn.wH(:,:,1) * sn.hvcout; % [msn] x [time]
-M = max(0, H - sn.msnthresh);
-B = ones(sn.nmsn,1)*sum(M,1);
-L = sn.wL*ones(1,sn.nhvc) .* (sn.lmanoffset*ones(sn.nmsn,sn.nhvc) + B);
-I = sn.wI * M;
-vp = L + H - I;
-v0 = max(vp, [], 2);
-sn.v0(:,1) = v0;
 
 % 
 sn.simulate()

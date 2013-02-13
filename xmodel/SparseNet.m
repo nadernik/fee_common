@@ -21,8 +21,6 @@ classdef SparseNet < handle
         wLstd       = 1;
         pinhib      = 1; % Probability of one MSN inhibting another
         latinhib    = 1; % Strength of lateral inhibition
-        v0offset    = 0;
-        v0decay     = 0;
         
         MICHALE_IS_WATCHING = false;
         
@@ -30,7 +28,6 @@ classdef SparseNet < handle
         wH
         wL
         wI
-        v0
         hvcout
         msnout
         lmanout
@@ -51,7 +48,6 @@ classdef SparseNet < handle
             obj.hvcout  = zeros(obj.nhvc);
             obj.msnout  = zeros(obj.nmsn, obj.nhvc, obj.niter);
             obj.lmanout =   nan(obj.nhvc, obj.niter);
-            obj.v0      = zeros(obj.nmsn, obj.niter);
             obj.rexp    = zeros(obj.nhvc, obj.niter);
             obj.wH      = zeros(obj.nmsn, obj.nhvc, obj.niter);
             
@@ -131,7 +127,6 @@ classdef SparseNet < handle
             % the state at the specified iteration.
             
             % Save the state of the model on trial 'iter'
-            saved.v0   = obj.v0(:,iter);
             saved.wH   = obj.wH(:,:,iter);
             saved.rexp = obj.rexp(:,iter);
             
@@ -143,7 +138,6 @@ classdef SparseNet < handle
             obj.init()
             
             % Set initial state to the saved state
-            obj.v0(:,1)   = saved.v0;
             obj.wH(:,:,1) = saved.wH;
             obj.rexp(:,1) = saved.rexp;
             obj.wL        = saved.wL;
@@ -166,27 +160,15 @@ classdef SparseNet < handle
             % v = vpost(obj, imsn, iter)
             %
             % Post-synaptic depolarization used in learning rule (see LTP).
-            % The learning rule is roughly (Vpost - V0) * HVC * RPE.
+            % The learning rule is roughly Vpost * HVC * RPE.
             L = obj.wL(imsn) * obj.noise(:,iter)';
             H = obj.wH(imsn,:,iter) * obj.hvcout;
             I = obj.inhib(imsn,iter);
             v = L + H - I;
         end
         
-        function v0update(obj, iter)
-%             for imsn = 1:obj.nmsn
-%                 vp = obj.vpost(imsn, iter);
-%                 if max(vp) > (obj.v0(imsn,iter) + obj.v0offset)
-%                     obj.v0(imsn, iter+1) = max(vp) - obj.v0offset;
-%                 else
-%                     obj.v0(imsn, iter+1) = obj.v0(imsn, iter) * (1-obj.v0decay);
-%                 end
-%             end
-        end
-        
         function wupdate(obj, iter)
             dw = zeros(obj.nmsn, obj.nhvc);
-            obj.v0update(iter);
             for i = 1:obj.nmsn
                 dw(i,:) = obj.LTP(i, iter) + obj.LTD(i,iter);
             end
@@ -199,7 +181,7 @@ classdef SparseNet < handle
             % inputs that are also active are eligibile to be
             % strengthened. Eligible synapses are strengthened if a
             % reward is given.
-            vp = max(0, obj.vpost(imsn,iter) - obj.v0(imsn,iter));
+            vp = max(0, obj.vpost(imsn,iter));
             L = ones(obj.nhvc,1) * vp;
             H = obj.hvcout';
             e = L .* H;
@@ -324,7 +306,7 @@ classdef SparseNet < handle
         end
         
         function plotvdw(obj, imsn, iter)
-            v = obj.vpost(imsn,iter) - obj.v0(imsn,iter);
+            v = obj.vpost(imsn,iter);
             p = obj.LTP(imsn, iter);
             d = obj.LTD(imsn, iter);
             plot(v/max(abs(v)), 'k', 'LineWidth', 2)
@@ -333,7 +315,7 @@ classdef SparseNet < handle
             plot(d/max(abs(p)), 'r', 'LineWidth', 2)
             hold off
             title(sprintf('MSN %g on trial %g', imsn, iter))
-            legend({'V_p_o_s_t - V_0', 'LTP', 'LTD'})
+            legend({'V_p_o_s_t', 'LTP', 'LTD'})
         end
             
     end

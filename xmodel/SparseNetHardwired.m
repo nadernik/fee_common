@@ -66,12 +66,8 @@ classdef SparseNetHardwired < SparseNet
             % v = vpost(obj, imsn, iter)
             %
             % Post-synaptic depolarization used in learning rule (see LTP).
-            % The learning rule is roughly (Vpost - V0) * HVC * RPE.
+            % The learning rule is roughly Vpost * HVC * RPE.
             v = obj.wL(imsn) * obj.lmanout(:,iter)';
-        end
-        
-        function v0update(obj, iter)
-            % Intentionally left blank
         end
                 
     end

@@ -11,7 +11,7 @@ sn.nmsn  =  300;
 sn.niter = 3000;
 
 sn.hvcburstlen = 11; % Width of HVC burst
-sn.kernelstd   =  0; % Standard deviation of Gaussian dopamine kernel
+sn.kernelstd   = 12; % Standard deviation of Gaussian dopamine kernel
 
 maxtemplate   = 1;   % maximum template value (this is arbitrary)
 sn.wLstd      = 0.1; % standard deviation of LMAN weights
@@ -21,9 +21,6 @@ sn.lmanstd    = 0.05 * maxtemplate; % Standard deviation of LMAN noise
 sn.lmanoffset = 2    * sn.lmanstd;  % Mean of LMAN noise
 sn.winit      = 0.1  * sn.lmanstd;  % Maximum initial HVC-MSN weight
 sn.msnthresh  = 1    * sn.winit;    % Threshold for MSN output
-sn.v0offset   = 3    * sn.lmanstd;  % v0 will always be this 
-
-sn.v0decay    = 1e-1; % FIXME how does this scale?
 
 sn.latinhib = 0.0005; % FIXME how does this scale?
 sn.LTPrate  = 0.05;   % FIXME how does this scale?

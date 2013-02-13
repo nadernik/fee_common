@@ -41,7 +41,7 @@ xlabel('Trial')
 
 %% LTP in a single MSN over all synapses and motifs
 % imsn [scalar]
-plot_every = false;
+% plot_every [boolean scalar]
 ltp = zeros(sn.nhvc, sn.niter);
 ltd = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
@@ -83,7 +83,7 @@ for i = 1:length(iters)
     ltp(i) = temp(ihvc);
     temp = sn.LTD(imsn, iters(i));
     ltd(i) = temp(ihvc);
-    temp = sn.vpost(imsn, iters(i)) - sn.v0(imsn, iters(i));
+    temp = sn.vpost(imsn, iters(i));
     vp(i) = temp(ihvc);
     temp = sn.rpe(iters(i));
     rpe(i) = temp(ihvc);
@@ -122,7 +122,7 @@ plot(vp)
 hold on
 plot(xlim, [0 0])
 hold off
-ylabel('V_p_o_s_t - V_0')
+ylabel('V_p_o_s_t')
 
 axh(6) = subplot(6,1,6);
 plot(rpe)
@@ -142,7 +142,8 @@ p2 = zeros(sn.nmsn, length(iters));
 d1 = zeros(sn.nmsn, length(iters));
 d2 =zeros(sn.nmsn, length(iters));
 for ii = 1:length(iters)
-    iter = iters(ii)
+    iter = iters(ii);
+    fprintf('Trial %g\n', iter)
     for imsn = 1:sn.nmsn
         temp = sn.LTP(imsn, iter);
         p1(imsn,ii) = temp(ihvc1);
@@ -218,8 +219,8 @@ for imsn = 1:sn.nmsn
 end
 
 %% MSN output on a single motif
-dosort = true;
-iter = sn.niter;
+% do_sort [boolean scalar]
+% iter [scalar]
 assert(isscalar(iter))
 if dosort
     tmax = nan(sn.nmsn, 1);
@@ -338,11 +339,6 @@ plot(sn.vpost(imsn, sn.niter))
 xlabel('Time')
 ylabel('V_p_o_s_t')
 title(sprintf('MSN %g on first iteration', imsn))
-
-%% Weights for a single MSN for all synapses over time
-% iters [vector]
-imagesc(squeeze(sn.wH(imsn,:,iters))')
-title(
 
 %% Weights from a single HVC neuron over trials
 iters = 1:sn.niter;
@@ -473,6 +469,7 @@ ylabel('Reward Prediction Error')
 title(sprintf('Time %g', ihvc))
 
 %% Reward and expected reward at a single time across trials
+r = zeros(sn.niter,1);
 for iter = 1:sn.niter
     temp = sn.reward(iter);
     r(iter) = temp(ihvc);
@@ -594,14 +591,14 @@ end
 cm = colormap;
 ic = floor(interp1([0, max(nactivemsn)], [1, size(cm,1)], 0:max(nactivemsn)));
 hold on
-legendh=[];
-legendstr={};
+legendh=zeros(max(nactivemsn), 1);
+legendstr=cell(max(nactivemsn), 1);
 for n = 1:max(nactivemsn)
     t = nactivemsn == n;
     if sum(t)>0
         h = plot(err(t,:)', 'Color', cm(ic(n+1),:));
-        legendh(end+1) = h(1);
-        legendstr{end+1} = int2str(n);
+        legendh(n) = h(1);
+        legendstr{n} = int2str(n);
     end
 end
 legend(legendh, legendstr)
@@ -626,37 +623,15 @@ end
 legend(filenames)
 hold off
 
-%% V0 for a single MSN across all times and trials
-for iter = 400:sn.niter
-    plot(sn.vpost(imsn,iter), 'k', 'LineWidth', 2)
-    hold on
-    plot(ones(sn.nhvc,1) * sn.v0(imsn,iter), 'r', 'LineWidth', 2)
-    hold off
-    ylabel('V')
-    xlabel('Time')
-    
-    title(sprintf('MSN %g on trial %g\n[Enter] for next...', imsn, iter))
-    legend({'Vpost', 'V_0'}, 'Location', 'NorthWest')
-    ylim([0 3])
-    pause
-end
-
-%% V_0 for a single MSN across trials
-clf
-plot(squeeze(sn.v0(imsn,:)))
-xlabel('Trial')
-ylabel('V_0')
-title(sprintf('MSN %g', imsn))
-
-%% (Vpost - V_0) on each iter
+%% Vpost on each iter
 iters = 1:sn.niter;
 for i = 1:50:length(iters)
     v = zeros(sn.nmsn, sn.nhvc);
     for imsn = 1:sn.nmsn
-        v(imsn,:) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
+        v(imsn,:) = sn.vpost(imsn,iters(i));
     end
     plot(v(1,:))
-    title(sprintf('(Vpost - V_0) for trial %g', iters(i)))
+    title(sprintf('Vpost for trial %g', iters(i)))
     xlabel('Time')
     ylabel('V')
     ylim([-0.3, 0.3])
@@ -664,19 +639,19 @@ for i = 1:50:length(iters)
     
 end
 
-%% (Vpost - V_0) vs lman noise
+%% Vpost vs lman noise
 clf
 v = zeros(size(sn.lmanout));
 for iter = 1:sn.niter
-    v(:,iter) = sn.vpost(imsn,iter) - sn.v0(imsn,iter);
+    v(:,iter) = sn.vpost(imsn,iter);
 end
 % scatter(sn.noise(:), v(:))
 scatter(sn.noise(ihvc,:), v(ihvc,:))
 xlabel('Noise')
-ylabel('V_p_o_s_t - V_0')
+ylabel('V_p_o_s_t')
 title(sprintf('MSN %g, LMAN weight %g', imsn, sn.wL(imsn)))
 
-%% (Vpost - V_0) vs RPE
+%% Vpost vs RPE
 % Only use with instantaneous reward
 % Paramters
 %   t     = vector
@@ -687,7 +662,7 @@ v = zeros(length(t),length(iters));
 d = zeros(length(t),length(iters));
 legendstr = cell(1,length(t));
 for i = 1:length(iters)
-    temp = sn.vpost(imsn, iters(i)) - sn.v0(iters(i));
+    temp = sn.vpost(imsn, iters(i));
     v(:,i) = temp(t);
     temp = sn.rpe(iters(i));
     d(:,i) = temp(t);
@@ -698,10 +673,10 @@ for k = 1:length(t)
         hold all
     end
     legendstr{k} = sprintf('Time %g', t(k));
-    fprintf('Correlation of (Vpost-V0) with RPE at time %g = %g\n', t(k), corr(v(k,:)', d(k,:)'))
+    fprintf('Correlation of Vpost with RPE at time %g = %g\n', t(k), corr(v(k,:)', d(k,:)'))
 end
 legend(legendstr)
-xlabel('V_p_o_s_t - V_0')
+xlabel('V_p_o_s_t')
 ylabel('RPE')
 title(sprintf('MSN %g', imsn))
 hold off
@@ -787,10 +762,10 @@ for k = 1:length(t)
     end
 end
 
-%% (Vpost - V_0) and change in weight
+%% Vpost and change in weight
 clf
 for i = 1:length(iters)
-    v = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
+    v = sn.vpost(imsn,iters(i));
     p = sn.LTP(imsn, iters(i));
     d = sn.LTD(imsn, iters(i));
     plot(v/max(abs(v)), 'k', 'LineWidth', 2)
@@ -799,7 +774,7 @@ for i = 1:length(iters)
     plot(d/max(abs(p)), 'r', 'LineWidth', 2)
     hold off
     title(sprintf('MSN %g on trial %g', imsn, iters(i)))
-    legend({'V_p_o_s_t - V_0', 'LTP', 'LTD'})
+    legend({'V_p_o_s_t', 'LTP', 'LTD'})
     ylim([-1.5, 1.5])
     pause
 end
@@ -830,7 +805,7 @@ for iter = sn.niter
     %pause
 end
 
-%% Histogram of vpost for a single neuron
+%% Histogram of Vpost for a single neuron
 % iters [vector]
 % t [vector]
 % imsn [scalar]
@@ -839,7 +814,7 @@ for imsn = 1:sn.nmsn
 vp = zeros(length(iters), length(t));
 r = zeros(length(iters), length(t));
 for i = 1:length(iters)
-    vtemp = sn.vpost(imsn, iters(i)) - sn.v0(imsn,iters(i));
+    vtemp = sn.vpost(imsn, iters(i));
     rtemp = sn.rpe(iters(i));
     vp(i,:) = vtemp(t);
     r(i,:) = rtemp(t);    
@@ -996,10 +971,12 @@ for i = 1:length(iters)
     pause
 end
 
-%% 
+%% All Vpost for one MSN
+% iters [vector]
+% imsn [scalar]
 vp = zeros(sn.nhvc, length(iters));
 for i = 1:length(iters)
-    vp(:,i) = sn.vpost(imsn,iters(i)) - sn.v0(imsn,iters(i));
+    vp(:,i) = sn.vpost(imsn,iters(i));
 end
 
 %% Calibrate LTD for fixed values
@@ -1022,7 +999,7 @@ fprintf('New value for inhibtion/timestep is %g\n', mean(inhib)/mean(nactive))
 %% All LTP
 ltp = zeros(sn.nmsn, sn.nhvc, sn.niter);
 for iter = 1:sn.niter
-    iter
+    fprintf('Trial %g\n', iter)
     for imsn = 1:sn.nmsn
         ltp(imsn,:,iter) = sn.LTP(imsn, iter);
     end
@@ -1031,6 +1008,6 @@ end
 %% All bias
 bias = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
-    iter
+    fprintf('Trial %g\n', iter)
     bias(:,iter) = sn.bias(iter);
 end

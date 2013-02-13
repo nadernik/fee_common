@@ -21,9 +21,6 @@ sn.lmanoffset = 2    * sn.lmanstd;
 sn.winit      = 1    * sn.lmanstd;
 sn.msnthresh  = 1    * sn.winit; % MSN threshold
 sn.wLstd      = 0; %standard deviation of LMAN weights
-
-sn.v0offset   = 3    * sn.lmanstd;
-sn.v0decay    = 1e-1;
 sn.latinhib   = 0;
 
 sn.LTPrate = 4e-2;
