@@ -995,19 +995,3 @@ fprintf('On average, each MSN is active on %g timesteps and LTD is %g\n', mean(t
 fprintf('New value for LTD/timestep is %g\n', mean(ltd)/mean(tactive))
 fprintf('On average, there are %g MSNs active on each timestep and inhibition is %g\n', mean(nactive), mean(inhib))
 fprintf('New value for inhibtion/timestep is %g\n', mean(inhib)/mean(nactive))
-
-%% All LTP
-ltp = zeros(sn.nmsn, sn.nhvc, sn.niter);
-for iter = 1:sn.niter
-    fprintf('Trial %g\n', iter)
-    for imsn = 1:sn.nmsn
-        ltp(imsn,:,iter) = sn.LTP(imsn, iter);
-    end
-end
-
-%% All bias
-bias = zeros(sn.nhvc, sn.niter);
-for iter = 1:sn.niter
-    fprintf('Trial %g\n', iter)
-    bias(:,iter) = sn.bias(iter);
-end

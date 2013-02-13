@@ -90,11 +90,12 @@ classdef SparseNet < handle
             
             
             r = -abs(obj.lmanoffset - obj.template');
-            sn.rexp(:,1) = conv(r, obj.kernel);
+            obj.rexp(:,1) = conv(r, obj.kernel);
         end
         
         function simulate(obj)
             for iter = 1:obj.niter
+                disp(iter)
                 obj.ffstep(iter);
                 if iter < obj.niter
                     obj.wupdate(iter);
@@ -308,7 +309,42 @@ classdef SparseNet < handle
             title(sprintf('MSN %g on trial %g', imsn, iter))
             legend({'V_p_o_s_t', 'LTP', 'LTD'})
         end
+        
+        function ltp = allltp(obj)
+            ltp = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            for iter = 1:obj.niter
+                for imsn = 1:obj.nmsn
+                    ltp(imsn,:,iter) = obj.LTP(imsn, iter);
+                end
+            end
+        end
+        
+        function ltd = allltd(obj)
+            ltd = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            for iter = 1:obj.niter
+                for imsn = 1:obj.nmsn
+                    ltd(imsn,:,iter) = obj.LTD(imsn, iter);
+                end
+            end
+        end
+        
+        function bias = allbias(obj)
+            bias = zeros(obj.nhvc, obj.niter);
+            for iter = 1:obj.niter
+                fprintf('Trial %g\n', iter)
+                bias(:,iter) = obj.bias(iter);
+            end
+        end
+        
+        function vp = allvpost(obj)
+            T = obj.nhvc + length(obj.kernel) - 1;
+            vp = zeros(obj.nmsn, T, obj.niter);
+            for iter = 1:obj.niter
+                for imsn = 1:obj.nmsn
+                    vp(imsn, :, iter) = obj.vpost(imsn, iter);
+                end
+            end
+        end
             
-    end
-    
-end
+    end % methods
+end % classdef
