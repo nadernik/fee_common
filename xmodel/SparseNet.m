@@ -18,7 +18,6 @@ classdef SparseNet < handle
         lmanstd     = 1;
         hvcburstlen = 1; % width of HVC burst
         kernelstd   = 0; % standard deviation of Gaussian kernel that blurs reward and eligibility traces
-        wLstd       = 1;
         pinhib      = 1; % Probability of one MSN inhibting another
         latinhib    = 1; % Strength of lateral inhibition
         
@@ -26,7 +25,6 @@ classdef SparseNet < handle
         
         % Model output
         wH
-        wL
         wI
         hvcout
         msnout
@@ -73,10 +71,6 @@ classdef SparseNet < handle
             
             % HVC-MSN weights
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
-            
-            % LMAN weights are normally distributed around 1 with a
-            % standard deviation given by obj.wLstd
-            obj.wL = randn(obj.nmsn, 1) * obj.wLstd + 1;
             
             % Expected reward is error between bias and template
             obj.rexp(:,1) = -abs(obj.template-obj.lmanoffset);
@@ -131,7 +125,6 @@ classdef SparseNet < handle
             saved.rexp = obj.rexp(:,iter);
             
             % Save the randomly generated things
-            saved.wL   = obj.wL;
             saved.wI   = obj.wI;
             
             % Re-initialize
@@ -140,7 +133,6 @@ classdef SparseNet < handle
             % Set initial state to the saved state
             obj.wH(:,:,1) = saved.wH;
             obj.rexp(:,1) = saved.rexp;
-            obj.wL        = saved.wL;
             obj.wI        = saved.wI;
         end
             
@@ -161,7 +153,7 @@ classdef SparseNet < handle
             %
             % Post-synaptic depolarization used in learning rule (see LTP).
             % The learning rule is roughly Vpost * HVC * RPE.
-            L = obj.wL(imsn) * obj.noise(:,iter)';
+            L = obj.noise(:,iter)';
             H = obj.wH(imsn,:,iter) * obj.hvcout;
             I = obj.inhib(imsn,iter);
             v = L + H - I;
@@ -287,10 +279,7 @@ classdef SparseNet < handle
                 drawnow
             end
         end
-        
-        
-            
-        
+
         function plotmse(obj)
             % Plot the mean squared error between the bias and template,
             % across trials.
@@ -306,6 +295,8 @@ classdef SparseNet < handle
         end
         
         function plotvdw(obj, imsn, iter)
+            %PLOTVDW Plots Vpost, LTP and LTD for one MSN on one trial
+            %Usage: plotvdw(obj, imsn, iter) 
             v = obj.vpost(imsn,iter);
             p = obj.LTP(imsn, iter);
             d = obj.LTD(imsn, iter);

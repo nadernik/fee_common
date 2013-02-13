@@ -14,7 +14,6 @@ sn.hvcburstlen = 11; % Width of HVC burst
 sn.kernelstd   = 12; % Standard deviation of Gaussian dopamine kernel
 
 maxtemplate   = 1;   % maximum template value (this is arbitrary)
-sn.wLstd      = 0.1; % standard deviation of LMAN weights
 
 % Derived parameters
 sn.lmanstd    = 0.05 * maxtemplate; % Standard deviation of LMAN noise
@@ -37,8 +36,7 @@ t = linspace(0,4*pi,sn.nhvc);
 sn.template = -a*cos(t) + b;
 
 sn.init()
-% plot(sn.hvcout(50,:))
-% return
+keyboard
 sn.simulate()
 
 y = [repmat([-1, -1, -1, 1 1 1], 1, 400) repmat([-1, -1, 1 1], 1, 200), repmat([-1, 1], 1, 200)];

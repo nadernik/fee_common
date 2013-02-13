@@ -649,7 +649,7 @@ end
 scatter(sn.noise(ihvc,:), v(ihvc,:))
 xlabel('Noise')
 ylabel('V_p_o_s_t')
-title(sprintf('MSN %g, LMAN weight %g', imsn, sn.wL(imsn)))
+title(sprintf('MSN %g', imsn))
 
 %% Vpost vs RPE
 % Only use with instantaneous reward

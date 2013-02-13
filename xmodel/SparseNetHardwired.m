@@ -9,7 +9,6 @@ classdef SparseNetHardwired < SparseNet
             obj.latinhib  = 0;
             obj.msnthresh = 0;
             obj.LTDrate   = 0;
-            obj.wLstd     = 0;
         end
             
         function init(obj)
@@ -26,10 +25,6 @@ classdef SparseNetHardwired < SparseNet
 %                 warning(msgid, 'MSN threshold set to zero.')
 %                 obj.msnthresh = 0;
 %             end
-            if obj.wLstd  ~= 0
-                warning(msgid, 'LMAN weight variance set to zero.')
-                obj.wLstd = 0;
-            end
             if obj.nmsn ~= obj.nhvc
                 warning(msgid, 'Number of MSNs set to equal number of HVC units')
             	obj.nmsn = obj.nhvc;
@@ -67,7 +62,7 @@ classdef SparseNetHardwired < SparseNet
             %
             % Post-synaptic depolarization used in learning rule (see LTP).
             % The learning rule is roughly Vpost * HVC * RPE.
-            v = obj.wL(imsn) * obj.lmanout(:,iter)';
+            v = obj.lmanout(:,iter)';
         end
                 
     end

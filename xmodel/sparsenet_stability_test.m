@@ -18,7 +18,6 @@ sn.kernelstd   = old.sn.kernelstd;
 sn.lmanstd     = old.sn.lmanstd;
 sn.lmanoffset  = old.sn.lmanoffset;
 sn.winit       = old.sn.winit;
-sn.wLstd       = old.sn.wLstd;
 sn.template    = old.sn.template;
 
 % Set some parameters differently
@@ -35,7 +34,6 @@ sn.init()
 % w(w>0) = w(w>0) + sn.msnthresh;
 sn.wH(:,:,1) = old.sn.wH(:,:,end);
 sn.rexp(:,1) = -abs(sn.bias(1) - sn.template);
-sn.wL = old.sn.wL;
 
 % 
 sn.simulate()
