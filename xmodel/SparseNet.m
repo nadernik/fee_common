@@ -88,9 +88,7 @@ classdef SparseNet < handle
             k = normpdf(x)'; % Gaussian, column vector
             obj.kernel = k./sum(k);
             
-            
-            r = -abs(obj.lmanoffset - obj.template');
-            obj.rexp(:,1) = conv(r, obj.kernel);
+            obj.rexp(:,1) = -abs(obj.lmanoffset - obj.template');
         end
         
         function simulate(obj)
@@ -345,6 +343,48 @@ classdef SparseNet < handle
                 end
             end
         end
+        
+        function save(obj, filename)
+            % Saves object to a file and attempts to use less disk space by
+            % emptying the properties that can be derived again later.
+            % Use obj.load(filename) to load from file and recalculate the
+            % empty properties
             
+            % Copy values that will be emptied
+            temp.msnout  = obj.msnout; 
+            temp.lmanout = obj.lmanout;
+            
+            % Empty the values
+            obj.msnout  = [];
+            obj.lmanout = [];
+            
+            % Save object with the empty values
+            save(filename, 'obj')
+            
+            % Put the emptied values back so we can continue using the
+            % object like normal.
+            obj.msnout  = temp.msnout;
+            obj.lmanout = temp.lmanout;
+        end
+        
+        function load(obj, filename)
+            % Loads an object from a save file created by obj.save(). All
+            % properties in obj will be replaced with the values in the
+            % loaded file. MSN output and LMAN output are recalculated
+            % based on other stored values.
+            
+            % Fill in loaded values
+            temp = load(filename, 'obj');
+            fn = fieldnames(temp.obj);
+            for i = 1:length(fn)
+                fname = fn{i};
+                obj.(fname) = temp.obj.(fname);
+            end
+            
+            % Recalculate MSN and LMAN output
+            for iter = 1:obj.niter
+                obj.ffstep(iter)
+            end
+        end 
     end % methods
 end % classdef

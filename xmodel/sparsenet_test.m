@@ -26,17 +26,12 @@ sn.LTPrate  = 0.05;   % FIXME how does this scale?
 sn.LTDrate  = 2e-6;   % FIXME how does this scale?
 sn.pinhib   = 0.75;   % FIXME how does this scale?
 
-% Square template
-% sn.template = [zeros(1,20), (ones(1,60)-sn.lmanoffset), zeros(1,20)] + sn.lmanoffset;
-
-% Cosine template
 a = (maxtemplate - sn.lmanoffset)/2;
 b = sn.lmanoffset + a;
-t = linspace(0,4*pi,sn.nhvc);
-sn.template = -a*cos(t) + b;
+t = linspace(0,2*pi,sn.nhvc);
+sn.template = a*sin(t) + b;
 
 sn.init()
-keyboard
 sn.simulate()
 
 y = [repmat([-1, -1, -1, 1 1 1], 1, 400) repmat([-1, -1, 1 1], 1, 200), repmat([-1, 1], 1, 200)];
