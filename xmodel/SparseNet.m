@@ -68,6 +68,9 @@ classdef SparseNet < handle
                 obj.hvcout(ihvc,tburst(mask)) = hvcburst(mask);
                 tburst = tburst + 1;
             end
+            sumh = ones(obj.nhvc, 1) * sum(obj.hvcout,1);
+            obj.hvcout = obj.hvcout ./ sumh;
+                        
             
             % HVC-MSN weights
             obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
