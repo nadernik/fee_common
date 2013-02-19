@@ -43,6 +43,9 @@ pull, merge and push again)
 
 -To pull others' changes from the server: hg pull
 
+-To update your version: hg update
+(you may get an error that this creates multiple heads.  In this case, merge instead.  DO NOT force (-f))
+
 -To merge your version with the server's version (after you pull): hg
  merge
 
@@ -54,7 +57,8 @@ hg commit -m "message explaining what you
  changed"
 --Check if anyone else made changes--
 hg pull
---Merge if they did--
+--Merge if they did, update if they didn't--
+hg update
 hg merge
 --Push your changes to the server-- 
 hg push
