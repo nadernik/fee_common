@@ -14,8 +14,8 @@ classdef SparseNet < handle
         rperate     = 0.2;  % learning rate for predicted reward
         msnthresh   = 1; % tonic inhibition on msn output
         winit       = 1; % initial hvc weights
-        lmanoffset  = 1;
-        lmanstd     = 1;
+        lmanoffset  = 1; % mean of LMAN fluctuations
+        lmanstd     = 1; % standard deviation of LMAN fluctuations
         hvcburstlen = 1; % width of HVC burst
         kernelstd   = 0; % standard deviation of Gaussian kernel that blurs reward and eligibility traces
         pinhib      = 1; % Probability of one MSN inhibting another
@@ -91,7 +91,7 @@ classdef SparseNet < handle
             k = normpdf(x)'; % Gaussian, column vector
             obj.kernel = k./sum(k);
             
-            obj.rexp(:,1) = -abs(obj.lmanoffset - obj.template');
+            obj.rexp(:,1) = -(obj.lmanoffset - obj.template').^2;
         end
         
         function simulate(obj)
@@ -211,7 +211,7 @@ classdef SparseNet < handle
         end
         
         function r = reward(obj, iter)
-            r = -abs(obj.lmanout(:,iter) - obj.template');
+            r = -(obj.lmanout(:,iter) - obj.template').^2;
         end
         
         function rexpupdate(obj, iter)
