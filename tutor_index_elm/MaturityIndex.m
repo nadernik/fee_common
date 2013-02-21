@@ -3,7 +3,8 @@ clear all
 add_elm_code_paths;
 initial_path = PlatformPicker('feebox3', 'emily');
 pathname = fullfile(initial_path, 'TI_data_weeded','Songbirds'); 
-MI.names = {'3289', '3291', '3403', '3422', '3423', '3426', '3427', '3434', ...
+MI.names = {'3284', '3294', '3423', '3288', '3292', '3293', ...
+    '3289', '3291', '3403', '3422', '3423', '3426', '3427', '3434', ...
     '3449', '3458'};
 %MI.scores = cell(1,numel(MI.names));
 for birdi = 1:numel(MI.names)
@@ -32,4 +33,4 @@ for birdi = 1:numel(MI.names)
 end
 cd(orig_path)
 %%
-save MI MI
+save(fullfile(pathname, ['MI', datestr(now, 'dd-mmm-yyyy')]), 'MI')
