@@ -1,0 +1,10 @@
+# to make something executable:
+# change permissions, e.g.: chmod +x MountFeeboxServers_elm.txt
+# run it, e.g.: ./MountFeeboxServers_elm.txt
+cd ~
+mount_smbfs //emackev:feelab@feebox1.mit.edu/shared shared
+mount_smbfs //emackev:feelab@feebox1.mit.edu/emackev emackev
+mount_smbfs //emackev:feelab25@feebox3.mit.edu/emily emily
+cd ~/Documents/code
+
+

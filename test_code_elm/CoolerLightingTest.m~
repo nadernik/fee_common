@@ -12,7 +12,6 @@ plot(CoolerQuality-jitters, SongQuality-jitters2, '.');
 set(gca, 'ytick', [0 1 2], 'yticklabel', {'subsongy/immature', 'mediocre', 'good'},...
     'xtick', [0 1 2], 'xticklabel', {'low', 'medium', 'high'});
 ylabel('song maturity'); xlabel('lighting quality')
-set(gcf, 'Papersize', [8 6], 'Paperposition', [0 0 8 6])
 for i = 1:numel(birdnames)
     if CoolerQuality(i) == 0
         Light{i} = 'low';
@@ -26,4 +25,3 @@ for i = 1:numel(birdnames)
 end
 anova1(SongQuality, Light)
 ylabel('song maturity on a scale from 0 to 2')
-set(gcf, 'Papersize', [8 6], 'Paperposition', [0 0 8 6])
