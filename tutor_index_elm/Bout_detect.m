@@ -5,26 +5,26 @@ function Bout_detect(pathName,FRQrange)
 %%% Yael MAndelblat Cerf 2012
 
 if nargin<1 % input argument empty
-    pathName = uigetdir('C:\', 'Choose the directory that contains songs');
+    pathName = uigetdir('', 'Choose the directory that contains songs');
 end
 
 cd(pathName)
 dbase.ChannelFiles =[];
 
 
-if isempty(dir([pathName filesep 'analysis.mat']))
-    if isempty(dir([pathName filesep 'bouts']))
-        mkdir([pathName filesep 'bouts']);
+if isempty(dir(fullfile(pathName,'analysis.mat')))
+    if isempty(dir(fullfile(pathName, 'bouts')))
+        mkdir(fullfile(pathName,  'bouts'));
     end
 
     dbase = [];
     dbase.PathName = [pathName];
 
-    s_files = dir([pathName,filesep,'*.wav']); FileFormat='wav';
+    s_files = dir(fullfile(pathName,'*.wav')); FileFormat='wav';
     if isempty(s_files)
-        s_files = dir([pathName,filesep,'*.dat']);FileFormat='dat';
+        s_files = dir(fullfile(pathName,'*.dat'));FileFormat='dat';
         if isempty(s_files)
-            s_files = dir([pathName,filesep,'*.mat']); FileFormat='mat';
+            s_files = dir(fullfile(pathName,'*.mat')); FileFormat='mat';
             if isempty(s_files)  error(['wav, dat or mat files are expected. Not found in directory:' pathName] );
             end
         end
@@ -79,26 +79,28 @@ if isempty(dir([pathName filesep 'analysis.mat']))
         temp.len = [];
         temp.ev = {};
         
-        if ~isempty(dir([pathName filesep 'analysis_incomplete.mat']))
-            load([pathName filesep 'analysis_incomplete.mat']);
+        if ~isempty(dir(fullfile(pathName, 'analysis_incomplete.mat')))
+            load(fullfile(pathName, 'analysis_incomplete.mat'));
         end
         
         for fl = dbase.AnalysisState.CurrentFile+1:length(s_files)
             dbase.AnalysisState.CurrentFile = fl;
-            mt = dir([dbase.PathName '\bouts\extr' num2str(fl,'%05.f') '_*']);
-            wg = dir([dbase.PathName '\bouts\pres' num2str(fl,'%05.f') '_*']);
+            mt = dir(fullfile(dbase.PathName, 'bouts',['extr' ...
+                num2str(fl,'%05.f') '_*']));
+            wg = dir(fullfile(dbase.PathName, 'bouts',['pres' ...
+                num2str(fl,'%05.f') '_*']));
             for i = 1:length(mt)
-                delete([dbase.PathName '\bouts\' mt(i).name]);
-           end
+                delete(fullfile(dbase.PathName, 'bouts', mt(i).name));
+            end
 
             try
                 switch FileFormat
                     case 'wav'
                         [a, fs] = wavread(s_files(fl).name);
                     case 'dat'
-                        [a fs dateandtime label props] = egl_AA_daq([dbase.PathName filesep s_files(fl).name], 1); % load sound file
+                        [a fs dateandtime label props] = egl_AA_daq(fullfile(dbase.PathName, s_files(fl).name), 1); % load sound file
                     case 'mat'
-                        [a fs ] = load([dbase.PathName filesep s_files(fl).name]); % load sound file
+                        [a fs ] = load(fullfile(dbase.PathName, s_files(fl).name)); % load sound file
                     otherwise error('wrong file format');
                 end
                 if fs~=44100
@@ -168,7 +170,9 @@ if isempty(dir([pathName filesep 'analysis.mat']))
                         iss = 0;
                         while iss==0
                             try
-                                save([dbase.PathName '\bouts\extr' num2str(fl,'%05.f') '_' num2str(c,'%03.f') '.mat'],'rec');
+                                save(fullfile(dbase.PathName, 'bouts',['extr' ...
+                                    num2str(fl,'%05.f') '_' num2str(c,'%03.f')...
+                                    '.mat']),'rec');
                                 %wavwrite(rec.Data,rec.Fs,32,[dbase.PathName '\bouts\extr' num2str(fl,'%05.f') '_' num2str(c,'%03.f') '.wav']);
                                 iss = 1;
                             catch
@@ -193,7 +197,7 @@ if isempty(dir([pathName filesep 'analysis.mat']))
                 iss = 0;
                 while iss==0
                     try
-                        save([pathName filesep 'analysis_incomplete.mat'],'dbase','temp');
+                        save(fullfile(pathName, 'analysis_incomplete.mat'),'dbase','temp');
                         iss = 1;
                     catch
                         disp('fail');
@@ -213,8 +217,8 @@ if isempty(dir([pathName filesep 'analysis.mat']))
         iss = 0;
         while iss==0
             try
-                save([pathName filesep 'analysis_bout.mat'],'dbase');
-                delete([pathName filesep 'analysis_incomplete.mat']);
+                save(fullfile(pathName, 'analysis_bout.mat'),'dbase');
+                delete(fullfile(pathName, 'analysis_incomplete.mat'));
                 iss = 1;
             catch
                 disp('fail');
@@ -226,11 +230,11 @@ if isempty(dir([pathName filesep 'analysis.mat']))
         thres = dbase.SegmentThresholds;
         
         dbase = [];
-        dbase.PathName = [pathName filesep 'bouts'];
+        dbase.PathName = fullfile(pathName, 'bouts');
         dbase.Times = temp.time;
         dbase.FileLength = temp.len;
-        dbase.SoundFiles = dir([dbase.PathName filesep 'extr*.mat']);
-        dbase.ChannelFiles = {dir([dbase.PathName filesep 'pres*.mat'])};
+        dbase.SoundFiles = dir(fullfile(dbase.PathName, 'extr*.mat'));
+        dbase.ChannelFiles = {dir(fullfile(dbase.PathName, 'pres*.mat'))};
         dbase.SoundLoader = 'Surgery_Rig_daq';
         dbase.ChannelLoader = {'Surgery_Rig_daq_pres'};
         dbase.Fs = fs;
