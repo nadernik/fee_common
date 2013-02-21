@@ -3,6 +3,7 @@ function Bout_detect(pathName,FRQrange)
 %%% originally written by Dmitiriy Aronov
 %%% Tatsuo Okubo 2011/01/29
 %%% Yael MAndelblat Cerf 2012
+%%% Emily Mackevicius, making it work on a mac too, Feb 21, 2013
 
 if nargin<1 % input argument empty
     pathName = uigetdir('', 'Choose the directory that contains songs');
