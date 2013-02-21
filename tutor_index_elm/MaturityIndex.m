@@ -16,7 +16,7 @@ for birdi = 1:numel(MI.names)
         load(fullfile(pathname, birdname, 'bouts', DIR(i).name));
         bout1 = rec.Data;
         fs = rec.Fs;
-        for j = 1:i
+        for j = 1:(i-1)
             tic
             load(fullfile(pathname, birdname, 'bouts', DIR(j).name));
             bout2 = rec.Data;

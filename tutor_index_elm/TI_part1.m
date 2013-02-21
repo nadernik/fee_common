@@ -3,10 +3,11 @@ Mypath=mfilename('fullpath');Mypath=Mypath(1:end-8);
 button = questdlg('Use default file paths?', 'Choose folders', 'Yes');
 switch button
     case 'Yes'
-        pathName = 'Y:\TI_data_weeded\Songbirds';
-        TutorpathName = 'Y:\TI_data_weeded\Tutors';
+        initial_path = PlatformPicker('feebox3', 'emily');
+        pathName = fullfile(initial_path, 'TI_data_weeded','Songbirds'); 
+        TutorpathName = fullfile(initial_path, 'TI_data_weeded', 'Tutors');
         str_listBirds = 'TutorMatch.xls';
-        str_pathname = 'Y:\TI_data_weeded';
+        str_pathname = fullfile(initial_path, 'TI_data_weeded');
     case 'No'
         pathName = uigetdir('', 'Choose the directory that contains all bird songs');
         TutorpathName = uigetdir('', 'Choose the directory that contains all Tutor songs');
@@ -14,7 +15,7 @@ switch button
     case 'Cancel'
         disp('Canceled')
 end
-ExcelFileName=[str_pathname '\' str_listBirds];
+ExcelFileName=fullfile(str_pathname, str_listBirds);
 [listAll,listAllTXT,listAllAll]=xlsread(ExcelFileName);
 if size(listAll,2)>2
     indexBirds=find(listAll(:,1))';
