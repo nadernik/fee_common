@@ -5,7 +5,7 @@ function initial_path = PlatformPicker(feebox, share, UseDialog)
 % set the default mapped network drives on your pc.  If UseDialog is true,
 % then you can pick manually.
 % Emily Mackevicius Feb 14 2013
-if nargin == 3
+if nargin == 2
     UseDialog = 0;
 end
 if UseDialog
