@@ -1,5 +1,6 @@
 %% calculate maturity index 
 clear all
+cd ~/Documents/code
 add_elm_code_paths;
 initial_path = PlatformPicker('feebox3', 'emily');
 pathname = fullfile(initial_path, 'TI_data_weeded','Songbirds'); 
@@ -31,6 +32,5 @@ for birdi = 1:numel(MI.names)
         end
     end
 end
-cd(orig_path)
 %%
 save(fullfile(pathname, ['MI', datestr(now, 'dd-mmm-yyyy')]), 'MI')
