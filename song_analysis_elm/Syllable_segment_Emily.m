@@ -1,4 +1,4 @@
-function segs = Syllable_segment_Emily_var(pathName,Fc)
+function segs = Syllable_segment_Emily(pathName,Fc)
 %%% divide SAP wave files into bout files
 %%% originally written by Dmitiriy Aronov
 %%% Tatsuo Okubo

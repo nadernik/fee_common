@@ -29,6 +29,11 @@ for i = 1:size(segs,1)
 end
 
 sound(b,fs)
+
+%%
+[c, lags] = xcorr(a);
+figure; 
+plot(lags/fs, c);shg
 %%
 close all
 hist(diff(segs')'/fs, .02:.01:.14)

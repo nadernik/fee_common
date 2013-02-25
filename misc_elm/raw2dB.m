@@ -1,0 +1,13 @@
+function dB = raw2dB(raw_audio, fs)
+%%% computes the dB trace from the raw audio file, copying Dmitriy's code
+%%% from Syllable_segment_Emily
+%%% Emily Mackevicius, Feb 25, 2013
+    a = raw_audio;
+    squared = raw_audio.^2;
+    b = fir1(200,[1000 4000]/(fs/2)); %%%%%%%%
+    snd = filtfilt(b, 1, a);
+    smooth_window = 0.0025;
+    wind = round(smooth_window*fs);
+    amp = smooth(10*log10(snd.^2+eps),wind);
+    amp = amp-prctile(amp(wind:length(amp)-wind),5);
+    amp(find(amp<0))=0;
