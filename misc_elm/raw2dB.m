@@ -11,3 +11,4 @@ function dB = raw2dB(raw_audio, fs)
     amp = smooth(10*log10(snd.^2+eps),wind);
     amp = amp-prctile(amp(wind:length(amp)-wind),5);
     amp(find(amp<0))=0;
+    dB = amp;
