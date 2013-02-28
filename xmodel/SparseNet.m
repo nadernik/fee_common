@@ -140,7 +140,7 @@ classdef SparseNet < handle
             
         
         function ffstep(obj, iter)
-            % MSN activity depends on HVC input and noise (from lman)
+            % MSN activity depends on HVC input
             msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, msnin);
