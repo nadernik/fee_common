@@ -67,6 +67,9 @@ OTHER USEFUL COMMANDS
 --If want to just get the server's version, and write over your local version--
 hg update --clean
 
+--If you want to update, and ignore any uncommited changes in your local repository:
+hg update -C
+
 --Get a list of the last 3 changes--
 hg log -l 3
 
