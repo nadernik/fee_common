@@ -1,22 +1,22 @@
 
 % load songs to play
-[simple,fs] = wavread('CallIntroFast.wav');
+[simple,fs] = wavread('SongOne.wav');
 
 % check they all have the same sampling rates
 
 % make a cell array of what songs to to each box, making each song the same
 % length
 WhichBox = {[simple zeros(numel(simple),1)] [zeros(numel(simple),1) simple] [simple simple]};
-song{1,2} = []; % cooler 1 song
-song{1,1} = []; % cooler 1 silence
-song{2,2} = []; % cooler 2 song
-song{2,1} = []; % cooler 2 silence
+song{1,2} = simple; % cooler 1 song
+song{1,1} = zeros(numel(simple),1); % cooler 1 silence
+song{2,2} = simple; % cooler 2 song
+song{2,1} = zeros(numel(simple),1); % cooler 2 silence
 
 % initialize dio and ao
 dio = digitalio('nidaq','Dev1');
 addline(dio,0,'in');
 addline(dio,1,'in');
-pushed = getvalue(dio);
+pulled = getvalue(dio); pulled(1) = ~pulled(1); % switch on channel 0 is 1 when open
 ao = analogoutput('nidaq', 'Dev1');
 addchannel(ao, 0);
 set(ao, 'SampleRate', fs)
@@ -36,7 +36,7 @@ today = date;
 % is there a way of doing this with timers or interrupts??
 while issame(today(1:2),date(1:2))
     % get value of the dio
-    pulled = getvalue(dio);
+    pulled = getvalue(dio); pulled(1) = ~pulled(1) % switch on channel 0 is 1 when open
     % check if each is pressed, and
     if sum(pulled) ~= 0
         % keep track of pull times
