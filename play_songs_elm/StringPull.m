@@ -76,8 +76,9 @@ for i = 1:20
             stop(ao)
         end
         save(['Z:\PullTimes\PullTimes', num2str(round(now*1000)), '.mat'])
-        emailme(['today strings were pulled ', [num2str(40-Nplays(1))], ' and ', [num2str(40-Nplays(2))], ' times'])
+
     end
+        emailme(['today strings were pulled ', [num2str(40-Nplays(1))], ' and ', [num2str(40-Nplays(2))], ' times'])
 end
 catch 
     A = lasterror;
