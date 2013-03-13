@@ -54,6 +54,15 @@ if ~exist('exper', 'var')
     exper = loadExper(birdname, expername, P.RootDir);
 end
 
+% If not in the root dir, remap
+try
+    L = length(P.RootDir);
+    if ~strcmpi(P.RootDir, exper.dir(1:L))
+        exper.dir = [fullfile(P.RootDir, birdname, expername) filesep];
+    end
+catch
+end
+
 %% Get syllable labels from processed annotation file
 filename = getExperAudioFilename(exper, filenum); % file we are looking for
 
@@ -103,6 +112,7 @@ linkaxes(ax,'x') % linking x axis makes zooming on spectrogram also adjust label
 
 ud.exper = exper;
 ud.filenum = filenum;
+ud.rootdir = P.RootDir;
 set(fh, 'UserData', ud)
 set(fh, 'KeyPressFcn', @nextjprevk)
 
@@ -135,4 +145,4 @@ end
 filenum = max(1, filenum);
 filenum = min(filenum, getLatestDatafileNumber(ud.exper));
 
-labeledspecgram(ud.exper, filenum);   
+labeledspecgram(ud.exper, filenum, 'RootDir', ud.rootdir);   

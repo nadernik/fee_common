@@ -58,21 +58,14 @@ classdef ResolutionOfLearningFig < Fig
             plot(d.t_esc,  d.y_esc,  'Color', [0 0 0],   'LineWidth', 3)
             plot(d.t_rwd,  d.y_rwd,  'Color', [0 .5 0],  'LineWidth', 3)
             hold off
-            %% (e) song examples with stretched lman fluctuations
+            %% (e) width of learning with wider LMAN fluctuations
             subplot(4,2,5)
-            ResolutionOfLearningFig.plot_hits_escapes(dlman.lman_slow, dlman.target_time, dlman.threshold)
-            set(gca, 'YTick', [])
-            xlabel('Time (ms)')
-
-            %% (f) power spectra of lman fluctuations
+            
+            
+            %% (f) comparison of learning vs. other time scales with wider lman
             subplot(4,2,6)
-            loglog(dlman.f, dlman.power_normal, 'LineWidth', 3, 'Color', [0.6 0.6 0.6])
-            hold on
-            loglog(dlman.f, dlman.power_slow, 'LineWidth', 3, 'Color', [0 0 0])
-            %set(gca, 'FontSize', 16)
-            xlabel('Frequency (Hz)')
-            ylabel('Power')
-            xlim([0, 400])
+            
+            
             %% (g) width of learning vs. width of LMAN autocorrelation
             subplot(4,2,7)
             dL = load(fullfile(obj.datadir, obj.filename.widthlman));
