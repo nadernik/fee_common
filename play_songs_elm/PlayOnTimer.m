@@ -1,11 +1,11 @@
 clear all; close all; clear t; clear t
 
-% startday = '2/18/13 9:43';
+% startday = '3/29/13 11:06';
 % StartTime = datenum(startday);
 % PlayToday = timer('TimerFcn', 'PlaySongs');
 % startat(PlayToday, StartTime);
 
-startday = '3/08/13 9:05';
+startday = '4/24/13 9:05';
 StartTime = datenum(startday);
 dt = 1;
 for day = 1:7
