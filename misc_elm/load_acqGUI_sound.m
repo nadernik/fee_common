@@ -1,7 +1,7 @@
 dir = 'C:/users/emackev/Documents/MATLAB/AcqGUI/';
 bird = '3765';
 exper = '2013-06-06';
-num = 1; 
+num = 28; 
 
 exp = loadExper(bird, exper, dir); 
 exp.dir = [fullfile(dir, bird, exper) '\'];
