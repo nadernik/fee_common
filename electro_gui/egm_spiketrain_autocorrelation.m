@@ -24,6 +24,7 @@ for c = fls % array of files
     [ACF(idx,:), lags] = xcorr(smooth_spiketimes, maxlag/1000*fs, 'coeff');
     %plot(lags/fs, ACF(idx,:)); shg; pause(1)
     nfactor(idx) = mean(ACF(idx, find(lags/fs>smoothing_window|lags/fs<-smoothing_window)));
+    L{idx} = num2str(c);
     idx = idx+1;
 end
 
@@ -34,4 +35,5 @@ end
 
 
 plot(lags/fs, ACF); plot(lags/fs, All, 'k', 'linewidth', 3)
+legend(L, 'mean')
 shg
