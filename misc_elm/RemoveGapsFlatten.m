@@ -5,27 +5,50 @@ clear all; close all
 path = 'C:\Users\emackev\Documents\MATLAB\OferSongs';
 [bells,fs] = wavread(fullfile(path, 'bells')); 
 [simple,fs] = wavread(fullfile(path, 'simple')); 
-[song,fs] = wavread(fullfile(path, 'bells')); 
+[intros, fs] = wavread(fullfile(path, 'Intro1'));
+
+%set parameters
+SongLength = round(2.5*fs); 
+cosramp = round(.005*fs); 
+Gap = round(.03*fs);
+NoGaps = 0;
+Flattened = 0; 
+IMotifI = round(.1*fs);
+scalefactor = 20;
+normalizeSyls = 1;
+
+
 A = bells(.675*fs:.747*fs);
 C = bells(.242*fs:.301*fs);
 D = bells(.34*fs:.384*fs);
 B = simple(1.076*fs:1.195*fs);
+I0 = [intros(3000:6750)]
+I2 = [zeros(size(I0,1)-Gap, size(I0,2)*.7); I0];
+I = [zeros(size(I0,1)-Gap, size(I0,2)); I0];
 
-%set parameters
-SongLength = round(.5*fs); 
-cosramp = round(.005*fs); 
-Gap = round(.03*fs);
-NoGaps = 1;
-Flattened = 1; 
-IMotifI = .1*fs;
-scalefactor = 20;
-normalizeSyls = 1;
+
+
+% %decide order
+% Syl{1} = A;
+% Syl{2} = B;
+% Syl{3} = C;
+% Syl{4} = D; 
 
 %decide order
-Syl{1} = A;
-Syl{2} = B;
-Syl{3} = C;
-Syl{4} = D; 
+
+Syl{1} = I;
+Syl{2} = I; 
+Syl{3} = I;
+Syl{4} = I2; 
+Syl{5} = D;
+Syl{6} = B;
+Syl{7} = D;
+Syl{8} = B;
+Syl{9} = D; 
+Syl{10} = B; 
+Syl{11} = D;
+Syl{12} = B;
+
 
 PrevOnset = 0; 
 PrevDur = 0; 
@@ -56,8 +79,9 @@ if Flattened
     All = pvocnormalized(All, 1,200);
     All = All';
 end
-All = [zeros(1,IMotifI ) All zeros(1,IMotifI) All zeros(1,IMotifI)];
+All = [zeros(1,IMotifI ) All zeros(1,IMotifI)];% All zeros(1,IMotifI)];
 All = All*scalefactor;
+All(1:.75*fs) = All(1:.75*fs)/2; %Just to make the intros softer
 subplot(211)
 plot(1/fs:1/fs:numel(All)/fs, All)
 subplot(212)

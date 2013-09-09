@@ -1,9 +1,15 @@
-function dbase= Syllable_duration_distribution(dbase,birdName,Date,Category,fileNum)
+function dbase= Syllable_duration_distribution(dbase,birdName,Date,Category,fileNum, save)
+
 %%% Calculates the syllable and gap distribution
 %%% Tatsuo Okubo
 %%% 2011/02/21
 
 %%
+switch nargin
+    case 6
+    otherwise
+        save = 1;
+end
 lst = 7:1:700; % array of histogram syllable edges (ms)
 lst2 = 7:1:300; % array of histogram gap edges (ms)
 B = 20; % # of bins for smoothing
@@ -136,47 +142,49 @@ ylabel('Probability density (s^{-1})','fontsize',12);
 box off
 
 %% save data and figures (TO DO: separate the save part)
-FileName = [birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.mat'];
-switch Category
-    case 1 % subsong
-        PathName = 'Z:\Data\Song_rhythm\Subsong';
-    case 2 % early plastic song
-        PathName = 'Z:\Data\Song_rhythm\Early_plastic_song';
-    case 3 % HVC lesion
-        PathName = 'Z:\Data\Song_rhythm\HVC_lesion';
-    case 4 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\LMAN_inactivation';
-    case 5 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\HVC_cooling';
-    case 6 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\LMAN_cooling';
-    case 7 % LMAN inactivation
-        PathName = 'Z:\Data\Song_rhythm\Development';
-    case 8 % Late plastic song
-        PathName = 'Z:\Data\Song_rhythm\Late_plastic_song';
-    case 9 % X lesion
-        PathName = 'Z:\Data\Song_rhythm\X_lesion';
-    case 10 % MMAN lesion
-        PathName = 'c:\stetner\data\mman lesion';
-    otherwise
-        error('Unknown category')
-end
-
-if Category==7 | Category==9
-    if exist([PathName,filesep,birdName])
-        save([PathName,filesep,birdName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau');
-    else % make new directory for the bird
-        mkdir(PathName,birdName);
-        save([PathName,filesep,birdName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau');
+if save
+    FileName = [birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.mat'];
+    switch Category
+        case 1 % subsong
+            PathName = 'Z:\Data\Song_rhythm\Subsong';
+        case 2 % early plastic song
+            PathName = 'Z:\Data\Song_rhythm\Early_plastic_song';
+        case 3 % HVC lesion
+            PathName = 'Z:\Data\Song_rhythm\HVC_lesion';
+        case 4 % LMAN inactivation
+            PathName = 'Z:\Data\Song_rhythm\LMAN_inactivation';
+        case 5 % LMAN inactivation
+            PathName = 'Z:\Data\Song_rhythm\HVC_cooling';
+        case 6 % LMAN inactivation
+            PathName = 'Z:\Data\Song_rhythm\LMAN_cooling';
+        case 7 % LMAN inactivation
+            PathName = 'Z:\Data\Song_rhythm\Development';
+        case 8 % Late plastic song
+            PathName = 'Z:\Data\Song_rhythm\Late_plastic_song';
+        case 9 % X lesion
+            PathName = 'Z:\Data\Song_rhythm\X_lesion';
+        case 10 % MMAN lesion
+            PathName = 'c:\stetner\data\mman lesion';
+        otherwise
+            error('Unknown category')
     end
-    cd([PathName,filesep,birdName]);
-else
-    save([PathName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau'); % save .mat
-    cd(PathName)
-end
 
-saveas(20,[birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.fig'],'fig');
-%close(19);
-%close(20);
-dbase.durs = durs;
-dbase.gaps = gaps;
+    if Category==7 | Category==9
+        if exist([PathName,filesep,birdName])
+            save([PathName,filesep,birdName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau');
+        else % make new directory for the bird
+            mkdir(PathName,birdName);
+            save([PathName,filesep,birdName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau');
+        end
+        cd([PathName,filesep,birdName]);
+    else
+        save([PathName,filesep,FileName],'lst','lst2','durs','gaps','GOF','GOF_DA','tau'); % save .mat
+        cd(PathName)
+    end
+
+    saveas(20,[birdName,'_',num2str(Date(1)),'-',num2str(Date(2)),'-',num2str(Date(3)),'_syll_gap_duration.fig'],'fig');
+    %close(19);
+    %close(20);
+end
+    dbase.durs = durs;
+    dbase.gaps = gaps;
