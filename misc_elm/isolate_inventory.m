@@ -11,7 +11,7 @@ for i = 1:5
     L{i} = num2str(I.Name{i});
 end
 set(gca, 'Xtick', [0 1 2 3 4], 'Xticklabel', ...
-    {'isolated', 'sings', 'rhythmic', 'very rhythmic', 'adult'})
+    {'isolated', 'sings', 'rhythmic', 'very rhythmic', 'adult'}, 'Ygrid', 'on')
 ylabel('age (days)')
 legend(L, 'location', 'northwest')
 %%
@@ -26,6 +26,7 @@ I.firstsongsrecorded{ind} = '4-07-2013';
 I.firstrhythmic{ind} = '4-13-2013';
 I.veryrhythmic{ind} = '4-28-2013';
 I.adultsong{ind} = '6-18-2013';
+I.to_hotel{ind} = '6-30-2013';
 I.notes{ind} = 'rhythmic triplet and long wavering syllable of inconsistent duration';
 %3647
 ind = ind+1;
@@ -37,6 +38,7 @@ I.firstsongsrecorded{ind} = '4-07-2013';
 I.firstrhythmic{ind} = '4-13-2013';
 I.veryrhythmic{ind} = '4-20-2013';
 I.adultsong{ind} = '6-18-2013';
+I.to_hotel{ind} = '6-28-2013';
 I.notes{ind} = 'very rhythmic for a while';
 %3650
 ind = ind+1;
@@ -48,6 +50,7 @@ I.firstsongsrecorded{ind} = '5-07-2013';
 I.firstrhythmic{ind} = '5-13-2013';
 I.veryrhythmic{ind} = '5-25-2013';
 I.adultsong{ind} = '6-10-2013';
+I.to_hotel{ind} = '6-28-2013';
 I.directed{ind} = '3650-2013-09-06-DIRECTED';
 I.notes{ind} = 'did not sing much at all early on, not as rhythmic as others, perhaps has several syllable durations, does not seem to have adult motif';
 %3651
@@ -60,6 +63,7 @@ I.firstsongsrecorded{ind} = '4-08-2013';
 I.firstrhythmic{ind} = '4-13-2013';
 I.veryrhythmic{ind} = '4-27-2013';
 I.adultsong{ind} = '6-18-2013';
+I.to_hotel{ind} = '6-30-2013';
 I.directed{ind} = '3651-2013-09-06-DIRECTED';
 I.notes{ind} = 'very rhythmic. adult song has motif.';
 %3710
@@ -74,14 +78,14 @@ I.veryrhythmic{ind} = '5-30-2013';
 I.adultsong{ind} = '7-03-2013';
 I.notes{ind} = 'rhythmic within syllables (triplets), 2 rhythms early on, faster later';
 
-%3747
-ind = ind+1;
-I.Name{ind} = 3747;
-I.birthdate{ind} = '4-13-2013';
-I.cage{ind} = '35-E';
-I.isolationdate{ind} = '5-17-2013';
-i.directed{ind} = '3747-2013-09-06-DIRECTED';
-I.notes{ind} = 'very rhythmic for a while';
+%3747 tutored with AB tutor
+% ind = ind+1;
+% I.Name{ind} = 3747;
+% I.birthdate{ind} = '4-13-2013';
+% I.cage{ind} = '35-E';
+% I.isolationdate{ind} = '5-17-2013';
+% i.directed{ind} = '3747-2013-09-06-DIRECTED';
+% I.notes{ind} = 'very rhythmic for a while';
 
 %3770
 ind = ind+1;

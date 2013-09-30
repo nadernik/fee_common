@@ -21,8 +21,8 @@ for c = fls % array of files
     spiketrain(spiketimes) = 1;
     filter = normpdf(-6*smoothing_window:1/fs:6*smoothing_window, 0, smoothing_window);
     smooth_spiketimes = conv(spiketrain, filter);
-    [ACF(idx,:), lags] = xcorr(smooth_spiketimes, maxlag/1000*fs, 'coeff');
-    %plot(lags/fs, ACF(idx,:)); shg; pause(1)
+    [ACF(idx,:), lags] = xcorr(smooth_spiketimes,  ceil(maxlag/1000*fs), 'coeff');
+    plot(lags/fs, ACF(idx,:)); shg; pause(1)
     nfactor(idx) = mean(ACF(idx, find(lags/fs>smoothing_window|lags/fs<-smoothing_window)));
     L{idx} = num2str(c);
     idx = idx+1;
@@ -30,10 +30,12 @@ end
 
 
 if size(ACF,1)>1
-    All = mean(ACF); 
+    All = mean(ACF,1);
+    %plot(lags/fs, ACF); 
+    plot(lags/fs, All, 'k', 'linewidth', 3)
+    legend(L, 'mean')
 end
 
 
-plot(lags/fs, ACF); plot(lags/fs, All, 'k', 'linewidth', 3)
-legend(L, 'mean')
+xlim([-maxlag/1000 maxlag/1000])
 shg
