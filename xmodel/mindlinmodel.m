@@ -22,11 +22,9 @@ tspan = 0:(1/fs):200e-3; % 200 ms
 
 subplot(4,2,1:2)
 plot(T,Y(:,2))
-% there are large transients whenever the parameters change suddenly (120ms, 140ms, 160ms, 180ms)
 
 subplot(4,2,3:4)
 displaySpecgramQuick(Y(:,2),fs)
-% These transients are very short, but they dominate the spectrogram.
 
 subplot(4,2,5)
 ndx = T > .122 & T < .139;
@@ -38,38 +36,25 @@ ndx = T > .142 & T < .159;
 plot(T(ndx), Y(ndx,2))
 subplot(4,2,8)
 displaySpecgramQuick(Y(ndx,2),fs)
-% In between the transients, the model has some steady state behavior with 
-% harmonic stacks.
+% There are some wierd very low freq components. What is going on??
 
     function a = alpha(t)
-        % Keep the same parameters for the first 120 ms to let the initial
-        % conditions settle, then change the parameters every 20 ms.
-        if     t < 120e-3
-            a = -0.02;
-        elseif t < 140e-3
-            a = -0.12;
-        elseif t < 160e-3
-            a = -0.04;
-        elseif t < 180e-3
-            a = -0.08;
-        else
-            a = -0.06;
-        end
+        % Represents air sac pressure
+        
+        % Keep constant for the first 100 ms to let things stabilize, then
+        % linearly ramp the value up
+        a = -.1;
     end
 
     function b = beta(t)
+        % Represents tension
+        
         % Keep the same parameters for the first 120 ms to let the initial
         % conditions settle, then change the parameters every 20 ms.
-        if     t < 120e-3
-            b = -0.15;
-        elseif t < 140e-3
-            b = -0.08;
-        elseif t < 160e-3
-            b = -0.20;
-        elseif t < 180e-3
-            b = -0.15;
+        if t > .1
+            b = interp1([.1, .2], [-.25, -.1], t);
         else
-            b = -0.15;
+            b = -0.25;
         end
     end
 
