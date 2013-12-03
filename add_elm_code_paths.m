@@ -33,7 +33,7 @@ for ii = 1:length(subdirs)
     end
     addpath(paths_to_add)
 end
-
+addpath('C:\\Users\emackev\My Documents\MATLAB\chronux')
 if verbosity > 0
     fprintf(' Done! \n')
 end
