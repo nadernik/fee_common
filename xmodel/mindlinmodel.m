@@ -8,54 +8,32 @@ function mindlinmodel
 % for the movement of the syringeal labia. It does not include the 
 % helmholtz resonator model of the vocal tract yet.
 
+% NOTE: There is a sign mistake in the equation in the paper by Perl et al.
+% See Amador et al. 2013 Figure 1 for the correct equation and Figure 2d to
+% see where zebra finch songs fall in the parameter space.
+
+alpha = 0.1; % represents air sac pressure
+beta  = 0.2; % represents tension of the ventral syringeal muscle
 gamma = 24000; % This parameter was determined by Perl et al. to be the same for all birds tested, so we use their value
-y0 = [1 1]';
+y0 = [0;0]; % initial condition
 dxdt = @(t,x,y) y;
-dydt = @(t,x,y) alpha(t)*gamma^2 - beta(t)*gamma^2*x - gamma^2*x^3 - gamma*x^2*y + gamma^2*x^2 - gamma*x*y;
+dydt = @(t,x,y) -alpha*gamma^2 - beta*gamma^2*x - gamma^2*x^3 - gamma*x^2*y + gamma^2*x^2 - gamma*x*y;
+% Here the parameters alpha and beta are constant in time, but to make a
+% song they would change as a function of time.
 
 odefun = @(t,y) [dxdt(t,y(1),y(2)); dydt(t,y(1),y(2))];
 
 fs = 40e3; % 40 kHz sampling rate
 tspan = 0:(1/fs):200e-3; % 200 ms
-[T,Y] = ode45(odefun, tspan, y0);
+[T,Y] = ode23(odefun, tspan, y0);
 
+subplot(2,1,1)
+plot(T,Y(:,1))
+title(sprintf('\\alpha = %g \n\\beta = %g', alpha, beta))
+ax1 = gca;
 
-subplot(4,2,1:2)
-plot(T,Y(:,2))
+subplot(2,1,2)
+displaySpecgramQuick(Y(:,1),fs)
+ax2 = gca;
 
-subplot(4,2,3:4)
-displaySpecgramQuick(Y(:,2),fs)
-
-subplot(4,2,5)
-ndx = T > .122 & T < .139;
-plot(T(ndx), Y(ndx,2))
-subplot(4,2,7)
-displaySpecgramQuick(Y(ndx,2),fs)
-subplot(4,2,6)
-ndx = T > .142 & T < .159;
-plot(T(ndx), Y(ndx,2))
-subplot(4,2,8)
-displaySpecgramQuick(Y(ndx,2),fs)
-% There are some wierd very low freq components. What is going on??
-
-    function a = alpha(t)
-        % Represents air sac pressure
-        
-        % Keep constant for the first 100 ms to let things stabilize, then
-        % linearly ramp the value up
-        a = -.1;
-    end
-
-    function b = beta(t)
-        % Represents tension
-        
-        % Keep the same parameters for the first 120 ms to let the initial
-        % conditions settle, then change the parameters every 20 ms.
-        if t > .1
-            b = interp1([.1, .2], [-.25, -.1], t);
-        else
-            b = -0.25;
-        end
-    end
-
-end
+linkaxes([ax1, ax2], 'x')
