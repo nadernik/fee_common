@@ -2,9 +2,11 @@
 %% kernels?
 
 kernel_widths = 2.^(0:6);
-total_runs = 10;
+total_runs = 6;
 datapath = 'c:\stetner\data\figures\xmodel\mes010\';
+fit_trials = 1:500;
 
+%%
 for irun = 1:total_runs
 for ikw = 1:length(kernel_widths)
     xmodel_parameters_extra_noise % Use the same parameters as the curse of dimensionality figure
@@ -24,33 +26,37 @@ end
 end
 
 %%
-kernel_widths = 2.^(0:6);
-total_runs = 10;
-datapath = 'c:\stetner\data\figures\xmodel\';
-threshold = 1/2/exp(2) * 50;
-
+figure
+c = get(gca, 'ColorOrder');
+hold on
 for ikw = 1:length(kernel_widths)
-    for irun = 1:total_runs
+    for irun = 1:6
         filename = sprintf('%skernel_width_%03.f_run_%02.f', datapath, kernel_widths(ikw), irun)
         load(filename)
         xmodel_calculate_bias
-        error = bias - template' * ones(1, total_motifs);
+        error = squeeze(bias) - template' * ones(1, total_motifs);
+        error = error(:,baseline_motifs+1:end); % chop off baseline motifs
         mse(:,irun,ikw) = mean(error.^2, 1);
-        ttl(irun, ikw) = find(mse(:,irun,ikw) < threshold, 1, 'first'); % time to learn is when mse first falls below threshold
+        
+        plot(mse(:,irun,ikw), 'Color', c(ikw,:))
+        
+        % Fit exponential to the mean squared error during fit_trials to
+        % get the learning rate time constant
+        X = [fit_trials; ones(size(fit_trials))];
+        y = mse(fit_trials,irun,ikw);
+        [b,bint,r,rint,stats] = regress(log(y) ,X');
+        yfit = exp(b' * X);
+        ttl(irun,ikw) = b(1);
     end
 end
-
-figure
-y = squeeze(mean(mse, 2));
-plot(y(baseline_motifs:end, :))
-hold on
-plot(xlim, threshold*[1 1], '--k')
-xlabel('Motifs')
+keyboard
+xlabel('Trials')
 ylabel('Mean Squared Error')
+set(gca, 'YScale', 'log')
 
 figure
 ttl = ttl - baseline_motifs;
 sem = std(ttl, 1) / sqrt(total_runs);
 errorbar(kernel_widths, mean(ttl,1), sem)
 xlabel('Reward kernel S.D. (ms)')
-ylabel('Motifs to learn')
+ylabel('Learning time constant (trials)')

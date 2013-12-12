@@ -1,6 +1,6 @@
 function figure_learning_is_average_of_baseline_escapes(do_simulations)
 
-datafile = 'c:\stetner\data\figures\xmodel\caf_ibags.mat';
+datafile = 'c:\stetner\data\figures\xmodel\caf_ibags50.mat';
 colorscheme = 'C:\stetner\code\figures\xmodel\xmodel_color_scheme.mat';
 num_traces = 10;
 
@@ -8,7 +8,9 @@ num_traces = 10;
 % If function is called without an argument or with an argument that is not
 % 1, this step is skipped!
 if exist('do_simulations', 'var') && (do_simulations == 1)
-    load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\74.mat');
+    load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\51.mat');
+    %load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\74.mat');
+    %load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\101.mat')
     baseline_motifs = 1000;
     learning_motifs = 600;
     total_motifs = baseline_motifs + learning_motifs + ending_motifs;
@@ -124,6 +126,6 @@ set(gca, 'FontSize', 16, 'YTick', [0 1])
 xlabel('Time from CAF target (ms)')
 legend({'Learning', 'HVC burst', 'Baseline escapes', 'Reward kernel'})
 
-save('c:\stetner\data\figures\xmodel\caf_example2.mat', ...
+save('c:\stetner\data\figures\xmodel\caf_example1.mat', ...
     't_bias', 'y_bias', 't_hvc', 'y_hvc', 't_esc', 'y_esc', 't_rwd', 'y_rwd', ...
     'rpe_hit', 'rpe_esc', 'hitmotif', 'escmotif')
