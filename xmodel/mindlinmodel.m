@@ -12,10 +12,35 @@ function mindlinmodel
 % See Amador et al. 2013 Figure 1 for the correct equation and Figure 2d to
 % see where zebra finch songs fall in the parameter space.
 
-alpha = 0.1; % represents air sac pressure
-beta  = 0.2; % represents tension of the ventral syringeal muscle
+
+alist = 0.02:0.02:0.10;% represents air sac pressure
+blist = 0.12:0.02:0.20;% represents tension of the ventral syringeal muscle
+
+clf
+p = 0;
+for ia = 1:length(alist)
+    for ib = 1:length(blist)
+        p = p + 1;
+        subplot(length(alist), length(blist), p)
+        helper_simulate(alist(ia), blist(ib));
+        
+        if ib > 1
+            set(gca, 'YTick', [])
+            ylabel('')
+        end
+        if ia < length(alist)
+            set(gca, 'XTick', [])
+            xlabel('')
+        end
+    end
+end
+
+function helper_simulate(alpha,beta)
+dur = 50e-3; % duration of simulation (seconds)
+fs = 40e3; % 40 kHz sampling rate
 gamma = 24000; % This parameter was determined by Perl et al. to be the same for all birds tested, so we use their value
 y0 = [0;0]; % initial condition
+
 dxdt = @(t,x,y) y;
 dydt = @(t,x,y) -alpha*gamma^2 - beta*gamma^2*x - gamma^2*x^3 - gamma*x^2*y + gamma^2*x^2 - gamma*x*y;
 % Here the parameters alpha and beta are constant in time, but to make a
@@ -23,17 +48,9 @@ dydt = @(t,x,y) -alpha*gamma^2 - beta*gamma^2*x - gamma^2*x^3 - gamma*x^2*y + ga
 
 odefun = @(t,y) [dxdt(t,y(1),y(2)); dydt(t,y(1),y(2))];
 
-fs = 40e3; % 40 kHz sampling rate
-tspan = 0:(1/fs):200e-3; % 200 ms
+tspan = 0:(1/fs):dur;
 [T,Y] = ode23(odefun, tspan, y0);
 
-subplot(2,1,1)
 plot(T,Y(:,1))
-title(sprintf('\\alpha = %g \n\\beta = %g', alpha, beta))
-ax1 = gca;
-
-subplot(2,1,2)
 displaySpecgramQuick(Y(:,1),fs)
-ax2 = gca;
-
-linkaxes([ax1, ax2], 'x')
+title(sprintf('\\alpha = %g \\beta = %g', alpha, beta))
