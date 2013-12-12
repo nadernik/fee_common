@@ -1,3 +1,5 @@
+
+
 function varargout = egm_Sorted_rasters(varargin)
 % EGM_SORTED_RASTERS M-file for egm_Sorted_rasters.fig
 %      EGM_SORTED_RASTERS, by itself, creates a new EGM_SORTED_RASTERS or raises the existing
@@ -162,8 +164,8 @@ handles.P.trig.contSubsample = 0.001;
 
 handles.P.event = handles.P.trig; % duplicate options
 
-handles.P.preStartRef = .5;
-handles.P.postStopRef = 2.5;
+handles.P.preStartRef = .2;
+handles.P.postStopRef = .3;
 
 handles.P.filter = repmat([-inf inf],length(get(handles.list_Filter,'string')),1);
 
@@ -193,7 +195,7 @@ handles.PlotInPerSec = 0.04;
 
 handles.BackgroundColor = [1 1 1];
 
-handles.PSTHBinSize = 0.02;
+handles.PSTHBinSize = 0.005;
 handles.PSTHSmoothingWindow = 1;
 handles.PSTHYLim = [0 50; 0 100; 0 0.05; 0 1; 0 1];
 
