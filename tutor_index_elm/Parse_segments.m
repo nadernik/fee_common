@@ -68,7 +68,7 @@ handles.dbase = dbase;
 handles.symbols = [97:122 48:57 65:90];
 handles.currentletter = [];
 
-handles.clim = [15 20];
+handles.clim = [19 30];
 handles.volume = 5;
 
 handles.colormap = colormap;

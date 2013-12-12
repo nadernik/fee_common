@@ -19,7 +19,7 @@ ffn = mfilename('fullpath');
 subdirs = {'acquisitionGui', 'annotation', 'caf', 'CAFGUI', 'daq', ...
     'electro_gui', 'subsong', 'toolbox', 'VectorClust',...
     'misc_elm', 'phase_vocoder_elm', 'play_songs_elm', 'song_analysis_elm',...
-    'test_code_elm', 'tutor_index_elm'};
+    'test_code_elm', 'tutor_index_elm', 'pptfigure'};
 
 for ii = 1:length(subdirs)
     paths_to_add = genpath(fullfile(code_dir, subdirs{ii}));
@@ -33,7 +33,7 @@ for ii = 1:length(subdirs)
     end
     addpath(paths_to_add)
 end
-
+addpath('C:\\Users\emackev\My Documents\MATLAB\chronux')
 if verbosity > 0
     fprintf(' Done! \n')
 end

@@ -1,4 +1,4 @@
-function segs = Syllable_segment_Emily_var(pathName,Fc)
+function segs = Syllable_segment_Emily(pathName,Fc)
 %%% divide SAP wave files into bout files
 %%% originally written by Dmitiriy Aronov
 %%% Tatsuo Okubo
@@ -7,6 +7,7 @@ function segs = Syllable_segment_Emily_var(pathName,Fc)
 [a,fs] = wavread(pathName);
 % Segment
 % a is the sound signal
+%b = fir1(200,[860 8600]/(fs/2)); %%%%%%%%
 b = fir1(200,[1000 4000]/(fs/2)); %%%%%%%%
 snd = filtfilt(b, 1, a);
 smooth_window = 0.0025;
