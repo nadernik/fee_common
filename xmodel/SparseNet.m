@@ -9,17 +9,17 @@ classdef SparseNet < handle
         niter = 1000;
         
         % Tweakable parameters
-        LTPrate     = 1;% learning rate for Long-Term Potentiation
-        LTDrate     = 1;% learning rate for Long-Term Depression
+        LTPrate     = 0;% learning rate for Long-Term Potentiation
+        LTDrate     = 0;% learning rate for Long-Term Depression
         rperate     = 0.2;  % learning rate for predicted reward
-        msnthresh   = 1; % tonic inhibition on msn output
-        winit       = 1; % initial hvc weights
-        lmanoffset  = 1; % mean of LMAN fluctuations
+        msnthresh   = 0.1; % tonic inhibition on msn output
+        winit       = 0.1; % initial hvc weights
+        lmanoffset  = 2; % mean of LMAN fluctuations
         lmanstd     = 1; % standard deviation of LMAN fluctuations
-        hvcburstlen = 1; % width of HVC burst
+        hvcburstlen = 11; % width of HVC burst
         kernelstd   = 0; % standard deviation of Gaussian kernel that blurs reward and eligibility traces
-        pinhib      = 1; % Probability of one MSN inhibting another
-        latinhib    = 1; % Strength of lateral inhibition
+        pinhib      = 0; % Probability of one MSN inhibting another
+        latinhib    = 0; % Strength of lateral inhibition
         
         MICHALE_IS_WATCHING = false;
         
@@ -97,7 +97,9 @@ classdef SparseNet < handle
         function simulate(obj)
             for iter = 1:obj.niter
                 disp(iter)
-                obj.ffstep(iter);
+                obj.msnupdate(iter)
+                obj.lmanupdate(iter)
+                obj.vocalupdate(iter)
                 if iter < obj.niter
                     obj.wupdate(iter);
                     obj.rexpupdate(iter);
@@ -137,15 +139,17 @@ classdef SparseNet < handle
             obj.rexp(:,1) = saved.rexp;
             obj.wI        = saved.wI;
         end
-            
         
-        function ffstep(obj, iter)
+        
+        function msnupdate(obj, iter)
             % MSN activity depends on HVC input
             msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, msnin);
-            
-            bias = sum(obj.msnout(:,:,iter), 1)';
+        end
+        
+        function lmanupdate(obj, iter)
+            bias = obj.wL' * obj.msnout(:,:,iter);
             lmanin = obj.lmanoffset + obj.noise(:,iter) + bias;
             obj.lmanout(:,iter) = max(0, lmanin);
         end
@@ -264,8 +268,7 @@ classdef SparseNet < handle
                 
         
         function plotbiasvstemplate(obj, iter)
-            Y = sum(obj.msnout(:,:,iter),1) + obj.lmanoffset;
-            plot(Y)
+            plot(obj.bias(iter))
             hold all
             plot(obj.template)
             hold off
@@ -388,6 +391,23 @@ classdef SparseNet < handle
             for iter = 1:obj.niter
                 obj.ffstep(iter)
             end
-        end 
+        end
+        
+        function y = foralliter(obj, func)
+            % Calls function func for each iteration and returns a matrix
+            % of all the results. func must be a handle to a function that
+            % takes the iteration as its only argument and returns a
+            % vector. In the returned matrix, the iteration is the second
+            % dimension.
+            %
+            % Example: FIXME
+            y1 = func(1);
+            assert(isvector(y1));
+            y = zeros(length(y1), obj.niter);
+            y(:,1) = y1;
+            for iter = 2:obj.niter
+                y(:,iter) = func(iter);
+            end
+        end
     end % methods
 end % classdef
