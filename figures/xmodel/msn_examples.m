@@ -1,14 +1,14 @@
 function msn_examples(d, msn_example_list)
-c = load('xmodel_color_scheme.mat');
+SF = 3;
 % rescale so template has max value of 3
 mx = max(d.template);
-bs = 3 * d.bias(:, end) / mx;
-plot(bs, 'Color', c.bias, 'LineWidth', 3) % plot bias on last motif
+tmpl = SF * d.template / mx;
+plot(tmpl, 'Color', [0.7 0.7 0.7], 'LineWidth', 3) % plot template
 hold on
-tmpl = 3 * d.template / mx;
-plot(tmpl, 'Color', c.template, 'LineWidth', 3, 'LineStyle', ':') % plot template
+bs = SF * d.bias(:, end) / mx;
+plot(bs, '.', 'Color', 'k', 'LineWidth', 3) % plot bias on last motif
 line(xlim, [0 0], 'Color', [0 0 0]) % black line at pitch = 0
-offset = 4; % starting offset. each trace is offset in Y from previous so traces do not overlap
+offset = 2; % starting offset. each trace is offset in Y from previous so traces do not overlap
 dy = 1.6; % offset increment between traces
 mmx = globalmax(d.msn_output(:,:,end));
 for ii = 1:length(msn_example_list)
@@ -18,7 +18,8 @@ for ii = 1:length(msn_example_list)
     ymsns(ii) = -offset;
     offset = offset + dy; % increment offset by dy
 end
-plot(Y, 'Color', c.msn, 'LineWidth', 3) % plot all the msn traces
+plot(Y, 'Color', 'k', 'LineWidth', 3) % plot all the msn traces
+ylim([-offset, 1.2*SF])
 set(gca, 'FontSize', 16)
 xlabel('Time (ms)')
 set(gca, 'YTick', [wrev(ymsns) 0])

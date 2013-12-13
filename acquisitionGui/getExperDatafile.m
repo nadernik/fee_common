@@ -4,11 +4,12 @@ persistent d;
 persistent d_exper;
 
 filename = '';
-if(~isempty(d_exper) && strcmp(exper.dir, d_exper.dir) && strcmp(exper.birdname, d_exper.birdname) &  strcmp(exper.expername, d_exper.expername))
+if(~isempty(d_exper) && strcmp(exper.dir, d_exper.dir) && strcmp(exper.birdname, d_exper.birdname) &&  strcmp(exper.expername, d_exper.expername))
     filename = helper_getExperDatafile(d, exper, num, chan, true);
 end
 if(strcmp(filename, ''))
-    d = dir([exper.dir,exper.birdname,'_d*chan',num2str(chan),'.dat']);
+    searchstring = [exper.birdname '_d*chan' num2str(chan) '.dat'];
+    d = dir(fullfile(exper.dir, searchstring));
     filename = helper_getExperDatafile(d, exper, num, chan, false);
 end
 

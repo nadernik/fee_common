@@ -2,7 +2,7 @@
 close all
 clear all
 
-sn = SparseNet();
+sn = SparseNet2();
 
 sn.MICHALE_IS_WATCHING = true;
 
@@ -21,10 +21,8 @@ sn.lmanoffset = 2    * sn.lmanstd;  % Mean of LMAN noise
 sn.winit      = 0.1  * sn.lmanstd;  % Maximum initial HVC-MSN weight
 sn.msnthresh  = 1    * sn.winit;    % Threshold for MSN output
 
-sn.latinhib = 0;
 sn.LTPrate  = 0.05;   % FIXME how does this scale?
-sn.LTDrate  = 2e-6;   % FIXME how does this scale?
-sn.pinhib   = 0.75;   % FIXME how does this scale?
+sn.LTDrate  = 0.5e-6;   % FIXME how does this scale?
 
 a = (maxtemplate - sn.lmanoffset);
 t1 = linspace(0, 2*pi, sn.nhvc);

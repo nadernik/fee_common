@@ -16,7 +16,7 @@ d = load(filename);
 
 %% Plot template with song at the end of learning and example MSNs
 figure
-msn_examples(d, 1:d.hvc_units)
+msn_examples(d, 5:10:45)
 
 
 %% Plot mean squared error

@@ -1,4 +1,7 @@
-classdef SparseNet < handle
+% Removed lateral inhibition
+% Set vpost to just noise (removed wH*H)
+
+classdef SparseNet2 < handle
     %SPARSENET Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -9,17 +12,15 @@ classdef SparseNet < handle
         niter = 1000;
         
         % Tweakable parameters
-        LTPrate     = 0;% learning rate for Long-Term Potentiation
-        LTDrate     = 0;% learning rate for Long-Term Depression
+        LTPrate     = 1;% learning rate for Long-Term Potentiation
+        LTDrate     = 1;% learning rate for Long-Term Depression
         rperate     = 0.2;  % learning rate for predicted reward
-        msnthresh   = 0.1; % tonic inhibition on msn output
-        winit       = 0.1; % initial hvc weights
-        lmanoffset  = 2; % mean of LMAN fluctuations
-        lmanstd     = 1; % standard deviation of LMAN fluctuations
-        hvcburstlen = 11; % width of HVC burst
+        msnthresh   = 1; % tonic inhibition on msn output
+        winit       = 1; % initial hvc weights
+        lmanoffset  = 1;
+        lmanstd     = 1;
+        hvcburstlen = 1; % width of HVC burst
         kernelstd   = 0; % standard deviation of Gaussian kernel that blurs reward and eligibility traces
-        pinhib      = 0; % Probability of one MSN inhibting another
-        latinhib    = 0; % Strength of lateral inhibition
         
         MICHALE_IS_WATCHING = false;
         
@@ -36,7 +37,7 @@ classdef SparseNet < handle
     end
     
     methods
-        function obj = SparseNet()
+        function obj = SparseNet2()
             obj.init()
         end
         
@@ -81,25 +82,18 @@ classdef SparseNet < handle
             z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
             obj.noise = z./std(z(:))*obj.lmanstd;
             
-            % Lateral inhibition weights
-            wii1 = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
-            wii2 = wii1 & ~eye(obj.nmsn); % make sure no MSN inhibits itself
-            obj.wI = obj.latinhib * wii2; % scale based on inhibition strength parameter
-            
             % Kernel for dopamine and eligibility traces
             x = linspace(-4,4,8*obj.kernelstd + 1);
             k = normpdf(x)'; % Gaussian, column vector
             obj.kernel = k./sum(k);
             
-            obj.rexp(:,1) = -(obj.lmanoffset - obj.template').^2;
+            obj.rexp(:,1) = -abs(obj.lmanoffset - obj.template');
         end
         
         function simulate(obj)
             for iter = 1:obj.niter
                 disp(iter)
-                obj.msnupdate(iter)
-                obj.lmanupdate(iter)
-                obj.vocalupdate(iter)
+                obj.ffstep(iter);
                 if iter < obj.niter
                     obj.wupdate(iter);
                     obj.rexpupdate(iter);
@@ -139,17 +133,15 @@ classdef SparseNet < handle
             obj.rexp(:,1) = saved.rexp;
             obj.wI        = saved.wI;
         end
+            
         
-        
-        function msnupdate(obj, iter)
-            % MSN activity depends on HVC input
+        function ffstep(obj, iter)
+            % MSN activity depends on HVC input and noise (from lman)
             msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
             % MSN output is threshold linear
             obj.msnout(:,:,iter) = max(0, msnin);
-        end
-        
-        function lmanupdate(obj, iter)
-            bias = obj.wL' * obj.msnout(:,:,iter);
+            
+            bias = sum(obj.msnout(:,:,iter), 1)';
             lmanin = obj.lmanoffset + obj.noise(:,iter) + bias;
             obj.lmanout(:,iter) = max(0, lmanin);
         end
@@ -160,9 +152,7 @@ classdef SparseNet < handle
             % Post-synaptic depolarization used in learning rule (see LTP).
             % The learning rule is roughly Vpost * HVC * RPE.
             L = obj.noise(:,iter)';
-            H = obj.wH(imsn,:,iter) * obj.hvcout;
-            I = obj.inhib(imsn,iter);
-            v = L + H - I;
+            v = L;
         end
         
         function wupdate(obj, iter)
@@ -201,21 +191,8 @@ classdef SparseNet < handle
             d = obj.reward(iter) - obj.rexp(:,iter);
         end
         
-        function I = inhib(obj, imsn, newiter)
-            persistent iter
-            persistent Iall
-            if isempty(iter)
-                iter = -1;
-            end
-            if newiter ~= iter
-                iter = newiter;
-                Iall = obj.wI * (obj.msnout(:,:,iter) > 0);
-            end
-            I = Iall(imsn,:);
-        end
-        
         function r = reward(obj, iter)
-            r = -(obj.lmanout(:,iter) - obj.template').^2;
+            r = -abs(obj.lmanout(:,iter) - obj.template');
         end
         
         function rexpupdate(obj, iter)
@@ -268,7 +245,8 @@ classdef SparseNet < handle
                 
         
         function plotbiasvstemplate(obj, iter)
-            plot(obj.bias(iter))
+            Y = sum(obj.msnout(:,:,iter),1) + obj.lmanoffset;
+            plot(Y)
             hold all
             plot(obj.template)
             hold off
@@ -391,23 +369,6 @@ classdef SparseNet < handle
             for iter = 1:obj.niter
                 obj.ffstep(iter)
             end
-        end
-        
-        function y = foralliter(obj, func)
-            % Calls function func for each iteration and returns a matrix
-            % of all the results. func must be a handle to a function that
-            % takes the iteration as its only argument and returns a
-            % vector. In the returned matrix, the iteration is the second
-            % dimension.
-            %
-            % Example: FIXME
-            y1 = func(1);
-            assert(isvector(y1));
-            y = zeros(length(y1), obj.niter);
-            y(:,1) = y1;
-            for iter = 2:obj.niter
-                y(:,iter) = func(iter);
-            end
-        end
+        end 
     end % methods
 end % classdef
