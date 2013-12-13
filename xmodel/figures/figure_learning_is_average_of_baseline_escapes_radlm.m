@@ -1,6 +1,6 @@
-function figure_learning_is_average_of_baseline_escapes(do_simulations)
+function figure_learning_is_average_of_baseline_escapes_radlm(do_simulations)
 
-datafile = 'c:\stetner\data\figures\xmodel\caf_ibags50.mat';
+datafile = 'c:\stetner\data\figures\xmodel\caf_radlm3.mat';
 colorscheme = 'C:\stetner\code\figures\xmodel\xmodel_color_scheme.mat';
 num_traces = 10;
 
@@ -8,25 +8,21 @@ num_traces = 10;
 % If function is called without an argument or with an argument that is not
 % 1, this step is skipped!
 if exist('do_simulations', 'var') && (do_simulations == 1)
-    load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\51.mat');
-    %load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\74.mat');
-    %load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\101.mat')
+    xmodel_parameters_caf
     baseline_motifs = 1000;
     learning_motifs = 600;
     total_motifs = baseline_motifs + learning_motifs + ending_motifs;
-    xmodel_initialize
-    for u = 1:lman_units % for each channel, stretch lman noise
-        lman_noise(u, :, :) = generate_lman_noise_streched_spectrum(motif_steps, total_motifs, stretches(n));
-    end
-    xmodel_run
-    xmodel_calculate_bias
-    bias = squeeze(bias);
+    ra_dlm_strength = 0.2;
+    ra_noise_amplitude = 0.6;
+    xmodel_initialize_ra_to_dlm
+    xmodel_run_ra_to_dlm_slow
     save(datafile)
 end
 
 %% Load stuff
 
 d = load(datafile); % Load data
+d.bias = squeeze(d.bias);
 c = load(colorscheme);
 
 
@@ -35,8 +31,8 @@ c = load(colorscheme);
 figure
 a1 = subplot(2,1,1); 
 is_baseline = (1:d.total_motifs) <= d.baseline_motifs;
-baseline_escapes = squeeze(d.ra_output(1,:,is_baseline &  d.is_escape));
-baseline_hits    = squeeze(d.ra_output(1,:,is_baseline & ~d.is_escape));
+baseline_escapes = squeeze(d.pitch(:,is_baseline &  d.is_escape));
+baseline_hits    = squeeze(d.pitch(:,is_baseline & ~d.is_escape));
 
 % example hits
 hold on
@@ -73,16 +69,40 @@ ylabel('RPE')
 
 %% Bias before and after learning
 figure
+
+% Calculate the bias at the end of learning by running the simulation
+% without noise. We cannot just calculate the 
+for t = 1:d.motif_steps
+    msn_input = d.weights_on_msn_from_hvc * d.hvc_output(:,t);
+    msn_output(:,t) = max(msn_input - d.msn_threshold, 0);
+    
+    pallidal_output(:,t) = d.weights_on_pallidus_from_msn * msn_output(:,t);
+    
+    if t == 1
+        dlm_output(:,t) = d.weights_on_dlm_from_pallidus * pallidal_output(:,t);
+    else
+        dlm_output(:,t) = d.weights_on_dlm_from_pallidus * pallidal_output(:,t) + ...
+            d.weights_on_dlm_from_ra * ra_output(:,t-1);
+    end
+    
+    lman_input = d.lman_offset + d.weights_on_lman_from_dlm * dlm_output(:,t);
+    lman_output(:,t) = lman_input; %max(0, lman_input); %DEBUG
+    ra_input = d.weights_on_ra_from_lman * lman_output(:,t) + ...
+        d.weights_on_ra_from_hvc * d.hvc_output(:,t) + d.lman_offset;
+    ra_output(:,t) = ra_input; %max(0, ra_input); %DEBUG
+    bias_end(t) = d.weights_on_song_from_ra * ra_output(:,t);
+end
+
 % normalize so that the max of the bias after learning is 1.
-Z = max(d.bias(:,end)); % normalization constant
-plot(d.bias(:,1)/Z, ':', 'Color', c.bias, 'LineWidth', 3)
+Z = max(bias_end); % normalization constant
+% plot(fixme/Z, ':', 'Color', c.bias, 'LineWidth', 3)
 hold on
-plot(d.bias(:,end)/Z, 'Color', c.bias, 'LineWidth', 3)
+plot(bias_end/Z, 'Color', c.bias, 'LineWidth', 3)
 set(gca, 'FontSize', 16)
 xlabel('Time (ms)')
 
 % Full width at half maximum of bias after learning
-[width, xw] = fwhm(d.bias(:,end));
+[width, xw] = fwhm(bias_end);
 y = [0.5, 0.5];
 [fx, fy] = dsxy2figxy(xw, y);
 annotation('doublearrow',fx,fy)
@@ -95,37 +115,31 @@ set(gca, 'YTick', [0 1])
 
 % bias after learning
 figure
-t_bias = (1:d.motif_steps) - d.caf_target_time2;
-y_bias = d.bias(:,end)./max(d.bias(:,end));
-plot(t_bias, y_bias, 'Color', c.bias, 'LineWidth', 3)
+t = (1:d.motif_steps) - d.caf_target_time2;
+plot(t, bias_end./max(bias_end), 'Color', c.bias, 'LineWidth', 3)
 hold on
-fprintf('Full width at half maximum of bias after learning is %g ms.\n', fwhm(d.bias(:,end)))
+fprintf('Full width at half maximum of bias after learning is %g ms.\n', fwhm(bias_end))
 
 % hvc burst
 hvc_burst = d.hvc_output(1, 1:9);
 t = 1:length(hvc_burst);
-t_hvc = t-mean(t);
-y_hvc = hvc_burst./max(hvc_burst);
-plot(t_hvc, y_hvc, 'Color', c.hvc, 'LineWidth', 3)
+t = t-mean(t);
+plot(t, hvc_burst./max(hvc_burst), 'Color', c.hvc, 'LineWidth', 3)
 fprintf('Full width at half maximum of HVC burst is %g ms.\n', fwhm(hvc_burst))
 
 % average of baseline escapes
-t_esc = (1:d.motif_steps) - d.caf_target_time2;
-y_esc = avg_of_baseline_escapes./max(avg_of_baseline_escapes);
-plot(t_esc, y_esc, 'Color', c.escape, 'LineWidth', 3)
+t = (1:d.motif_steps) - d.caf_target_time2;
+plot(t, avg_of_baseline_escapes./max(avg_of_baseline_escapes), 'Color', c.escape, 'LineWidth', 3)
 fprintf('Full width at half maximum of average of baseline escapes is %g ms.\n', fwhm(avg_of_baseline_escapes))
 
 % reward kernel
 t = 1:length(d.rkernel);
-t_rwd = t-mean(t);
-y_rwd = d.rkernel./max(d.rkernel);
-plot(t_rwd, y_rwd, 'Color', c.vta, 'LineWidth', 3)
+t = t-mean(t);
+plot(t, d.rkernel./max(d.rkernel), 'Color', c.vta, 'LineWidth', 3)
 fprintf('Full width at half maximum of reward kernel is %g ms.\n', fwhm(d.rkernel))
 
 set(gca, 'FontSize', 16, 'YTick', [0 1])
 xlabel('Time from CAF target (ms)')
 legend({'Learning', 'HVC burst', 'Baseline escapes', 'Reward kernel'})
 
-save('c:\stetner\data\figures\xmodel\caf_example1.mat', ...
-    't_bias', 'y_bias', 't_hvc', 'y_hvc', 't_esc', 'y_esc', 't_rwd', 'y_rwd', ...
-    'rpe_hit', 'rpe_esc', 'hitmotif', 'escmotif')
+keyboard

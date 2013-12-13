@@ -82,5 +82,8 @@ ylabel('Learning width')
 hold on
 plot(xlim, ones(2,1) * fwhm(d.rkernel), 'k')
 setticklimx([0,40])
-setticklimy([0, 20])
+setticklimy([0, 60])
+
+rkernel = d.rkernel;
+save('c:\stetner\data\figures\xmodel\learning_width_vs_lman.mat', 'rkernel', 'width_lman', 'width_learning')
 keyboard
