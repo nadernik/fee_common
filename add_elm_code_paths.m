@@ -38,4 +38,4 @@ if verbosity > 0
     fprintf(' Done! \n')
 end
 
-clear all
+%clear all
