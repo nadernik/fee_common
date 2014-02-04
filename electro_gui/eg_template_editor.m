@@ -56,7 +56,8 @@ handles.template = varargin{1};
 handles.CurrentTemplate = get(handles.template,'userdata');
 
 % Make template editor's directory the current directory
-[pathstr, name, ext, versn] = fileparts(mfilename('fullpath'));
+[pathstr, name, ext] = fileparts(mfilename('fullpath')); % changed from: ...
+% [pathstr, name, ext, versn] = fileparts(mfilename('fullpath'));
 cd(pathstr);
 
 mt = dir('egt_*.m');
