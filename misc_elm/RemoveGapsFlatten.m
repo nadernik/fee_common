@@ -1,6 +1,6 @@
 
 %% making new songs
-clear all; close all
+%clear all; close all
 %syllable library
 path = 'C:\Users\emackev\Documents\MATLAB\OferSongs';
 [bells,fs] = wavread(fullfile(path, 'bells')); 
@@ -92,14 +92,20 @@ shg
 
 %% gapfreeing and flattening another song
 close all; clear all
-path = 'C:\Users\emackev\Documents\MATLAB\Tutors'
-[song,fs] = wavread(fullfile(path, 'Purple40_3803_cage42_tutor.wav')); 
 
+%to use purple song:
+% path = 'C:\Users\emackev\Documents\MATLAB\Tutors';
+% [song,fs] = wavread(fullfile(path, 'Purple40_3803_cage42_tutor.wav')); 
+% load(fullfile(path, 'analysis_purple40'));%load(fullfile(path, 'analysis_simple_bp_860_8600'));
+
+%to use simple song: 
+path = 'C:\Users\emackev\Documents\MATLAB\OferSongs';
+[song,fs] = wavread(fullfile(path, 'simple.wav')); 
+load(fullfile(path, 'analysis_simple_bp_860_8600'));
 %set syllables
 %segment in electrogui, set high threshold so that you don't include any
 %preonset gap (don't want to flatten up the noise)
-load(fullfile(path, 'analysis_purple40'));%load(fullfile(path, 'analysis_simple_bp_860_8600'));
-segs = dbase.SegmentTimes{1}; 
+segs = dbase.SegmentTimes{end}; 
 
 for i = 1:size(segs,1)
     Syl{i} = song(segs(i,1):segs(i,2));
@@ -111,10 +117,10 @@ cosramp = round(.005*fs);
 Gap = round(.03*fs);
 NoGaps = 1;
 Flattened = 1; 
-IMotifI = .1*fs;
+IMotifI = 0;%.1*fs;
 scalefactor = 15;
 normalizeSyls = 0; 
-
+NMotifs = 2;
 
 PrevOnset = 0; 
 PrevDur = 0; 
@@ -139,17 +145,24 @@ for syli = 1:numel(Syl)
     Seed(syli,:) = [zeros(1, OnsetS) (S.*window)' zeros(1, (SongLength-OnsetS)-numel(S))];
 end
 
-All = sum(Seed);
-All = All(1:PrevOnset+PrevDur);
+All = sum(Seed(:,1:OnsetS));
+All1 = All; 
+for i = 1:NMotifs-1
+    All1 = [All1 zeros(1,IMotifI) All];
+end
+All = All1;
+%All = All(1:PrevOnset+PrevDur);
 if Flattened
     All = pvocnormalized(All, 1,200);
     All = All';
 end
-All = [zeros(1,IMotifI ) All zeros(1,IMotifI) All zeros(1,IMotifI)];
+
 All = All*scalefactor;
-subplot(211)
+h = subplot(211);
 plot(1/fs:1/fs:numel(All)/fs, All)
-subplot(212)
+g = subplot(212);
 displaySpecgramQuick(All,fs)
-sound(All,fs)
+linkaxes([h g], 'x')
 shg
+sound(All,fs)
+
