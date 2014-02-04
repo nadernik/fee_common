@@ -164,3 +164,27 @@ I.Name{ind} = 3982;
 I.birthdate{ind} = '7-27-2013';
 I.cage{ind} = 'E40';
 I.isolationdate{ind} = '9-06-2013';
+%4014
+ind = ind+1;
+I.Name{ind} = 4014;
+I.birthdate{ind} = '8-9-2013';
+%4031
+ind = ind+1;
+I.Name{ind} = 4031;
+I.birthdate{ind} = '8-14-2013';
+%4033
+ind = ind+1;
+I.Name{ind} = 4033;
+I.birthdate{ind} = '8-14-2013';
+%4140
+ind = ind+1;
+I.Name{ind} = 4140;
+I.birthdate{ind} = '9-20-2013';
+%4141
+ind = ind+1;
+I.Name{ind} = 4141;
+I.birthdate{ind} = '9-20-2013';
+%4203
+ind = ind+1;
+I.Name{ind} = 4203;
+I.birthdate{ind} = '10-12-2013';
