@@ -1,4 +1,8 @@
 function varargout = mini_max_plot(times, data, varargin)
+assert(isvector(data), 'MINI_MAX_PLOT only handles vector inputs atm');
+assert(isvector(times), 'MINI_MAX_PLOT only handles vector inputs atm');
+times = reshape(times, [], 1);
+data = reshape(data, [], 1);
 %% Handling arguments to MINI_MAX_PLOT
 options = struct('ax', nan);
 
