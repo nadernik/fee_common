@@ -12,7 +12,8 @@ end
 
 %loading file
 cd(fullfile(path, ChildName));
-D = wavread(fullname{i});
+[D,fs] = wavread(fullname{i});
 D = mean(D,2);
 cd C:\Users\emackev\Documents\MATLAB\code
 %%
+mini_max_plot((1/fs:1/fs:length(D)/fs)', D);
