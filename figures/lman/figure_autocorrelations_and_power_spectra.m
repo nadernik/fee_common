@@ -80,8 +80,9 @@ figure
 set(gca, 'ColorOrder', colors)
 hold all
 for ii = 1:length(b)
-    plot(b(ii).lags, b(ii).acorr)
+    plot(b(ii).lags, b(ii).acorr, 'LineWidth', 2)
 end
+set(gca, 'XTick', -10:5:10, 'YLim', [0 1], 'YTick', 0:0.25:1)
 xlabel('Lag (ms)')
 ylabel('Correlation (normalized)')
 
@@ -90,9 +91,10 @@ figure
 set(gca, 'ColorOrder', colors)
 hold all
 for ii = 1:length(b)
-    plot(b(ii).freq, b(ii).freqpower)
+    plot(b(ii).freq, b(ii).freqpower, 'LineWidth', 2)
 end
 set(gca, 'YScale', 'log')
+set(gca, 'XTick', 0:100:500)
 xlabel('Frequency (Hz)')
 ylabel('Power')
 

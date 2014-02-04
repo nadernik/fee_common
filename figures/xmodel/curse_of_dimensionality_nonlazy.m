@@ -11,7 +11,7 @@ function curse_of_dimensionality_nonlazy(do_simulations)
 
 dof_list = [1, 2, 4, 8, 12, 16];
 total_runs = 10;
-threshold = 3;
+fit_trials = 1:500;
 
 %%
 if exist('do_simulations', 'var') && do_simulations == 1
@@ -24,6 +24,7 @@ end
 
 %% Plot mean squared error over time
 figure
+set(gca, 'YScale', 'log')
 hold all
 c = get(gca, 'ColorOrder');
 for id = 1:length(dof_list)
@@ -80,50 +81,38 @@ ylabel('Trials to reach threshold MSE')
 %% Calculate time to learn based on the time constant of an exponential fit
 %% to the early phase of learning
 
-% Do an exponential fit on MSE until the log(MSE) reaches this value
-ymin_for_fit = 2.5;
-
 figure
+set(gca, 'YScale', 'log')
 hold on
 c = get(gca, 'ColorOrder');
 for id = 1:length(dof_list)
     mse_mean = mean(mse(:,id,:), 1);
 
-    % do exponential fit up until this time. This is the first time that
-    % the average log(MSE) falls below ymin_for_fit. There is a different
-    % time for each degree of freedom
-    temp = find(mse_mean < exp(ymin_for_fit), 1, 'first');
-    if isempty(temp)
-        % If it never falls below the threshold, just fit the exponential
-        % to the whole thing
-        xmax(id) = size(mse,3);
-    else
-        xmax(id) = temp;
-    end
-
     % Fit an exponential to each run separately so we can have error bars
     % on our mesaurement of the time constant
     for ir = 1:total_runs
         % fit an exponential by fitting a line to log(y)
-        logy = squeeze(log(mse(ir,id,:)));
-        plot(logy, 'Color', c(id, :))
+        y = squeeze(mse(ir,id,:));
+        plot(y, 'Color', c(id, :))
 
-        x = 1:xmax(id);
+        x = fit_trials;
         X = [x; ones(size(x))];
-        [b,bint,r,rint,stats] = regress(logy(x) ,X');
-        plot(b' * X, 'Color', 'k')
+        [b,bint,r,rint,stats] = regress(log(y(x)) ,X');
+        yfit = exp(b' * X);
+        plot(yfit, 'Color', 'k')
         slopes(ir,id) = b(1);
     end
 end
-plot(xlim, ones(2,1)*ymin_for_fit, ':k')
-ylabel('Log(MSE)')
+ylabel('Mean squared error')
 xlabel('Trials')
+set(gca, 'XTick', [0 2500 5000 7500 10000])
 
 figure
 taus = -1 ./ slopes;
 errorbar(dof_list, mean(taus,1), std(taus,1))
-xlabel('Degrees of Freedom')
-ylabel('Learning Time Constant')
+xlabel('Dimensions in vocal output')
+ylabel('Learning time constant (trials)')
+set(gca, 'XTick', 0:4:16, 'YTick', 0:500:2000)
 %%
 save('c:\stetner\data\xmodel\curse_of_dimensionality_nonlazy_aggregated.mat')
 

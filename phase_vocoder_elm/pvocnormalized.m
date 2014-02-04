@@ -23,7 +23,11 @@ scf = 1.0;
 % Calculate the basic STFT, magnitude scaled
 X = scf * stft(x', n, n, hop);
 for i = 1:size(X,2)
-    X1(:,i) = X(:,i)/sqrt(sum(abs(X(:,i)).^2));
+    if sqrt(sum(abs(X(:,i)).^2))~=0
+        X1(:,i) = X(:,i)/sqrt(sum(abs(X(:,i)).^2));
+    else
+        X1(:,i) = X(:,i)*0; 
+    end
 end
 X = X1;
 % Calculate the new timebase samples

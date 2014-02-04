@@ -1,5 +1,6 @@
-function pathname = PlatformPicker(feebox, folder, UseDialog)
-% pathname = PlatformPicker(feebox, folder, UseDialog)
+function initial_path = PlatformPicker(feebox, share, UseDialog)
+% pathname = PlatformPicker(feebox, share, UseDialog)
+% e.g. PlatformPicker(feebox1, shared, code)
 % makes folder names consistent across mac and pc.  For now, you need to
 % set the default mapped network drives on your pc.  If UseDialog is true,
 % then you can pick manually.
@@ -11,19 +12,18 @@ if UseDialog
     pathname = uigetdir('', 'Choose the directory');
 else
     if ismac
-        initial_path = '~/../../Volumes';
+        initial_path = fullfile('~', share);
     end
     if ispc
         % change defaults for different pc
-        if strmatch('emily', folder)
+        if strmatch('emily', share)
             initial_path = 'Y:';
         end
-        if strmatch('emackev', folder)
+        if strmatch('emackev', share)
             initial_path  = 'Z:';
         end
-        if strmatch('shared', folder)
+        if strmatch('shared', share)
             initial_path  = 'X:';
         end
     end
-    pathname = fullfile(initial_path, folder);
 end

@@ -43,6 +43,9 @@ pull, merge and push again)
 
 -To pull others' changes from the server: hg pull
 
+-To update your version: hg update
+(you may get an error that this creates multiple heads.  In this case, merge instead.  DO NOT force (-f))
+
 -To merge your version with the server's version (after you pull): hg
  merge
 
@@ -54,7 +57,8 @@ hg commit -m "message explaining what you
  changed"
 --Check if anyone else made changes--
 hg pull
---Merge if they did--
+--Merge if they did, update if they didn't--
+hg update
 hg merge
 --Push your changes to the server-- 
 hg push
@@ -62,6 +66,9 @@ hg push
 OTHER USEFUL COMMANDS
 --If want to just get the server's version, and write over your local version--
 hg update --clean
+
+--If you want to update, and ignore any uncommited changes in your local repository:
+hg update -C
 
 --Get a list of the last 3 changes--
 hg log -l 3

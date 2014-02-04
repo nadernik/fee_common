@@ -23,7 +23,7 @@ if(~strcmp(filename,''))
     %[HWChannels, data, time, startSamp, names, values, trigFileFormat] = daq_readDatafile([exper.dir,filename],false, whichSamples);
     
     %new
-    [data, info] = daq_readDatafile([exper.dir,filename],true, whichSamples);
+    [data, info] = daq_readDatafile(fullfile(exper.dir,filename),true, whichSamples);
     HWChannels = info.daqchannels;
     time = [datevec(info.absStartTime - (info.startSampleNum/(info.fs*60*60*24))), ...
             datevec(convertExperTimeStr2MatlabTime(timeCreated)), ...

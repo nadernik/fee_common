@@ -1,3 +1,15 @@
+%% Bias at a single time across trials
+% t [vector]
+iters = 1:sn.niter;
+b = zeros(length(iters), length(t));
+for i = 1:length(iters)
+    temp = sn.bias(iters(i));
+    b(i,:) = temp(t);
+end
+plot(b)
+bn = b ./ (ones(sn.niter,1) * sn.template);
+plot(bn)
+
 %% LMAN output and RPE at a single time across trials
 iters = 1:530;
 lman = sn.lmanout(ihvc,iters);
@@ -28,74 +40,118 @@ line(xlim, ones(2,1)*sn.template(ihvc), 'Color', 'k')
 xlabel('Trial')
 
 %% LTP in a single MSN over all synapses and motifs
-plot_every = false;
+% imsn [scalar]
+% plot_every [boolean scalar]
 ltp = zeros(sn.nhvc, sn.niter);
+ltd = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
-    ltp(:,iter) = sn.LTD(imsn, iter);
+    ltp(:,iter) = sn.LTP(imsn, iter);
+    ltd(:,iter) = sn.LTD(imsn, iter);
     if plot_every
-        plot(ltp(:,iter))
+        plot(ltp(:,iter), 'r')
+        hold on
+        plot(ltd(:,iter), 'b')
         title(sprintf('LTP for MSN %g on trial %g', imsn, iter))
         ylim([-.1, .1])
         pause
     end
 end
+clf
+subplot(2,1,1)
 imagesc(ltp')
 xlabel('HVC')
 ylabel('Trial')
 title(sprintf('LTP for MSN %g', imsn))
+subplot(2,1,2)
+imagesc(ltd')
+xlabel('HVC')
+ylabel('Trial')
+title(sprintf('LTD for MSN %g', imsn))
+
 
 %% LTP and LTD for a single HVC-X synapse
+% imsn [scalar]
+% ihvc [scalar]
+% iters [vector]
 clf
-axh(1) = subplot(4,1,1);
-ltp = zeros(1, sn.niter);
-ltd = zeros(1, sn.niter);
-for iter = 1:sn.niter
-    temp = sn.LTP(imsn, iter);
-    ltp(iter) = temp(ihvc);
-    temp = sn.LTD(imsn, iter);
-    ltd(iter) = temp(ihvc);
+ltp = zeros(1, length(iters));
+ltd = zeros(1, length(iters));
+vp  = zeros(1, length(iters));
+rpe = zeros(1, length(iters));
+for i = 1:length(iters)
+    temp = sn.LTP(imsn, iters(i));
+    ltp(i) = temp(ihvc);
+    temp = sn.LTD(imsn, iters(i));
+    ltd(i) = temp(ihvc);
+    temp = sn.vpost(imsn, iters(i));
+    vp(i) = temp(ihvc);
+    temp = sn.rpe(iters(i));
+    rpe(i) = temp(ihvc);
 end
+
+axh(1) = subplot(6,1,1);
 plot(ltp)
-% hold all
-% plot(ltd)
+hold all
+plot(ltd)
 hold off
 xlabel('Trial')
 ylabel('LTP or LTD')
-% legend({'LTP', 'LTD'})
+legend({'LTP', 'LTD'})
 title(sprintf('LTP and LTD for weight onto MSN %g from HVC neuron %g', imsn, ihvc))
 
-axh(2) = subplot(4,1,2);
+axh(2) = subplot(6,1,2);
 plot(squeeze(sn.wH(imsn,ihvc,:)))
 xlabel('Trial')
 ylabel('Weight')
 
-axh(3) = subplot(4,1,3);
+axh(3) = subplot(6,1,3);
 plot(squeeze(sn.msnout(imsn, ihvc, :)))
 hold all
 plot(squeeze(sum(sn.msnout(:,ihvc,:), 1)))
 ylabel('MSN output')
 
-axh(4) = subplot(4,1,4);
+axh(4) = subplot(6,1,4);
 plot(sn.lmanout(ihvc,:))
 hold all
 plot([1, sn.niter], ones(1,2) * sn.template(ihvc))
 hold off
 ylabel('LMAN output')
 
+axh(5) = subplot(6,1,5);
+plot(vp)
+hold on
+plot(xlim, [0 0])
+hold off
+ylabel('V_p_o_s_t')
+
+axh(6) = subplot(6,1,6);
+plot(rpe)
+hold on
+plot(xlim, [0 0])
+hold off
+ylabel('RPE')
+
 linkaxes(axh, 'x')
 
 %% LTP for all synapses from a single HVC neuron
-iters = 1:sn.niter;
-ihvc1 = 20;
-ihvc2 = 21;
+iters = 1:500;
+ihvc1 = 47;
+ihvc2 = 62;
 p1 = zeros(sn.nmsn, length(iters));
 p2 = zeros(sn.nmsn, length(iters));
+d1 = zeros(sn.nmsn, length(iters));
+d2 =zeros(sn.nmsn, length(iters));
 for ii = 1:length(iters)
-    iter = iters(ii)
+    iter = iters(ii);
+    fprintf('Trial %g\n', iter)
     for imsn = 1:sn.nmsn
         temp = sn.LTP(imsn, iter);
         p1(imsn,ii) = temp(ihvc1);
         p2(imsn,ii) = temp(ihvc2);
+        
+        temp = sn.LTD(imsn, iter);
+        d1(imsn,ii) = temp(ihvc1);
+        d2(imsn,ii) = temp(ihvc2);
     end
 end
 subplot(1,2,1)
@@ -163,8 +219,8 @@ for imsn = 1:sn.nmsn
 end
 
 %% MSN output on a single motif
-dosort = true;
-iter = sn.niter;
+% do_sort [boolean scalar]
+% iter [scalar]
 assert(isscalar(iter))
 if dosort
     tmax = nan(sn.nmsn, 1);
@@ -190,16 +246,17 @@ fprintf('MSNs active on time step %g on trial %g: ', ihvc, iter)
 disp(imsn')
 
 %% Number of MSNs active
-nactivemsn = squeeze(sum(sn.msnout > 0, 1));
-iter = sn.niter;
+% t [vector]
+% iter [scalar]
 
+nactivemsn = squeeze(sum(sn.msnout > 0, 1));
 subplot(1,3,1)
-plot(nactivemsn(ihvc,:)')
+plot(nactivemsn(t,:)')
 xlabel('Trial')
 ylabel('Active MSNs')
-title(['Number of active MSNs at time ', int2str(ihvc)])
-if length(ihvc) > 1
-    legend(arrayfun(@int2str, ihvc, 'UniformOutput', 0))
+title(['Number of active MSNs at time ', int2str(t)])
+if length(t) > 1
+    legend(arrayfun(@int2str, t, 'UniformOutput', 0))
 end
 
 subplot(1,3,2)
@@ -257,7 +314,8 @@ vpost = zeros(sn.nhvc, sn.niter);
 for iter = 1:sn.niter
     vpost(:,iter) = sn.vpost(imsn,iter);
 end
-imagesc(vpost')
+%imagesc(vpost')
+plot(vpost)
 ylabel('Trial')
 xlabel('time')
 title(sprintf('V_p_o_s_t for MSN %g', imsn))
@@ -281,10 +339,6 @@ plot(sn.vpost(imsn, sn.niter))
 xlabel('Time')
 ylabel('V_p_o_s_t')
 title(sprintf('MSN %g on first iteration', imsn))
-
-%% Weights for a single MSN for all synapses over time
-iters = 1:100;
-imagesc(squeeze(sn.wH(imsn,:,iters))')
 
 %% Weights from a single HVC neuron over trials
 iters = 1:sn.niter;
@@ -415,6 +469,7 @@ ylabel('Reward Prediction Error')
 title(sprintf('Time %g', ihvc))
 
 %% Reward and expected reward at a single time across trials
+r = zeros(sn.niter,1);
 for iter = 1:sn.niter
     temp = sn.reward(iter);
     r(iter) = temp(ihvc);
@@ -422,6 +477,7 @@ end
 plot(r, 'Color', [.7 .7 .7])
 hold all
 plot(sn.rexp(ihvc,:), 'Color', [0 0 0])
+legend({'Reward', 'Expected Reward'})
 
 %% Compare LTP
 iters = [496, 400:495];
@@ -535,14 +591,14 @@ end
 cm = colormap;
 ic = floor(interp1([0, max(nactivemsn)], [1, size(cm,1)], 0:max(nactivemsn)));
 hold on
-legendh=[];
-legendstr={};
+legendh=zeros(max(nactivemsn), 1);
+legendstr=cell(max(nactivemsn), 1);
 for n = 1:max(nactivemsn)
     t = nactivemsn == n;
     if sum(t)>0
         h = plot(err(t,:)', 'Color', cm(ic(n+1),:));
-        legendh(end+1) = h(1);
-        legendstr{end+1} = int2str(n);
+        legendh(n) = h(1);
+        legendstr{n} = int2str(n);
     end
 end
 legend(legendh, legendstr)
@@ -566,3 +622,376 @@ for n = 1:N
 end
 legend(filenames)
 hold off
+
+%% Vpost on each iter
+iters = 1:sn.niter;
+for i = 1:50:length(iters)
+    v = zeros(sn.nmsn, sn.nhvc);
+    for imsn = 1:sn.nmsn
+        v(imsn,:) = sn.vpost(imsn,iters(i));
+    end
+    plot(v(1,:))
+    title(sprintf('Vpost for trial %g', iters(i)))
+    xlabel('Time')
+    ylabel('V')
+    ylim([-0.3, 0.3])
+    pause
+    
+end
+
+%% Vpost vs lman noise
+clf
+v = zeros(size(sn.lmanout));
+for iter = 1:sn.niter
+    v(:,iter) = sn.vpost(imsn,iter);
+end
+% scatter(sn.noise(:), v(:))
+scatter(sn.noise(ihvc,:), v(ihvc,:))
+xlabel('Noise')
+ylabel('V_p_o_s_t')
+title(sprintf('MSN %g', imsn))
+
+%% Vpost vs RPE
+% Only use with instantaneous reward
+% Paramters
+%   t     = vector
+%   iters = vector
+%   imsn  = scalar
+
+v = zeros(length(t),length(iters));
+d = zeros(length(t),length(iters));
+legendstr = cell(1,length(t));
+for i = 1:length(iters)
+    temp = sn.vpost(imsn, iters(i));
+    v(:,i) = temp(t);
+    temp = sn.rpe(iters(i));
+    d(:,i) = temp(t);
+end
+for k = 1:length(t)
+    scatter(v(k,:),d(k,:))
+    if k == 1
+        hold all
+    end
+    legendstr{k} = sprintf('Time %g', t(k));
+    fprintf('Correlation of Vpost with RPE at time %g = %g\n', t(k), corr(v(k,:)', d(k,:)'))
+end
+legend(legendstr)
+xlabel('V_p_o_s_t')
+ylabel('RPE')
+title(sprintf('MSN %g', imsn))
+hold off
+
+%% LMAN noise vs RPE
+% Use only with instantaneous reward
+% Parameters: 
+%   t     = [vector]
+%   iters = [vector]
+clf
+z = sn.noise(t, iters) - sn.lmanoffset;
+d = zeros(length(t),length(iters));
+for i = 1:length(iters)
+    temp = sn.rpe(iters(i));
+    d(:,i) = temp(t);
+end
+legendstr = cell(1,length(t));
+for k = 1:length(t)
+    scatter(z(k,:),d(k,:))
+    if k == 1
+        hold all
+    end
+    legendstr{k} = sprintf('Time %g', t(k));
+    fprintf('Correlation of noise with RPE at time %g = %g\n', t(k), corr(z(k,:)', d(k,:)'))
+end
+legend(legendstr)
+xlabel('LMAN noise')
+ylabel('RPE')
+hold off
+
+%% LMAN noise vs change in bias
+% t
+% iters
+z = sn.noise(t, iters(1:end-1));
+b = zeros(sn.nhvc, length(iters));
+for i = 1:length(iters)
+    b(:,i) = sn.bias(iters(i));
+end
+db = diff(b(t,:),1,2); % difference along iterations
+for k = 1:length(t)
+    scatter(z(k,:),db(k,:))
+    if k == 1
+        hold all
+    end
+    legendstr{k} = sprintf('Time %g', t(k));
+    fprintf('Correlation of noise with change in bias at time %g = %g\n', t(k), corr(z(k,:)', db(k,:)'))
+end
+xlabel('LMAN noise')
+ylabel('Change in bias')
+legend(legendstr)
+
+%% LMAN noise vs change in weights
+z = sn.noise(t, iters(1:end-1));
+dw = diff(sn.wH(:,t,iters), 1, 3);
+
+for k = 1:length(t)
+    clf
+    msnlist = find(sn.wH(:,t(k),end)>eps);
+    for imsn = msnlist'
+        scatter(z(k,:), squeeze(dw(imsn,k,:)))
+        xlabel('LMAN noise')
+        ylabel('Change in weight')
+        title(sprintf('Time %g, MSN %g, weight %g', t(k), imsn, sn.wH(imsn,t(k),end)))
+        pause
+    end
+end
+
+%% LMAN noise vs LTP
+% imsn
+% t
+z = sn.noise(t, iters(1:end-1)) - sn.lmanoffset;
+dw = diff(sn.wH(:,t,iters), 1, 3);
+
+for k = 1:length(t)
+    clf
+    msnlist = find(sn.wH(:,t(k),end)>eps);
+    for imsn = msnlist'
+        scatter(z(k,:), squeeze(dw(imsn,k,:)))
+        xlabel('LMAN noise')
+        ylabel('Change in weight')
+        title(sprintf('Time %g, MSN %g, weight %g', t(k), imsn, sn.wH(imsn,t(k),end)))
+        pause
+    end
+end
+
+%% Vpost and change in weight
+clf
+for i = 1:length(iters)
+    v = sn.vpost(imsn,iters(i));
+    p = sn.LTP(imsn, iters(i));
+    d = sn.LTD(imsn, iters(i));
+    plot(v/max(abs(v)), 'k', 'LineWidth', 2)
+    hold on
+    plot(p/max(abs(p)), 'g', 'LineWidth', 2)
+    plot(d/max(abs(p)), 'r', 'LineWidth', 2)
+    hold off
+    title(sprintf('MSN %g on trial %g', imsn, iters(i)))
+    legend({'V_p_o_s_t', 'LTP', 'LTD'})
+    ylim([-1.5, 1.5])
+    pause
+end
+
+%% 
+t = 25;
+iters = 800:1000;
+msnlist = find(sn.msnout(:,t,end) > eps);
+for imsn = msnlist'
+    plot(iters,squeeze(sn.msnout(imsn,t,iters)))
+    title(sprintf('MSN %g', imsn))
+    ylim([0, .1])
+    pause
+end
+
+%% MICHALE IS WATCHING
+for iter = sn.niter
+    subplot(2,3,[1 4])
+    sn.imagemsnout(iter)
+    subplot(2,3,[2 5])
+    sn.plotbiasvstemplate(iter)
+    title(int2str(iter))
+    subplot(2,3,3)
+    %sn.plotmse();
+    subplot(2,3,6)
+    sn.plotvdw(1,iter)
+    drawnow
+    %pause
+end
+
+%% Histogram of Vpost for a single neuron
+% iters [vector]
+% t [vector]
+% imsn [scalar]
+ratio = zeros(1,sn.nmsn);
+for imsn = 1:sn.nmsn
+vp = zeros(length(iters), length(t));
+r = zeros(length(iters), length(t));
+for i = 1:length(iters)
+    vtemp = sn.vpost(imsn, iters(i));
+    rtemp = sn.rpe(iters(i));
+    vp(i,:) = vtemp(t);
+    r(i,:) = rtemp(t);    
+end
+% % bins = linspace(-.01, 0.04, 40);
+% bins = linspace(-0.05, 0.2, 40);
+% c = {'b', 'r'};
+% for n = 1:length(t)
+% %     stairs(bins, cumsum(hist(vp(:,n).*r(:,n), bins)), 'LineWidth', 3)
+% scatter(vp(:,n), r(:,n), [], c{n})
+%     if n == 1
+%         hold all
+%     end
+% end
+% hold off
+pr = mean(vp.*r);
+ratio(imsn) = pr(2) / pr(1);
+end
+plot(ratio)
+    
+    
+%%
+mi = zeros(sn.nhvc, length(iters));
+for i = 1:length(iters)
+    mi(:,i) = sn.wH(imsn,:,iters(i)) * sn.hvcout;
+end
+plot(mi)
+
+%% Sum of weights
+% iters [vector]
+wmax = globalmax(sum(sn.wH(:,:,iters),1));
+for i = 1:length(iters)
+    plot(sum(sn.wH(:,:,iters(i))))
+    ylim([0 wmax])
+    title(sprintf('Trial %g', iters(i)))
+    xlabel('Time')
+    ylabel('\Sigma Weight')
+    pause
+end
+
+%% Weight image unsorted
+% iters [vector]
+wmax = 1.1 * globalmax(sn.wH(:,:,iters(1)));
+for i = 1:length(iters)
+    image(sn.wH(:,:,iters(i)) ./ wmax .* 64)
+    title(sprintf('Trial %g', iters(i)))
+    pause
+end
+
+%% All weight profiles, aligned at peak
+% iter [scalar]
+clf
+tt = 1:sn.nhvc;
+for m = 90:100
+    w = sn.wH(m,:,iter);
+    [wmax, tpk] = max(w);
+    plot(tt-tpk, w/wmax)
+    if true %m == 1
+        hold all
+    end
+end
+hold off
+xlim([-10, 10])
+
+%% LTD components
+% imsn [scalar]
+% ihvc [vector]
+% iter [scalar]
+a(1) = subplot(4,1,1);
+M = sn.msnout(imsn,:,iter);
+plot(M)
+ylabel('MSN output')
+a(2) = subplot(4,1,2);
+H = sn.hvcout(ihvc,:);
+ph = plot(H);
+ylabel('HVC output')
+xlabel('Time')
+a(3) = subplot(4,1,3);
+plot((ones(length(ihvc),1)*M) .* (H == 0))
+a(4) = subplot(4,1,4);
+ltd = sn.LTD(imsn, iter);
+plot(ltd)
+hold on
+for n = 1
+    c = get(ph, 'Color');
+    scatter(ihvc(n), ltd(ihvc(n)), 50, c, 'filled')    
+end
+hold off
+xlabel('HVC neuron')
+ylabel('LTD')
+linkaxes(a, 'x')
+
+%% Noise * RPE
+% iters [vector]
+% t [vector]
+rpe = zeros(length(t), length(iters));
+for i = 1:length(iters)
+    temp = sn.rpe(iters(i));
+    rpe(:,i) = temp(t);
+end
+noise = sn.noise(t,iters);
+plot(iters, cumsum(rpe .* noise))
+xlabel('Trial')
+    
+
+%% Bias - Template
+% iters [vector]
+db = zeros(length(sn.template), length(iters));
+for i = 1:length(iters)
+    db(:,i) = sn.bias(iters(i));
+end
+imagesc(1:sn.nhvc,iters,db')
+xlabel('Time')
+ylabel('Trial')
+    
+%%
+% iter [scalar]
+b = sn.bias(iter) - sn.template;
+omax = zeros(sn.nmsn,1);
+tmax = zeros(sn.nmsn,1);
+for m = 1:sn.nmsn
+    out = sn.msnout(m,:,iter);
+    [omax(m), tmax(m)] = max(out);
+%     plot(out)
+%     title(int2str(m))
+%     ylim([0, 0.4])
+%     pause
+end
+bins = 1:sn.nhvc;
+N = hist(tmax,bins);
+N(1)=nan;
+plot(b/max(b))
+hold all
+plot(N)
+hold off
+
+%% Bias and LTP
+% iters [vector]
+% imsn [scalar]
+clear a
+for i = 1:length(iters)
+    bias = sn.bias(iters(i));
+    ltp = sn.LTP(imsn,iters(i));
+    a(1) = subplot(2,1,1);
+    plot(bias)
+    hold on
+    title(int2str(iters(i)))
+    grid on
+    a(2) = subplot(2,1,2);
+    plot(ltp)
+    grid on
+    linkaxes(a, 'x')
+    hold on
+    pause
+end
+
+%% All Vpost for one MSN
+% iters [vector]
+% imsn [scalar]
+vp = zeros(sn.nhvc, length(iters));
+for i = 1:length(iters)
+    vp(:,i) = sn.vpost(imsn,iters(i));
+end
+
+%% Calibrate LTD for fixed values
+%load lastscalinginhib sn
+iter = 50;
+isactive = sn.msnout(:,:,iter) > 0;
+tactive = sum(isactive, 2);% number of timesteps where each MSN is active
+nactive = sum(isactive, 1); % number of MSNs active at each timestep
+ltd   = zeros(sn.nmsn,1);
+inhib = zeros(sn.nmsn,1);
+for imsn = 1:sn.nmsn
+    ltd(imsn) = min(sn.LTD(imsn, iter));
+    inhib(imsn) = max(sn.allinhib(imsn, iter));
+end
+fprintf('On average, each MSN is active on %g timesteps and LTD is %g\n', mean(tactive), mean(ltd))
+fprintf('New value for LTD/timestep is %g\n', mean(ltd)/mean(tactive))
+fprintf('On average, there are %g MSNs active on each timestep and inhibition is %g\n', mean(nactive), mean(inhib))
+fprintf('New value for inhibtion/timestep is %g\n', mean(inhib)/mean(nactive))
