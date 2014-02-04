@@ -3,7 +3,7 @@ function handles = spike_spectrum(handles)
 % Plots the syllable distribution of all analyzed files
 
 filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
-answer = inputdlg({'File','[winsize winstep]', '[minfreq maxfreq]'},'in seconds...',1,{[num2str(filenum)],'[2 .1]', '[3 12]'}); % input dialog box
+answer = inputdlg({'File','[winsize winstep]', '[minfreq maxfreq]', 'Event Index (order in sorted raster dropdown list)'},'in seconds...',1,{[num2str(filenum)],'[1.5 .1]', '[2 25]', '4'}); % input dialog box
 if isempty(answer)
     return
 end
@@ -11,11 +11,12 @@ file = eval(answer{1}); % array of files to be analyzed, convert from string to 
 
 movingwin = str2num(answer{2}); 
 fpass = str2num(answer{3});
+EventInd = str2num(answer{4});
 fs = handles.fs;
 figure; hold all
 
 %smoothing_window = .020; 
-spiketimes1 =handles.EventTimes{1}{1, file};
+spiketimes1 =handles.EventTimes{EventInd}{1, file};
 spiketimes = spiketimes1/fs;
 spiketrain = zeros(1, numel(handles.sound));
 spiketrain(spiketimes1) = 1;
@@ -45,8 +46,13 @@ xlabel('time (s)')
 % ylabel('frequency (Hz)')
 g = subplot(2,1,2)
 plot(time,spiketrain, 'k')
-linkaxes([f g h], 'x')
+linkaxes([h g], 'x')
+subplot(g)
 xlabel('time (s)')
+figure; 
+[S,f] = mtspectrumpt(data, params);
+plot(f,S)
+xlabel('frequency (Hz)')
 axis tight
 
 
