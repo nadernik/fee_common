@@ -5,31 +5,8 @@ times = reshape(times, [], 1);
 data = reshape(data, [], 1);
 %% Handling arguments to MINI_MAX_PLOT
 options = struct('ax', nan);
+options = gl_parse_args(options, varargin);
 
-% read the acceptable names
-optionNames = fieldnames(options);
-
-% count arguments
-nArgs = length(varargin);
-if mod(nArgs,2) %If the number of arguments is not even
-    error('MINI_MAX_PLOT needs propertyName/propertyValue pairs')
-end
-
-for pairIdx = reshape(varargin,2,[]) % pair is {propName;propValue}
-    inpName = lower(pairIdx{1}); % make case insensitive
-    
-    if any(strcmp(inpName,lower(optionNames)))
-        % overwrite options. If you want you can test for the right class here
-        % Also, if you find out that there is an option you keep getting wrong,
-        % you can use "if strcmp(inpName,'problemOption'),testMore,end"-statements
-        argName = optionNames(strcmp(inpName, lower(optionNames)));
-        options.(argName{1}) = pairIdx{2};
-    else
-        error('%s is not a recognized parameter name',inpName)
-    end
-end
-
-%keyboard;
 if isnan(options.ax)
     options.ax = gca();
 end
@@ -85,6 +62,12 @@ else
     minimaxData  = [max(reshapedData); min(reshapedData)];
     minimaxData = reshape(minimaxData, [], 1);
     p = plot(ud.ax, timeCenters, minimaxData);
+    %top bottom plot
+%     timeCenters = repmat(timeCenters, 1,2)';
+%     timeCenters = reshape(timeCenters, [], 1);
+%     minimaxData  = [max(reshapedData)'; flipud(min(reshapedData)')];
+%     axes(ud.ax);
+%     p = plot(ud.ax, timeCenters, minimaxData);
 end
 axis xy; axis tight;
 xlabel('Time (s)');
