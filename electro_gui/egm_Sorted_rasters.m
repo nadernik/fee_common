@@ -22,7 +22,7 @@ function varargout = egm_Sorted_rasters(varargin)
 
 % Edit the above text to modify the response to help egm_Sorted_rasters
 
-% Last Modified by GUIDE v2.5 01-Oct-2009 20:34:14
+% Last Modified by GUIDE v2.5 28-Mar-2014 15:50:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -5858,5 +5858,3 @@ function push_GenerateRaster_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to push_GenerateRaster (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-
