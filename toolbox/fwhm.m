@@ -1,24 +1,53 @@
-function width = fwhm(x)
+function varargout = fwhm(varargin)
 %FWHM Full Width at Half Maximum
-%   width = fwhm(x)
+%   width = fwhm(y)
+%   width = fwhm(x, y)
+%   [width, xw] = fwhm(x, y)
 
 DEBUG_FLAG = 0;
 
-[xmax, imax] = max(x);
-halfmax = xmax/2;
-i1 = find(x(imax-1:-1:1)<= halfmax, 1, 'first');
-i2 = find(x(imax+1:end) <= halfmax, 1, 'first');
+switch nargin
+    case 1
+        y = varargin{1};
+        x = 1:length(y);
+    case 2
+        x = varargin{1};
+        y = varargin{2};
+        assert(length(x) == length(y))
+    otherwise
+        error('Wrong number of arguments')
+end
 
-if isempty(i1) || isempty(i2)
-    width = nan; % if x does not reach half max, fwhm is undefined
-else
-    width = i1 + i2;
+
+% Divide y into two, splitting at the maximum. note that maximum is in both
+[ymax, imax] = max(y);
+x1 = x(1:imax);
+y1 = y(1:imax);
+x2 = x(imax:end);
+y2 = y(imax:end);
+
+
+% Abort if there is more than one maximum?
+
+% Interpolate to find x at half maximum on the way up
+xw(1) = interp1(y1, x1, ymax/2);
+% Repeat to find x at half maximum on the way down
+xw(2) = interp1(y2, x2, ymax/2);
+
+width = diff(xw);
+
+switch nargout
+    case 1
+        varargout{1} = width;
+    case 2
+        varargout{1} = width;
+        varargout{2} = xw;
 end
 
 if DEBUG_FLAG
     figure
-    plot(x)
+    plot(x,y)
     hold on
-    h = line([-i1, i2]+imax, halfmax*[1,1]);
+    h = line(xw, ymax/2*[1,1]);
     set(h, 'LineStyle', '--')
 end

@@ -112,3 +112,52 @@ Batch_song_rhythm('2303','2307',1,1:50)
 % 2312
 electro_gui
 Batch_song_rhythm('2303','2312',1,1:50)
+
+%% 2012-05-25
+bird_dir = 'c:\stetner\data\mman lesion\2303';
+
+for day = 2260:2272
+    data_dir = fullfile(bird_dir, int2str(day));
+    bouts_dir = fullfile(data_dir, 'bouts');
+    if exist(bouts_dir, 'dir')
+        fprintf('%s already exists. Skipping to next day...\n', bouts_dir)
+    else
+        fprintf('Now detecting bouts in %s...\n', data_dir)
+        Bout_detect_SAP_TO(data_dir)
+    end
+end
+
+%%
+
+% 2263 First singing after surgery (already analyzed)
+% 2264 Already analyzed
+% 2265 Already analyzed
+% 2266 1:200
+% 2267 1:200 
+% 2268 Already analyzed
+% 2269 1:200
+% 2270 1:200
+% 2271 (already analyzed)
+% 2272 1:200
+
+%%
+bird_dir = 'c:\stetner\data\mman lesion\2303';
+dbase_file = 'bouts\analysis_selected.mat';
+category = 10; % for Batch_song_rhythm.m
+
+% Find directories for this bird
+d = subdirs(bird_dir);
+for ii = 1:length(d)
+    filename = fullfile(bird_dir, d(ii).name, dbase_file);
+    eg_repair_dbase_dir(filename)
+    switch d(ii).name
+        case {'2263', '2264', '2265'}
+            Batch_song_rhythm(filename, category); % all files
+        case {'2268', '2271'}
+            filenums = 1:400;
+            Batch_song_rhythm(filename, category, filenums)
+        otherwise
+            filenums = 1:200;
+            Batch_song_rhythm(filename, category, filenums)
+    end
+end

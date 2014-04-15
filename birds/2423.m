@@ -45,3 +45,51 @@ Batch_song_rhythm('2423','2011-06-02', 1, files)
 %% 2011-06-09
 Parse_segments
 Batch_song_rhythm('2423','2011-06-08', 1, 1:102)
+
+%%
+load('C:\stetner\data\mman lesion\2423\2011-06-10\exper.mat')
+Bout_detect_TO('C:\stetner\data\mman lesion\2423\2011-06-10\', exper.audioCh, [])
+
+% 2011-06-01 already analyzed
+% 2011-06-02 already analyzed
+% 2011-06-03 1:200
+% 2011-06-04 1:200
+% 2011-06-05 1:200
+% 2011-06-06 1:150
+% 2011-06-07 1:200
+% 2011-06-08 already analyzed
+% 2011-06-09 1:300 (many files of just calls excluded)
+% 2011-06-10 1:250
+% discarded calls at the beginning of every bout
+
+%%
+bird_dir = 'c:\stetner\data\mman lesion\2423';
+dbase_file = 'bouts\analysis_selected.mat';
+category = 10; % for Batch_song_rhythm.m
+
+% Find directories for this bird
+d = subdirs(bird_dir);
+for ii = 1:length(d)
+    filename = fullfile(bird_dir, d(ii).name, dbase_file);
+    eg_repair_dbase_dir(filename)
+    switch d(ii).name
+        case '2011-06-01'
+            filenums = 12:123;
+            Batch_song_rhythm(filename, category, filenums)
+        case '2011-06-02'
+            filenums = [7:100, 137:139, 171:189];
+            Batch_song_rhythm(filename, category, filenums)
+        case '2011-06-06'
+            filenums = 1:150;
+            Batch_song_rhythm(filename, category, filenums)
+        case '2011-06-08'
+            filenums = 1:102;
+            Batch_song_rhythm(filename, category, filenums)
+        case '2011-06-10'
+            filenums = 1:250;
+            Batch_song_rhythm(filename, category, filenums)
+        otherwise
+            filenums = 1:200;
+            Batch_song_rhythm(filename, category, filenums)
+    end
+end

@@ -1,0 +1,93 @@
+%% get the correct path
+cd ~/Documents/code/
+add_elm_code_paths
+%% 
+% pick a bird to look at
+pathname = PlatformPicker('feebox1', fullfile('shared', 'colony', 'tutorsong'));
+pathname = fullfile(pathname, '73', 'Purple37(previous)', 'undirected',...
+'2461'); % quite rhythmic at .07 and .15s lag
+%pathname = fullfile(pathname, '9', 'Black225Yellow411(current)'); %very repetitive
+%pathname = fullfile(pathname, '18', 'LBlue14(current)'); %rhythmic at .2s lag, .1s less so
+%pathname = fullfile(pathname, '23', 'Black238(current)', 'directed'); %rhythmic at .2s lag, .1s less so
+%pathname = fullfile(pathname, '46', 'LBlue4(current)', '2723'); % rhythmic at .18s lag
+%pathname = fullfile(pathname, '70', 'purple32(previous)', 'undirected',
+%'2104'); % fairly rhythmic, but without long bouts
+%pathname = fullfile(pathname, '72', 'LBlue22(previous)', 'undirected', '2105'); 
+DIR = dir(fullfile(pathname, '*.wav'))
+close all
+%%
+close all
+%look through some if its files
+for i = 31:40 
+    figure
+    [a,fs] = wavread(fullfile(pathname, DIR(i).name));
+    displaySpecgramQuick(a,fs);
+    sound(a,fs)
+end
+
+%% 
+close all
+% choose a file that looks good, start and end times in sec
+i = 32; start_time = .2; end_time =2.2;
+
+% segment syllables and display them on top of spectrogram
+[a,fs] = wavread(fullfile(pathname, DIR(i).name));
+Singing = a(max(1,start_time*fs):(min(end,fs*end_time)));
+segs = Syllable_segment_Emily(fullfile(pathname, DIR(i).name), 4000); 
+displaySpecgramQuick(Singing,fs); hold on
+ind = [];
+for i = 1:size(segs,1)
+    ind = [ind segs(i,1):segs(i,2)];
+    plot([segs(i,1)/fs segs(i,2)/fs], [6000 6000], 'r', 'linewidth', 6)
+    %syl{j}{i} = song(segs(i,1):segs(i,2));
+end
+
+sound(Singing,fs)
+
+%% examine autocorrelation of dB trace
+[c, lags] = xcorr(raw2dB(Singing,fs));
+figure; 
+plot(lags/fs, c');%./min([(1:numel(c)); numel(c) - (1:numel(c))],[],1));shg
+lag = .228/3; %observed from autocorr for 73, purple37
+%% separating the intros from the rest of the song (by eye)
+intro_split = 1/fs;
+INTROS = Singing(1:fs*intro_split);
+SONG = Singing(fs*intro_split:end);
+%% plot fft of autocorrelation
+y = [diff(c); 0]; plot(lags/fs,y)
+lag = 1/13; % estimated by graph
+T = 1/fs;
+L = length(y);
+t = (0:L-1)*T;
+NFFT = 2^nextpow2(L);
+Y = fft(y,NFFT)/L;
+f = fs/2*linspace(0,1,NFFT/2+1);
+plot(f,2*abs(Y(1:NFFT/2+1))) 
+title('Single-Sided Amplitude Spectrum of y(t)')
+xlabel('Frequency (Hz)')
+ylabel('|Y(f)|')
+%% stretch a version
+figure;  h = subplot(3,1,1); hold on
+% set how many times faster and slower
+faster_factor = lag/.05;
+slower_factor = lag/.09; 
+% plot original
+displaySpecgramQuick([Singing],fs); hold on
+steps = round(mod((1:numel([Singing]))/fs,lag)/lag);
+plot((1:numel([Singing]))/fs,steps*6000/max(steps), 'r');
+% plot faster one
+g = subplot(3,1,2)
+SpedUp = pvoc(Singing, faster_factor, 200);
+displaySpecgramQuick([SpedUp],fs); hold on
+% plot slower one
+j = subplot(3,1,3)
+SlowedDown = pvoc(Singing, slower_factor, 200); 
+displaySpecgramQuick([SlowedDown],fs); hold on
+
+
+linkaxes([h g j],'x')
+xlim([0 max([numel(Singing)/fs numel(SlowedDown)/fs])])
+sound([Singing],fs)
+sound([SpedUp],fs)
+sound([SlowedDown],fs)
+

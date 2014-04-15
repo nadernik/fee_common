@@ -46,8 +46,13 @@ for n = 1:total_files
         acorr_lman = mean(c, 2);
         %[c, lags] = autocorrelation_by_columns(bias(:,end-N:end), maxlag);
         %acorr_learning = mean(c, 2);
+        try
         width_lman(n) = fwhm(acorr_lman);
         width_learning(n) = fwhm(bias(:,end));
+        catch
+            width_lman(n) = nan;
+            width_learning(n) = nan;
+        end
         
         if DEBUG_FLAG
             figure(1)
@@ -70,9 +75,15 @@ end
 
 figure(406)
 clf
-scatter(width_lman, width_learning, 100, '.')
+scatter(width_lman, width_learning, 500, '.')
+set(gca, 'FontSize', 16)
 xlabel('LMAN width')
 ylabel('Learning width')
 hold on
 plot(xlim, ones(2,1) * fwhm(d.rkernel), 'k')
+setticklimx([0,40])
+setticklimy([0, 60])
+
+rkernel = d.rkernel;
+save('c:\stetner\data\figures\xmodel\learning_width_vs_lman.mat', 'rkernel', 'width_lman', 'width_learning')
 keyboard

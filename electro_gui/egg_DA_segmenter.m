@@ -42,7 +42,7 @@ if params.IsSplit == 0
     thnew = min([th mn+2*st]); % mean + 2*std
     for c=1:size(f,1)
         f(c,1)=max([1; find(a(1:f(c,1)-1)<thnew)]);
-        f(c,2)=min([length(a); f(c,2)+find(a(f(c,2)+1:end)<th/2)]); % Why is this not thnew?
+        f(c,2)=min([length(a); f(c,2)+find(a(f(c,2)+1:end)<thnew)]); %Apparent bug fixed, now consistent with Aronov & Fee 2011
     end
 end
 

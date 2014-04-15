@@ -1,0 +1,82 @@
+%% Neural activity
+
+% Make one motif of the HVC chain
+hvc_output = zeros(hvc_units,  motif_steps);
+t_burst = 1:9;
+sinburst = sin((t_burst-1)/8*pi).^2;
+for u = 1:hvc_units
+    hvc_output(u, t_burst) = sinburst;
+    t_burst = modnonzero(t_burst + hvc_burst_shift, motif_steps);
+end
+
+% Initialize empty matrices for other units
+lman_input      = zeros(lman_units, motif_steps);
+lman_output     = zeros(lman_units, motif_steps, total_motifs);
+msn_output      = zeros(msn_units,  motif_steps);
+pallidal_output = zeros(lman_units, motif_steps);
+dlm_output      = zeros(lman_units, motif_steps, total_motifs);
+ra_output       = zeros(lman_units, motif_steps, total_motifs);
+pitch = zeros(motif_steps, total_motifs);
+
+%% Synaptic weights
+
+% Start with the motor pathway empty
+weights_on_ra_from_hvc = zeros(lman_units, hvc_units);
+
+% There are two units in LMAN. One increases RA activity and one decreases
+% RA activity. FIXME add explanation for pitch up and pitch down channels.
+weights_on_song_from_ra = [1, -1];
+
+% One-to-one connections to relay pallidal output to LMAN through DLM and
+% LMAN to RA
+weights_on_dlm_from_pallidus = -eye(lman_units); % inhibitory
+weights_on_lman_from_dlm = eye(lman_units);
+weights_on_ra_from_lman = eye(lman_units);
+
+% Topographic LMAN-X-DLM loop
+weights_on_msn_from_hvc = zeros(msn_units, hvc_units);
+weights_on_msn_from_lman = zeros(msn_units, lman_units);
+weights_on_pallidus_from_msn = zeros(lman_units, msn_units);
+m = 0;
+for ell = 1:lman_units
+    for h = 1:hvc_units
+        m = m + 1;
+        weights_on_msn_from_hvc(m, h) = 1e-3; % start small. these weights are learned
+        weights_on_msn_from_lman(m, ell) = 1;
+        weights_on_pallidus_from_msn(ell, m) = -1; % inhibitory
+    end
+end
+
+% RA to DLM (this is unique to this version of the model)
+weights_on_dlm_from_ra = ra_dlm_strength .* eye(lman_units);
+
+
+%% Generate intrinsic noise in LMAN and RA
+lman_noise = zeros(lman_units, motif_steps, total_motifs);
+ra_noise   = zeros(lman_units, motif_steps, total_motifs);
+for u = 1:lman_units
+    lman_noise(u, :, :) = generate_lman_noise_ra_dlm(motif_steps, total_motifs, ra_dlm_strength);
+    ra_noise(u, :, :)   = generate_lman_noise_ra_dlm(motif_steps, total_motifs, ra_dlm_strength);
+end
+ra_noise   = ra_noise   .* sqrt(ra_noise_amplitude) ./ std(ra_noise(:));
+lman_noise = lman_noise .* sqrt(1 - ra_noise_amplitude) ./ std(lman_noise(:));
+
+%% Eligibility trace
+x = -4*std_etrace:4*std_etrace;
+ekernel = 1 / sqrt(2 * pi * std_etrace .^ 2) * exp(-(x) .^ 2 ./ (2 * std_etrace .^ 2));
+ekernel = ekernel./sum(ekernel);
+t_ekernel = 0:length(ekernel) - 1;
+
+%% Reward kernel
+x = -4*std_rkernel:4*std_rkernel;
+rkernel = 1 / sqrt(2 * pi * std_rkernel .^ 2) * exp(-(x) .^ 2 ./ (2 * std_rkernel .^ 2));
+rkernel = rkernel ./ sum(rkernel);
+t_rkernel = 0:length(rkernel) - 1;
+
+%%
+extra_steps = max(length(rkernel), length(ekernel)) - 1; %%%DEBUG
+expected_reward = zeros(motif_steps + extra_steps, total_motifs + 1);
+reward = zeros(motif_steps + extra_steps, total_motifs);
+eligibility_matrix = zeros(msn_units, hvc_units);
+is_escape = true(1, total_motifs);
+is_random_hit = false(1, total_motifs);

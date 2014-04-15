@@ -136,3 +136,61 @@ Batch_song_rhythm('2296','2310',1, 1:150)
 % tell where singing began
 % Sac today. Bird does not look good. feathers ruffled
 % s
+
+%% 2012-05-25
+% Analyze rhythmicity across days to make a figure for Michale to use as
+% preliminary data in his grant. I need to analyze data from days -1 to 9
+% where 0 is the first day that the goodness of fit of an exponential to
+% the syllable duration distribution is >= 2. In MMAN lesion birds, use the
+% day of lesion as day 0.
+
+bird_dir = 'c:\stetner\data\mman lesion\2296';
+
+for day = 2278:2294
+    data_dir = fullfile(bird_dir, int2str(day));
+    bouts_dir = fullfile(data_dir, 'bouts');
+    if exist(bouts_dir, 'dir')
+        fprintf('%s already exists. Skipping to next day...\n', bouts_dir)
+    else
+        fprintf('Now detecting bouts in %s...\n', data_dir)
+        Bout_detect_SAP_TO(data_dir)
+    end
+end
+
+Parse_segments
+
+% 2285 First day singing post surgery (already analyzed)
+% 2286 Stuttering single syllable, eg bout 125. Selected files 1:250
+%      Unreliable segmentation of stuttered syllable eg bout 184
+% 2287 1:250
+% 2288 1:250
+% 2289 1:250 
+% 2290 (already analyzed)
+% 2291 1:250
+% 2292 1:250
+% 2293 all (1:159)
+% 2294 1:252
+
+%%
+bird_dir = 'c:\stetner\data\mman lesion\2296';
+dbase_file = 'bouts\analysis_selected.mat';
+category = 10; % for Batch_song_rhythm.m
+
+% Find directories for this bird
+d = subdirs(bird_dir);
+for ii = 1:length(d)
+    filename = fullfile(bird_dir, d(ii).name, dbase_file);
+    eg_repair_dbase_dir(filename)
+    switch d(ii).name
+        case '2285'
+            Batch_song_rhythm(filename, category); % all files
+        case '2290'
+            filenums = 1:200;
+            Batch_song_rhythm(filename, category, filenums)
+        case '2293'
+            Batch_song_rhythm(filename, category); % all files
+        otherwise
+            filenums = 1:250;
+            Batch_song_rhythm(filename, category, filenums)
+    end
+end

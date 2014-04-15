@@ -105,14 +105,16 @@ s1=subplot(211);
 hold on
 plot(x,y,'k','linewidth',2);
 plot(x,y_check_1,'b','linewidth',2);
-xlabel('Syllable duration distribution (ms)','fontsize',16);
+xlabel('Syllable duration (ms)','fontsize',16);
 legend('Data','Null');
+grid on
 s2=subplot(212);
 hold on
 plot(x2,y2,'k','linewidth',2);
 plot(x2,y2_check_1,'b','linewidth',2);
-xlabel('Gap duration distribution (ms)','fontsize',16)
+xlabel('Gap duration (ms)','fontsize',16)
 legend('Data','Null');
+grid on
 
     function x=Generate_syllable(tau_syll)
         x = exprnd(tau_syll);

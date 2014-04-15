@@ -1,3 +1,10 @@
+%% Connections
+
+lman_units = 2 * ra_units;
+msn_units = lman_units * hvc_units;
+total_motifs = baseline_motifs + learning_motifs + ending_motifs;
+
+
 %% Neural activity
 
 % Make one motif of the HVC chain
@@ -10,10 +17,6 @@ for u = 1:hvc_units
 end
 
 % Initialize empty matrices for other units
-lman_input      = zeros(lman_units, motif_steps);
-lman_output     = zeros(lman_units, motif_steps, total_motifs);
-msn_output      = zeros(msn_units,  motif_steps);
-pallidal_output = zeros(lman_units, motif_steps);
 dlm_output      = zeros(lman_units, motif_steps, total_motifs);
 ra_output       = zeros(ra_units,   motif_steps, total_motifs);
 
@@ -22,9 +25,17 @@ ra_output       = zeros(ra_units,   motif_steps, total_motifs);
 % Start with the motor pathway empty
 weights_on_ra_from_hvc = zeros(ra_units, hvc_units);
 
-% There are two units in LMAN. One increases RA activity and one decreases
-% RA activity. FIXME add explanation for pitch up and pitch down channels.
-weights_on_ra_from_lman = [1, -1];
+% There are two units in LMAN for each unit in RA. This is a "push/pull"
+% control system where one LMAN unit pushes the activity of the RA unit up
+% and activity in the other LMAN unit pulls the activity of the RA unit
+% down.
+ell = 1;
+weights_on_ra_from_lman = zeros(ra_units, lman_units);
+for r = 1:ra_units
+    weights_on_ra_from_lman(r, ell) = 1;
+    weights_on_ra_from_lman(r, ell + 1) = -1;
+    ell = ell + 2;
+end
 
 % One-to-one connections to relay pallidal output to LMAN through DLM
 weights_on_dlm_from_pallidus = -eye(lman_units); % inhibitory
@@ -64,8 +75,8 @@ t_rkernel = 0:length(rkernel) - 1;
 
 %%
 extra_steps = max(length(rkernel), length(ekernel)); %%%DEBUG
-expected_reward = zeros(motif_steps + extra_steps, total_motifs + 1);
-reward = zeros(motif_steps, total_motifs);
+expected_reward = zeros(motif_steps + extra_steps - 1, total_motifs + 1);
+reward = zeros(motif_steps + extra_steps - 1, total_motifs);
 eligibility_matrix = zeros(msn_units, hvc_units);
 is_escape = true(1, total_motifs);
 is_random_hit = false(1, total_motifs);

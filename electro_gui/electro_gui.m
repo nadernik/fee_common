@@ -6981,7 +6981,7 @@ function menu_EditFigureTemplate_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-eg_Template_Editor(hObject);
+eg_template_editor(hObject, eventdata, handles);
 
 
 % --------------------------------------------------------------------

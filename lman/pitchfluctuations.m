@@ -69,6 +69,8 @@ if ~loaded
                 'Part', part, 'RootDir', P.RootDir, 'Type', 'misc');
             pitchfile = annofilename(birdname, expernames{nexper}, ...
                 'Part', part, 'RootDir', P.RootDir, 'Type', 'pitch');
+            audiofile = annofilename(birdname, expernames{nexper}, ...
+                'Part', part, 'RootDir', P.RootDir, 'Type', 'audio');
             if exist(miscfile, 'file') && exist(pitchfile, 'file')
                 load(miscfile)
                 load(pitchfile)
