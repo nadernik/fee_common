@@ -920,3 +920,5 @@ function checkReloadTdt_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of checkReloadTdt
 
 
+function panelCondition_CreateFcn(hObject, eventdata, handles)
+
