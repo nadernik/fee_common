@@ -1884,7 +1884,7 @@ if(~isempty(hc))
         [junk,ndx] = sort(cell2mat(get(hc,'UserData')));
         hc = hc(ndx);
     end
-    bVis = handles.vcg.bDraw & handles.vcg.bFilt & ~isnan(getSF(handles.vcdb,xfeat)) & ~isnan(getSF(handles.vcdb,yfeat));
+    bVis = handles.vcg.bDraw & handles.vcg.bFilt & ~isnan(getsf(handles.vcdb,xfeat)) & ~isnan(getsf(handles.vcdb,yfeat));
     oldface = get(hc,'MarkerFaceColor');
     if(length(hc)==1)
         oldface = {oldface};
