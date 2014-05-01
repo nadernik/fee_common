@@ -10,3 +10,8 @@ annotate_exper('vtadrive02', '2014-04-14', 'edgeSyllThreshold', -8, ...
 
 % Cluster syllables
 vectorClust
+
+% Verify clustering
+labeledspecgram('vtadrive02', '2014-04-14')
+
+rules
