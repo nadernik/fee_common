@@ -89,6 +89,9 @@ c(2).tdtTags(3).pfield = 'lpcoefs';
 c(2).tdtTags(4).name = 'bandThresh';
 c(2).tdtTags(4).type = 'scalar';
 c(2).tdtTags(4).pfield = 'threshold';
+c(2).tdtTags(5).name = 'bandSteps';
+c(2).tdtTags(5).type = 'scalar';
+c(2).tdtTags(5).pfield = 'stepsAbove';
 
 c(3).name = 'Pitch (CAFGUI)';
 c(3).editFcn = @pitchGUI;
