@@ -3,16 +3,18 @@ function handles = egm_ISI_distribution(handles)
 % Plots the syllable distribution of all analyzed files
 
 filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
-answer = inputdlg({'Files','Array of bin edges (ms)', 'log xaxis?'},'ISI distribution',1,{[num2str(filenum)],'logspace(-3,3.75,100)', '1'}); % input dialog box
+answer = inputdlg({'Files','Array of bin edges (ms)', 'log xaxis?', 'event ind (order in sorted raster menu)'},'ISI distribution',1,{[num2str(filenum)],'logspace(-3,3.75,100)', '1', '1'}); % input dialog box
 if isempty(answer)
     return
 end
 fls = eval(answer{1}); % array of files to be analyzed, convert from string to number
 lst = str2num(answer{2}); % array of histogram bin edges (ms)
 logaxis = str2num(answer{3});
+EventInd = str2num(answer{4});
 ISIs = zeros(0,1);
 for c = fls % array of files
-    spiketimes = handles.EventTimes{1}{1,c}; % change to use input to select which event
+    spiketimes = handles.EventTimes{EventInd}{1, c}; % sometimes this indexing is different... handles.EventTimes{1}{1,c}; % change to use input to select which event
+    
     ISIs = [ISIs; diff(spiketimes)]; 
 end
 
