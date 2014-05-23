@@ -27,7 +27,7 @@ function varargout = electro_gui(varargin)
 
 % Edit the above text to modify the response to help electro_gui
 
-% Last Modified by GUIDE v2.5 04-Dec-2009 12:13:44
+% Last Modified by GUIDE v2.5 10-Feb-2014 10:14:26
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -6981,7 +6981,7 @@ function menu_EditFigureTemplate_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-eg_Template_Editor(hObject);
+eg_template_editor(hObject, eventdata, handles);
 
 
 % --------------------------------------------------------------------

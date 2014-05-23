@@ -56,7 +56,7 @@ else
 end
 h=line(xlim,[1 1]);
 xlim([0 30]); %%% added
-ylim([0 3]);
+%ylim([0 3]);
 set(h,'color','k','linewidth',2);
 xlabel('Frequency (Hz)','fontsize',16);
 ylabel('Ratio','fontsize',12);

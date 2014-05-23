@@ -53,4 +53,7 @@ xlabel('Reward width (ms)')
 ylabel('Learning width (ms)')
 setticklimx([0,40])
 setticklimy([0, 20])
-keyboard
+
+
+save('c:\stetner\data\figures\xmodel\learning_width_vs_reward.mat', 'width_reward', 'width_learning', 'width_lman')
+

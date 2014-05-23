@@ -1,82 +1,413 @@
-classdef SparseNet
+classdef SparseNet < handle
     %SPARSENET Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
-        nhvc = 10; % number of hvc units
-        nmsn = 100; % number of msn units
-        thspike
-        niter = 1e4;
-        stdp
-        learnrate %learning rate
-        w
-        winit = 0.1;
+        % Size of the simulation
+        nhvc  =  100; % number of hvc units
+        nmsn  =  200; % number of msn units
+        niter = 1000;
+        
+        % Tweakable parameters
+        LTPrate     = 0;% learning rate for Long-Term Potentiation
+        LTDrate     = 0;% learning rate for Long-Term Depression
+        rperate     = 0.2;  % learning rate for predicted reward
+        msnthresh   = 0.1; % tonic inhibition on msn output
+        winit       = 0.1; % initial hvc weights
+        lmanoffset  = 2; % mean of LMAN fluctuations
+        lmanstd     = 1; % standard deviation of LMAN fluctuations
+        hvcburstlen = 11; % width of HVC burst
+        kernelstd   = 0; % standard deviation of Gaussian kernel that blurs reward and eligibility traces
+        pinhib      = 0; % Probability of one MSN inhibting another
+        latinhib    = 0; % Strength of lateral inhibition
+        
+        MICHALE_IS_WATCHING = false;
+        
+        % Model output
+        wH
+        wI
         hvcout
         msnout
-        msnin
+        lmanout
+        noise
+        template = nan;
+        rexp
+        kernel
     end
     
     methods
-        function obj = SparseNet(stdp, learnrate)
-            obj.stdp = stdp;
-            assert(mod(length(obj.stdp),2) == 1) % length of stdp is odd
-            obj.learnrate = learnrate;
-            obj.hvcout = eye(obj.nhvc);
-            obj.msnout = zeros(obj.nmsn, obj.nhvc, obj.niter);
-            obj.msnin = zeros(size(obj.msnout));
-            obj.w = obj.winit * ones(obj.nmsn,obj.nhvc);
-            obj.thspike = 0.95 * ones(obj.nmsn,1); % threshold for spiking
+        function obj = SparseNet()
+            obj.init()
         end
         
-        function obj = simulate(obj)
-            for iter = 1:obj.niter
-                obj = obj.ffstep(iter);
-                obj = obj.wupdate(iter);
-                %obj = obj.homeostasis(iter);
-            end
-        end
-        
-        function obj = ffstep(obj, iter)
-            % MSN activity only depends on HVC input
-            obj.msnin(:,:,iter) = obj.w * obj.hvcout;
-            obj.msnout(:,:,iter) = obj.msnin(:,:,iter) >= (obj.thspike * ones(1,obj.nhvc));
-        end
-        
-        function obj = wupdate(obj, iter)
-            % Modified STDP: use LMAN*MSN instead of spike. 
-            % For now, each MSN gets a different random signal from LMAN.
-            dw = zeros(size(obj.w));
-            lman = double(rand(obj.nmsn, obj.nhvc) > 0.5);
-            for imsn = 1:obj.nmsn
-                temp = conv(lman(imsn,:), obj.stdp);
-                ndrop = (length(obj.stdp) - 1) / 2;
-                elig = temp(ndrop+1:end-ndrop);
-                dw(imsn,:) = elig .* obj.msnin(imsn,:,iter); % ones and zeros
+        function init(obj)
+            
+            % Initialize empty matrices
+            obj.hvcout  = zeros(obj.nhvc);
+            obj.msnout  = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            obj.lmanout =   nan(obj.nhvc, obj.niter);
+            obj.rexp    = zeros(obj.nhvc, obj.niter);
+            obj.wH      = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            
+            % Check to make sure HVC burst width parameter is odd 
+            if mod(obj.hvcburstlen, 2) == 0
+                obj.hvcburstlen = obj.hvcburstlen + 1;
+                warning('SparseNet:badParameter', 'HVC burst length set to %g because it must be odd.', obj.hvcburstlen)
             end
             
-            obj.w = obj.w + obj.learnrate .* dw;
-            obj.w = max(0, obj.w); % weights must be nonnegative
+            % HVC burst is one period of sine squared, scaled so that its
+            % area is unity.
+            BL = obj.hvcburstlen + 2; % add 2 to burst length because the first and last points of the burst will be zero
+            t = linspace(0, pi, BL);
+            hvcburst = sin(t).^2; 
+            hvcburst = hvcburst ./ sum(hvcburst);
+            
+            tburst = (1:BL)-(BL+1)/2 + 1; % first burst is centered on t=1            
+            for ihvc = 1:obj.nhvc
+                mask = tburst > 0 & tburst <= obj.nhvc; % chop off parts of the burst that extend outside the song
+                obj.hvcout(ihvc,tburst(mask)) = hvcburst(mask);
+                tburst = tburst + 1;
+            end
+            sumh = ones(obj.nhvc, 1) * sum(obj.hvcout,1);
+            obj.hvcout = obj.hvcout ./ sumh;
+                        
+            
+            % HVC-MSN weights
+            obj.wH(:,:,1) = obj.winit * rand(obj.nmsn,obj.nhvc);
+            
+            % Expected reward is error between bias and template
+            obj.rexp(:,1) = -abs(obj.template-obj.lmanoffset);
+            
+            z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
+            obj.noise = z./std(z(:))*obj.lmanstd;
+            
+            % Lateral inhibition weights
+            wii1 = (rand(obj.nmsn) <= obj.pinhib); % random 1s and 0s
+            wii2 = wii1 & ~eye(obj.nmsn); % make sure no MSN inhibits itself
+            obj.wI = obj.latinhib * wii2; % scale based on inhibition strength parameter
+            
+            % Kernel for dopamine and eligibility traces
+            x = linspace(-4,4,8*obj.kernelstd + 1);
+            k = normpdf(x)'; % Gaussian, column vector
+            obj.kernel = k./sum(k);
+            
+            obj.rexp(:,1) = -(obj.lmanoffset - obj.template').^2;
         end
         
-        function obj = homeostasis(obj, iter)
-            warning('Homeostasis not implemented')
+        function simulate(obj)
+            for iter = 1:obj.niter
+                disp(iter)
+                obj.msnupdate(iter)
+                obj.lmanupdate(iter)
+                obj.vocalupdate(iter)
+                if iter < obj.niter
+                    obj.wupdate(iter);
+                    obj.rexpupdate(iter);
+                end
+                
+                if obj.MICHALE_IS_WATCHING && mod(iter,10) == 0
+                    subplot(2,3,[1 4])
+                    obj.imagemsnout(iter)
+                    subplot(2,3,[2 5])
+                    obj.plotbiasvstemplate(iter)
+                    title(int2str(iter))
+                    subplot(2,3,3)
+                    %obj.plotmse();
+                    subplot(2,3,6)
+                    obj.plotvdw(50,iter)
+                    drawnow
+                end
+            end
         end
         
-        function wimage(obj)
-            imagesc(obj.w)
+        function reinit(obj, iter)
+            % Reinitializes the model and sets the initial conditions to
+            % the state at the specified iteration.
+            
+            % Save the state of the model on trial 'iter'
+            saved.wH   = obj.wH(:,:,iter);
+            saved.rexp = obj.rexp(:,iter);
+            
+            % Save the randomly generated things
+            saved.wI   = obj.wI;
+            
+            % Re-initialize
+            obj.init()
+            
+            % Set initial state to the saved state
+            obj.wH(:,:,1) = saved.wH;
+            obj.rexp(:,1) = saved.rexp;
+            obj.wI        = saved.wI;
+        end
+        
+        
+        function msnupdate(obj, iter)
+            % MSN activity depends on HVC input
+            msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
+            % MSN output is threshold linear
+            obj.msnout(:,:,iter) = max(0, msnin);
+        end
+        
+        function lmanupdate(obj, iter)
+            bias = obj.wL' * obj.msnout(:,:,iter);
+            lmanin = obj.lmanoffset + obj.noise(:,iter) + bias;
+            obj.lmanout(:,iter) = max(0, lmanin);
+        end
+        
+        function v = vpost(obj, imsn, iter)
+            % v = vpost(obj, imsn, iter)
+            %
+            % Post-synaptic depolarization used in learning rule (see LTP).
+            % The learning rule is roughly Vpost * HVC * RPE.
+            L = obj.noise(:,iter)';
+            H = obj.wH(imsn,:,iter) * obj.hvcout;
+            I = obj.inhib(imsn,iter);
+            v = L + H - I;
+        end
+        
+        function wupdate(obj, iter)
+            dw = zeros(obj.nmsn, obj.nhvc);
+            for i = 1:obj.nmsn
+                dw(i,:) = obj.LTP(i, iter) + obj.LTD(i,iter);
+            end
+            
+            obj.wH(:,:,iter+1) = max(0,obj.wH(:,:,iter) + dw); % weights must be nonnegative
+        end
+        
+        function dw = LTP(obj, imsn, iter)
+            % Long-term potentiation: Whenever an MSN is active, HVC
+            % inputs that are also active are eligibile to be
+            % strengthened. Eligible synapses are strengthened if a
+            % reward is given.
+            vp = max(0, obj.vpost(imsn,iter));
+            L = ones(obj.nhvc,1) * vp;
+            H = obj.hvcout';
+            e = L .* H;
+            % blur eligibility trace in time (across rows)
+            assert(iscolumn(obj.kernel)) % kernel must be column vector
+            etrace   = conv2(e, obj.kernel);
+            dopamine = conv(obj.rpe(iter), obj.kernel);
+            dw = obj.LTPrate * dopamine' * etrace;
+        end
+        
+        function dw = LTD(obj, imsn, iter)
+            % Long-term depression
+            msnactive = obj.msnout(imsn,:,iter) > 0;
+            hvcactive = obj.hvcout > 0;
+            dw = -obj.LTDrate * msnactive * (~hvcactive)';
+        end
+        
+        function d = rpe(obj, iter)
+            d = obj.reward(iter) - obj.rexp(:,iter);
+        end
+        
+        function I = inhib(obj, imsn, newiter)
+            persistent iter
+            persistent Iall
+            if isempty(iter)
+                iter = -1;
+            end
+            if newiter ~= iter
+                iter = newiter;
+                Iall = obj.wI * (obj.msnout(:,:,iter) > 0);
+            end
+            I = Iall(imsn,:);
+        end
+        
+        function r = reward(obj, iter)
+            r = -(obj.lmanout(:,iter) - obj.template').^2;
+        end
+        
+        function rexpupdate(obj, iter)
+            if iter < obj.niter
+                obj.rexp(:,iter+1) = obj.rexp(:,iter) + ...
+                    obj.rperate .* obj.rpe(iter);
+            end
+        end
+        
+        function b = bias(obj, iter)
+            msnin = obj.wH(:,:,iter) * obj.hvcout - obj.msnthresh;
+            mout = max(0, msnin);
+            b = obj.lmanoffset + sum(mout, 1);
+        end
+            
+        
+        function wimage(obj, iter)
+            tmax = nan(obj.nmsn, 1);
+            for i = 1:obj.nmsn
+                [~, tmax(i)] = max(obj.wH(i,:, iter));
+            end
+            [~, ord] = sort(tmax);
+            imagesc(obj.wH(ord,:, iter))
             title('Weights on MSN from HVC')
             xlabel('HVC unit')
             ylabel('MSN unit')
         end
         
-        function msnimage(obj, imsn)
-            imagesc(squeeze(obj.msnout(imsn,:,:))')
-            xlabel('Time')
-            ylabel('Trial')
-            title(sprintf('MSN %g output', imsn))
+        function imagemsnout(obj, iter, dosort)
+            % imagemsnout(obj, iter, dosort)
+            %   imagesc of msn output on a given iteration. If dosort is 
+            if ~exist('dosort', 'var')
+                dosort = true;
+            end
+            if dosort == true
+                tmax = nan(obj.nmsn, 1);
+                for i = 1:obj.nmsn
+                    [~, tmax(i)] = max(obj.msnout(i,:, iter));
+                end
+                [~, ord] = sort(tmax);
+                w = obj.msnout(ord,:,iter);
+            else
+                w = obj.msnout(:,:,iter);
+            end
+            imagesc(w)
+            xlabel('HVC neuron')
+            ylabel('MSN')
+            title(sprintf('MSN output on trial %g', iter))
         end
-            
-    end
-    
-end
+                
+        
+        function plotbiasvstemplate(obj, iter)
+            plot(obj.bias(iter))
+            hold all
+            plot(obj.template)
+            hold off
+            legend({'Bias', 'Template'})
+            xlabel('Time (ms)')
+            ylabel('Output')
+        end
+        
+        function moview(obj)
+            for iter = 1:obj.niter
+                imagesc(obj.wH(:,:,iter))
+                title(int2str(iter))
+                drawnow
+            end
+        end
 
+        function plotmse(obj)
+            % Plot the mean squared error between the bias and template,
+            % across trials.
+            mse = zeros(1,obj.niter);
+            for iter = 1:obj.niter
+                mse(iter) = mean((obj.bias(iter) - obj.template).^2);
+            end
+            plot(mse)
+            xlim([1 obj.niter])
+            ylim([0, mse(1)*1.1])
+            xlabel('Trial')
+            ylabel('Mean Squared Error')
+        end
+        
+        function plotvdw(obj, imsn, iter)
+            %PLOTVDW Plots Vpost, LTP and LTD for one MSN on one trial
+            %Usage: plotvdw(obj, imsn, iter) 
+            v = obj.vpost(imsn,iter);
+            p = obj.LTP(imsn, iter);
+            d = obj.LTD(imsn, iter);
+            plot(v/max(abs(v)), 'k', 'LineWidth', 2)
+            hold on
+            plot(p/max(abs(p)), 'g', 'LineWidth', 2)
+            plot(d/max(abs(p)), 'r', 'LineWidth', 2)
+            hold off
+            title(sprintf('MSN %g on trial %g', imsn, iter))
+            legend({'V_p_o_s_t', 'LTP', 'LTD'})
+        end
+        
+        function ltp = allltp(obj)
+            ltp = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            for iter = 1:obj.niter
+                for imsn = 1:obj.nmsn
+                    ltp(imsn,:,iter) = obj.LTP(imsn, iter);
+                end
+            end
+        end
+        
+        function ltd = allltd(obj)
+            ltd = zeros(obj.nmsn, obj.nhvc, obj.niter);
+            for iter = 1:obj.niter
+                for imsn = 1:obj.nmsn
+                    ltd(imsn,:,iter) = obj.LTD(imsn, iter);
+                end
+            end
+        end
+        
+        function bias = allbias(obj)
+            bias = zeros(obj.nhvc, obj.niter);
+            for iter = 1:obj.niter
+                fprintf('Trial %g\n', iter)
+                bias(:,iter) = obj.bias(iter);
+            end
+        end
+        
+        function vp = allvpost(obj)
+            T = obj.nhvc + length(obj.kernel) - 1;
+            vp = zeros(obj.nmsn, T, obj.niter);
+            for iter = 1:obj.niter
+                for imsn = 1:obj.nmsn
+                    vp(imsn, :, iter) = obj.vpost(imsn, iter);
+                end
+            end
+        end
+        
+        function save(obj, filename)
+            % Saves object to a file and attempts to use less disk space by
+            % emptying the properties that can be derived again later.
+            % Use obj.load(filename) to load from file and recalculate the
+            % empty properties
+            
+            % Copy values that will be emptied
+            temp.msnout  = obj.msnout; 
+            temp.lmanout = obj.lmanout;
+            
+            % Empty the values
+            obj.msnout  = [];
+            obj.lmanout = [];
+            
+            % Save object with the empty values
+            save(filename, 'obj')
+            
+            % Put the emptied values back so we can continue using the
+            % object like normal.
+            obj.msnout  = temp.msnout;
+            obj.lmanout = temp.lmanout;
+        end
+        
+        function load(obj, filename)
+            % Loads an object from a save file created by obj.save(). All
+            % properties in obj will be replaced with the values in the
+            % loaded file. MSN output and LMAN output are recalculated
+            % based on other stored values.
+            
+            % Fill in loaded values
+            temp = load(filename, 'obj');
+            fn = fieldnames(temp.obj);
+            for i = 1:length(fn)
+                fname = fn{i};
+                obj.(fname) = temp.obj.(fname);
+            end
+            
+            % Recalculate MSN and LMAN output
+            for iter = 1:obj.niter
+                obj.ffstep(iter)
+            end
+        end
+        
+        function y = foralliter(obj, func)
+            % Calls function func for each iteration and returns a matrix
+            % of all the results. func must be a handle to a function that
+            % takes the iteration as its only argument and returns a
+            % vector. In the returned matrix, the iteration is the second
+            % dimension.
+            %
+            % Example: FIXME
+            y1 = func(1);
+            assert(isvector(y1));
+            y = zeros(length(y1), obj.niter);
+            y(:,1) = y1;
+            for iter = 2:obj.niter
+                y(:,iter) = func(iter);
+            end
+        end
+    end % methods
+end % classdef

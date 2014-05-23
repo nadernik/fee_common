@@ -1,7 +1,7 @@
 function handles = egm_Syllable_duration_distribution(handles)
 % ElectroGui macro
 % Plots the syllable distribution of all analyzed files
-
+ 
 filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
 answer = inputdlg({'Files','Array of bin edges (ms)'},'Duration distribution',1,{['1:' num2str(filenum)],'7:7:700'}); % input dialog box
 if isempty(answer)

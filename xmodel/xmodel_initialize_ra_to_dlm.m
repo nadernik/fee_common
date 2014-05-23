@@ -27,9 +27,11 @@ weights_on_ra_from_hvc = zeros(lman_units, hvc_units);
 % RA activity. FIXME add explanation for pitch up and pitch down channels.
 weights_on_song_from_ra = [1, -1];
 
-% One-to-one connections to relay pallidal output to LMAN through DLM
+% One-to-one connections to relay pallidal output to LMAN through DLM and
+% LMAN to RA
 weights_on_dlm_from_pallidus = -eye(lman_units); % inhibitory
 weights_on_lman_from_dlm = eye(lman_units);
+weights_on_ra_from_lman = eye(lman_units);
 
 % Topographic LMAN-X-DLM loop
 weights_on_msn_from_hvc = zeros(msn_units, hvc_units);
@@ -46,17 +48,18 @@ for ell = 1:lman_units
 end
 
 % RA to DLM (this is unique to this version of the model)
-weights_on_dlm_from_ra = 1 * eye(lman_units);
+weights_on_dlm_from_ra = ra_dlm_strength .* eye(lman_units);
+
 
 %% Generate intrinsic noise in LMAN and RA
 lman_noise = zeros(lman_units, motif_steps, total_motifs);
 ra_noise   = zeros(lman_units, motif_steps, total_motifs);
 for u = 1:lman_units
-    lman_noise(u, :, :) = generate_lman_noise_mes010(motif_steps, total_motifs);
-    ra_noise(u, :, :)   = generate_lman_noise_mes010(motif_steps, total_motifs);
+    lman_noise(u, :, :) = generate_lman_noise_ra_dlm(motif_steps, total_motifs, ra_dlm_strength);
+    ra_noise(u, :, :)   = generate_lman_noise_ra_dlm(motif_steps, total_motifs, ra_dlm_strength);
 end
-ra_noise   = ra_noise   .* sqrt(ra_noise_amplitude);
-lman_noise = lman_noise .* sqrt(1 - ra_noise_amplitude);
+ra_noise   = ra_noise   .* sqrt(ra_noise_amplitude) ./ std(ra_noise(:));
+lman_noise = lman_noise .* sqrt(1 - ra_noise_amplitude) ./ std(lman_noise(:));
 
 %% Eligibility trace
 x = -4*std_etrace:4*std_etrace;

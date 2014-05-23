@@ -13,7 +13,7 @@ if strcmpi(datagen, 'y')
     xmodel_parameters_bias_figure
     xmodel_initialize
 
-    % make 4th hvc-x synapse strong
+    % make one hvc-x synapse strong
     weights_on_msn_from_hvc(strong_unit,strong_unit) = strength;
 
     xmodel_run
@@ -52,7 +52,7 @@ while true
     % msn activity for the msns that project to 1st lman unit
     for m = units_to_plot
         if weights_on_msn_from_lman(m,1) > 0
-            plot(squeeze(msn_output(m,:,selected_motifs))/ ...
+            plot(squeeze(msn_output(m,:))/ ...
                 weights_on_msn_from_hvc(strong_unit,strong_unit) - y0, ...
                 'Color', c.msn, 'LineWidth', 3)
             y0 = y0+dy;
@@ -61,7 +61,13 @@ while true
 
     % lman activity of 1st lman unit (pitch up channel)
     y0 = y0+2*dy;
-    plot(squeeze((lman_output(1,:,selected_motifs)) - lman_offset)/strength*3 - y0, ...
+    for ii = 1:length(selected_motifs)
+        motif = selected_motifs(ii);
+        L(:,ii) = weights_on_lman_from_dlm(1,:) * dlm_output(:,:,motif) + ...
+            lman_noise(1,:,motif);
+    end
+    
+    plot(L/strength*3 - y0, ...
         'Color', c.lman, 'LineWidth', 3)
     
     % pitch

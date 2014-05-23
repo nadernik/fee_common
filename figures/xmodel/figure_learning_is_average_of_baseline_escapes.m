@@ -1,6 +1,6 @@
 function figure_learning_is_average_of_baseline_escapes(do_simulations)
 
-datafile = 'c:\stetner\data\figures\xmodel\caf3.mat';
+datafile = 'c:\stetner\data\figures\xmodel\caf_ibags50.mat';
 colorscheme = 'C:\stetner\code\figures\xmodel\xmodel_color_scheme.mat';
 num_traces = 10;
 
@@ -8,13 +8,19 @@ num_traces = 10;
 % If function is called without an argument or with an argument that is not
 % 1, this step is skipped!
 if exist('do_simulations', 'var') && (do_simulations == 1)
-    xmodel_parameters_caf
+    load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\51.mat');
+    %load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\74.mat');
+    %load('c:\stetner\data\figures\xmodel\temporal_resolution_lman\mes010\101.mat')
     baseline_motifs = 1000;
     learning_motifs = 600;
     total_motifs = baseline_motifs + learning_motifs + ending_motifs;
     xmodel_initialize
+    for u = 1:lman_units % for each channel, stretch lman noise
+        lman_noise(u, :, :) = generate_lman_noise_streched_spectrum(motif_steps, total_motifs, stretches(n));
+    end
     xmodel_run
     xmodel_calculate_bias
+    bias = squeeze(bias);
     save(datafile)
 end
 
@@ -89,29 +95,37 @@ set(gca, 'YTick', [0 1])
 
 % bias after learning
 figure
-t = (1:d.motif_steps) - d.caf_target_time2;
-plot(t, d.bias(:,end)./max(d.bias(:,end)), 'Color', c.bias, 'LineWidth', 3)
+t_bias = (1:d.motif_steps) - d.caf_target_time2;
+y_bias = d.bias(:,end)./max(d.bias(:,end));
+plot(t_bias, y_bias, 'Color', c.bias, 'LineWidth', 3)
 hold on
 fprintf('Full width at half maximum of bias after learning is %g ms.\n', fwhm(d.bias(:,end)))
 
 % hvc burst
 hvc_burst = d.hvc_output(1, 1:9);
 t = 1:length(hvc_burst);
-t = t-mean(t);
-plot(t, hvc_burst./max(hvc_burst), 'Color', c.hvc, 'LineWidth', 3)
+t_hvc = t-mean(t);
+y_hvc = hvc_burst./max(hvc_burst);
+plot(t_hvc, y_hvc, 'Color', c.hvc, 'LineWidth', 3)
 fprintf('Full width at half maximum of HVC burst is %g ms.\n', fwhm(hvc_burst))
 
 % average of baseline escapes
-t = (1:d.motif_steps) - d.caf_target_time2;
-plot(t, avg_of_baseline_escapes./max(avg_of_baseline_escapes), 'Color', c.escape, 'LineWidth', 3)
+t_esc = (1:d.motif_steps) - d.caf_target_time2;
+y_esc = avg_of_baseline_escapes./max(avg_of_baseline_escapes);
+plot(t_esc, y_esc, 'Color', c.escape, 'LineWidth', 3)
 fprintf('Full width at half maximum of average of baseline escapes is %g ms.\n', fwhm(avg_of_baseline_escapes))
 
 % reward kernel
 t = 1:length(d.rkernel);
-t = t-mean(t);
-plot(t, d.rkernel./max(d.rkernel), 'Color', c.vta, 'LineWidth', 3)
+t_rwd = t-mean(t);
+y_rwd = d.rkernel./max(d.rkernel);
+plot(t_rwd, y_rwd, 'Color', c.vta, 'LineWidth', 3)
 fprintf('Full width at half maximum of reward kernel is %g ms.\n', fwhm(d.rkernel))
 
 set(gca, 'FontSize', 16, 'YTick', [0 1])
 xlabel('Time from CAF target (ms)')
 legend({'Learning', 'HVC burst', 'Baseline escapes', 'Reward kernel'})
+
+save('c:\stetner\data\figures\xmodel\caf_example1.mat', ...
+    't_bias', 'y_bias', 't_hvc', 'y_hvc', 't_esc', 'y_esc', 't_rwd', 'y_rwd', ...
+    'rpe_hit', 'rpe_esc', 'hitmotif', 'escmotif')
