@@ -42,7 +42,7 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
-
+function panelCondition_CreateFcn(varargin)
 
 % --- Executes just before rules is made visible.
 function rules_OpeningFcn(hObject, eventdata, handles, varargin)
