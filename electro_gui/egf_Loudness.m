@@ -5,7 +5,7 @@ if isstr(a) & strcmp(a,'params')
     y.Values = {'2','5','3'};
     return
 end
-wind = .0025*fs; %2.5ms smoothing window
+wind = round(.0025*fs); %2.5ms smoothing window
 amp = smooth(10*log10(a.^2+eps),wind);
 amp = amp-min(amp(wind:length(amp)-wind));
 amp(find(amp<0))=0;
