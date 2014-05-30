@@ -70,6 +70,7 @@ plot(time,spiketrain, 'k')
 linkaxes([h g], 'x')
 subplot(g)
 xlabel('time (s)')
+ylim([-1 2]); 
 figure; 
 [S,f] = mtspectrumpt(data, params);
 plot(f,S)

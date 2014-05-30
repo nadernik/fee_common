@@ -1,10 +1,10 @@
-function [snd lab] = egf_FIRBandPass(a,fs,params)
+function [snd lab] = egf_FIRBandPass_1_6_Khz(a,fs,params)
 % ElectroGui filter
 
 lab = 'Band-pass filtered';
 if isstr(a) & strcmp(a,'params')
     snd.Names = {'Lower frequency','Higher frequency','Order'};
-    snd.Values = {'400','9000','80'};
+    snd.Values = {'1000','6000','80'};
     return
 end
 
