@@ -47,7 +47,7 @@ powerSong = mean(abs(b(minNdx:maxNdx,:)), 1);
 powerNonSong = mean(abs(b([1:minNdx-1,maxNdx+1:end],:)), 1) + eps;
 songRatio = powerSong./powerNonSong;
 thresCross = (songRatio>ratioThreshold);
-songDet = conv(thresCross,windowAvg);
+songDet = conv(double(thresCross),windowAvg);
 tElapsed = toc;
 
 score = max(songDet);
