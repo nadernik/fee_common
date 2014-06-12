@@ -27,7 +27,7 @@ function varargout = electro_gui(varargin)
 
 % Edit the above text to modify the response to help electro_gui
 
-% Last Modified by GUIDE v2.5 10-Feb-2014 10:14:26
+% Last Modified by GUIDE v2.5 11-Jun-2014 22:49:15
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -8891,3 +8891,11 @@ dbase.AnalysisState.EventList = get(handles.popup_EventList,'string');
 dbase.AnalysisState.CurrentFile = str2num(get(handles.edit_FileNumber,'string'));
 dbase.AnalysisState.EventWhichPlot = handles.EventWhichPlot;
 dbase.AnalysisState.EventLims = handles.EventLims;
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over push_Properties.
+function push_Properties_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to push_Properties (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
