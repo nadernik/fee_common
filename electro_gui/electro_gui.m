@@ -27,7 +27,7 @@ function varargout = electro_gui(varargin)
 
 % Edit the above text to modify the response to help electro_gui
 
-% Last Modified by GUIDE v2.5 11-Jun-2014 22:49:15
+% Last Modified by GUIDE v2.5 11-Jun-2014 23:34:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -8898,4 +8898,14 @@ dbase.AnalysisState.EventLims = handles.EventLims;
 function push_Properties_ButtonDownFcn(hObject, eventdata, handles)
 % hObject    handle to push_Properties (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on key press with focus on list_Files and none of its controls.
+function list_Files_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to list_Files (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
