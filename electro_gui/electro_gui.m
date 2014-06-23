@@ -6857,7 +6857,10 @@ function MacrosMenuclick(hObject, eventdata, handles)
 handles.dbase = GetDBase(handles);
 
 f = find(handles.menu_Macros==hObject);
-
+if isempty(f)
+    warning('Could not find the appropriate macro')
+    keyboard()
+end
 mcr = get(handles.menu_Macros(f),'label');
 handles = eval(['egm_' mcr '(handles)']);
 
