@@ -861,6 +861,9 @@ xlim([0 xmax]);
 hold off
 box on;
 
+% Clear selected channel (I think this should be happening? GL 6/23/2014)
+handles.SelectedEvent = [];
+
 % Delete old plots
 cla(handles.axes_Sonogram);
 set(handles.axes_Sonogram,'buttondownfcn','%','uicontextmenu','');
@@ -4449,21 +4452,25 @@ set(handles.EventWaveHandles,'buttondownfcn','electro_gui(''click_eventwave'',gc
 
 filenum = str2num(get(handles.edit_FileNumber,'string'));
 nums = [];
-for c = 1:length(handles.EventTimes);
-    nums(c) = size(handles.EventTimes{c},1);
+for c = 1:length(handles.EventTimes);%For every event detector
+    nums(c) = size(handles.EventTimes{c},1);%For each set of event times within the same detector
 end
 indx = get(handles.popup_EventList,'value')-1;
-cs = cumsum(nums);
-f = length(find(cs<indx))+1;
+cs = cumsum(nums);%Cumulative number of series by event type
+f = length(find(cs<indx))+1;%The first element which is not less than indx
 if f>1
-    g = indx-cs(f-1);
+    g = indx-cs(f-1);rate
 else
     g = indx;
 end
 tm = handles.EventTimes{f}{g,filenum};
 sel = handles.EventSelected{f}{g,filenum};
 tm = tm(find(sel==1));
-
+if i > length(tm)
+    warning('selected event is invalid');
+    handles.SelectedEvent = [];
+    return;
+end
 xs = linspace(0,length(handles.sound)/handles.fs,length(handles.sound));
 subplot(handles.axes_Sound);
 hold on;
