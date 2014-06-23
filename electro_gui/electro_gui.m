@@ -4459,7 +4459,7 @@ indx = get(handles.popup_EventList,'value')-1;
 cs = cumsum(nums);%Cumulative number of series by event type
 f = length(find(cs<indx))+1;%The first element which is not less than indx
 if f>1
-    g = indx-cs(f-1);rate
+    g = indx-cs(f-1);
 else
     g = indx;
 end
