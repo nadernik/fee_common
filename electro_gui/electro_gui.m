@@ -2905,7 +2905,7 @@ elseif strcmp(get(gcf,'selectiontype'),'normal')
         xd(2:3) = rect(1)+rect(3);
         if strcmp(get(handles.(['menu_AllowYZoom' num2str(axnum)]),'checked'),'on')
             assert(~any(isnan([rect(2) rect(4)+rect(2)])), 'Bad ylim: nan found');
-            assert(rect(2)<= rect(4)+rect(2), 'Bad ylim: must be decreasing');
+            assert(rect(2)< rect(4)+rect(2), 'Bad ylim: must be increasing');
             ylim([rect(2) rect(4)+rect(2)]);
         end
     end
