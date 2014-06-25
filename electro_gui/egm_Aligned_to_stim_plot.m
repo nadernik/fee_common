@@ -1,5 +1,4 @@
 function handles = egm_Aligned_to_stim_plot(handles)
-
 fls = get(handles.list_Files,'string');
 found = [];
 for c = 1:handles.TotalFileNumber

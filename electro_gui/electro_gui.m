@@ -4407,13 +4407,13 @@ end
 function click_eventwave(hObject, eventdata, handles)
 
 i = find(handles.EventWaveHandles==hObject);
-if strcmp(get(gcf,'selectiontype'),'normal')
+if strcmp(get(gcf,'selectiontype'),'normal')%normal click
     handles = SelectEvent(handles,i);
     guidata(hObject, handles);
-elseif strcmp(get(gcf,'selectiontype'),'extend')
+elseif strcmp(get(gcf,'selectiontype'),'extend')%Shift click
     set(hObject,'xdata',[],'ydata',[]);
     hold on
-    handles.EventWaveHandles(i) = plot(mean(xlim),mean(ylim),'w.');
+    handles.EventWaveHandles(i) = plot(mean(xlim),mean(ylim),'w.');%Make a dot in the center of the plot??
     hold off
     handles = DeleteEvents(handles,i);
     guidata(hObject, handles);
