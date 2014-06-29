@@ -1,7 +1,7 @@
 function [y label] = egf_Loudness(a,fs, params)
 label = 'Loudness'; 
 if ischar(a) & strcmp(a,'params')
-    y.Names = {'Rectification exponent (e.g. 2 for squared signal)'};
+    y.Names = {'Rectification exponent (e.g. 2 for squared signal)', 'Gaussian half-width sigma (ms)'};
     y.Values = {'2','10'};
     return
 end
