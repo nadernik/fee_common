@@ -75,19 +75,27 @@ else
         fprintf('Unequal cell lengths at depth %d/n', depth)
     else
         for entryNo = 1:nEntry
-            if isequal(cell1{entryNo}, cell2{entryNo})
+            if isequal(cell1{entryNo}, cell2{entryNo})%If they're equal
                 continue;
-            elseif ~strcmp(class(cell1{entryNo}), class(cell2{entryNo}))
+            elseif ~strcmp(class(cell1{entryNo}), class(cell2{entryNo}))%If they're not the same class
                 fprintf([repmat(' ', 1, depth-1), '! different classes at depth %d position %d\n'], depth, entryNo); 
-            elseif isa(cell1{entryNo}, 'cell') && isa(cell2{entryNo}, 'cell')
+            elseif isa(cell1{entryNo}, 'cell')%If they're differing cells
                 fprintf([repmat(' ', 1, depth-1), 'checking position %d at depth %d...\n'], entryNo, depth);
                 recursive_cell_comp(cell1{entryNo}, cell2{entryNo}, depth+1);
-            elseif ~isequal(cell1{entryNo}, cell2{entryNo})
-                if isa(cell1{entryNo}, 'double') && isequal(size(cell1{entryNo}),size((cell2{entryNo})))
-                    if all(abs(cell1{entryNo} - cell2{entryNo}) <= tolerance)
-                        fprintf([repmat(' ', 1, depth-1), 'entries at depth %d position %d within tolerance\n'], depth, entryNo);
+            else%If they're differing non-cells
+                if isa(cell1{entryNo}, 'double')%If they're differing doubles
+                    if isempty(cell1{entryNo}) && isempty(cell2{entryNo})%If they're empty
+                        fprintf([repmat(' ', 1, depth-1), 'entries at depth %d position %d are both empty\n'], depth, entryNo);
+                    elseif isequal(size(cell1{entryNo}),size((cell2{entryNo}))) %if they're non-empty and the same size
+                        if all(abs(cell1{entryNo} - cell2{entryNo}) <= tolerance)%If they're close enough
+                            fprintf([repmat(' ', 1, depth-1), 'entries at depth %d position %d within tolerance\n'], depth, entryNo);
+                        else%If they're not close enough
+                            fprintf([repmat(' ', 1, depth-1), '! unequal entries at depth %d position %d\n'], depth, entryNo);
+                        end
+                    else %If they're non-empty and differing sizes
+                        fprintf([repmat(' ', 1, depth-1), '! length differs in entries at depth %d position %d\n'], depth, entryNo);
                     end
-                else
+                else%If they're differing non-cell and non-double
                     fprintf([repmat(' ', 1, depth-1), '! unequal entries at depth %d position %d\n'], depth, entryNo);
                 end
             end
