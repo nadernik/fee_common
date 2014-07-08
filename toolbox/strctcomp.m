@@ -1,4 +1,4 @@
-function out = strctcomp(strct1, strct2)
+function out = strctcomp(strct1, strct2, varargin)
 %Check if structs are totally equal or equal within some tolerance
 %
 %takes two structures as input, returns true if they're equal
@@ -7,7 +7,9 @@ function out = strctcomp(strct1, strct2)
 %within a tolerance value of eachother
 %
 %Written by Galen Lynch 7/6/2014
-TOLERANCE = 1e-5; %Change this to change what's 'good enough'
+options = struct('tolerance', 1e-5, 'verbose', false);
+options = gl_parse_args(options, varargin);
+TOLERANCE = options.tolerance; %Change this to change what's 'good enough'
 out = isequaln(strct1, strct2);
 if numel(strct1) == numel(strct2)
     disp('Lengths are equal')
@@ -40,10 +42,12 @@ if numel(strct1) == numel(strct2)
                                 fprintf('Doubles in field ''%s'' at position %d are within tolerance\n', fld, arrNo)
                             end
                         else
-                            disp('Strct 1 has value:')
-                            disp(strct1(arrNo).(fld));
-                            disp('Strct 2 has value:')
-                            disp(strct2(arrNo).(fld));
+                            if options.verbose
+                                disp('Strct 1 has value:')
+                                disp(strct1(arrNo).(fld));
+                                disp('Strct 2 has value:')
+                                disp(strct2(arrNo).(fld));
+                            end
                         end
                     end
                 end
