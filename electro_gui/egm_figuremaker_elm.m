@@ -48,7 +48,8 @@ tdata = get(temp, 'xdata');
 subplot(2,1,1); 
 Thres = -16.2;
 cdata(cdata<Thres) = Thres; 
-surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
+imagesc(cdata, 'xdata', tdata, 'ydata', fdata); set(gca, 'ydir', 'normal')
+%surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
 ylabel('Frequency (kHz)')
 set(gca, 'xtick', [], 'xticklabel', '')
 cmap = jet; 
@@ -76,8 +77,9 @@ colormap(cmap);
 % plot((1:size(handles.sound))/handles.fs, handles.amplitude)
 g = subplot(2,1,2)
 set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren')
-plot(time, units)
+mini_max_plot(time, units, 'ax', g)
 xlabel('Time(s)'); ylabel('Voltage (mV)')
+
 linkaxes([h g],'x')
 %xlim([lims(1) lims(2)])
 %% in order to make no space between plots
