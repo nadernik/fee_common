@@ -27,7 +27,7 @@ function varargout = electro_gui(varargin)
 
 % Edit the above text to modify the response to help electro_gui
 
-% Last Modified by GUIDE v2.5 10-Feb-2014 10:14:26
+% Last Modified by GUIDE v2.5 17-Jun-2014 14:51:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -8891,3 +8891,21 @@ dbase.AnalysisState.EventList = get(handles.popup_EventList,'string');
 dbase.AnalysisState.CurrentFile = str2num(get(handles.edit_FileNumber,'string'));
 dbase.AnalysisState.EventWhichPlot = handles.EventWhichPlot;
 dbase.AnalysisState.EventLims = handles.EventLims;
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over push_Save.
+function push_Save_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to push_Save (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on key press with focus on push_Save and none of its controls.
+function push_Save_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to push_Save (see GCBO)
+% eventdata  structure with the following fields (see UICONTROL)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
