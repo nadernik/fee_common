@@ -122,7 +122,7 @@ handles.maxlag = 3;
 set(handles.edit1, 'String', num2str(handles.maxlag));
 
 % setting default smoothing window
-handles.smoothwin = .01; 
+handles.smoothwin = .0025; 
 set(handles.edit3, 'String', num2str(handles.smoothwin)); 
 
 % make option to calculate for multiple files
