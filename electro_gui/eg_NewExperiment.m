@@ -8,6 +8,7 @@ if handles.IsUpdating == 0
     else
         dr = pwd;
     end
+
     path_name = uigetdir(dr,'Experiment Directory');
     if ~isstr(path_name)
         ischanged = 0;
@@ -24,6 +25,7 @@ else
     str = 'Update file list';
 end
 
+
 % Create dialog figure
 screen_size = get(0,'screensize');
 screen_size = get(0,'screensize');
@@ -35,6 +37,7 @@ set(fig,'visible','on');
 set(fig,'Name',str,'NumberTitle','off','MenuBar','none','doublebuffer','on','units','pixels','resize','off');
 set(fig,'position',[(screen_size(3)-fig_w)/2 (screen_size(4)-fig_h)/2 fig_w fig_h]);
 set(fig,'closerequestfcn',@CloseFig);
+
 
 % Find all loader files
 load_files = dir(egfile('egl_*.m'));
@@ -80,6 +83,7 @@ end
 
 curr = pwd;
 cd(handles.path_name);
+
 handles.sound_files = dir(get(textbox(1),'string'));
 handles.sound_loader = pop_str{get(popup(1),'value')};
 handles.chan_files = {};
@@ -88,8 +92,8 @@ for c = 2:num_chan+1
     handles.chan_files{c-1} = dir(get(textbox(c),'string'));
     handles.chan_loader{c-1} = pop_str{get(popup(c),'value')};
 end
-cd(curr);
 delete(fig)
+cd(curr);
 
     function PushOK(hObject, eventdata)
         ischanged = 1;
