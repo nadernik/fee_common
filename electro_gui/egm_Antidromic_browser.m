@@ -987,7 +987,9 @@ switch str{val}
         xlim([-handles.xlim(1),handles.xlim(2)]*1000);
         box on
         xlabel('Time from stim (ms)');
-        ylabel('Trial number'); %%% fixed TO
+        ylabel('Trial number');
+        set(gca,'clim',handles.ylim);
+        ylabel(handles.Label);
         set(gca,'clim',handles.ylim);
 end
 

@@ -1,4 +1,4 @@
-function [snd lab] = egf_FIRBandPass(a,fs,params)
+function [snd lab] = egf_FIRBandPass2(a,fs,params)
 % ElectroGui filter
 
 lab = 'Band-pass filtered';

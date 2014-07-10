@@ -2,6 +2,7 @@ function handles = egm_Batch_segment(handles)
 % ElectroGui macro
 % Batch syllable segmentation for faster analysis
 % Uses current segmentation algorithm and parameters
+% Only works for segmentation based on sound amplitude
 
 if isfield(handles,'AutomationELM')
     fls = 1:handles.TotalFileNumber;
@@ -65,6 +66,7 @@ for j = 1:length(fls) % counter for files to be segmented
     end
     %---------------------------
     
+    handles.SegmentTimes{c} = eval(['egg_' alg '(amp,fs,curr,handles.SegmenterParams)']);
     handles.SegmentTitles{c} = cell(1,size(handles.SegmentTimes{c},1));
     handles.SegmentSelection{c} = ones(1,size(handles.SegmentTimes{c},1));
 

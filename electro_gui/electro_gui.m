@@ -861,6 +861,9 @@ xlim([0 xmax]);
 hold off
 box on;
 
+% Clear selected channel (I think this should be happening? GL 6/23/2014)
+handles.SelectedEvent = [];
+
 % Delete old plots
 cla(handles.axes_Sonogram);
 set(handles.axes_Sonogram,'buttondownfcn','%','uicontextmenu','');
@@ -2901,6 +2904,11 @@ elseif strcmp(get(gcf,'selectiontype'),'normal')
         xd([1 4:5]) = rect(1);
         xd(2:3) = rect(1)+rect(3);
         if strcmp(get(handles.(['menu_AllowYZoom' num2str(axnum)]),'checked'),'on')
+            if abs(rect(4)) <eps
+                rect(4) = eps;
+            end
+            assert(~any(isnan([rect(2) rect(4)+rect(2)])), 'Bad ylim: nan found');
+            assert(rect(2)< rect(4)+rect(2), 'Bad ylim: must be increasing');
             ylim([rect(2) rect(4)+rect(2)]);
         end
     end
@@ -4402,13 +4410,13 @@ end
 function click_eventwave(hObject, eventdata, handles)
 
 i = find(handles.EventWaveHandles==hObject);
-if strcmp(get(gcf,'selectiontype'),'normal')
+if strcmp(get(gcf,'selectiontype'),'normal')%normal click
     handles = SelectEvent(handles,i);
     guidata(hObject, handles);
-elseif strcmp(get(gcf,'selectiontype'),'extend')
+elseif strcmp(get(gcf,'selectiontype'),'extend')%Shift click
     set(hObject,'xdata',[],'ydata',[]);
     hold on
-    handles.EventWaveHandles(i) = plot(mean(xlim),mean(ylim),'w.');
+    handles.EventWaveHandles(i) = plot(mean(xlim),mean(ylim),'w.');%Make a dot in the center of the plot??
     hold off
     handles = DeleteEvents(handles,i);
     guidata(hObject, handles);
@@ -4449,12 +4457,12 @@ set(handles.EventWaveHandles,'buttondownfcn','electro_gui(''click_eventwave'',gc
 
 filenum = str2num(get(handles.edit_FileNumber,'string'));
 nums = [];
-for c = 1:length(handles.EventTimes);
-    nums(c) = size(handles.EventTimes{c},1);
+for c = 1:length(handles.EventTimes);%For every event detector
+    nums(c) = size(handles.EventTimes{c},1);%For each set of event times within the same detector
 end
 indx = get(handles.popup_EventList,'value')-1;
-cs = cumsum(nums);
-f = length(find(cs<indx))+1;
+cs = cumsum(nums);%Cumulative number of series by event type
+f = length(find(cs<indx))+1;%The first element which is not less than indx
 if f>1
     g = indx-cs(f-1);
 else
@@ -4463,7 +4471,11 @@ end
 tm = handles.EventTimes{f}{g,filenum};
 sel = handles.EventSelected{f}{g,filenum};
 tm = tm(find(sel==1));
-
+if i > length(tm)
+    warning('selected event is invalid');
+    handles.SelectedEvent = [];
+    return;
+end
 xs = linspace(0,length(handles.sound)/handles.fs,length(handles.sound));
 subplot(handles.axes_Sound);
 hold on;
@@ -6857,7 +6869,10 @@ function MacrosMenuclick(hObject, eventdata, handles)
 handles.dbase = GetDBase(handles);
 
 f = find(handles.menu_Macros==hObject);
-
+if isempty(f)
+    warning('Could not find the appropriate macro')
+    keyboard()
+end
 mcr = get(handles.menu_Macros(f),'label');
 handles = eval(['egm_' mcr '(handles)']);
 
@@ -8894,16 +8909,16 @@ dbase.AnalysisState.EventLims = handles.EventLims;
 
 
 % --- If Enable == 'on', executes on mouse press in 5 pixel border.
-% --- Otherwise, executes on mouse press in 5 pixel border or over push_Save.
-function push_Save_ButtonDownFcn(hObject, eventdata, handles)
-% hObject    handle to push_Save (see GCBO)
+% --- Otherwise, executes on mouse press in 5 pixel border or over push_Properties.
+function push_Properties_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to push_Properties (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on key press with focus on push_Save and none of its controls.
-function push_Save_KeyPressFcn(hObject, eventdata, handles)
-% hObject    handle to push_Save (see GCBO)
+% --- Executes on key press with focus on list_Files and none of its controls.
+function list_Files_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to list_Files (see GCBO)
 % eventdata  structure with the following fields (see UICONTROL)
 %	Key: name of the key that was pressed, in lower case
 %	Character: character interpretation of the key(s) that was pressed

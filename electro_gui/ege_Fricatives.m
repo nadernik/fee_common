@@ -4,8 +4,8 @@ function [events labels] = ege_Fricatives(a,fs,thres,params)
 
 labels = {'Onsets','Offsets'};
 if isstr(a) & strcmp(a,'params')
-    events.Names = {};
-    events.Values = {};
+    events.Names = {'Threshold','Max distance'};
+    events.Values = {'0','0.2'};
     return
 end
 
@@ -14,7 +14,10 @@ if isempty(a)
     return
 end
 
-[segs th] = DA_segmenter_full(a,fs);
+maxdist = str2num(params.Values{2})*fs;
+
+th = str2num(params.Values{1});
+[segs th] = DA_segmenter_full(a,fs,th);
 
 gapon = [1; segs(:,2)];
 gapoff = [segs(:,1); length(a)];
@@ -31,18 +34,11 @@ for g = 1:length(gapon)
     gapdata([1 end]) = 0;
     f1 = find(gapdata(1:end-1)<thres & gapdata(2:end)>=thres);
     f2 = find(gapdata(1:end-1)>=thres & gapdata(2:end)<thres);
-    if ~isempty(f1)
-        if f1(1)==1
-            f1(1)=[];
-            f2(1)=[];
-        end
-    end
-    if ~isempty(f2)
-        if f2(end)==length(gapdata)-1
-            f1(end)=[];
-            f2(end)=[];
-        end
-    end
+    
+    f = find(f1>maxdist & f2<(gapoff(g)-gapon(g))-maxdist);
+    f1(f) = [];
+    f2(f) = [];
+    
     breaths{g} = [f1 f2]+gapon(g);
     if isempty(f1)
         breaths{g} = zeros(0,2);
@@ -66,16 +62,23 @@ events{1} = breaths(:,1);
 events{2} = breaths(:,2);
 
 
-function [segs th] = DA_segmenter_full(a,fs)
+function [segs th] = DA_segmenter_full(a,fs,th)
 
 params.Values = {'1000','4000','100'};
 snd = egf_FIRBandPass(a,fs,params);
 smooth_window = 0.0025;
 wind = round(smooth_window*fs);
 amp = smooth(10*log10(snd.^2+eps),wind);
-amp = amp-prctile(amp(wind:length(amp)-wind),5);
+
+% CHANGED HERE FOR DIFFERENT AMPLITUDE OFFSETS!!!!
+% amp = amp-prctile(amp(wind:length(amp)-wind),5);
+amp = amp-min(amp(wind:length(amp)-wind));
+
 amp(find(amp<0))=0;
-th = eg_AutoThreshold(amp);
+if th==0
+    th = eg_AutoThreshold(amp);
+end
+
 
 params.Values = {'7', '7','7','0'};
 params.IsSplit = 0;

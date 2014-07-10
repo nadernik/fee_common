@@ -20,6 +20,10 @@ function varargout = egm_Sorted_rasters(varargin)
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
+%      This function is a duplicate of egm_Sorted_rasters_elm.m with
+%      default options setup for Emily. Perhaps we should figure out some
+%      way to use an ini file for defaults to avoid code clutter?
+%
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
 % Edit the above text to modify the response to help egm_Sorted_rasters
