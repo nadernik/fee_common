@@ -120,6 +120,7 @@ set(fh, 'KeyPressFcn', @nextjprevk)
 function nextjprevk(src,evnt)
 % Push j to see next file. Push k to see previous file.
 ud = get(src, 'UserData');
+filenum = ud.filenum;
 switch evnt.Key
     case 'j'
         filenum = ud.filenum + 1;
