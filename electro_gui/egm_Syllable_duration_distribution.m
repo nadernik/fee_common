@@ -3,7 +3,7 @@ function handles = egm_Syllable_duration_distribution(handles)
 % Plots the syllable distribution of all analyzed files
  
 filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
-answer = inputdlg({'Files','Array of bin edges (ms)'},'Duration distribution',1,{['1:' num2str(filenum)],'7:7:700'}); % input dialog box
+answer = inputdlg({'Files','Array of bin edges (ms)'},'Duration distribution',1,{['1:' num2str(filenum)],'10:10:1000'}); % input dialog box
 if isempty(answer)
     return
 end
@@ -29,3 +29,4 @@ xlim([0 lst(end)]);
 
 xlabel('Duration (ms)');
 ylabel('Probability');
+set(gcf, 'Color', [1 1 1], 'papersize', [4 3], 'paperposition', [0 0 4 3])

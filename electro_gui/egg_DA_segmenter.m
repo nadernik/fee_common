@@ -7,6 +7,11 @@ if isstr(a) & strcmp(a,'params')
     return
 end
 
+%%% Added by Maya
+if ~isfield(params,'IsSplit')
+   params = setfield (params,'IsSplit',0) ; 
+end
+
 if params.IsSplit == 1
     min_dur = str2num(params.Values{3})/1000; % minimum duration for splitting (ms)
     min_stop = str2num(params.Values{4})/1000; % minimum interval for splitting (ms)

@@ -792,7 +792,11 @@ end
 
 [experfilename, experfilepath] = uigetfile('exper.mat', 'Choose an experiment file:');
 if(~isequal(experfilename, 0))
-    load([experfilepath,filesep,experfilename]);
+    load([experfilepath,filesep,experfilename]);%Loads exper struct into namespace
+    %Code for checking if exper has been moved
+    if ~strcmp(exper.dir, experfilepath) %directory has been moved
+        exper.dir = experfilepath;
+    end
     addExperiment(guifig, exper);
 end
 

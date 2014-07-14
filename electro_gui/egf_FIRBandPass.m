@@ -4,7 +4,7 @@ function [snd lab] = egf_FIRBandPass(a,fs,params)
 lab = 'Band-pass filtered';
 if isstr(a) & strcmp(a,'params')
     snd.Names = {'Lower frequency','Higher frequency','Order'};
-    snd.Values = {'2000','4000','130'}; %%% {'9600','10200','80'}
+    snd.Values = {'400','9000','80'};
     return
 end
 

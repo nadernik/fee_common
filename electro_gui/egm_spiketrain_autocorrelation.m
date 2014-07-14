@@ -17,7 +17,7 @@ ylabel('autocorr (normalized)');
 idx = 1; 
 for c = fls % array of files
     spiketimes = handles.EventTimes{1}{1,c}; % change to use input to select which event
-    spiketrain = zeros(1, numel(handles.sound));
+    spiketrain = zeros(1, numel(handles.sound)); % change to use multiple files
     spiketrain(spiketimes) = 1;
     filter = normpdf(-6*smoothing_window:1/fs:6*smoothing_window, 0, smoothing_window);
     smooth_spiketimes = conv(spiketrain, filter);

@@ -22,7 +22,7 @@ function varargout = egm_Sorted_rasters(varargin)
 
 % Edit the above text to modify the response to help egm_Sorted_rasters
 
-% Last Modified by GUIDE v2.5 01-Oct-2009 20:34:14
+% Last Modified by GUIDE v2.5 28-Mar-2014 15:50:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -5629,20 +5629,23 @@ end
 handles.overlaptolerance = str2num(answer{1});
 tol = handles.overlaptolerance*handles.fs;
 
-for c = length(handles.DatesAndTimes)-1:-1:1
+for c = length(handles.DatesAndTimes)-1:-1:1%iterate through the files in reverse order
     if handles.FileLength(c)==0 | handles.FileLength(c+1)==0 % files unanalyzed
         continue
     end
     
-    if handles.DatesAndTimes(c) + (handles.FileLength(c) + tol)/(24*60*60)/handles.fs > handles.DatesAndTimes(c+1)
+    if handles.DatesAndTimes(c) + (handles.FileLength(c) + tol)/(24*60*60)/handles.fs > handles.DatesAndTimes(c+1) %If the current file ends within tol of the next file's start
         handles.SegmentTimes{c} = [handles.SegmentTimes{c}; handles.SegmentTimes{c+1}+round((handles.DatesAndTimes(c+1)-handles.DatesAndTimes(c))*(24*60*60)*handles.fs)];
         handles.SegmentTimes{c+1} = zeros(0,2);
         handles.SegmentTitles{c} = [handles.SegmentTitles{c} handles.SegmentTitles{c+1}];
         handles.SegmentTitles{c+1} = {};
         handles.SegmentSelection{c} = [handles.SegmentSelection{c} handles.SegmentSelection{c+1}];
         handles.SegmentSelection{c+1} = [];
-        for d = 1:length(handles.EventTimes)
-            for e = 1:size(handles.EventTimes{d},1)
+        for d = 1:length(handles.EventTimes)%For each event detector
+            for e = 1:size(handles.EventTimes{d},1)%For each member of event sets
+                if size(handles.EventTimes{d}{e,c},2) > size(handles.EventTimes{d}{e,c},2)
+                    warning('Looks like you have a row vector here, the code below will probably break');%Fix the code below!
+                end
                 handles.EventTimes{d}{e,c} = [handles.EventTimes{d}{e,c}; handles.EventTimes{d}{e,c+1}+round((handles.DatesAndTimes(c+1)-handles.DatesAndTimes(c))*(24*60*60)*handles.fs)];
                 handles.EventTimes{d}{e,c+1} = [];
                 handles.EventSelected{d}{e,c} = [handles.EventSelected{d}{e,c} handles.EventSelected{d}{e,c+1}];
@@ -5858,5 +5861,3 @@ function push_GenerateRaster_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to push_GenerateRaster (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
-
-

@@ -15,30 +15,47 @@ song = handles.sound(round(ind_time*fs));
 units = handles.chan1(round(ind_time*fs));
 time = 0:1/fs:(lims(2)-lims(1));
 
-%% using chronux
-Thres = -95; % threshold for being in black background
-
-params.Fs = fs;
-params.fpass = [0 8000];
-winsize = .015;
-winstep = winsize/10;
-T = winsize; 
-W = 150; % frequency bandwidth
-K = 1; %number of tapers
-params.tapers = [T*W K];
-movingwin = [winsize winstep]; 
-[S,t,f]=mtspecgramc(song,movingwin,params);
-Pow = 10*log10(S)';
-Pow(Pow<Thres) = Thres;
+%% using chronux. It is prettier this way, but the figures are huge.
+% Thres = -95; % threshold for being in black background
+% 
+% params.Fs = fs;
+% params.fpass = [0 8000];
+% winsize = .015;
+% winstep = winsize/10;
+% T = winsize; 
+% W = 150; % frequency bandwidth
+% K = 1; %number of tapers
+% params.tapers = [T*W K];
+% movingwin = [winsize winstep]; 
+% [S,t,f]=mtspecgramc(song,movingwin,params);
+% Pow = 10*log10(S)';
+% Pow(Pow<Thres) = Thres;
+% cmap = jet; 
+% cmap(1,:) = zeros(1,3); % background = black
+% colormap(cmap);
+% surf(t, f/1000, Pow,'edgecolor','none'); axis tight; 
+% view(0,90);
+% ylabel('Frequency (kHz)')
+% %imagesc(t, f, 10*log10(S)');shg
+% %set(gca, 'Ydir', 'normal')
+%% using displayspecgramquick
+set(gca, 'xtick', [])
+displaySpecgramQuick(song,fs); 
+temp = get(gca, 'Children'); 
+cdata = get(temp, 'Cdata');
+fdata = get(temp, 'ydata'); 
+tdata = get(temp, 'xdata'); 
+subplot(2,1,1); 
+Thres = -16.2;
+cdata(cdata<Thres) = Thres; 
+imagesc(cdata, 'xdata', tdata, 'ydata', fdata); set(gca, 'ydir', 'normal')
+%surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
+ylabel('Frequency (kHz)')
+set(gca, 'xtick', [], 'xticklabel', '')
 cmap = jet; 
 cmap(1,:) = zeros(1,3); % background = black
 colormap(cmap);
-surf(t, f/1000, Pow,'edgecolor','none'); axis tight; 
-view(0,90);
-ylabel('Frequency (kHz)')
-%imagesc(t, f, 10*log10(S)');shg
-%set(gca, 'Ydir', 'normal')
-set(gca, 'xtick', [])
+
 %% using MATLAB spectrogram function
 
 % NFFT = 1025;
@@ -60,8 +77,9 @@ set(gca, 'xtick', [])
 % plot((1:size(handles.sound))/handles.fs, handles.amplitude)
 g = subplot(2,1,2)
 set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren')
-plot(time, units)
+mini_max_plot(time, units, 'ax', g)
 xlabel('Time(s)'); ylabel('Voltage (mV)')
+
 linkaxes([h g],'x')
 %xlim([lims(1) lims(2)])
 %% in order to make no space between plots
@@ -75,4 +93,4 @@ q(4) = m-q(2)-  gap/(2*ShrinkBy);
 set(h, 'pos', p)
 set(g, 'pos', q)
 %%
-set(gcf, 'Color', [1 1 1], 'papersize', [5 4], 'paperposition', [0 0 5 4])
+set(gcf, 'Color', [1 1 1], 'papersize', [6 3], 'paperposition', [0 0 6 3])
