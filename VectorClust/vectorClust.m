@@ -1218,7 +1218,7 @@ elseif(strcmp(mouseMode,'alt')) % right click (Ctrl + click)
     d = handles.vcdb.d;
     xfeat = getFeaturePopupValue(handles.popupXFeature, handles.vcdb);
     yfeat = getFeaturePopupValue(handles.popupYFeature, handles.vcdb);
-    bSel = getSF(handles.vcdb, xfeat)>ll(1) & getSF(handles.vcdb, xfeat)<ur(1) & getSF(handles.vcdb, yfeat)>ll(2) & getSF(handles.vcdb, yfeat)<ur(2);
+    bSel = getsf(handles.vcdb, xfeat)>ll(1) & getsf(handles.vcdb, xfeat)<ur(1) & getsf(handles.vcdb, yfeat)>ll(2) & getsf(handles.vcdb, yfeat)<ur(2);
     handles.vcg.bSel = bSel & handles.vcg.bDraw & handles.vcg.bFilt;
     handles = refreshScatterSelection(handles);
     handles = refreshVectorSelection(handles);
@@ -1632,7 +1632,7 @@ handles.vcg.bDraw = computeDrawVector(handles);
 [mcolor, msize, mstyle] = computeScatterStyle(handles);
 ccolor = mat2cell(mcolor,ones(length(mcolor),1), 3);
 
-bVis = handles.vcg.bDraw & handles.vcg.bFilt  & ~isnan(getSF(handles.vcdb,xfeat)) & ~isnan(getSF(handles.vcdb,yfeat));
+bVis = handles.vcg.bDraw & handles.vcg.bFilt  & ~isnan(getsf(handles.vcdb,xfeat)) & ~isnan(getsf(handles.vcdb,yfeat));
 %If only show selected:
 if(strcmp(get(handles.menuDisplayOnlySelectedVectors,'Checked'),'on'))
     bVis = bVis & handles.vcg.bSel;
