@@ -88,14 +88,13 @@ if nargin > 3
     handles.params.timeAbove = 20; %milliseconds
     handles.params.threshold = 0.8; %ratio between 0 and 1
     if isfield(rulesHandles.rules(rulesHandles.rSel),'params') && ~isempty(rulesHandles.rules(rulesHandles.rSel).params)
-        % use catstruct from matlab central to merge default parameters
-        % with parameters passed from rules. parameters from rules take
-        % precedence. supress warning message about the same field in both
-        % structs
-        warning('off','catstruct:DuplicatesFound')
-        handles.params = catstruct(handles.params, ...
-            rulesHandles.rules(rulesHandles.rSel).params);
-        warning('on','catstruct:DuplicatesFound')
+        % Merge default parameters with parameters passed from rules.
+        % Parameters from rules take precedence. 
+        rp = rulesHandles.rules(rulesHandles.rSel).params; % params from rules
+        fn = fieldnames(rp);
+        for ii = 1:length(fn)
+            handles.params.(fn{ii}) = rp.(fn{ii});
+        end
     end
     set(handles.editFreqLo1,'String',num2str(handles.params.freqLo1));
     set(handles.editFreqLo2,'String',num2str(handles.params.freqLo2));
