@@ -22,7 +22,7 @@ function varargout = pitchGUI(varargin)
 
 % Edit the above text to modify the response to help pitchGUI
 
-% Last Modified by GUIDE v2.5 07-Jun-2010 11:05:30
+% Last Modified by GUIDE v2.5 14-Jul-2014 13:25:51
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -121,53 +121,7 @@ function varargout = pitchGUI_OutputFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-p.pitchTarget       = str2num(get(handles.textPitchTarget,     'String'));
-p.nudge             = str2num(get(handles.textNudge,           'String'));
-p.width             = str2num(get(handles.textWidth,           'String'));
-p.overlap           = str2num(get(handles.textOverlap,         'String'));
-p.pitchThreshold    = str2num(get(handles.textPitchThreshold,  'String'));
-p.bottomFreq        = str2num(get(handles.textBottomFreq,      'String'));
-p.passIn            = str2num(get(handles.textPassIn,          'String'));
-p.dBdown            = str2num(get(handles.textDbDown,          'String'));
-p.harmonics         =         get(handles.popupHarmonics,      'Value');
-p.lpfCutoff         = str2num(get(handles.textBandFilter,      'String'));
-p.lpfdBdown         = str2num(get(handles.textDbDownBandFilter,'String'));
-p.syllable          = str2num(get(handles.textSyllable,        'String'));
-p.targetRegionStart = str2num(get(handles.textTargRegMin,      'String'));
-p.targetRegionEnd   = str2num(get(handles.textTargRegMax,      'String'));
-p.randFrac          = str2num(get(handles.textRandFrac,        'String'));
-if get(handles.uipanel1,'SelectedObject') == handles.buttonUp
-    p.push = 'up';
-else
-    p.push = 'down';
-end
-p.tdt_fs = handles.tdt_fs;
-p.bandFilters = makeFilter(...
-    'tdt_fs',p.tdt_fs,...
-    'bUp',strcmp(p.push,'up'),...
-    'pitchTarget',p.pitchTarget,...
-    'nudge',p.nudge,...
-    'width',p.width,...
-    'filterOverlap',p.overlap,...
-    'bottomFreq',p.bottomFreq,...
-    'passIn',p.passIn,...
-    'dbDown',p.dBdown,...
-    'harmonics',1:p.harmonics...
-    );
-p.lpBands = v3lp(1, p.tdt_fs, p.lpfCutoff, p.lpfdBdown); %% low-pass output of filters
-p.lpBands.Numerator = p.lpBands.Numerator ./ sum(p.lpBands.Numerator); % normalize
-p.coefIn1 = p.bandFilters.in(1).Numerator;
-p.coefIn2 = p.bandFilters.in(2).Numerator;
-p.coefIn3 = p.bandFilters.in(3).Numerator;
-p.coefOut1 = p.bandFilters.out(1).Numerator;
-p.coefOut2 = p.bandFilters.out(2).Numerator;
-p.coefOut3 = p.bandFilters.out(3).Numerator;
-p.coefLP = p.lpBands.Numerator;
-% Update handles structure
-handles.params = p;
-handles.params.tdt_fs = handles.tdt_fs;
-handles.params.filterFunc = @pitchFilterFunc; %%%FIXME
-handles.params.dependencies = [];
+handles = updateParams(handles);
 varargout{1} = handles.params;
 delete(handles.figure1)
 
@@ -413,40 +367,32 @@ function buttonTest_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles = Refresh(handles);
+handles = updateParams(handles);
 guidata(hObject, handles);
 
 axes(handles.axesTest)
 cla;
 
-% if exist(['getinfo_',handles.birdName])==0 % getinfo file doesn't exist
-%     errordlg('Prepare getinfo file.')
-%     return;
-% end
-[pitchRange, dbLoudnessRelSong] = artificialStack(handles.pitchRange(1), handles.pitchRange(2), handles.stepSize,... %%
-    handles.tdt_fs, 'calculateCAF',1,handles);
-
-%%%
-tempThres = -5; % [dB]
-temp1 = dbLoudnessRelSong(1:end-1);
-temp2 = dbLoudnessRelSong(2:end); % shifted one sample
+pitches = handles.pitchRange(1):handles.stepSize:handles.pitchRange(2);
+hits = nan(size(pitches));
+stackDuration = 0.2; %seconds
+for ii = 1:length(pitches)
+    stack = getHarmonicStack(pitches(ii), handles.harmonics, handles.tdt_fs, stackDuration);
+    hits(ii) = any(pitchFilterFunc(stack, handles.params, []));
+end
+plot(handles.axesTest, pitches, hits, 'LineWidth', 3)
+isHit = hits > 0.5;
 if handles.bUp
-    idx = find((temp1>tempThres).*(temp2<tempThres)); % downward threshold crossing
+    % when pushing up, the threshold is the falling edge
+    ind = find(diff(isHit) == -1, 1);
 else
-    idx = find((temp1<tempThres).*(temp2>tempThres)); % upward threshold crossing
+    % when pushing down, the threshold is the rising edge
+    ind = find(diff(isHit) == 1, 1);
 end
-
-ylim([-50 5]);
-if ~isempty(idx)
-    if handles.bUp
-        handles.StackThreshold = pitchRange(idx(1)); % first downward threshold crossing
-    else
-        handles.StackThreshold = pitchRange(idx(1)+1); % first upward threshold crossing
-    end
-    h = line([handles.StackThreshold handles.StackThreshold],ylim);
-    set(h,'color','g');
-    set(handles.textStackThreshold,'String',[num2str(handles.StackThreshold),' Hz']);
-end
+handles.StackThreshold = pitches(ind);
+set(handles.textStackThreshold,'String',[num2str(handles.StackThreshold),' Hz']);
 xlabel('Frequency (Hz)','fontsize',12)
+ylim([-0.1, 1.1])
 grid on
 box off
 guidata(hObject, handles);
@@ -929,7 +875,7 @@ guidata(hObject, handles);
 avgPitch = zeros(size(handles.pitchTrajs));
 for nTraj = 1:length(handles.pitchTrajs)
     traj = handles.pitchTrajs{nTraj};
-    avgPitch(nTraj) = mean(traj((handles.targetRegion(1)*100):(handles.targetRegion(2)*100)));%(traj>handles.pitchRange(1) & traj<pitchRange(2));
+    avgPitch(nTraj) = mean(traj(floor(handles.targetRegion(1)*100):floor(handles.targetRegion(2)*100)));%(traj>handles.pitchRange(1) & traj<pitchRange(2));
 end
 handles.avgPitch = avgPitch;
 handles.Mean = round(mean(avgPitch));
@@ -2244,7 +2190,53 @@ function buttonDone_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonDone (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-
 uiresume;
 
+function handles = updateParams(handles)
+p.pitchTarget       = str2num(get(handles.textPitchTarget,     'String'));
+p.nudge             = str2num(get(handles.textNudge,           'String'));
+p.width             = str2num(get(handles.textWidth,           'String'));
+p.overlap           = str2num(get(handles.textOverlap,         'String'));
+p.pitchThreshold    = str2num(get(handles.textPitchThreshold,  'String'));
+p.bottomFreq        = str2num(get(handles.textBottomFreq,      'String'));
+p.passIn            = str2num(get(handles.textPassIn,          'String'));
+p.dBdown            = str2num(get(handles.textDbDown,          'String'));
+p.harmonics         =         get(handles.popupHarmonics,      'Value');
+p.lpfCutoff         = str2num(get(handles.textBandFilter,      'String'));
+p.lpfdBdown         = str2num(get(handles.textDbDownBandFilter,'String'));
+p.syllable          = str2num(get(handles.textSyllable,        'String'));
+p.targetRegionStart = str2num(get(handles.textTargRegMin,      'String'));
+p.targetRegionEnd   = str2num(get(handles.textTargRegMax,      'String'));
+p.randFrac          = str2num(get(handles.textRandFrac,        'String'));
+if get(handles.uipanel1,'SelectedObject') == handles.buttonUp
+    p.push = 'up';
+else
+    p.push = 'down';
+end
+p.tdt_fs = handles.tdt_fs;
+p.bandFilters = makeFilter(...
+    'tdt_fs',p.tdt_fs,...
+    'bUp',strcmp(p.push,'up'),...
+    'pitchTarget',p.pitchTarget,...
+    'nudge',p.nudge,...
+    'width',p.width,...
+    'filterOverlap',p.overlap,...
+    'bottomFreq',p.bottomFreq,...
+    'passIn',p.passIn,...
+    'dbDown',p.dBdown,...
+    'harmonics',1:p.harmonics...
+    );
+p.lpBands = v3lp(1, p.tdt_fs, p.lpfCutoff, p.lpfdBdown); %% low-pass output of filters
+p.lpBands.Numerator = p.lpBands.Numerator ./ sum(p.lpBands.Numerator); % normalize
+p.coefIn1 = p.bandFilters.in(1).Numerator;
+p.coefIn2 = p.bandFilters.in(2).Numerator;
+p.coefIn3 = p.bandFilters.in(3).Numerator;
+p.coefOut1 = p.bandFilters.out(1).Numerator;
+p.coefOut2 = p.bandFilters.out(2).Numerator;
+p.coefOut3 = p.bandFilters.out(3).Numerator;
+p.coefLP = p.lpBands.Numerator;
+% Update handles structure
+handles.params = p;
+handles.params.tdt_fs = handles.tdt_fs;
+handles.params.filterFunc = @pitchFilterFunc;
+handles.params.dependencies = [];
