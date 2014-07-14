@@ -222,7 +222,7 @@ currentFileNumber = get(handles.listFile,'Value');
 if handles.audioFileNumber ~= currentFileNumber
     audio = loadAudio(handles.exper, currentFileNumber);
     audio = audio - mean(audio);
-    audio_tdt = resample(audio, handles.tdt_fs, handles.fs);
+    audio_tdt = resample2(audio, handles.tdt_fs, handles.fs);
     handles.audio = audio_tdt;
 end
 

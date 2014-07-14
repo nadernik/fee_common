@@ -367,7 +367,7 @@ function buttonTest_Callback(hObject, eventdata, handles)
 Fs_in = handles.exper.desiredInSampRate;
 Fs = 24414; %Hz, TDT sampling rate
 audio_in = loadAudio(handles.exper, get(handles.listFiles,'Value'));
-audio = resample(audio_in, Fs, Fs_in);
+audio = resample2(audio_in, Fs, Fs_in);
 audio = audio - mean(audio);
 t = (0:length(audio)-1) * 1/Fs;
 % get list of rules to test
@@ -670,7 +670,7 @@ for ii = 1:length(miscfiles)
             audio_in = loadAudio(handles.exper, filenum_list(jj));
             Fs_in = handles.exper.desiredInSampRate;
             Fs_tdt = 24414; %Hz, TDT sampling rate
-            audio = resample(audio_in, Fs_tdt, Fs_in);
+            audio = resample2(audio_in, Fs_tdt, Fs_in);
             audio = audio - mean(audio);
             % apply rules
             file_noise = testRulesOnFile(handles, audio);
@@ -695,7 +695,7 @@ for ii = 1:length(miscfiles)
 end %miscfile
 
 L = cellfun(@length,all_syll_noise,'UniformOutput',false);
-all_syll_noise = cellfun(@resample, all_syll_noise, repmat({100},size(L)), L,'UniformOutput',false);
+all_syll_noise = cellfun(@resample2, all_syll_noise, repmat({100},size(L)), L,'UniformOutput',false);
 all_syll_noise = cell2mat(all_syll_noise');
 
 for clust = unique(all_syll_type)
@@ -763,7 +763,7 @@ handles = exportTDT(handles);
 Fs_in = handles.exper.desiredInSampRate;
 Fs = 24414; %Hz, TDT sampling rate
 audio_in = loadAudio(handles.exper, get(handles.listFiles,'Value'));
-audio = resample(audio_in, Fs, Fs_in);
+audio = resample2(audio_in, Fs, Fs_in);
 audio = audio - mean(audio);
 noise = testRulesTdt(audio, handles.RP, handles.testSuffix);
 figure

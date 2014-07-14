@@ -205,7 +205,7 @@ handles.params = createFilter(handles);
 % load audio
 audio = loadAudio(handles.exper, get(handles.listFile,'Value'));
 % audio = audio - mean(audio); %%%DEBUG
-audio_tdt = resample(audio, handles.tdt_fs, handles.fs);
+audio_tdt = resample2(audio, handles.tdt_fs, handles.fs);
 % run filter on audio
 [tf, sigfilt] = rawPowerFilterFunc(audio_tdt, handles.params);
 
