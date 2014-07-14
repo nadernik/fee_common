@@ -636,6 +636,14 @@ function buttonTestSyllable_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+%% Check to make sure at least one rule is set to play noise.
+% If no rules are selected to play noise, this test will be useless. It
+% will always return 0% hit for all syllables.
+if ~any([handles.rules.actionNoise])
+    errordlg('Mark the "Play Noise" checkbox for at least one rule.', 'Cannot test on syllables', 'modal')
+    return
+end
+
 %% load all annotations
 wbh = waitbar(0);
 filenum_list = get(handles.listFiles,'Value');
