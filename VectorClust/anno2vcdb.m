@@ -104,7 +104,7 @@ for part = P.Part
     vcdb.d.t = [misc.segs.absStart]'; %column vector
     vcdb.d.cn = nan(size(vcdb.d.v));
     vcdb.c = [];
-    [pathname, filename, ext, versn] = fileparts(miscfile);
+    [pathname, filename, ext] = fileparts(miscfile);
     vcdb.fileName = pathname;
     vcdb.pathName = filename;
 
