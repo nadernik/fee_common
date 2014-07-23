@@ -86,10 +86,10 @@ linkaxes([h g],'x')
 ShrinkBy = 4; 
 p = get(h, 'pos');
 q = get(g, 'pos');
-m = mean([p(2) q(2)+q(4)])
-gap = p(2) - (q(2)+q(4));
-p(2) = m + gap/(2*ShrinkBy);
-q(4) = m-q(2)-  gap/(2*ShrinkBy);
+m = mean([p(2) q(2)+q(4)]);%Halfway point between axes
+gap = p(2) - (q(2)+q(4));%gap between axes
+p(2) = m + gap/(2*ShrinkBy);%move bottom of top axis
+q(4) = m-q(2)-  gap/(2*ShrinkBy);%move height of bottom axis
 set(h, 'pos', p)
 set(g, 'pos', q)
 %%
