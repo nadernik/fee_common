@@ -1,8 +1,9 @@
 function eliminatesubplotgaps(hAxes)
 %ELIMINATESUBPLOTGAPS decrease gaps between subplots
 %   ELIMINATESUBPLOTGAPS(hAxes) eliminates the gap between axes pointed
-%   to by handle array 'hAxes'. These axes are assumed to be in the same
-%   figure, and have been created by SUBPLOT.
+%   to by handle array 'hAxes'. These axes are assumed to be in a single 
+%   vertical line in the same figure.
+%   
 % 
 %   Author: Galen Lynch
 %   7/23/2014
@@ -17,16 +18,10 @@ for axNo = 1:nAx
     set(hAxes(axNo), 'Units', 'normalized');
 end
 
-%Check for arrangement of axes
-if all(diff(axPos(:,2)) < 0) %monotonically decreasing y positions
-    axPos = flipud(axPos);%Flip axes positions to be bottom to top
-    hAxes = hAxes(end:-1:1);%Do the same for the handles
-    unitsCache = unitsCache(end:-1:1);
-elseif all(diff(axPos(:,2)) > 0) %monotonically increasing y positions
-    %Do nothing
-else
-    error('Axes y positions must be monotonic')
-end
+[~, srtIdx] = sort(axPos(:,2));%Sort by distance from bottom of figure
+axPos = axPos(srtIdx,:);
+hAxes = hAxes(srtIdx);
+unitsCache = unitsCache(srtIdx);
 
 axHeights = axPos(:,4)';
 gaps = nan(1, nAx - 1);
