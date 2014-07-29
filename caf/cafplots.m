@@ -15,8 +15,9 @@ titlestr = sprintf(...
     birdname, expername, P.EscapeCluster, P.HitCluster, P.LastN, P.MinPitchGoodness);
 
 %%
-if exist(P.LoadVcdb, 'file')
-    if ischar(P.LoadVcdb) % load vcdb from given filename
+
+if ischar(P.LoadVcdb) % load vcdb from given filename
+    if exist(P.LoadVcdb, 'file')
         try
             load(P.LoadVcdb)
             vcdb = handles.vcdb;
@@ -24,9 +25,9 @@ if exist(P.LoadVcdb, 'file')
         catch
             warning('MATLAB:cafplots:LoadVcdb', 'Unable to load vcdb from file %s. Will try to create vcdb from proccessed annotation files instead.', P.Vcdb)
         end
-    elseif isvcdb(P.LoadVcdb) % use given vcdb
-        vcdb = P.LoadVcdb;
     end
+elseif isvcdb(P.LoadVcdb) % use given vcdb
+    vcdb = P.LoadVcdb;
 end
             
 if ~exist('vcdb', 'var')
