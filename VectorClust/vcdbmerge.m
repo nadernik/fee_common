@@ -132,3 +132,6 @@ for sf = 1:length(all_sfname) % for each sf
         end
     end
 end
+
+vcdb.f.sfname = vcdb.f.sfname';
+vcdb.f.vfname = vcdb.f.vfname';
