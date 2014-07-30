@@ -210,7 +210,9 @@ t = [vcdb.d.t(is_hit); vcdb.d.t(is_escape)];
 y = [ones(sum(is_hit),1); zeros(sum(is_escape), 1)];
 [t, ndx] = sort(t);
 y = y(ndx);
-plot(t, smooth(y, P.LastN))
+ysmooth = smooth(y, P.LastN);
+ikeep = (P.LastN/2):(length(ysmooth)-P.LastN/2); % throw out data where there is an edge effect
+plot(t(ikeep), ysmooth(ikeep))
 datetick('x', 'HH:MM', 'keeplimits')
 xlabel('Time of day')
 ylabel('Fraction hit')
