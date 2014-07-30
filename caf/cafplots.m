@@ -1,4 +1,73 @@
 function cafplots(birdname, expername, varargin)
+%CAFPLOTS Plots to show the effectiveness of conditional auditory feedback
+%
+% Usage:
+%    CAFPLOTS(BIRDNAME, EXPERNAME)
+%    CAFPLOTS(BIRDNAME, EXPERNAME, 'ParameterName', value, ...)
+% 
+% Before you run this, you must run ANNOTATE_EXPER(BIRDNAME, EXPERNAME) or
+% have a vcdb from vectorClust!
+%
+% Makes four plots showing the results of CAF:
+%     1. Pitch traces of last N (default=100) target syllables. Hits are in
+%        red and escapes are in black. For successful CAF, the pitch in the
+%        target region should be different for hits vs. escapes with
+%        minimal overlap. Use the Range and RangeUnits parameters (see
+%        below) to set the target region.
+%     2. Mean pitch in target region over time. Each point represents the
+%        mean pitch in the target region for one rendition (black for
+%        escape and red for hit). A line represents the average pitch of N 
+%        syllables (default=100) computed in a sliding boxcar window. For 
+%        successful CAF, the pitch should trend up if hitting low pitches 
+%        over the course of the day. 
+%     3. Histograms of pitch in target interval at beginning and end of the
+%        data file. For successful CAF, the pitch distribution should have
+%        shifted away from the noise.
+%     4. Percentage of target syllables hit over time. This is a moving
+%        average (sliding boxcar window of N=100 syllables) of
+%        hits/(hits+escapes). For sucessful CAF, this should start around
+%        50-70% and end around 10-20%.
+%
+% Parameters:
+%    EscapeCluser (default = -1)
+%        Cluster number for escapes
+%    HitCluster (default = nan)
+%        Cluster number for hits
+%    Range (default = [0 100])
+%        Range over which to measure pitch. Must be a two-element vector
+%        marking the onset and offset of the pitch measurement window.
+%    RangeUnits (default = 'percent')
+%        Units for Range parameter. Valid units are 'percent', 'seconds',
+%        and 'samples'
+%    LastN (default = 100)
+%        Number of syllables to use for histograms of pitch. The plot of
+%        pitch at the target time is smoothed by a rectangluar window of
+%        this length.
+%    MinPitchGoodness (default = 0.3)
+%        Any syllables with mean pitch goodness over the target range that
+%        is below this threshold are excluded from analysis. This is
+%        designed to eliminate some outliers where the pitch could not be
+%        accurately measured.
+%    Polygons (default = '')
+%        Polygons file created by vectorClust that is used to label the
+%        syllables. If blank, the existing syllable labels are used. You
+%        can also label your syllables in vectorClust.
+%    LoadVcdb (default = '')
+%        vcdb structure or filename of .mat file containing vcdb structure.
+%        By default (when this is left blank), CAFPLOTS converts processed
+%        annotation files to vcdb using ANNO2VCDB. This process is time
+%        consuming, so if you already have a vcdb, you can use the option
+%        to speed things up.
+%    SaveVcdb (default = '')
+%        Filename to which the vcdb struct created by CAFPLOTS is saved. If
+%        blank, the vcdb is not saved. This can be useful in conjuction
+%        with the LoadVcdb parameter to speed up future calls to CAFPLOTS
+%        on the same data, since creating the vcdb is the most time
+%        consuming part of this function.
+%
+% See also: ANNOTATE_EXPER, VECTORCLUST, ANNO2VCDB
+
+%% Parameters
 P.EscapeCluster = -1;
 P.HitCluster = nan;
 P.Range = [0 100];
