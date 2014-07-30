@@ -145,6 +145,8 @@ mask = good_pitch & (is_hit | is_escape);
 mask_lastn = mask & (sum(mask) - cumsum(mask)) <= P.LastN;
 mask_firstn = mask & cumsum(mask) <= P.LastN;
 
+assert(any(is_hit) || any(is_escape), 'No escapes nor hits were found.')
+
 % Plot pitch traces of last_n syllables. Hits in red and escapes in black.
 figure(4441)
 clf
