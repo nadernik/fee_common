@@ -1,7 +1,9 @@
-function sfhist(vcdb, sfname, varargin)
+function varargout = sfhist(vcdb, sfname, varargin)
 % SFHIST Histogram of scalar feature from vectorClust vcdb.
 %   SFHIST(vcdb, sfname) plots histogram of scalar feature with name sfname
 %   from vcdb.
+%
+%   H = SFHIST(...) returns a handle to the object plotted. 
 %
 %   SFHIST(vcdb, sfname, 'Parameter', value, ...) takes additional
 %   parameters:
@@ -37,15 +39,19 @@ if ~isempty(P.BinWidth)
     x = min(y - P.BinWidth):P.BinWidth:max(y + P.BinWidth);
     if P.Stairs
         n = hist(y, x);
-        stairs(x, n)
+        h = stairs(x, n);
     else
-        histpp(y, x, P.PatchProperties{:})
+        h = histpp(y, x, P.PatchProperties{:});
     end
 else
     if P.Stairs
         [n, x] = hist(y);
-        stairs(x, n);
+        h = stairs(x, n);
     else
-        histpp(y, P.PatchProperties{:})
+        h = histpp(y, P.PatchProperties{:});
     end
+end
+
+if nargout > 0
+    varargout{1} = h;
 end
