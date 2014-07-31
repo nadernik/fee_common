@@ -150,6 +150,12 @@ assert(any(is_hit) || any(is_escape), 'No escapes nor hits were found.')
 % Plot pitch traces of last_n syllables. Hits in red and escapes in black.
 figure(4441)
 clf
+% rectangle around target region, if region is in seconds
+if strcmp(P.RangeUnits, 'seconds')
+    X = [P.Range([1 2]), P.Range([2 1])];
+    Y = [0 0 4000 4000];
+    fill(X, Y, [1 1 .6])
+end
 % h = vfplot(vcdb, 'pitch', 'mask', mask_lastn & is_hit);
 h = vfplot(vcdb, 'pitch', 'mask', is_hit);
 hold on
@@ -160,12 +166,6 @@ end
 h = vfplot(vcdb, 'pitch', 'mask', is_escape);
 for ii = 1:length(h)
     set(h(ii), 'Color', 'b');
-end
-% rectangle around target region, if region is in seconds
-if strcmp(P.RangeUnits, 'seconds')
-    X = [P.Range([1 2]), P.Range([2 1])];
-    Y = [0 0 4000 4000];
-    fill(X, Y, 'y', 'FaceAlpha', 0.3)
 end
 xlabel('Seconds from syllable onset')
 ylabel('Pitch (Hz)')
