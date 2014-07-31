@@ -192,13 +192,12 @@ title(titlestr)
 % Show pitch distribitions for first and last n
 figure(4443)
 clf
+h = sfhist(vcdb, 'pitchtarg', 'Mask', mask_firstn, 'BinWidth', 5, 'Stairs', true);
+set(h, 'Color', [.6 .6 .6], 'LineWidth', 4)
 hold on
-patchargs = {'FaceColor', 'b', 'FaceAlpha', 0.5};
-sfhist(vcdb, 'pitchtarg', 'Mask', mask_firstn, 'BinWidth', 5, 'PatchProperties', patchargs)
-% hold(axh, 'on')
-patchargs = {'FaceColor', 'r', 'FaceAlpha', 0.5};
-sfhist(vcdb, 'pitchtarg', 'Mask', mask_lastn, 'BinWidth', 5, 'PatchProperties', patchargs)
-% hold(axh, 'off')
+h = sfhist(vcdb, 'pitchtarg', 'Mask', mask_lastn,  'BinWidth', 5, 'Stairs', true);
+set(h, 'Color', [0 0 0], 'LineWidth', 4)
+hold off
 ylabel('Number')
 xlabel('Mean pitch over target interval (Hz)')
 title(titlestr)
