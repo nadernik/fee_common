@@ -213,6 +213,7 @@ ysmooth = smooth(y, P.LastN);
 ikeep = (P.LastN/2):(length(ysmooth)-P.LastN/2); % throw out data where there is an edge effect
 plot(t(ikeep), ysmooth(ikeep))
 datetick('x', 'HH:MM', 'keeplimits')
+ylim([0 1])
 xlabel('Time of day')
 ylabel('Fraction hit')
 title(titlestr)
