@@ -1878,7 +1878,12 @@ d = handles.vcdb.d;
 xfeat = getFeaturePopupValue(handles.popupXFeature, handles.vcdb);
 yfeat = getFeaturePopupValue(handles.popupYFeature, handles.vcdb);
 
-hc = get(handles.vcg.hScat,'Children');
+try
+    hc = get(handles.vcg.hScat,'Children');
+catch
+    handles = refreshAll(handles);
+    hc = get(handles.vcg.hScat,'Children');
+end
 if(~isempty(hc))
     if(length(hc)>1)
         [junk,ndx] = sort(cell2mat(get(hc,'UserData')));
