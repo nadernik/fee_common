@@ -792,7 +792,7 @@ guidata(hObject, handles);
 axes(handles.axesSyllable);
 cla;
 
-bStretch = true; %stretch all pitch trajectores to stretchN
+bStretch = false; %stretch all pitch trajectores to stretchN
 bStretchFast = true; %specified which stretching algorithm to use.
 stretchN = 100;
 
@@ -875,12 +875,16 @@ guidata(hObject, handles);
 avgPitch = zeros(size(handles.pitchTrajs));
 for nTraj = 1:length(handles.pitchTrajs)
     traj = handles.pitchTrajs{nTraj};
-    avgPitch(nTraj) = mean(traj(floor(handles.targetRegion(1)*100):floor(handles.targetRegion(2)*100)));%(traj>handles.pitchRange(1) & traj<pitchRange(2));
+    try
+        avgPitch(nTraj) = mean(traj(floor(handles.targetRegion(1)*100):floor(handles.targetRegion(2)*100)));%(traj>handles.pitchRange(1) & traj<pitchRange(2));
+    catch
+        avgPitch(nTraj) = nan;
+    end
 end
 handles.avgPitch = avgPitch;
-handles.Mean = round(mean(avgPitch));
-handles.Median = round(median(avgPitch));
-handles.SD = std(avgPitch);
+handles.Mean = round(nanmean(avgPitch));
+handles.Median = round(nanmedian(avgPitch));
+handles.SD = nanstd(avgPitch);
 set(handles.textMean,'String',[num2str(handles.Mean),' Hz']); % display mean pitch
 set(handles.textMedian,'String',[num2str(handles.Median),' Hz']); % display median pitch
 set(handles.textSD,'String',[num2str(handles.SD,3),' Hz']); % display median pitch
