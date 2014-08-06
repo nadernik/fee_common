@@ -1430,34 +1430,7 @@ function buttonAllSyllables_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 handles = Refresh(handles);
-set(handles.textProbability,'String',''); % clear display
-AllSyllables(handles.birdName, handles.experName, 'all', ...
-    'randFraction',handles.randFrac, 'syllType', handles.targetSyll, 'lastN',handles.lastN,...
-    'rootdir', handles.rootdir,'handles',handles);
-
-part = '';
-prefix = 'all';
-
-load([handles.rootdir,handles.birdName,filesep,handles.birdName,'_',prefix,'_misc_',handles.experName,part,'.mat']);
-load([handles.rootdir,handles.birdName,filesep,handles.birdName,'_',prefix,'_audio_',handles.experName,part,'.mat']);
-load([handles.rootdir,handles.birdName,filesep,handles.birdName,'_',prefix,'_cafProgram_',handles.experName,part,'.mat']);
-load([handles.rootdir,handles.birdName,filesep,handles.birdName,'_',prefix,'_pitch_',handles.experName,part,'.mat']);
-
-cafProgram.songPower = [];
-if(~isempty(handles.targetSyll))
-    ndxsum = find(ismember([misc.segs(:).segType],handles.targetSyll) & ~(cellfun(@isempty, {cafProgram.segs(:).songPower})));
-else
-    ndxsum = find(~(cellfun(@isempty, {cafProgram.segs(:).songPower})));
-end
-
-set(handles.buttonSummary,'Enable','on');
-
-handles.n = 0;
-handles.ndxsum = ndxsum;
-handles.rawaudio = rawaudio;
-handles.cafProgram = cafProgram;
-guidata(hObject, handles);
-buttonNextSyllable_Callback(hObject, eventdata, handles);
+AllSyllables(handles)
 
 guidata(hObject, handles);
 
