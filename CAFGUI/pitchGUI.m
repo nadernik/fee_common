@@ -91,7 +91,7 @@ if nargin > 3
         else
             set(handles.uipanel1,'SelectedObject',handles.buttonDown)
         end
-        set(handles.textSyllable,'String',num2str( p.syllable))
+        set(handles.textSyllable,'String',['[' num2str( p.syllable) ']'])
         set(handles.textTargRegMin,'String',num2str( p.targetRegionStart))
         set(handles.textTargRegMax,'String',num2str( p.targetRegionEnd))
         set(handles.textRandFrac,'String',num2str( p.randFrac))
@@ -1588,7 +1588,7 @@ set(handles.textExperName,'String',handles.experName,'Enable','off');
 set(handles.buttonUp,'Value',handles.bUp);
 set(handles.buttonDown,'Value',~handles.bUp);
 set(handles.buttonUp,'Value',handles.bUp);
-set(handles.textSyllable,'String',handles.targetSyll);
+set(handles.textSyllable,'String',['[' handles.targetSyll ']']);
 set(handles.textTargRegMin,'String',handles.targetRegion(1)*100);
 set(handles.textTargRegMax,'String',handles.targetRegion(2)*100);
 set(handles.textRandFrac,'String',handles.randFrac);
