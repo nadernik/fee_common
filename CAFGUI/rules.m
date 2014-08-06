@@ -362,7 +362,7 @@ function buttonTest_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonTest (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% keyboard %%%DEBUG
+
 % get audio
 Fs_in = handles.exper.desiredInSampRate;
 Fs = 24414; %Hz, TDT sampling rate
@@ -615,7 +615,6 @@ suff = str2double(get(handles.editPartagSuffix,'String'));
 handles.rules(handles.rSel).condition = c;
 handles.rules(handles.rSel).tdtTags =  makeSuffix(tags, suff);
 guidata(hObject,handles);
-% keyboard %%%DEBUG
 
 % --- Executes during object creation, after setting all properties.
 function popupCondition_CreateFcn(hObject, eventdata, handles)
@@ -636,104 +635,18 @@ function buttonTestSyllable_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-%% Check to make sure at least one rule is set to play noise.
-% If no rules are selected to play noise, this test will be useless. It
-% will always return 0% hit for all syllables.
-if ~any([handles.rules.actionNoise])
-    errordlg('Mark the "Play Noise" checkbox for at least one rule.', 'Cannot test on syllables', 'modal')
-    return
-end
-
-%% load all annotations
-wbh = waitbar(0);
-filenum_list = get(handles.listFiles,'Value');
-total_files = length(filenum_list);
-filename_list = arrayfun(@getExperAudioFilename, repmat(handles.exper, 1, total_files), filenum_list, 'UniformOutput', false);
-
-% infer rootdir from exper dir
-idx = strfind(handles.exper.dir,filesep);
-rootdir = handles.exper.dir(1:idx(end-2)); % like c:\data\
-
-miscfiles = getProcessedDataFiles(handles.exper.birdname,'experNames',handles.exper.expername, 'rootdir', rootdir);
-pitchfiles = getProcessedDataFiles(handles.exper.birdname,'experNames',handles.exper.expername, 'rootdir', rootdir, 'dataType', 'pitch');
-
-all_syll_noise = [];
-all_syll_type = [];
-all_pitch = [];
-files_processed = 0;
-for ii = 1:length(miscfiles)
-    load([rootdir handles.exper.birdname filesep miscfiles(ii).name])
-    pitch_loaded = false;
-    for jj = 1:total_files
-        key = filename_list(jj);
-        % get segs from this file
-        idx_seg_file = cellfun(@strcmp, {misc.segs.key}, repmat({key}, size(misc.segs)));
-        if any(idx_seg_file)
-            files_processed = files_processed + 1;
-        end
-        idx_seg_file = idx_seg_file & [misc.segs.segType] ~= -1; % skip unclustered syllables
-        total_syllables = sum(idx_seg_file);
-        if total_syllables > 0 % if we have segs, load audio and apply rules
-            % load audio
-            audio_in = loadAudio(handles.exper, filenum_list(jj));
-            Fs_in = handles.exper.desiredInSampRate;
-            Fs_tdt = 24414; %Hz, TDT sampling rate
-            audio = resample2(audio_in, Fs_tdt, Fs_in);
-            audio = audio - mean(audio);
-            % apply rules
-            file_noise = testRulesOnFile(handles, audio);
-            % map noise onto syllables
-            t = (0:length(audio)-1) * 1/Fs_tdt;
-            t = repmat({t}, total_syllables, 1);
-            temp = [[misc.segs(idx_seg_file).fStartTime]' [misc.segs(idx_seg_file).fEndTime]'];
-            t_range = mat2cell(temp, ones(1,size(temp,1)), 2);
-            syll_noise = cellfun(@extract_time_range, repmat({file_noise}, total_syllables, 1), t, t_range, 'UniformOutput', false);
-            all_syll_noise = [all_syll_noise; syll_noise];
-            syll_type = [misc.segs(idx_seg_file).segType];
-            all_syll_type = [all_syll_type syll_type];
-            % load pitch
-            if ~pitch_loaded
-                load([rootdir handles.exper.birdname filesep pitchfiles(ii).name])
-                pitch_loaded = true;
-            end
-            all_pitch = [all_pitch {pitch.segs(idx_seg_file).pitch}];                
-        end
-        waitbar(files_processed / total_files)
-    end %file
-end %miscfile
-
-L = cellfun(@length,all_syll_noise,'UniformOutput',false);
-all_syll_noise = cellfun(@resample2, all_syll_noise, repmat({100},size(L)), L,'UniformOutput',false);
-all_syll_noise = cell2mat(all_syll_noise');
-
-for clust = unique(all_syll_type)
-    figure
-    % example spectrogram FIXME
-    %axh(1) = subplot(3,1,1)
-    %displaySpecgramQuick(sampleaudio{clust}, Fs)
-    % noise
-    axh(2) = subplot(3,1,2);
-    imagesc(all_syll_noise(:,all_syll_type == clust)')
-    %xlims = xlim(axh(1));
-    %nz = all_syll_noise(all_syll_type == clust);
-    %x = linspace(xlims(1),xlims(2),size(nz,1));
-    %y = 1:size(nz,2);
-    %imagesc(x,y,nz')
-    % pitch traces
-    axh(3) = subplot(3,1,3);
-    has_noise = any(all_syll_noise);
-    hold on
-    idx = has_noise & all_syll_type == clust;
-    cellfun(@plot, all_pitch(idx), repmat({'r'},1,sum(idx)))
-    hits = sum(idx);
-    idx = ~has_noise & all_syll_type == clust;
-    cellfun(@plot, all_pitch(idx), repmat({'b'},1,sum(idx)))
-    escapes = sum(idx);
-    %linkaxes(axh,'x') %FIXME
-    N = hits + escapes;
-    title(sprintf('Cluster %g N = %g %.0f%% hit',clust,N,hits/N * 100))
-end
-close(wbh)
+%% Ask for target syllables and region
+prompt = {'Target syllable(s):','Target region start (ms):','Target region end (ms):'};
+dlg_title = 'Input';
+num_lines = 1;
+def = {'1,2','50','60'};
+answer = inputdlg(prompt,dlg_title,num_lines,def);
+target_syllable = str2num(answer{1});
+target_range = [str2num(answer{2}), str2num(answer{3})];
+testRulesBySyllable(handles.rules, handles.exper, ...
+    'File', get(handles.listFiles, 'Value'), ...
+    'TargetSyllable', target_syllable, ...
+    'TargetRange', target_range)
 
 function editPartagSuffix_Callback(hObject, eventdata, handles)
 % hObject    handle to editPartagSuffix (see GCBO)
