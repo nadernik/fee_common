@@ -39,7 +39,7 @@ debugdisp('Evaluating rule...')
 for ii = 1:handles.lastN
     jj = length(handles.audio) - ii + 1;
     if jj == 0
-        warning(sprintf('Could not evaluate last %g syllables because there are only %g target syllables in the dataset.', handles.lastN, length(handles.audio)))
+        warning('Could not evaluate last %g syllables because there are only %g target syllables in the dataset.', handles.lastN, length(handles.audio))
         break
     end
     tdt_audio = resample2(handles.audio{jj}, handles.tdt_fs, handles.fs);
@@ -77,4 +77,7 @@ set(h(3), 'FaceColor', color_esc, 'EdgeColor', color_esc)
 xlim([min(target_pitch) max(target_pitch)])
 xlabel('Mean pitch in target region (Hz)')
 ylabel('Number of syllables')
-title(texcolor('Hits', color_hit, 'Escapes', color_esc, 'Neither', color_neither), 'Interpreter', 'tex')
+str_hit = sprintf('%2.0f%% Hit',     mean(is_hit)     * 100);
+str_esc = sprintf('%2.0f%% Escape',  mean(is_esc)     * 100);
+str_non = sprintf('%2.0f%% Neither', mean(is_neither) * 100);
+title(texcolor(str_hit, color_hit, str_esc, color_esc, str_non, color_neither), 'Interpreter', 'tex')
