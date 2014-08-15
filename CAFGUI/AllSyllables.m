@@ -38,6 +38,10 @@ assert(all(pct_diff < .1), 'Length of one or more audio segments does not match 
 debugdisp('Evaluating rule...')
 for ii = 1:handles.lastN
     jj = length(handles.audio) - ii + 1;
+    if jj == 0
+        warning(sprintf('Could not evaluate last %g syllables because there are only %g target syllables in the dataset.', handles.lastN, length(handles.audio)))
+        break
+    end
     tdt_audio = resample2(handles.audio{jj}, handles.tdt_fs, handles.fs);
     hit = feval(handles.params.filterFunc, tdt_audio, handles.params);
     target_hit_frac(ii) = mean(extract_time_range(hit,                    handles.tdt_fs, handles.targetRegion/10));
