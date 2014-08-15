@@ -156,6 +156,11 @@ set(handles.actionNoise,'Enable','off')
 set(handles.buttonCondition,'Enable','off')
 
 handles.testSuffix = get(handles.editTestSuffix,'String');
+
+% Defaults for the dialog box that appears when you click "Test Clustered
+% Syllables" button
+handles.testSyllablesDefaults = {'1,2','50','60'};
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -636,11 +641,22 @@ function buttonTestSyllable_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 %% Ask for target syllables and region
+
+% Dialog box to ask for info on testing
 prompt = {'Target syllable(s):','Target region start (ms):','Target region end (ms):'};
 dlg_title = 'Input';
 num_lines = 1;
-def = {'1,2','50','60'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
+answer = inputdlg(prompt,dlg_title,num_lines,handles.testSyllablesDefaults);
+
+if isempty(answer)
+    return
+end
+
+% Update defaults of that dialog box to be the answers we just received
+handles.testSyllablesDefaults = answer;
+guidata(hObject, handles)
+
+% Call function to do the testing
 target_syllable = str2num(answer{1});
 target_range = [str2num(answer{2}), str2num(answer{3})];
 testRulesBySyllable(handles.rules, handles.exper, ...
