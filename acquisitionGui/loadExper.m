@@ -8,8 +8,8 @@ function exper = loadExper(birdname, expername, rootdir)
 % If the path to data is omitted, the current directory is used.
 % Loads the file path\to\data\birdname\expername\exper.mat
 
-if(~exist('rootdir'))
+if(nargin < 3)
     rootdir = pwd;
 end
 
-load([rootdir,'\',birdname,'\',expername,'\','exper.mat']);    
+load(fullfile(rootdir, birdname, expername, 'exper.mat'));    
