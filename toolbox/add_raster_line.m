@@ -1,5 +1,16 @@
 function add_raster_line(axisHandle, rasterTimes, yBase, yHeight, varargin)
-%Add a raster line to an existing plot
+%ADD_RASTER_LINE Add a raster line to an existing plot
+%   ADD_RASTER_LINE(axisHandle, rasterTimes, yBase, yHeight) adds a raster
+%   line to the axes in axisHandle, with lines at x position in vector
+%   rasterTimes, starting at y yBase, and extending for extent yHeight.
+%
+%   ADD_RASTER_LINE(axisHandle, rasterTimes, yBase, yHeight,...) accepts
+%   the following named options:
+%  'lineWidth': default .5, width of raster lines
+%  'lineColors': default [0, 0, 0], color fo raster lines
+%  See also: POPULATION_RASTERPLOT_GL
+
+%   Galen Lynch, 8/22/2014
 options = struct('lineWidth', .5, 'lineColor', [0,0,0]);
 options = gl_parse_args(options, varargin);
 

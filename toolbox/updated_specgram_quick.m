@@ -1,11 +1,39 @@
 function updated_specgram_quick(signal, Fs, varargin)
-%nCourse specified the number of pixes per column of specgram... default is
-%1.
+%UPDATED_SPECGRAM_QUICK create interactive spectrogram
+%   UPDATED_SPECGRAM_QUICK(signal, Fs) creates an interactive spectrogram
+%   plot of the signal with sampling rate Fs that is calculated to fit the
+%   resolution of the plot. Left clicking zooms, dragging boxes sets the
+%   plot limits, double clicking zooms out. Based entirely on
+%   DISPLAYSPECGRAMQUICK.M by Aaron Andalman. Differences include: named
+%   optional arguments, correct redisplay of spectrogram when the figure is
+%   resized, does not destroy other plots in the same axes when resized,
+%   ability to freeze the colormap so that subsequent changes of the
+%   figure's colormap do not change the plot colors.
+%
+%   UPDATED_SPECGRAM_QUICK(signal, Fs,...) where signal and Fs are followed
+%   by any of the named parameters as folows:
+%   'freqRange': default [500 7500], bounds the frequencies included in the
+%       spectrogram
+%   'startTime': default 0, sets the time of the first index in signal
+%   'nCourse': default 1, allows for alteration of the plot resolution
+%   'cLimits': default [], changes the colormap range to fill [min, max].
+%       if empty then the min and max is calculated from the data.
+%   'windowSize': default 512, changes the FFT window size
+%   'NFFT': default 1024, changes the number of FFT points used in the
+%       spectrogram
+%   'ax': default current axes, the axes to put the spectrogram in
+%   'backgroundColor': default [0 0 0], the color of the bottom of the
+%       colormap
+%   'colorMap': default jet(256), colormap to use for spectrogram
+%   'freezeColors': default false, boolean to invoke FREEZECOLORS.M on each
+%       redraw to prevent subsequent changes to figure colormaps from
+%       changing the spectrogram's colormap.
+%   See also DISPLAYSPECGRAMQUICK, ELECTRO_SONOGRAM_CLONER
 
-%TODO:  Maybe automatically adjust the window size and NFFT is
+%   Galen Lynch, 8/22/2014
 options = struct('freqRange', [500 7500], 'startTime', 0, 'nCourse', 1,...
     'cLimits', [], 'windowSize', 512, 'NFFT', 1024, 'ax', [],...
-    'backgroundColor', [0, 0 0], 'freezeColors', true);
+    'backgroundColor', [0, 0 0], 'colorMap', jet(256), 'freezeColors', false);
 options = gl_parse_args(options, varargin);
 
 freqRange = options.freqRange;
@@ -17,7 +45,7 @@ NFFT = options.NFFT;
 if isempty(options.ax)
     options.ax = gca;
 end
-cMap = jet(256);
+cMap = options.colorMap;
 cMap(1,:) = options.backgroundColor;%set background to black
 hFig = getParentFigure(options.ax);
 %Determine the size of the axis... to determine the
@@ -125,10 +153,12 @@ if ~holdState %Restore hold state at call
 end
 xlim(ud.ax, [times(1), times(end)]);
 ylim(ud.ax, [freqs(1), freqs(end)]);
+cmapCache = colormap();
 axis xy; colormap(ud.ax, ud.cMap);
 if ud.freezeColors
     freezeColors(ud.ax);%Stop colormap from interacting with others
 end
+colormap(ud.ax, cmapCache);
 xlabel('Time (s)');
 ylabel('Frequency (Hz)');
 set(img,'HitTest', 'off');
