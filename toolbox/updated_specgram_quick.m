@@ -25,15 +25,14 @@ function updated_specgram_quick(signal, Fs, varargin)
 %   'backgroundColor': default [0 0 0], the color of the bottom of the
 %       colormap
 %   'colorMap': default jet(256), colormap to use for spectrogram
-%   'freezeColors': default false, boolean to invoke FREEZECOLORS.M on each
-%       redraw to prevent subsequent changes to figure colormaps from
-%       changing the spectrogram's colormap.
 %   See also DISPLAYSPECGRAMQUICK, ELECTRO_SONOGRAM_CLONER
-
+%   
+%   REQUIRES: FreezeColors: http://www.mathworks.com/matlabcentral/fileexchange/7943-freezecolors---unfreezecolors
+%   getParentFigure
 %   Galen Lynch, 8/22/2014
 options = struct('freqRange', [500 7500], 'startTime', 0, 'nCourse', 1,...
     'cLimits', [], 'windowSize', 512, 'NFFT', 1024, 'ax', [],...
-    'backgroundColor', [0, 0 0], 'colorMap', jet(256), 'freezeColors', false);
+    'backgroundColor', [0, 0 0], 'colorMap', jet(256));
 options = gl_parse_args(options, varargin);
 
 freqRange = options.freqRange;
@@ -63,7 +62,6 @@ ud.endndx = length(signal);
 ud.cMap = cMap;
 ud.hIm = [];
 ud.hFig = hFig;
-ud.freezeColors = options.freezeColors;
 
 set(ud.ax, 'UserData', ud);
 set(ud.ax, 'ButtonDownFcn', @buttondown_updatedspecgram);
@@ -155,9 +153,7 @@ xlim(ud.ax, [times(1), times(end)]);
 ylim(ud.ax, [freqs(1), freqs(end)]);
 cmapCache = colormap();
 axis xy; colormap(ud.ax, ud.cMap);
-if ud.freezeColors
-    freezeColors(ud.ax);%Stop colormap from interacting with others
-end
+freezeColors(ud.ax);%Stop colormap from interacting with others
 colormap(ud.ax, cmapCache);
 xlabel('Time (s)');
 ylabel('Frequency (Hz)');
