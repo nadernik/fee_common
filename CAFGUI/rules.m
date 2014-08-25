@@ -55,95 +55,10 @@ function rules_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for rules
 handles.output = hObject;
 
-% a list of all conditions
-c(1).name = 'Raw Power (Sliding Boxcar)';
-c(1).editFcn = @rawPowerGUI;
-c(1).tdtTags(1).name = 'rawCoef';
-c(1).tdtTags(1).type = 'buffer';
-c(1).tdtTags(1).size = 33;
-c(1).tdtTags(1).pfield = 'Numerator';
-c(1).tdtTags(2).name = 'rawThresh';
-c(1).tdtTags(2).type = 'scalar';
-c(1).tdtTags(2).pfield = 'threshold';
-c(1).tdtTags(3).name = 'rawSteps';
-c(1).tdtTags(3).type = 'scalar';
-c(1).tdtTags(3).pfield = 'stepsAbove';
-c(1).tdtTags(4).name = 'rawStepsMax';
-c(1).tdtTags(4).type = 'scalar';
-c(1).tdtTags(4).pfield = 'stepsMax';
+% a list of all conditions (sound power, pitch, boolean, etc.)
+handles.conditions = ruleConditions();
+% edit ruleConditions.m to add new conditions
 
-c(2).name = 'Bandpassed Sound Power';
-c(2).editFcn = @bandPowerGUI;
-c(2).tdtTags(1).name = 'band1coef';
-c(2).tdtTags(1).type = 'buffer';
-c(2).tdtTags(1).size = 208;
-c(2).tdtTags(1).pfield = 'coefs1';
-c(2).tdtTags(2).name = 'band2coef';
-c(2).tdtTags(2).type = 'buffer';
-c(2).tdtTags(2).size = 208;
-c(2).tdtTags(2).pfield = 'coefs2';
-c(2).tdtTags(3).name = 'bandLP';
-c(2).tdtTags(3).type = 'buffer';
-c(2).tdtTags(3).size = 33;
-c(2).tdtTags(3).pfield = 'lpcoefs';
-c(2).tdtTags(4).name = 'bandThresh';
-c(2).tdtTags(4).type = 'scalar';
-c(2).tdtTags(4).pfield = 'threshold';
-c(2).tdtTags(5).name = 'bandSteps';
-c(2).tdtTags(5).type = 'scalar';
-c(2).tdtTags(5).pfield = 'stepsAbove';
-
-c(3).name = 'Pitch (CAFGUI)';
-c(3).editFcn = @pitchGUI;
-c(3).tdtTags(1).name = 'in1pitch';
-c(3).tdtTags(1).type = 'buffer';
-c(3).tdtTags(1).size = 300;
-c(3).tdtTags(1).pfield = 'coefIn1';
-c(3).tdtTags(2).name = 'in2pitch';
-c(3).tdtTags(2).type = 'buffer';
-c(3).tdtTags(2).size = 300;
-c(3).tdtTags(2).pfield = 'coefIn2';
-c(3).tdtTags(3).name = 'in3pitch';
-c(3).tdtTags(3).type = 'buffer';
-c(3).tdtTags(3).size = 300;
-c(3).tdtTags(3).pfield = 'coefIn3';
-c(3).tdtTags(4).name = 'out1pitch';
-c(3).tdtTags(4).type = 'buffer';
-c(3).tdtTags(4).size = 300;
-c(3).tdtTags(4).pfield = 'coefOut1';
-c(3).tdtTags(5).name = 'out2pitch';
-c(3).tdtTags(5).type = 'buffer';
-c(3).tdtTags(5).size = 300;
-c(3).tdtTags(5).pfield = 'coefOut2';
-c(3).tdtTags(6).name = 'out3pitch';
-c(3).tdtTags(6).type = 'buffer';
-c(3).tdtTags(6).size = 300;
-c(3).tdtTags(6).pfield = 'coefOut3';
-c(3).tdtTags(7).name = 'threshPitch';
-c(3).tdtTags(7).type = 'scalar';
-c(3).tdtTags(7).pfield = 'pitchThreshold';
-c(3).tdtTags(8).name = 'lpPitch';
-c(3).tdtTags(8).type = 'buffer';
-c(3).tdtTags(8).size = 55;
-c(3).tdtTags(8).pfield = 'coefLP';
-
-c(4).name = 'Boolean Statement';
-c(4).editFcn = @booleanGUI;
-c(4).tdtTags(1).name = 'boolSteps';
-c(4).tdtTags(1).type = 'scalar';
-c(4).tdtTags(1).pfield = 'stepsAbove';
-c(4).tdtTags(2).name = 'boolDelay';
-c(4).tdtTags(2).type = 'scalar';
-c(4).tdtTags(2).pfield = 'timeDelay';
-c(4).tdtTags(3).name = 'boolHi';
-c(4).tdtTags(3).type = 'scalar';
-c(4).tdtTags(3).pfield = 'stepsHigh';
-
-handles.conditions = c;
-% to add more conditions, you need to add a radio button to the radio
-% button group 'panelRule' and add an entry to variable c above. You
-% should always add to the end of c, otherwise you will break compatability
-% with old save files.
 for nc = 1:length(handles.conditions)
     str{nc} = handles.conditions(nc).name;
 end
