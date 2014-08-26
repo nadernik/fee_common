@@ -76,7 +76,8 @@ for(nExper = find(dgd.bTrigOnSong))
             params(nExper).songStartSampNum = sampNum + firstCrossSamp;
             [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.expers{nExper});
             recinfo(nExper).recfilenum = recfilenum;
-            [bStatus, params(nExper).startSamp, params(nExper).filenames] = daq_recordStart(params(nExper).songStartSampNum - round(srp.preSecs*fs), [dgd.expers{nExper}.dir, filenamePrefix], dgd.experData(nExper).inChans);
+            fname = fullfile(dgd.expers{nExper}.dir, filenamePrefix);
+            [bStatus, params(nExper).startSamp, params(nExper).filenames] = daq_recordStart(params(nExper).songStartSampNum - round(srp.preSecs*fs), fname, dgd.experData(nExper).inChans);
             if(~bStatus)
                 beep;
                 warning('Start recording failed'); %#ok<WNTAG>

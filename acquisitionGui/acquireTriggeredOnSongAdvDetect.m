@@ -93,7 +93,8 @@ while(true)
             %If sufficient power to signify song, then begin recording
             songStartSampNum = sampNum;
             [filenamePrefix, filenum] = getNewDatafilePrefix(exper);
-            [bStatus, startSamp, filenames] = daq_recordStart(songStartSampNum - preSamps, [exper.dir, filenamePrefix], inChans);
+            fname = fullfile(exper.dir, filenamePrefix);
+            [bStatus, startSamp, filenames] = daq_recordStart(songStartSampNum - preSamps, fname, inChans);
             if(~bStatus)
                 warning('Start recording failed' );
             else
@@ -179,7 +180,8 @@ while(true)
                 elseif(char == 'r' | char == 't')
                     recSampNum = daq_getCurrSampNum;
                     [filenamePrefix, filenum] = getNewDatafilePrefix(exper);
-                    [bStatus, startSamp, filenames] = daq_recordStart(recSampNum, [exper.dir, filenamePrefix], inChans);
+                    fname = fullfile(exper.dir, filenamePrefix);
+                    [bStatus, startSamp, filenames] = daq_recordStart(recSampNum, fname, inChans);
                     if(~bStatus)
                         warning('Forced Start recording failed' );
                     else

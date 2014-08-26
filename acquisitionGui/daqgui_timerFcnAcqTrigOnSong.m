@@ -55,7 +55,8 @@ if(~daq_isRecording(dgd.exper.audioCh))
         params.songStartSampNum = sampNum;
         [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.exper);
         dgd.recfilenum = recfilenum;
-        [bStatus, params.startSamp, params.filenames] = daq_recordStart(params.songStartSampNum - params.preSamps, [dgd.exper.dir, filenamePrefix], dgd.inChans);
+        fname = fullfile(dgd.exper.dir, filenamePrefix);
+        [bStatus, params.startSamp, params.filenames] = daq_recordStart(params.songStartSampNum - params.preSamps, fname, dgd.inChans);
         if(~bStatus)
             warning('Start recording failed' );
         else
