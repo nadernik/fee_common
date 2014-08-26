@@ -2,10 +2,16 @@ function exper = createExperAuto(rootdir, birdname, expername, desiredInSampRate
 %Creates a folder for all files related to this experiment.  Also saves a
 %.mat file to this folder containing the experiment description.
 
-mkdir(rootdir, birdname);
-mkdir([rootdir,'/',birdname], expername);
+birddir = fullfile(rootdir, birdname);
+if ~exist(birddir, 'dir')
+    mkdir(rootdir, birdname);
+end
+experdir = fullfile(rootdir, birdname, expername);
+if ~exist(experdir, 'dir')
+    mkdir(birddir, expername);
+end
 
-exper.dir = [rootdir,'\',birdname,'\',expername,'\'];
+exper.dir = experdir;
 exper.birdname = birdname;
 exper.birddesc = '';
 exper.expername = expername;
@@ -22,4 +28,5 @@ for nName = 1:length(exper.sigCh)
     exper.sigDesc{nName} = '';
 end
 
-save([rootdir,'\',birdname,'\',expername,'\exper.mat'], 'exper');
+experfile = fullfile(experdir, 'exper.mat');
+save(experfile, 'exper');
