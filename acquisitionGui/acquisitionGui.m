@@ -296,8 +296,7 @@ if(~recinfo(dgd.ce).bSongTrigRecording)
         recSampNum = daq_getCurrSampNum;
         [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.expers{dgd.ce});
         recinfo(dgd.ce).recfilenum = recfilenum;
-        fname = fullfile(dgd.expers{dgd.ce}.dir, filenamePrefix);
-        [bStatus, startSamp, filenames] = daq_recordStart(recSampNum, fname, dgd.experData(dgd.ce).inChans);
+        [bStatus, startSamp, filenames] = daq_recordStart(recSampNum, [dgd.expers{dgd.ce}.dir, filenamePrefix], dgd.experData(dgd.ce).inChans);
         if(~bStatus)
             error('Forced Start recording failed' );
         else

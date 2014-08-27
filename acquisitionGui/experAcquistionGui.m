@@ -181,8 +181,7 @@ if(~dgd.bForcedRecording)
     recSampNum = daq_getCurrSampNum;
     [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.exper);
     dgd.recfilenum = recfilenum;
-    fname = fullfile(dgd.exper.dir, filenamePrefix);
-    [bStatus, startSamp, filenames] = daq_recordStart(recSampNum, fname, dgd.inChans);
+    [bStatus, startSamp, filenames] = daq_recordStart(recSampNum, [dgd.exper.dir, filenamePrefix], dgd.inChans);
     if(~bStatus)
         error('Forced Start recording failed' );
     else
