@@ -68,6 +68,8 @@ set(ud.ax, 'ButtonDownFcn', @buttondown_updatedspecgram);
 
 set(hFig, 'ResizeFcn', @(hObject, event) helper_updatedspecgram(get(ud.ax, 'UserData')));
 helper_updatedspecgram(ud);
+xlabel(ud.ax, 'Time (s)');
+ylabel(ud.ax, 'Frequency (Hz)');
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -155,8 +157,6 @@ cmapCache = colormap();
 axis xy; colormap(ud.ax, ud.cMap);
 freezeColors(ud.ax);%Stop colormap from interacting with others
 colormap(ud.ax, cmapCache);
-xlabel('Time (s)');
-ylabel('Frequency (Hz)');
 set(img,'HitTest', 'off');
 set(ud.ax,'children',flipud(get(ud.ax,'children')));%Reorder plots on this axis to place the spectrogram on the bottom (won't cover up other plots)
 ud.hIm = img;
