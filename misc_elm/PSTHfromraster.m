@@ -94,7 +94,8 @@ for i = 1:4
     end
 end
 
-%% During Singing
+%% During Singing, categories
+clear all; close all; clc
 XLS = importdata('C:/Users/emackev/Documents/NIfDuringSingingPutProj.xlsx');
 Fls = XLS.textdata.Sheet1; 
 PutProj = XLS.data.Sheet1(:,1); 
@@ -158,6 +159,8 @@ for i = 1:2
     if mod(i,2) == 1
         legend(h, CatNames)
     end
+    gcf
+    set(gcf, 'Color', [1 1 1], 'papersize', [5 4], 'paperposition', [0 0 5 4])
 end
 %% 
 
@@ -181,6 +184,19 @@ Colors = lines(length(D));
 dt = data.time(2)-data.time(1); 
 tcheck = .15; 
 comp = []; 
+
+conds = [1 4]; 
+D1 = {};L1 = {}; I1 = {}; emptylabels = {};
+Colors = Colors(conds,:); 
+for i = 1:length(conds)
+    D1{i} = D{conds(i)}; 
+    L1{i} = labels{conds(i)}; 
+    I1{i} = ind{conds(i)}; 
+    emptylabels{i} = ''; 
+end
+D = D1; 
+labels = L1; 
+ind = I1; 
 
 for i = 1:length(D)
     m = []; 
@@ -235,7 +251,7 @@ for i = 1:length(D)
     %ylim([-.15 .15])
 end
 linkaxes([a b], 'x')
-boxplot(comp, grps, 'color', Colors, 'orientation', 'horizontal', 'labelorientation', 'inline',  'labels', {'' '' '' ''});
+boxplot(comp, grps, 'color', Colors, 'orientation', 'horizontal', 'labelorientation', 'inline',  'labels', emptylabels);
 %legend(h, labels);
 plot([0 0], [0 length(D)+1], 'k', 'linewidth', 2)
 xlim([T(1) T(end)])

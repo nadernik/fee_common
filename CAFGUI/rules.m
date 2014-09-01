@@ -42,7 +42,7 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
-function panelCondition_CreateFcn(varargin)
+
 
 % --- Executes just before rules is made visible.
 function rules_OpeningFcn(hObject, eventdata, handles, varargin)
@@ -55,92 +55,10 @@ function rules_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for rules
 handles.output = hObject;
 
-% a list of all conditions
-c(1).name = 'Raw Power (Sliding Boxcar)';
-c(1).editFcn = @rawPowerGUI;
-c(1).tdtTags(1).name = 'rawCoef';
-c(1).tdtTags(1).type = 'buffer';
-c(1).tdtTags(1).size = 33;
-c(1).tdtTags(1).pfield = 'Numerator';
-c(1).tdtTags(2).name = 'rawThresh';
-c(1).tdtTags(2).type = 'scalar';
-c(1).tdtTags(2).pfield = 'threshold';
-c(1).tdtTags(3).name = 'rawSteps';
-c(1).tdtTags(3).type = 'scalar';
-c(1).tdtTags(3).pfield = 'stepsAbove';
-c(1).tdtTags(4).name = 'rawStepsMax';
-c(1).tdtTags(4).type = 'scalar';
-c(1).tdtTags(4).pfield = 'stepsMax';
+% a list of all conditions (sound power, pitch, boolean, etc.)
+handles.conditions = ruleConditions();
+% edit ruleConditions.m to add new conditions
 
-c(2).name = 'Bandpassed Sound Power';
-c(2).editFcn = @bandPowerGUI;
-c(2).tdtTags(1).name = 'band1coef';
-c(2).tdtTags(1).type = 'buffer';
-c(2).tdtTags(1).size = 208;
-c(2).tdtTags(1).pfield = 'coefs1';
-c(2).tdtTags(2).name = 'band2coef';
-c(2).tdtTags(2).type = 'buffer';
-c(2).tdtTags(2).size = 208;
-c(2).tdtTags(2).pfield = 'coefs2';
-c(2).tdtTags(3).name = 'bandLP';
-c(2).tdtTags(3).type = 'buffer';
-c(2).tdtTags(3).size = 33;
-c(2).tdtTags(3).pfield = 'lpcoefs';
-c(2).tdtTags(4).name = 'bandThresh';
-c(2).tdtTags(4).type = 'scalar';
-c(2).tdtTags(4).pfield = 'threshold';
-
-c(3).name = 'Pitch (CAFGUI)';
-c(3).editFcn = @pitchGUI;
-c(3).tdtTags(1).name = 'in1pitch';
-c(3).tdtTags(1).type = 'buffer';
-c(3).tdtTags(1).size = 300;
-c(3).tdtTags(1).pfield = 'coefIn1';
-c(3).tdtTags(2).name = 'in2pitch';
-c(3).tdtTags(2).type = 'buffer';
-c(3).tdtTags(2).size = 300;
-c(3).tdtTags(2).pfield = 'coefIn2';
-c(3).tdtTags(3).name = 'in3pitch';
-c(3).tdtTags(3).type = 'buffer';
-c(3).tdtTags(3).size = 300;
-c(3).tdtTags(3).pfield = 'coefIn3';
-c(3).tdtTags(4).name = 'out1pitch';
-c(3).tdtTags(4).type = 'buffer';
-c(3).tdtTags(4).size = 300;
-c(3).tdtTags(4).pfield = 'coefOut1';
-c(3).tdtTags(5).name = 'out2pitch';
-c(3).tdtTags(5).type = 'buffer';
-c(3).tdtTags(5).size = 300;
-c(3).tdtTags(5).pfield = 'coefOut2';
-c(3).tdtTags(6).name = 'out3pitch';
-c(3).tdtTags(6).type = 'buffer';
-c(3).tdtTags(6).size = 300;
-c(3).tdtTags(6).pfield = 'coefOut3';
-c(3).tdtTags(7).name = 'threshPitch';
-c(3).tdtTags(7).type = 'scalar';
-c(3).tdtTags(7).pfield = 'pitchThreshold';
-c(3).tdtTags(8).name = 'lpPitch';
-c(3).tdtTags(8).type = 'buffer';
-c(3).tdtTags(8).size = 55;
-c(3).tdtTags(8).pfield = 'coefLP';
-
-c(4).name = 'Boolean Statement';
-c(4).editFcn = @booleanGUI;
-c(4).tdtTags(1).name = 'boolSteps';
-c(4).tdtTags(1).type = 'scalar';
-c(4).tdtTags(1).pfield = 'stepsAbove';
-c(4).tdtTags(2).name = 'boolDelay';
-c(4).tdtTags(2).type = 'scalar';
-c(4).tdtTags(2).pfield = 'timeDelay';
-c(4).tdtTags(3).name = 'boolHi';
-c(4).tdtTags(3).type = 'scalar';
-c(4).tdtTags(3).pfield = 'stepsHigh';
-
-handles.conditions = c;
-% to add more conditions, you need to add a radio button to the radio
-% button group 'panelRule' and add an entry to variable c above. You
-% should always add to the end of c, otherwise you will break compatability
-% with old save files.
 for nc = 1:length(handles.conditions)
     str{nc} = handles.conditions(nc).name;
 end
@@ -153,6 +71,11 @@ set(handles.actionNoise,'Enable','off')
 set(handles.buttonCondition,'Enable','off')
 
 handles.testSuffix = get(handles.editTestSuffix,'String');
+
+% Defaults for the dialog box that appears when you click "Test Clustered
+% Syllables" button
+handles.testSyllablesDefaults = {'1,2','50','60'};
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -359,12 +282,12 @@ function buttonTest_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonTest (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% keyboard %%%DEBUG
+
 % get audio
 Fs_in = handles.exper.desiredInSampRate;
 Fs = 24414; %Hz, TDT sampling rate
 audio_in = loadAudio(handles.exper, get(handles.listFiles,'Value'));
-audio = resample(audio_in, Fs, Fs_in);
+audio = resample2(audio_in, Fs, Fs_in);
 audio = audio - mean(audio);
 t = (0:length(audio)-1) * 1/Fs;
 % get list of rules to test
@@ -612,7 +535,6 @@ suff = str2double(get(handles.editPartagSuffix,'String'));
 handles.rules(handles.rSel).condition = c;
 handles.rules(handles.rSel).tdtTags =  makeSuffix(tags, suff);
 guidata(hObject,handles);
-% keyboard %%%DEBUG
 
 % --- Executes during object creation, after setting all properties.
 function popupCondition_CreateFcn(hObject, eventdata, handles)
@@ -633,96 +555,29 @@ function buttonTestSyllable_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-%% load all annotations
-wbh = waitbar(0);
-filenum_list = get(handles.listFiles,'Value');
-total_files = length(filenum_list);
-filename_list = arrayfun(@getExperAudioFilename, repmat(handles.exper, 1, total_files), filenum_list, 'UniformOutput', false);
+%% Ask for target syllables and region
 
-% infer rootdir from exper dir
-idx = strfind(handles.exper.dir,filesep);
-rootdir = handles.exper.dir(1:idx(end-2)); % like c:\data\
+% Dialog box to ask for info on testing
+prompt = {'Target syllable(s):','Target region start (ms):','Target region end (ms):'};
+dlg_title = 'Input';
+num_lines = 1;
+answer = inputdlg(prompt,dlg_title,num_lines,handles.testSyllablesDefaults);
 
-miscfiles = getProcessedDataFiles(handles.exper.birdname,'experNames',handles.exper.expername, 'rootdir', rootdir);
-pitchfiles = getProcessedDataFiles(handles.exper.birdname,'experNames',handles.exper.expername, 'rootdir', rootdir, 'dataType', 'pitch');
-
-all_syll_noise = [];
-all_syll_type = [];
-all_pitch = [];
-files_processed = 0;
-for ii = 1:length(miscfiles)
-    load([rootdir handles.exper.birdname filesep miscfiles(ii).name])
-    pitch_loaded = false;
-    for jj = 1:total_files
-        key = filename_list(jj);
-        % get segs from this file
-        idx_seg_file = cellfun(@strcmp, {misc.segs.key}, repmat({key}, size(misc.segs)));
-        if any(idx_seg_file)
-            files_processed = files_processed + 1;
-        end
-        idx_seg_file = idx_seg_file & [misc.segs.segType] ~= -1; % skip unclustered syllables
-        total_syllables = sum(idx_seg_file);
-        if total_syllables > 0 % if we have segs, load audio and apply rules
-            % load audio
-            audio_in = loadAudio(handles.exper, filenum_list(jj));
-            Fs_in = handles.exper.desiredInSampRate;
-            Fs_tdt = 24414; %Hz, TDT sampling rate
-            audio = resample(audio_in, Fs_tdt, Fs_in);
-            audio = audio - mean(audio);
-            % apply rules
-            file_noise = testRulesOnFile(handles, audio);
-            % map noise onto syllables
-            t = (0:length(audio)-1) * 1/Fs_tdt;
-            t = repmat({t}, total_syllables, 1);
-            temp = [[misc.segs(idx_seg_file).fStartTime]' [misc.segs(idx_seg_file).fEndTime]'];
-            t_range = mat2cell(temp, ones(1,size(temp,1)), 2);
-            syll_noise = cellfun(@extract_time_range, repmat({file_noise}, total_syllables, 1), t, t_range, 'UniformOutput', false);
-            all_syll_noise = [all_syll_noise; syll_noise];
-            syll_type = [misc.segs(idx_seg_file).segType];
-            all_syll_type = [all_syll_type syll_type];
-            % load pitch
-            if ~pitch_loaded
-                load([rootdir handles.exper.birdname filesep pitchfiles(ii).name])
-                pitch_loaded = true;
-            end
-            all_pitch = [all_pitch {pitch.segs(idx_seg_file).pitch}];                
-        end
-        waitbar(files_processed / total_files)
-    end %file
-end %miscfile
-
-L = cellfun(@length,all_syll_noise,'UniformOutput',false);
-all_syll_noise = cellfun(@resample, all_syll_noise, repmat({100},size(L)), L,'UniformOutput',false);
-all_syll_noise = cell2mat(all_syll_noise');
-
-for clust = unique(all_syll_type)
-    figure
-    % example spectrogram FIXME
-    %axh(1) = subplot(3,1,1)
-    %displaySpecgramQuick(sampleaudio{clust}, Fs)
-    % noise
-    axh(2) = subplot(3,1,2);
-    imagesc(all_syll_noise(:,all_syll_type == clust)')
-    %xlims = xlim(axh(1));
-    %nz = all_syll_noise(all_syll_type == clust);
-    %x = linspace(xlims(1),xlims(2),size(nz,1));
-    %y = 1:size(nz,2);
-    %imagesc(x,y,nz')
-    % pitch traces
-    axh(3) = subplot(3,1,3);
-    has_noise = any(all_syll_noise);
-    hold on
-    idx = has_noise & all_syll_type == clust;
-    cellfun(@plot, all_pitch(idx), repmat({'r'},1,sum(idx)))
-    hits = sum(idx);
-    idx = ~has_noise & all_syll_type == clust;
-    cellfun(@plot, all_pitch(idx), repmat({'b'},1,sum(idx)))
-    escapes = sum(idx);
-    %linkaxes(axh,'x') %FIXME
-    N = hits + escapes;
-    title(sprintf('Cluster %g N = %g %.0f%% hit',clust,N,hits/N * 100))
+if isempty(answer)
+    return
 end
-close(wbh)
+
+% Update defaults of that dialog box to be the answers we just received
+handles.testSyllablesDefaults = answer;
+guidata(hObject, handles)
+
+% Call function to do the testing
+target_syllable = str2num(answer{1});
+target_range = [str2num(answer{2}), str2num(answer{3})];
+testRulesBySyllable(handles.rules, handles.exper, ...
+    'File', get(handles.listFiles, 'Value'), ...
+    'TargetSyllable', target_syllable, ...
+    'TargetRange', target_range)
 
 function editPartagSuffix_Callback(hObject, eventdata, handles)
 % hObject    handle to editPartagSuffix (see GCBO)
@@ -760,7 +615,7 @@ handles = exportTDT(handles);
 Fs_in = handles.exper.desiredInSampRate;
 Fs = 24414; %Hz, TDT sampling rate
 audio_in = loadAudio(handles.exper, get(handles.listFiles,'Value'));
-audio = resample(audio_in, Fs, Fs_in);
+audio = resample2(audio_in, Fs, Fs_in);
 audio = audio - mean(audio);
 noise = testRulesTdt(audio, handles.RP, handles.testSuffix);
 figure
@@ -919,4 +774,6 @@ function checkReloadTdt_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of checkReloadTdt
 
+
+function panelCondition_CreateFcn(hObject, eventdata, handles)
 

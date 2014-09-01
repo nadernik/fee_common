@@ -63,6 +63,41 @@ try
 catch
 end
 
+%% Initialization - assign colors to syllable labels
+labels = [];
+for part = 1:1000 
+    % load each annotation file
+    annofile = annofilename(exper.birdname, exper.expername, ...
+        'Part', part, 'RootDir', P.RootDir, 'Type', 'annotation');
+    if exist(annofile, 'file')
+        hash = aaLoadHashtable(annofile);
+        
+        % get all the labels from this annotation file
+        elements = hash.elements;
+        for ii = 1:length(elements)
+            new_labels = elements{ii}.segType;
+            % update set of labels with any new ones we found
+            labels = unique([labels; new_labels]);
+        end
+    end
+end
+
+% unlabeled syllables (label == -1) are gray
+if any(labels == -1)
+    is_unlabeled = labels == -1;
+    unlabeled_color = [.6 .6 .6];
+    other_colors = lines(length(labels) - 1);
+    colors = nan(length(labels), 3);
+    colors( is_unlabeled, :) = unlabeled_color;
+    colors(~is_unlabeled, :) = other_colors;
+else
+    colors = lines(length(labels));
+end
+chash = mhashtable;
+for n = 1:length(labels)
+    chash.put(labels(n), colors(n,:));
+end
+
 %% Get syllable labels from processed annotation file
 filename = getExperAudioFilename(exper, filenum); % file we are looking for
 
@@ -85,13 +120,6 @@ ax(1) = subplot(10,1,1); % height of spectrogram is 9x height of labels
 cla
 hold on
 if ~isempty(element)
-    segtypes = unique(element.segType);
-    colors = get(gca,'ColorOrder');
-    chash = mhashtable;
-    cidx = mod(1:length(segtypes),size(colors,1)) + 1;
-    for n = 1:length(segtypes)
-        chash.put(segtypes(n), colors(cidx(n),:));
-    end
     for syll = 1:length(element.segType)
         x = [element.segFileStartTimes(syll) element.segFileEndTimes(syll) element.segFileEndTimes(syll) element.segFileStartTimes(syll)];
         y = [0 0 1 1];
@@ -120,6 +148,7 @@ set(fh, 'KeyPressFcn', @nextjprevk)
 function nextjprevk(src,evnt)
 % Push j to see next file. Push k to see previous file.
 ud = get(src, 'UserData');
+filenum = ud.filenum;
 switch evnt.Key
     case 'j'
         filenum = ud.filenum + 1;

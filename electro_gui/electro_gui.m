@@ -27,7 +27,7 @@ function varargout = electro_gui(varargin)
 
 % Edit the above text to modify the response to help electro_gui
 
-% Last Modified by GUIDE v2.5 11-Jun-2014 23:34:58
+% Last Modified by GUIDE v2.5 17-Jun-2014 14:51:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;

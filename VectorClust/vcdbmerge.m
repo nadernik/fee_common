@@ -1,4 +1,4 @@
-function vcdb = merge_vcdb(vcdb1, vcdb2, varargin)
+function vcdb = vcdbmerge(vcdb1, vcdb2, varargin)
 P.mode = {'omit', 'nan', 'compute'}; % how to deal with missing scalar features
 P = parseargs(P, varargin{:});
 % Assumes that if two features have the same name then they are the same.
@@ -36,7 +36,7 @@ for vf = 1:length(all_vfname) % for each vf
         % if vf is in both, just concatenate
         vcdb.f.vffcn{vf,1} = vcdb1.f.vffcn{vf1};
         vcdb.f.vfparam{vf,1} = vcdb1.f.vfparam{vf1};
-        vcdb.d.vf{vf} = [vcdb1.d.vf{vf1}; vcdb2.d.vf{vf2}];
+        vcdb.d.vf{vf,1} = [vcdb1.d.vf{vf1}; vcdb2.d.vf{vf2}];
     elseif ~isempty(vf1) && isempty(vf2)
         % if sf is in 1 but not 2
         switch P.mode
@@ -132,3 +132,6 @@ for sf = 1:length(all_sfname) % for each sf
         end
     end
 end
+
+vcdb.f.sfname = vcdb.f.sfname';
+vcdb.f.vfname = vcdb.f.vfname';

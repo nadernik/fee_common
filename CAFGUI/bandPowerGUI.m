@@ -54,6 +54,7 @@ function bandPowerGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for bandPowerGUI
 handles.output = hObject;
+handles.audioFileNumber = -1;
 
 if nargin > 3
     % we were passed handles from rulesGUI
@@ -73,9 +74,6 @@ if nargin > 3
         str = mat2cell(n,ones(size(n)), 1);
         set(handles.listFile,'String',str);
         set(handles.listFile,'Value',1);
-        % if(get(handles.checkAutoshow,'Value') == 1)
-        %     showFile(1,handles)
-        % end
     end
     handles.tdt_fs = 24414;
     handles.params.Fs = handles.tdt_fs; 
@@ -90,14 +88,13 @@ if nargin > 3
     handles.params.timeAbove = 20; %milliseconds
     handles.params.threshold = 0.8; %ratio between 0 and 1
     if isfield(rulesHandles.rules(rulesHandles.rSel),'params') && ~isempty(rulesHandles.rules(rulesHandles.rSel).params)
-        % use catstruct from matlab central to merge default parameters
-        % with parameters passed from rules. parameters from rules take
-        % precedence. supress warning message about the same field in both
-        % structs
-        warning('off','catstruct:DuplicatesFound')
-        handles.params = catstruct(handles.params, ...
-            rulesHandles.rules(rulesHandles.rSel).params);
-        warning('on','catstruct:DuplicatesFound')
+        % Merge default parameters with parameters passed from rules.
+        % Parameters from rules take precedence. 
+        rp = rulesHandles.rules(rulesHandles.rSel).params; % params from rules
+        fn = fieldnames(rp);
+        for ii = 1:length(fn)
+            handles.params.(fn{ii}) = rp.(fn{ii});
+        end
     end
     set(handles.editFreqLo1,'String',num2str(handles.params.freqLo1));
     set(handles.editFreqLo2,'String',num2str(handles.params.freqLo2));
@@ -139,7 +136,7 @@ function listFile_Callback(hObject, eventdata, handles)
 % Hints: contents = get(hObject,'String') returns listFile contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from listFile
 if(get(handles.checkAutoshow,'Value') == 1)
-    showFile(get(hObject,'Value'),handles)
+    showFile(handles)
 end
 
 
@@ -161,7 +158,7 @@ function buttonShow_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonShow (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-showFile(get(handles.listFile,'Value'),handles)
+showFile(handles)
 
 
 
@@ -214,92 +211,93 @@ function checkAutoshow_Callback(hObject, eventdata, handles)
 
 % Hint: get(hObject,'Value') returns toggle state of checkAutoshow
 
-function showFile(n, handles)
-cla(handles.axesFiltered)
-cla(handles.axesSpecgram)
+function showFile(handles)
+
 % make filter
 handles.params = createFilter(handles);
-% load audio
-audio = loadAudio(handles.exper, get(handles.listFile,'Value'));
-audio = audio - mean(audio);
-audio_tdt = resample(audio, handles.tdt_fs, handles.fs);
-% run filter on audio
-[tf, sigfilt] = bandPowerFilterFunc(audio_tdt, handles.params);
 
-% plot results
+% load audio if not already loaded
+currentFileNumber = get(handles.listFile,'Value');
+if handles.audioFileNumber ~= currentFileNumber
+    audio = loadAudio(handles.exper, currentFileNumber);
+    audio = audio - mean(audio);
+    audio_tdt = resample2(audio, handles.tdt_fs, handles.fs);
+    handles.audio = audio_tdt;
+end
+
+% Run filter on audio. Returns binary (tf) where the rule is met
+% (bandpassed power ratio above threshold) and the actual ratio of
+% bandpassed power to total sound power (powerRatio)
+[tf, powerRatio] = bandPowerFilterFunc(audio_tdt, handles.params);
+
+% Plot the ratio of bandpassed power to total power.
+cla(handles.axesFiltered)
 dt = 1/handles.tdt_fs;
 t = (0:length(tf)-1) .* dt;
-yrange = max(sigfilt)-min(sigfilt);
-ymax = max(sigfilt) + 0.1*yrange;
-ymin = min(sigfilt) - 0.1*yrange;
+yrange = max(powerRatio)-min(powerRatio);
+ymax = max(powerRatio) + 0.1*yrange
+ymin = min(powerRatio) - 0.1*yrange
 hold(handles.axesFiltered,'off')
-plot(handles.axesFiltered, t, sigfilt,'k')
+plot(handles.axesFiltered, t, powerRatio,'k')
 hold(handles.axesFiltered,'on')
 plot(handles.axesFiltered, t, handles.params.threshold*ones(size(t)),'b:')
+
 % fill in area where tf = true
 x = [t t(end) t(1)];
 y = ones(1,length(t)+2)*handles.params.threshold;
-y(tf) = sigfilt(tf);
+y(tf) = powerRatio(tf);
 set(0,'CurrentFigure',handles.figure1)
 set(handles.figure1,'CurrentAxes',handles.axesFiltered)
 fill(x, y, 'r','LineStyle','none')
-axis(handles.axesFiltered, [t(1) t(end) ymin ymax])
-% tf = double(tf);
-% tf(tf==0) = nan;
-% plot(handles.axesFiltered, t, ymin*tf,'r','LineWidth',7,'MarkerSize',10)
+% axis(handles.axesFiltered, [t(1) t(end) ymin ymax])
+axis(handles.axesFiltered, [t(1) t(end) -.1 1]) %%%DEBUG
 hold(handles.axesFiltered,'off')
+
 % plot spectrogram
 set(handles.figure1,'CurrentAxes',handles.axesSpecgram)
+cla
 displaySpecgramQuick(audio_tdt, handles.tdt_fs, [0000,7000], [-15,5]);
-linkaxes([handles.axesSpecgram, handles.axesFiltered],'x')
+linkaxes([handles.axesSpecgram, handles.axesFiltered],'x')  % zooming on spectrogram will zoom on the other axes as well
 
+guidata(handles.output, handles)
 
 function p = createFilter(handles)
+% Bandpass filter
 temp = v3strong(...
     handles.params.freqLo1, ...
     handles.params.Fs, ...
     handles.params.width1, ...
     handles.params.dbDown1, ...
     handles.params.freqHi1);
-handles.params.coefs1 = temp.Numerator ./ sum(temp.Numerator);
+handles.params.coefs1 = temp.Numerator;
 temp = v3strong(...
     handles.params.freqLo2, ...
     handles.params.Fs, ...
     handles.params.width2, ...
     handles.params.dbDown2, ...
     handles.params.freqHi2);
-handles.params.coefs2 = temp.Numerator ./ sum(temp.Numerator);
-% temp = v3lp(1, handles.tdt_fs, 1000, 40); %% low-pass output of filters
-clear temp
-temp.Numerator = ones(1,33);
-handles.params.lpcoefs = temp.Numerator ./ sum(temp.Numerator);
+handles.params.coefs2 = temp.Numerator;
+
+handles.params.stepsAbove = ceil(handles.params.timeAbove/1000 * handles.params.Fs);
+
+% Lowpass filter for smoothing the power
+temp = v3lp(1, handles.tdt_fs, 1000, 40); % 1000 Hz width, 40 dB drop
+% handles.params.lpcoefs = temp.Numerator;
+handles.params.lpcoefs = ones(40,1); %%%DEBUG
 p = handles.params;
-length(p.coefs1)
-length(p.coefs2)
 
 function [tf, varargout] = bandPowerFilterFunc(sig, p, r)
-filtered1 = (filter(p.coefs1, 1, sig.^2)).^2;
-filtered2 = (filter(p.coefs2, 1, sig.^2)).^2;
-pow1 = filter(p.lpcoefs,1,filtered1);
-pow2 = filter(p.lpcoefs,1,filtered2);
-ratio = pow1 ./ (pow1 + pow2);
-threshed = ratio > p.threshold;
-stepsAbove = ceil(p.timeAbove/1000 * p.Fs);
-kernel = ones(1,stepsAbove) / stepsAbove;
-tf = filter(kernel,1,threshed) >= (1-2/stepsAbove);
+filtered1 = filter(p.coefs1, 1, sig);
+bandpower1 = filter(p.lpcoefs,1,filtered1.^2);
+filtered2 = filter(p.coefs2, 1, sig);
+bandpower2 = filter(p.lpcoefs,1,filtered2.^2);
+powerRatio = bandpower1 ./ (bandpower1 + bandpower2);
+threshed = powerRatio > p.threshold;
+kernel = ones(1,p.stepsAbove) / p.stepsAbove;
+tf = filter(kernel,1,threshed) >= (1-2/p.stepsAbove);
 if nargout > 1
-    varargout{1} = pow2;%ratio; %%%DEBUG
+    varargout{1} = powerRatio;
 end
-% figure(1)
-% ah(1) = subplot(3,1,1);
-% plot(filtered1)
-% ah(2) = subplot(3,1,2);
-% plot(filtered2)
-% ah(3) = subplot(3,1,3);
-% plot(ratio)
-% linkaxes(ah,'x')
-% keyboard
-
 
 function editTimeThresh_Callback(hObject, eventdata, handles)
 % hObject    handle to editTimeThresh (see GCBO)

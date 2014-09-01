@@ -19,7 +19,7 @@ end
 durs = diff(durs(:,1)); %durs(:,2)-durs(:,1); % calculating duration (samples)
 durs = durs/handles.fs*1000; % converting duration to miliseconds
 
-figure
+figure; hold all
 
 y = histc(durs,lst)/length(durs); % converting to probability
 if ~isempty(durs) % duration is not empty
@@ -29,3 +29,4 @@ xlim([0 lst(end)]);
 
 xlabel('Onset-to-onset interval(ms)');
 ylabel('Probability');
+set(gcf, 'Color', [1 1 1], 'papersize', [4 3], 'paperposition', [0 0 4 3])

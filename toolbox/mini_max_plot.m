@@ -1,4 +1,18 @@
 function varargout = mini_max_plot(times, data, varargin)
+%MINI_MAX_PLOT Min-max decimation and plotting
+%
+%Usage: 
+%   mini_max_plot(times, data)
+%   mini_max_plot(times, data, 'ax', axes_handle)
+%Arguments:
+%   time is the vector of time points corresponding to the data
+%   data is the vector to be decimated and plotted
+%   axes_handle is a handle to the axes to plot on. If omitted, the curret
+%       axes are used.
+%
+% The amount of decimation is automatically chosen based on the size of the
+% figure window. 
+
 assert(isvector(data), 'MINI_MAX_PLOT only handles vector inputs atm');
 assert(isvector(times), 'MINI_MAX_PLOT only handles vector inputs atm');
 times = reshape(times, [], 1);
@@ -19,11 +33,21 @@ ud.startndx = 1;
 ud.endndx = length(data);
 ud.startTime = times(1);
 ud.Fs = 1/(times(2)-times(1));
+hFig = getParentFigure(ud.ax);
+rszFcn = get(hFig, 'ResizeFcn');
+function helper_resize(hObject, event) 
+        helper_mini_max_plot(get(ud.ax, 'UserData'));
+        if ~isempty(rszFcn)
+            rszFcn(hObject, event);
+        end
+end
+set(gcf, 'ResizeFcn', @helper_resize)
 helper_mini_max_plot(ud)
 if nargout > 0
     varargout = {ud.ax};
 end
 end
+
 
 function helper_mini_max_plot(ud)
 %determine size of axis relative to size of the signal,
@@ -70,8 +94,6 @@ else
 %     p = plot(ud.ax, timeCenters, minimaxData);
 end
 axis xy; axis tight;
-xlabel('Time (s)');
-ylabel('uV');
 set(p,'HitTest', 'off');
 
 set(ud.ax,'Units','normalized')

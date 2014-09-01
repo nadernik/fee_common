@@ -104,10 +104,13 @@ for part = P.Part
     vcdb.d.t = [misc.segs.absStart]'; %column vector
     vcdb.d.cn = nan(size(vcdb.d.v));
     vcdb.c = [];
-    [pathname, filename, ext, versn] = fileparts(miscfile);
+    [pathname, filename, ext] = fileparts(miscfile);
     vcdb.fileName = pathname;
     vcdb.pathName = filename;
-
+    
+    vcdb.f.sfname = vcdb.f.sfname';
+    vcdb.f.vfname = vcdb.f.vfname';
+    
     % merge with other parts
     if exist('vcdb_all', 'var')
         vcdb_all = vcdbmerge(vcdb_all, vcdb);
@@ -116,5 +119,3 @@ for part = P.Part
     end
     clear vcdb
 end
-vcdb_all.f.sfname = vcdb_all.f.sfname';
-vcdb_all.f.vfname = vcdb_all.f.vfname';

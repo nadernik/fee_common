@@ -11,6 +11,8 @@ P.randNumber = 0;
 P.bOnlyLabled = false;
 P.durationRange = [-Inf,Inf]; %seconds
 P.bUse = []; %specify exactly which syllables to use. %Overrides all other selections.
+P.minPitchFreq = 400; % minimum pitch that can be estimated
+P.maxPitchFreq = 2000; % maximum pitch that can be estimated
 P = parseargs(P,varargin{:});
 
 %Load the annotation we just created
@@ -182,8 +184,7 @@ for(tempn = P.whichAnalyses)
                 %Compute pitch
                     pitch.segs(count).key = filenames{nAnnot};
                     pitch.segs(count).absStart = annot.segAbsStartTimes(nSeg);
-                    [pi, pg, hp, pt, entropy] = estimatePitch(syllAudio, fs);
-                    %[pi, pg, hp, pt, entropy] = estimatePitch(syllAudio, fs, 'winSize', P.winSize, 'winStep', P.winStep);
+                    [pi, pg, hp, pt, entropy] = estimatePitch(syllAudio, fs, 'minPitchFreq', P.minPitchFreq, 'maxPitchFreq', P.maxPitchFreq);
                     pitch.segs(count).pitch = pi;
                     pitch.segs(count).pitchGoodness = pg;
                     pitch.segs(count).harmonicPower = hp;

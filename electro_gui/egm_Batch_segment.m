@@ -4,12 +4,16 @@ function handles = egm_Batch_segment(handles)
 % Uses current segmentation algorithm and parameters
 % Only works for segmentation based on sound amplitude
 
-answer = inputdlg({'File range'},'File range',1,{['1:' num2str(handles.TotalFileNumber)]}); % default file range: all files
-if isempty(answer)
-    return
-end
+if isfield(handles,'AutomationELM')
+    fls = 1:handles.TotalFileNumber;
+else
+    answer = inputdlg({'File range'},'File range',1,{['1:' num2str(handles.TotalFileNumber)]}); % default file range: all files
+    if isempty(answer)
+        return
+    end
 
-fls = eval(answer{1});
+    fls = eval(answer{1});
+end
 for c = 1:length(handles.menu_Segmenter)
     if strcmp(get(handles.menu_Segmenter(c),'checked'),'on')
         alg = get(handles.menu_Segmenter(c),'label');
@@ -71,8 +75,10 @@ for j = 1:length(fls) % counter for files to be segmented
 end
 
 delete(txt);
-
-msgbox(['Segmented ' num2str(cnt) ' files.'],'Segmentation complete')
+if isfield(handles,'AutomationELM')
+else
+    msgbox(['Segmented ' num2str(cnt) ' files.'],'Segmentation complete')
+end
 
 %%
 function amp = eg_CalculateAmplitude(handles)
