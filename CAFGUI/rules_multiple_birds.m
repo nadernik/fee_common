@@ -184,15 +184,27 @@ function buttonExport_Callback(hObject, eventdata, handles)%#ok
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-if hasDuplicatePartags([handles.birds.rules])
-    errordlg('Cannot export because there are duplicate partag names')
-    return
+% Set the bird and rule numbers for TDT ParTags
+% Every TDT ParTag has a name like 'basename_birdnum_rulenum'
+% where birdnum and rulenum are integers. birdnum is stored in
+% handles.birds.number and rulenum is stored in
+% handles.birds.rules.tdtPartagSuffix
+for b = 1:length(handles.birds)
+    for r = 1:length(handles.birds(b).rules)
+        handles.birds(b).rules(r).tdtTags = setPartagBirdNumber( ...
+            handles.birds(b).rules(r).tdtTags, ...
+            handles.birds(b).number);
+        handles.birds(b).rules(r).tdtTags = setPartagRuleNumber( ...
+            handles.birds(b).rules(r).tdtTags, ...
+            handles.birds(b).rules(r).tdtPartagSuffix);
+    end
 end
 
 % Connect to TDT RX8 with ActiveX control
 if ~isfield(handles,'RP')
     handles.RP = actxcontrol('RPco.x',[5 5 26 26]);
 end
+guidata(hObject, handles)
 handles.RP.ConnectRX8('USB', 1);
 status=double(handles.RP.GetStatus); % Get status
 if bitget(status,1)==0; % Checks for connection
@@ -202,7 +214,7 @@ end
 % Stop the TDT and load the circuit
 handles.RP.Halt; % Stops any processing chains running on RP2
 handles.RP.ClearCOF; % Clears all the buffers and circuits on RP2
-handles.RP.LoadCOF(handles.tdt.rcx);
+handles.RP.LoadCOF(handles.tdtCircuit);
 handles.RP.Run;
 status=double(handles.RP.GetStatus); % Get status
 if bitget(status,1)==0; % Checks for connection
