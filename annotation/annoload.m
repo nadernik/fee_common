@@ -1,23 +1,27 @@
 function anno = annoload(exper, varargin)
+%ANNOLOAD load annotation created from acquisitionGui exper
+%
+%Usage:
+% ANNO = ANNOLOAD(EXPER);
+% ANNO = ANNOLOAD(EXPER, PT);
+%
+% ANNO is the annotation
+%
+% EXPER is an exper struct (typically created by acquisitionGui and stored
+% in exper.mat inside the exper's directory).
+%
+% PT is the part of the annotation to load. If omitted, the first part is
+% loaded.
 
-filename = sprintf('%s_annotation_%s', exper.birdname, exper.expername);
 if nargin > 1
     part = varargin{1};
 else
     part = 1;
 end
 
-if strcmp(part,'end')
-    while exist(exist(filename,'file'))
-        filename = sprintf('%s-pt%03.f', filename, part);
-        part = part + 1;
-    end
-    part = part - 1;
-end
-
-if part ~= 1
-    % if part is 1, there is no suffix
-    filename = sprintf('%s-pt%03.f', filename, part);
-end
+filename = annofilename(exper.birdname, exper.expername, ...
+    'Type', 'annotation', ...
+    'Part', part, ...
+    'RootDir', getExperRootdir(exper));
 
 anno = aaLoadHashtable(filename);
