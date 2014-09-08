@@ -11,7 +11,7 @@ N1 = length(vcdb1.d.v);
 N2 = length(vcdb2.d.v);
 
 % easy stuff
-vcdb.d.v = [vcdb1.d.v;  vcdb2.d.v];
+vcdb.d.v   = [vcdb1.d.v;  vcdb2.d.v];
 vcdb.d.cn  = [vcdb1.d.cn; vcdb2.d.cn];
 vcdb.d.t   = [vcdb1.d.t;  vcdb2.d.t];
 vcdb.d.i   = [vcdb1.d.i;  vcdb2.d.i];
@@ -27,6 +27,10 @@ end
 
 % vector features
 all_vfname = unique([vcdb1.f.vfname; vcdb2.f.vfname]);
+vcdb.f.vfname  = cell(length(all_vfname), 1);
+vcdb.f.vffcn   = cell(length(all_vfname), 1);
+vcdb.f.vfparam = cell(length(all_vfname), 1);
+vcdb.d.vf      = cell(length(all_vfname), 1);
 for vf = 1:length(all_vfname) % for each vf
     vfname = all_vfname{vf};
     vf1 = getvfnum(vcdb1, vfname);
@@ -133,5 +137,9 @@ for sf = 1:length(all_sfname) % for each sf
     end
 end
 
-vcdb.f.sfname = vcdb.f.sfname';
-vcdb.f.vfname = vcdb.f.vfname';
+if isfield(vcdb.f, 'sfname')
+    vcdb.f.sfname = vcdb.f.sfname';
+end
+if isfield(vcdb.f, 'vfname')
+    vcdb.f.vfname = vcdb.f.vfname';
+end
