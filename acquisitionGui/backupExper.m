@@ -122,5 +122,7 @@ delete(zipfiletemp)
 if P.DeleteOriginal
     disp('Deleting originals...')
     rmdir(exper.dir, 's')
-    delete(annofiles{:})
+    if ~isempty(annofiles)
+        delete(annofiles{:})
+    end
 end
