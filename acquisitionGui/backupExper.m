@@ -26,11 +26,16 @@ function backupExper(varargin)
 %        backup. Default = false
 %    BACKUPEXPER( ... , 'DeleteOriginal', true)
 %        Deletes original files after they are backed up. Default = false
+%    BACKUPEXPER( ... , 'OverwriteDestination', true)
+%        Overwrite destination file, if it exists. If this option is not
+%        set and the destination file already exists, the backup will fail
+%        with an error message.
 
 %% Default parameter values
 P.RootDir = 'C:\stetner\data';
 P.DeleteOriginal = false;
 P.WithAnnotation = false;
+P.OverwriteDestination = false;
 
 %% Parse arguments
 if isexper(varargin{1})
@@ -55,9 +60,17 @@ if exist(backuptempdir, 'dir')
     rmdir(backuptempdir, 's')
 end
 mkdir(backuptempdir)
-
-%% Check to make sure destination exists
+fname = [birdname '_' expername '.tar.gz'];
+zipfiletemp = fullfile(backuptempdir, fname); % zip file in local temp directory (with path)
+zipfiledest = fullfile(destination,   fname); % destination zip file (with path) 
+%% Check to make sure destination directory exists
 assert(exist(destination, 'dir') == 7, 'Destination does not exist')
+
+%% Check to make sure destination file does NOT exist
+
+if ~P.OverwriteDestination && exist(zipfiledest, 'file')
+    error('Destination file %s exists. Set the input parameter OverwriteDestination to true to force an overwrite.', zipfiledest)
+end
 
 %%
 annofiles = {};
@@ -92,19 +105,18 @@ for ii = 1:length(annofiles)
 end
 
 disp('Compressing...')
-zippedFile = fullfile(backuptempdir, [expername '.tar.gz']);
-tar(zippedFile, birddirTemp)
+tar(zipfiletemp, birddirTemp)
 
 
 
 %% Copy to destination
 disp('Copying...')
-[success, msg, msgid] = copyfile(zippedFile, destination);
+[success, msg, msgid] = copyfile(zipfiletemp, destination);
 if ~success
     error(['Backup failed: ' msgid msg])
 end
 % always delete zipped file and tarball after copying
-delete(zippedFile)
+delete(zipfiletemp)
 
 %% Delete original
 if P.DeleteOriginal
