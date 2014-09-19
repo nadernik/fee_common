@@ -56,7 +56,14 @@ function rules_multiple_birds_OpeningFcn(hObject, eventdata, handles, varargin)%
 handles.output = hObject;
 
 % Initialize data structure
-handles.birds = struct('number', {}, 'name', {}, 'rules', {}, 'exper', {}, 'ruleSummary', {});
+handles.birds = struct(...
+    'number', {}, ...
+    'name', {}, ...
+    'rules', {}, ...
+    'exper', {}, ...
+    'ruleSummary', {}, ...
+    'targetSyllable', {}, ...
+    'targetRegion', {});
 handles.selectedBird = 1;
 handles.tdtCircuit = '';
 
@@ -106,6 +113,8 @@ else
 end
 handles.birds(end).name = handles.birds(end).exper.birdname;
 handles.birds(end).ruleSummary = '';
+handles.birds(end).targetSyllable = [1, 2];
+handles.birds(end).targetRegion = [50, 60]; % target region in milliseconds
 handles.selectedBird = length(handles.birds);
 handles = update_display(handles);
 guidata(hObject, handles)

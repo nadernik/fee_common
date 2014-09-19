@@ -56,6 +56,8 @@ function ruleEditor_OpeningFcn(hObject, eventdata, handles, varargin)%#ok
 handles.birdinfo = varargin{1};
 handles.rules = handles.birdinfo.rules;
 handles.exper = handles.birdinfo.exper;
+handles.targetSyllable = handles.birdinfo.targetSyllable;
+handles.targetRegionMs = handles.birdinfo.targetRegion;
 if isempty(handles.rules)
     handles.list2rule = [];
 else
@@ -70,8 +72,6 @@ set(handles.popupCondition, 'String', {handles.conditions.name})
 % Default parameters for testing
 handles.testFile = 1; % default file number to analyze when "All rules for one file" button is pushed
 handles.statsFiles = 1; % default file numbers to do statistics on when "Hit/escape statistics" button is pushed
-handles.targetSyllable = [1, 2];
-handles.targetRegionMs = [50, 60]; % target region in milliseconds
 
 % List of file numbers (used for testing dialogues)
 filenum = 1:getLatestDatafileNumber(handles.exper);
@@ -83,14 +83,10 @@ handles.filestr = arrayfun(@int2str, filenum, 'UniformOutput', false); % cell ar
 % would make it complicated to keep track of dependencies between rules.
 % Invisibility is accomplished by setting the 'visible' property to false
 % and also removing the corresponding entry in handles.list2rule
-handles.DELETED_RULE.name = 'DELETED';
-handles.DELETED_RULE.condition = -1;
-handles.DELETED_RULE.tdtPartagSuffix = -1;
-handles.DELETED_RULE.tdtTags = struct();
-handles.DELETED_RULE.actionNoise = 0;
-handles.DELETED_RULE.visible = false;
-handles.DELETED_RULE.params = struct();
-handles.DELETED_RULE.summary = 'This is a deleted rule. You should never see this text.';
+handles.DELETED_RULE = struct(handles.rules);
+handles.DELETED_RULE(1).name = 'DELETED';
+handles.DELETED_RULE(1).visible = false;
+handles.DELETED_RULE(1).summary = 'This is a deleted rule. You should never see this text.';
 
 handles.rSel = 1; % selected rule
 handles = updateDisplay(handles);
@@ -113,6 +109,8 @@ if isempty(handles)
     varargout{1} = [];
 else
     handles.birdinfo.rules = handles.rules;
+    handles.birdinfo.targetSyllable = handles.targetSyllable;
+    handles.birdinfo.targetRegion = handles.targetRegionMs;
     visibleRules = handles.rules([handles.rules.visible]);
     handles.birdinfo.ruleSummary = strjoin({visibleRules.summary}, '\n\n');
     varargout{1} = handles.birdinfo;
@@ -407,12 +405,12 @@ if ~ok
 end
 handles.statsFiles = sel;
 
+guidata(hObject, handles)
+
 testRulesBySyllable(handles.rules, handles.exper, ...
     'File', handles.statsFiles, ...
     'TargetSyllable', handles.targetSyllable, ...
     'TargetRange', handles.targetRegionMs)
-guidata(hObject, handles)
-
 
 % --- Executes on button press in buttonUp.
 function buttonUp_Callback(hObject, eventdata, handles)%#ok
