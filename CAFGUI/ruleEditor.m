@@ -86,11 +86,11 @@ handles.filestr = arrayfun(@int2str, filenum, 'UniformOutput', false); % cell ar
 handles.DELETED_RULE.name = 'DELETED';
 handles.DELETED_RULE.condition = -1;
 handles.DELETED_RULE.tdtPartagSuffix = -1;
-handles.DELETED_RULE.tdtTags = [];
+handles.DELETED_RULE.tdtTags = struct();
 handles.DELETED_RULE.actionNoise = 0;
 handles.DELETED_RULE.visible = false;
+handles.DELETED_RULE.params = struct();
 handles.DELETED_RULE.summary = 'This is a deleted rule. You should never see this text.';
-handles.DELETED_RULE.params = [];
 
 handles.rSel = 1; % selected rule
 handles = updateDisplay(handles);
