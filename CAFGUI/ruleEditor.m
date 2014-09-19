@@ -113,7 +113,8 @@ if isempty(handles)
     varargout{1} = [];
 else
     handles.birdinfo.rules = handles.rules;
-    handles.birdinfo.ruleSummary = strjoin({handles.rules.summary}, '\n\n');
+    visibleRules = handles.rules([handles.rules.visible]);
+    handles.birdinfo.ruleSummary = strjoin({visibleRules.summary}, '\n\n');
     varargout{1} = handles.birdinfo;
     delete(handles.figure1)
 end
