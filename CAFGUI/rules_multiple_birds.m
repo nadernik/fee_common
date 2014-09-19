@@ -237,10 +237,10 @@ wbh = waitbar(0);
 for b = 1:length(handles.birds)
     for r = 1:length(handles.birds(b).rules)
         if handles.birds(b).rules(r).visible
+            loadStatus = sprintf('Bird %s: Loading rule %s', handles.birds(b).name, handles.birds(b).rules(r).name);
+            waitbar(numLoaded / numRules, wbh, loadStatus);
             exportRule2tdt(handles.birds(b).rules(r), handles.RP) %%%DEBUG
             numLoaded = numLoaded + 1;
-            loadStatus = sprintf('Bird %s: Loaded rule %s', handles.birds(b).name, handles.birds(b).rules(r).name);
-            waitbar(numLoaded / numRules, wbh, loadStatus);
         end
     end
 end
