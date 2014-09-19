@@ -191,12 +191,14 @@ function buttonExport_Callback(hObject, eventdata, handles)%#ok
 % handles.birds.rules.tdtPartagSuffix
 for b = 1:length(handles.birds)
     for r = 1:length(handles.birds(b).rules)
+        if handles.birds(b).rules(r).visible
         handles.birds(b).rules(r).tdtTags = setPartagBirdNumber( ...
             handles.birds(b).rules(r).tdtTags, ...
             handles.birds(b).number);
         handles.birds(b).rules(r).tdtTags = setPartagRuleNumber( ...
             handles.birds(b).rules(r).tdtTags, ...
             handles.birds(b).rules(r).tdtPartagSuffix);
+        end
     end
 end
 
