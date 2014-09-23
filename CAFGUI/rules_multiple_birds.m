@@ -22,7 +22,7 @@ function varargout = rules_multiple_birds(varargin)
 
 % Edit the above text to modify the response to help rules_multiple_birds
 
-% Last Modified by GUIDE v2.5 18-Aug-2014 13:39:58
+% Last Modified by GUIDE v2.5 19-Sep-2014 10:29:44
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -66,6 +66,7 @@ handles.birds = struct(...
     'targetRegion', {});
 handles.selectedBird = 1;
 handles.tdtCircuit = '';
+handles.testFile = 1; % default file to test on TDT. updated each time file is tested
 
 % Turn debugging on or off (for debugdisp function)
 global DEBUG_TEXT
@@ -409,3 +410,47 @@ set(handles.panelRule, 'Title', ['Rules for ' handles.birds(handles.selectedBird
 set(handles.textRuleSummary, 'String', handles.birds(handles.selectedBird).ruleSummary)
 
 set(handles.editCircuit, 'String', handles.tdtCircuit)
+
+
+% --- Executes on button press in buttonTest.
+function buttonTest_Callback(hObject, eventdata, handles)
+% hObject    handle to buttonTest (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% choose file
+exper = handles.birds(handles.selectedBird).exper;
+filenum = 1:getLatestDatafileNumber(exper);
+filestr = arrayfun(@int2str, filenum, 'UniformOutput', false); % cell array of strings
+[sel, ok] = listdlg('ListString', filestr, ...
+                    'SelectionMode', 'single', ...
+                    'InitialValue', handles.testFile, ...
+                    'Name', 'Test all rules on one file', ...
+                    'PromptString', 'Choose one file');
+if ~ok
+    return
+end
+handles.testFile = sel;
+guidata(hObject, handles)
+
+% load audio and resample to TDT sampling rate
+Fs_in = exper.desiredInSampRate;
+Fs = 24414; %Hz, TDT sampling rate
+audio_in = loadAudio(exper, handles.testFile);
+audio = resample2(audio_in, Fs, Fs_in);
+
+% export rules
+buttonExport_Callback(handles.buttonExport, [], handles)
+
+% test rules
+birdnum = handles.birds(handles.selectedBird).number;
+noise = testRulesTdt(audio, handles.RP, birdnum);
+
+% display results
+figure
+axh(1) = subplot(2,1,1);
+displaySpecgramQuick(audio, Fs)
+axh(2) = subplot(2,1,2);
+t = (0:length(noise)-1)*1/Fs;
+plot(t,noise)
+linkaxes(axh, 'x')
