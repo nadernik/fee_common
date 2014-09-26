@@ -55,6 +55,8 @@ function annorealtime_OpeningFcn(hObject, eventdata, handles, varargin)
 % Choose default command line output for annorealtime
 handles.output = hObject;
 
+handles.birds = [];
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -102,6 +104,25 @@ function buttonAddExper_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+[newexper, success] = loadExperGui;
+if ~success
+    debugdisp('Loading experiment failed. Abort new bird.')
+    return
+end
+
+bn = length(handles.birds) + 1;
+handles.birds(bn).exper = newexper;
+
+vcdbfile = getVcdbFilename(newexper);
+isLoaded = false;
+if exist(vcdbfile, 'file')
+    [handles.birds(bn).vcdb, isLoaded] = loadVcdb(vcdbfile);
+end
+if ~isLoaded
+    handles.birds(bn).vcdb = [];
+    handles.birds(bn).lastfile = 0;
+end
+guidata(hObject, handles)
 
 
 function editInterval_Callback(hObject, eventdata, handles)
@@ -138,12 +159,60 @@ function buttonStart_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonStart (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+stopfcn = @(obj,evnt) saveAllVcdb(hObject);
+timerfcn = @(obj,evnt) annotimerfcn(hObject);
+handles.timer = timer('ExecutionMode', 'fixedRate', ...
+    'Period', 60, ...
+    'StopFcn', stopfcn, ...
+    'TimerFcn', timerfcn);
+guidata(hObject, handles)
+start(handles.timer)
 
+    
 
 % --- Executes on button press in buttonStop.
 function buttonStop_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonStop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+stop(handles.timer)
 
+function annotimerfcn(fh)
+debugdisp('entering annorealtime timer callback')
+handles = guidata(fh);
+for b = 1:length(handles.birds)
+    filelist = getUnanalyzedFiles(handles.birds(b));
+    if ~isempty(filelist)
+        vcdbnew = exper2vcdb(handles.birds(b).exper, ...
+            'FileNumber', filelist, handles.vcdbparams{:});
+        handles.birds(b).vcdb = vcdbmerge(handles.birds(b).vcdb, vcdbnew);
+    end
+end
+guidata(fh, handles)
 
+function filenumbers = getUnanalyzedFiles(brd)
+f1 = brd.lastfile + 1;
+f2 = getLatestDatafileNumber(brd.exper); 
+% Just to be safe, do not include the last file if it is less than 5
+% minutes old because acquisitionGui might be writing to it.
+if now - getDatafileTime(brd.exper, f2) < datenum(0,0,0,0,5,0) 
+    f2 = f2 - 1;
+end
+filenumbers = f1:f2;
+
+function t = getDatafileTime(exper, filenumber)
+filename = fullfile(exper.dir, getExperAudioFilename(exper, filenumber));
+d = dir(filename);
+t = d.datenum;
+
+function saveAllVcdb(fh)
+handles = guidata(fh);
+for b = 1:length(handles.birds)
+    vcdb = handles.birds(b).vcdb;
+    save(getVcdbFilename(handles.birds(b).exper), 'vcdb')
+end
+
+function filename = getVcdbFilename(exper)
+rootdir = getExperRootdir(exper);
+shortname = ['vcdb_' exper.birdname '_' exper.expername '.mat'];
+filename = fullfile(rootdir, exper.birdname, shortname);
