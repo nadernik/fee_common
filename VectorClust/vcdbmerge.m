@@ -7,6 +7,17 @@ P = parseargs(P, varargin{:});
 % features that do not exist in vcdb1. Inherits fileName and pathName from
 % vcdb1
 
+if isempty(vcdb1)
+    vcdb = vcdb2;
+    return
+elseif isempty(vcdb2)
+    vcdb = vcdb1;
+    return
+end
+
+assert(isvcdb(vcdb1), 'vcdb1 is not a valid vcdb')
+assert(isvcdb(vcdb2), 'vcdb2 is not a valid vcdb')
+
 N1 = length(vcdb1.d.v);
 N2 = length(vcdb2.d.v);
 
