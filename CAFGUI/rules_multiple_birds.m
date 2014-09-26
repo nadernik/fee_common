@@ -444,7 +444,7 @@ buttonExport_Callback(handles.buttonExport, [], handles)
 
 % test rules
 birdnum = handles.birds(handles.selectedBird).number;
-noise = testRulesTdt(audio, handles.RP, birdnum);
+noise = testRulesTdt(audio, handles.RP, int2str(birdnum));
 
 % display results
 figure
