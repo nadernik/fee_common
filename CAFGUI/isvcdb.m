@@ -58,7 +58,6 @@ try
     yand(isvector(vcdb.f.sfparam), 'Not a vector: vcdb.f.sfparam')
     
 catch
-    keyboard
     y = false;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
