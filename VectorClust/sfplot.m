@@ -7,5 +7,8 @@ t = vcdb.d.t(P.mask);
 y = getsf(vcdb, sf, P.mask);
 if ~isempty(P.smoothing)
     y = smooth(y, P.smoothing);
+    % remove edge effects from smoothing
+    y(1:(P.smoothing/2)) = nan;
+    y((end-P.smoothing/2):end) = nan;
 end
 h = plot(t, y);

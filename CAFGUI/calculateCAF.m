@@ -32,7 +32,7 @@ rmsFilteredNoise =  1; % Not computed
 %Resample audio for the tdt.
 audio_daq = P.audio;
 audio_daq = audio_daq - mean(audio_daq);
-audio_tdt = resample(audio_daq,P.tdt_fs, P.fs);
+audio_tdt = resample2(audio_daq,P.tdt_fs, P.fs);
 
 %Compute loudness of audio
 if(isempty(lpSongPowerFilter) | (tdtfs~=P.tdt_fs) | (~P.bQuick))

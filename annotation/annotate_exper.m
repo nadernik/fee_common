@@ -47,6 +47,10 @@ P.fMinSyllDuration = .016; %secs
 P.fMinIntervalDuration = .007; %secs
 P.fMaxSyllDuration = 1; %sec
 
+% Pitch detection parameters
+P.minPitchFreq = 400; % minimum pitch that can be estimated
+P.maxPitchFreq = 2000; % maximum pitch that can be estimated
+
 P = parseargs(P,varargin{:});
 
 %%
@@ -78,5 +82,10 @@ end
 
 %compute features
 for(nAnnot = 1:length(annotNames))
-    caf_ProcessAnnotation(annotNames{nAnnot}, [], 'all', [], ['getinfo_',birdname], 'bOnlyLabled', false, 'whichAnalyses', [1,3,5]);
+    
+    caf_ProcessAnnotation(annotNames{nAnnot}, [], 'all', [], ['getinfo_',birdname], ...
+        'bOnlyLabled', false, ...
+        'whichAnalyses', [1,3,5], ...
+        'minPitchFreq', P.minPitchFreq, ...
+        'maxPitchFreq', P.maxPitchFreq);
 end

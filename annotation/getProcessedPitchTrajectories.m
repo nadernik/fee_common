@@ -1,4 +1,52 @@
 function [pitchTraj, absTime, syllType, dura] = getProcessedPitchTrajectories(birdName, varargin)
+%GETPROCESSEDPITCHTRAJECTORIES pitch trajectories from processed annotation files
+%
+% Usage:
+%     [pitchTraj, absTime, syllType, dura] = getProcessedPitchTrajectories(birdName, varargin)
+%
+% Outputs:
+%     pitchTraj = cell array of pitch trajectories
+%     absTime = vector of the start times for each pitch trajectory, in
+%               datenum format
+%     syllType = vector of syllable types (usually set by vectorClust) for
+%                each pitch trajectory
+%     dura = vector of durations of pitch trajectories (in seconds)
+%
+% Parameters:
+%     experNames (default = [])
+%         Single exper name or a cell array of exper names from which pitch
+%         trajectories are gotten. If blank, pitch trajectories are gotten
+%         from all expers available.
+%     prefix (default = 'all')
+%         Prefix of annotation to get pitch trajectories from. Name of
+%         annotation files are birdname_prefix_dataType_expername.mat
+%     rootdir (default = 'c:\stetner\data')
+%         Root directory for data. Annotation files should be in
+%         rootdir\birdname\.
+%     targetSyll (default = [])
+%         Syllable label(s) to include. If blank, syllables with all
+%         labels (including unlabeled) are included. 
+%     timeRanges (default = [])
+%         Minimum and maximum syllable start times to include, in datenum
+%         format. Return pitch trajectories from syllables that start
+%         between timeRanges(1) and timeRanges(2). If empty, sylllables are
+%         included regardless of start time.
+%     selMode (default = 'none')
+%         If 'randFrac', a random subset of pitch trajectories are
+%         returned. Use the selParam parameter to set what fraction of
+%         syllables are returned. If 'none', the full selection is
+%         returned.
+%     selParam (default = [])
+%         If selMode parameter is 'randFrac', this parameter sets what
+%         fraction of selected syllables are returned (between 0 and 1).
+%     targetRegion (default = [])
+%         Return a subset of each pitch trajectory between targetRegion(1)
+%         and targetRegion(2). See also the targetMethod parameter.
+%     targetMethod (default = 'percent')
+%         Units for targetRegion parameter. Can be 'percent' or 'time'
+%     
+% See also: ANNOTATE_EXPER, GETPROCESSEDDATAFILES,
+%           GETPROCESSEDSYLLABLESELECTION
 
 	%Default Parameters
 	%To get files

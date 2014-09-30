@@ -1,4 +1,4 @@
-function vcdb = merge_vcdb(vcdb1, vcdb2, varargin)
+function vcdb = vcdbmerge(vcdb1, vcdb2, varargin)
 P.mode = {'omit', 'nan', 'compute'}; % how to deal with missing scalar features
 P = parseargs(P, varargin{:});
 % Assumes that if two features have the same name then they are the same.
@@ -7,11 +7,22 @@ P = parseargs(P, varargin{:});
 % features that do not exist in vcdb1. Inherits fileName and pathName from
 % vcdb1
 
+if isempty(vcdb1)
+    vcdb = vcdb2;
+    return
+elseif isempty(vcdb2)
+    vcdb = vcdb1;
+    return
+end
+
+assert(isvcdb(vcdb1), 'vcdb1 is not a valid vcdb')
+assert(isvcdb(vcdb2), 'vcdb2 is not a valid vcdb')
+
 N1 = length(vcdb1.d.v);
 N2 = length(vcdb2.d.v);
 
 % easy stuff
-vcdb.d.v = [vcdb1.d.v;  vcdb2.d.v];
+vcdb.d.v   = [vcdb1.d.v;  vcdb2.d.v];
 vcdb.d.cn  = [vcdb1.d.cn; vcdb2.d.cn];
 vcdb.d.t   = [vcdb1.d.t;  vcdb2.d.t];
 vcdb.d.i   = [vcdb1.d.i;  vcdb2.d.i];
@@ -27,6 +38,10 @@ end
 
 % vector features
 all_vfname = unique([vcdb1.f.vfname; vcdb2.f.vfname]);
+vcdb.f.vfname  = cell(length(all_vfname), 1);
+vcdb.f.vffcn   = cell(length(all_vfname), 1);
+vcdb.f.vfparam = cell(length(all_vfname), 1);
+vcdb.d.vf      = cell(length(all_vfname), 1);
 for vf = 1:length(all_vfname) % for each vf
     vfname = all_vfname{vf};
     vf1 = getvfnum(vcdb1, vfname);
@@ -36,7 +51,7 @@ for vf = 1:length(all_vfname) % for each vf
         % if vf is in both, just concatenate
         vcdb.f.vffcn{vf,1} = vcdb1.f.vffcn{vf1};
         vcdb.f.vfparam{vf,1} = vcdb1.f.vfparam{vf1};
-        vcdb.d.vf{vf} = [vcdb1.d.vf{vf1}; vcdb2.d.vf{vf2}];
+        vcdb.d.vf{vf,1} = [vcdb1.d.vf{vf1}; vcdb2.d.vf{vf2}];
     elseif ~isempty(vf1) && isempty(vf2)
         % if sf is in 1 but not 2
         switch P.mode
@@ -131,4 +146,11 @@ for sf = 1:length(all_sfname) % for each sf
                 end
         end
     end
+end
+
+if isfield(vcdb.f, 'sfname')
+    vcdb.f.sfname = vcdb.f.sfname';
+end
+if isfield(vcdb.f, 'vfname')
+    vcdb.f.vfname = vcdb.f.vfname';
 end

@@ -1,7 +1,5 @@
-function [bNoise, varargout] = testRulesOnFile(handles, audio)
-Fs = 24414; %Hz, TDT sampling rate
-% get list of rules to test
-toTest = handles.list2rule;%(get(handles.listRules,'Value'));
+function [bNoise, varargout] = testRulesOnFile(rules, audio)
+toTest = find([rules.visible] == 1); % only test visible rules
 tested = zeros(size(toTest));
 % evaluate each rule
 bRuleMet = [];
@@ -9,10 +7,10 @@ while ~all(tested)
     evalFlag = 0;
     for r = toTest(~tested)
         rTested = toTest(logical(tested));
-        dep = handles.rules(r).params.dependencies;
+        dep = rules(r).params.dependencies;
         if isempty(dep) || ... % if no dependencies
             all(ismember(dep, rTested)) % if all dependencies met
-        bRuleMet(:,r) = feval(handles.rules(r).params.filterFunc, audio, handles.rules(r).params, bRuleMet);
+        bRuleMet(:,r) = feval(rules(r).params.filterFunc, audio, rules(r).params, bRuleMet);
         tested(toTest==r) = 1;
         evalFlag = 1;
         end
@@ -27,7 +25,7 @@ end
 % use noise-determining rule(s)
 bNoise = zeros(size(audio));
 for r = toTest
-    if handles.rules(r).actionNoise
+    if rules(r).actionNoise
         bNoise(logical(bRuleMet(:,r))) = 1;
     end
 end

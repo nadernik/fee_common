@@ -5698,7 +5698,7 @@ for c = 1:length(handles.DatesAndTimes)
     end
 end
 
-
+%This is the function that "export matlab data" calls
 % --------------------------------------------------------------------
 function menu_ExportData_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_ExportData (see GCBO)
@@ -5816,7 +5816,7 @@ trigInfo = orderfields(triggerInfo,[23:25 21:22 31 2 4:5 29 3 6:7 8:13 26 19:20 
 save([path file],'trigInfo');
 
 
-
+%This is the function that "export matlab figure" calls
 % --------------------------------------------------------------------
 function menu_ExportFigure_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_ExportFigure (see GCBO)

@@ -14,6 +14,9 @@ function vcdb_all = anno2vcdb(birdname, expername, varargin)
 % Audio (true)
 %   Boolean controls whether audio is loaded into vcdb.d.v. Setting to
 %   false saves time and memory.
+% Vectors (true)
+%   Boolean controls whether vector featurea are loaded into vcdb.d.vf.
+%   Setting to false saves time and memory.
 % Part (1:1000)
 %   If annotation is divided into multiple parts, you can convert only a
 %   subset of those parts. Part must be an array of part numbers. Part
@@ -22,6 +25,7 @@ function vcdb_all = anno2vcdb(birdname, expername, varargin)
 
 P.RootDir = 'c:\stetner\data';
 P.Audio = true;
+P.Vectors = true;
 P.Part = 1:1000;
 P = parseargs(P, varargin{:});
 
@@ -33,14 +37,14 @@ for part = P.Part
         'Part', part, ...
         'RootDir', P.RootDir);
     pitchfile = annofilename(birdname, expername, ...
-        'Type', 'pitch', ...
-        'Part', part, ...
-        'RootDir', P.RootDir);
+            'Type', 'pitch', ...
+            'Part', part, ...
+            'RootDir', P.RootDir);
     if ~exist(miscfile, 'file') || ~exist(pitchfile, 'file')
         continue
     end
+    
     load(miscfile)
-    load(pitchfile)
 
     % audio
     if P.Audio
@@ -55,34 +59,41 @@ for part = P.Part
     end
     
     % vector features
-    vcdb.f.vfname{1,1}  = 'pitch';
-    vcdb.f.vffcn{1,1}   = mfilename;
-    vcdb.f.vfparam{1,1} = varargin;
-    vcdb.d.vf{1,1}    = {pitch.segs.pitch}';
-
-    vcdb.f.vfname{2,1}  = 'pitchGoodness';
-    vcdb.f.vffcn{2,1}   = mfilename;
-    vcdb.f.vfparam{2,1} = varargin;
-    vcdb.d.vf{2,1}    = {pitch.segs.pitchGoodness}';
-    
-    vcdb.f.vfname{3,1}  = 'harmonicPower';
-    vcdb.f.vffcn{3,1}   = mfilename;
-    vcdb.f.vfparam{3,1} = varargin;
-    vcdb.d.vf{3,1}    = {pitch.segs.harmonicPower}';
-    
-    vcdb.f.vfname{4}  = 'pitchTime';
-    vcdb.f.vffcn{4}   = mfilename;
-    vcdb.f.vfparam{4} = varargin;
-    vcdb.d.vf{4}    = {pitch.segs.pitchTime}';
-    
-    vcdb.f.vfname{5}  = 'entropy';
-    vcdb.f.vffcn{5}   = mfilename;
-    vcdb.f.vfparam{5} = varargin;
-    vcdb.d.vf{5}    = {pitch.segs.entropy}';
+    if P.Vectors
+        load(pitchfile)
         
-    % scalar features
-%     vcdb.d.sf = nan(size(vcdb.d.v));
-    
+        vcdb.f.vfname{1,1}  = 'pitch';
+        vcdb.f.vffcn{1,1}   = mfilename;
+        vcdb.f.vfparam{1,1} = varargin;
+        vcdb.d.vf{1,1}    = {pitch.segs.pitch}';
+        
+        vcdb.f.vfname{2,1}  = 'pitchGoodness';
+        vcdb.f.vffcn{2,1}   = mfilename;
+        vcdb.f.vfparam{2,1} = varargin;
+        vcdb.d.vf{2,1}    = {pitch.segs.pitchGoodness}';
+        
+        vcdb.f.vfname{3,1}  = 'harmonicPower';
+        vcdb.f.vffcn{3,1}   = mfilename;
+        vcdb.f.vfparam{3,1} = varargin;
+        vcdb.d.vf{3,1}    = {pitch.segs.harmonicPower}';
+        
+        vcdb.f.vfname{4}  = 'pitchTime';
+        vcdb.f.vffcn{4}   = mfilename;
+        vcdb.f.vfparam{4} = varargin;
+        vcdb.d.vf{4}    = {pitch.segs.pitchTime}';
+        
+        vcdb.f.vfname{5}  = 'entropy';
+        vcdb.f.vffcn{5}   = mfilename;
+        vcdb.f.vfparam{5} = varargin;
+        vcdb.d.vf{5}    = {pitch.segs.entropy}';
+    else
+        vcdb.f.vfname = {};
+        vcdb.f.vffcn = {};
+        vcdb.f.vfparam = {};
+        vcdb.vf = {};
+    end
+        
+    % scalar features    
     vcdb.f.sfname{1}  = 'duration';
     vcdb.f.sffcn{1}   = mfilename;
     vcdb.f.sfparam{1} = varargin;
@@ -104,10 +115,17 @@ for part = P.Part
     vcdb.d.t = [misc.segs.absStart]'; %column vector
     vcdb.d.cn = nan(size(vcdb.d.v));
     vcdb.c = [];
-    [pathname, filename, ext, versn] = fileparts(miscfile);
+    [pathname, filename, ext] = fileparts(miscfile);
     vcdb.fileName = pathname;
     vcdb.pathName = filename;
-
+    
+    if isfield(vcdb.f, 'sfname')
+        vcdb.f.sfname = vcdb.f.sfname';
+    end
+    if isfield(vcdb.f, 'vfname')
+        vcdb.f.vfname = vcdb.f.vfname';
+    end
+    
     % merge with other parts
     if exist('vcdb_all', 'var')
         vcdb_all = vcdbmerge(vcdb_all, vcdb);
@@ -116,5 +134,3 @@ for part = P.Part
     end
     clear vcdb
 end
-vcdb_all.f.sfname = vcdb_all.f.sfname';
-vcdb_all.f.vfname = vcdb_all.f.vfname';

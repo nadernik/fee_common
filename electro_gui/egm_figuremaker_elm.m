@@ -1,14 +1,14 @@
 function handles = egm_figuremaker_elm(handles)
 shg;
 figure; 
-h = subplot(2,1,1)
+h = subplot(2,1,1);
 fs = handles.fs;
 lims = get(handles.axes_Sonogram, 'xlim');
 if lims(1) < 1/fs;
     lims(1) = 1/fs;
 end
 if lims(2)*fs > numel(handles.sound)
-    lims(2) = numel(handles.sound)/fs
+    lims(2) = numel(handles.sound)/fs;
 end
 ind_time = lims(1):1/fs:lims(2);
 song = handles.sound(round(ind_time*fs));
@@ -39,7 +39,7 @@ time = 0:1/fs:(lims(2)-lims(1));
 % %imagesc(t, f, 10*log10(S)');shg
 % %set(gca, 'Ydir', 'normal')
 %% using displayspecgramquick
-set(gca, 'xtick', [])
+set(gca, 'xtick', []);
 displaySpecgramQuick(song,fs); 
 temp = get(gca, 'Children'); 
 cdata = get(temp, 'Cdata');
@@ -48,10 +48,10 @@ tdata = get(temp, 'xdata');
 subplot(2,1,1); 
 Thres = -16.2;
 cdata(cdata<Thres) = Thres; 
-imagesc(cdata, 'xdata', tdata, 'ydata', fdata); set(gca, 'ydir', 'normal')
+imagesc(cdata, 'xdata', tdata, 'ydata', fdata); set(gca, 'ydir', 'normal');
 %surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
-ylabel('Frequency (kHz)')
-set(gca, 'xtick', [], 'xticklabel', '')
+ylabel('Frequency (kHz)');
+set(gca, 'xtick', [], 'xticklabel', '');
 cmap = jet; 
 cmap(1,:) = zeros(1,3); % background = black
 colormap(cmap);
@@ -75,22 +75,22 @@ colormap(cmap);
 %%
 % subplot(3,1,2)
 % plot((1:size(handles.sound))/handles.fs, handles.amplitude)
-g = subplot(2,1,2)
-set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren')
-mini_max_plot(time, units, 'ax', g)
-xlabel('Time(s)'); ylabel('Voltage (mV)')
+g = subplot(2,1,2);
+set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren');
+mini_max_plot(time, units, 'ax', g);
+xlabel('Time(s)'); ylabel('Voltage (mV)');
 
-linkaxes([h g],'x')
+linkaxes([h g],'x');
 %xlim([lims(1) lims(2)])
 %% in order to make no space between plots
 ShrinkBy = 4; 
 p = get(h, 'pos');
 q = get(g, 'pos');
-m = mean([p(2) q(2)+q(4)])
-gap = p(2) - (q(2)+q(4));
-p(2) = m + gap/(2*ShrinkBy);
-q(4) = m-q(2)-  gap/(2*ShrinkBy);
-set(h, 'pos', p)
-set(g, 'pos', q)
+m = mean([p(2) q(2)+q(4)]);%Halfway point between axes
+gap = p(2) - (q(2)+q(4));%gap between axes
+p(2) = m + gap/(2*ShrinkBy);%move bottom of top axis
+q(4) = m-q(2)-  gap/(2*ShrinkBy);%move height of bottom axis
+set(h, 'pos', p);
+set(g, 'pos', q);
 %%
-set(gcf, 'Color', [1 1 1], 'papersize', [6 3], 'paperposition', [0 0 6 3])
+set(gcf, 'Color', [1 1 1], 'papersize', [6 3], 'paperposition', [0 0 6 3]);

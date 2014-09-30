@@ -542,13 +542,14 @@ if(dispfilenum > 0)
     set(hObject,'String','Show aligned antidromic');
     set(hObject,'BackgroundColor',[236/255,233/255,216/255]);
     stimClips = clipStimFromSignal(sig, fs, stimThreshold, preStimMs, postStimMs, maxStimPeakWidthMs, minStimSpacingSecs);
+    debugdisp(['Found ' int2str(size(stimClips,1)) ' stims on chan ' int2str(currchan)])
     if(~isempty(stimClips))
         axes(handles.axes3);
         cla;
         time = linspace(-preStimMs, postStimMs, size(stimClips,2));
         plot(time, stimClips');
-        xlim([-10,10]);
-        ylim([-2,2]);
+        xlim([-preStimMs,postStimMs]);
+        ylim([-0.5,0.5]);
         zoom on;
         %set rt and lf click to flip through individual stims.
     end
