@@ -5084,7 +5084,7 @@ switch str
         dtm = datenum(get(handles.text_DateAndTime,'string'));
         sd = datestr(dtm,'yyyymmdd');
         st = datestr(dtm,'HHMMSS');
-        [pathstr,name,ext,versn] = fileparts(get(handles.text_FileName,'string'));
+        [pathstr,name,ext] = fileparts(get(handles.text_FileName,'string'));
         sf = name;
         for c = 1:length(handles.SegmentTitles{filenum})
             if ~isempty(findstr(newlab,handles.SegmentTitles{filenum}{c})) | isempty(newlab) | (isempty(handles.SegmentTitles{filenum}{c}) & ~isempty(findstr(newlab,'''''')))
@@ -5136,7 +5136,7 @@ switch str
 
     case 'Sonogram'
         if get(handles.radio_Files,'value')==1
-            [pathstr,name,ext,versn] = fileparts(get(handles.text_FileName,'string'));
+            [pathstr,name,ext] = fileparts(get(handles.text_FileName,'string'));
             [file, path] = uiputfile([handles.DefaultDirectory '\' name '.jpg'],'Save image');
             if ~isstr(file)
                 delete(txtexp)
@@ -5387,7 +5387,7 @@ elseif get(handles.radio_Files,'value')==1
             delete(fig);
 
         case {'Current sound', 'Sound mix'}
-            [pathstr,name,ext,versn] = fileparts(get(handles.text_FileName,'string'));
+            [pathstr,name,ext] = fileparts(get(handles.text_FileName,'string'));
             [file, path] = uiputfile([handles.DefaultDirectory '\' name '.wav'],'Save sound');
             if ~isstr(file)
                 delete(txtexp)
