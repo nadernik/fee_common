@@ -10,7 +10,7 @@ end
 fls = eval(answer{1}); % array of files to be analyzed, convert from string to number
 lst = str2num(answer{2}); % array of histogram bin edges (ms)
 logaxis = str2num(answer{3});
-EventInd = str2num(answer{4});
+%EventInd = str2num(answer{4});
 ISIs = zeros(0,1);
 
 % user dialog to select data (added by Maya):
