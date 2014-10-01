@@ -46,7 +46,7 @@ cdata = get(temp, 'Cdata');
 fdata = get(temp, 'ydata'); 
 tdata = get(temp, 'xdata'); 
 subplot(2,1,1); 
-Thres = -16.2;
+Thres = -12;
 cdata(cdata<Thres) = Thres; 
 imagesc(cdata, 'xdata', tdata, 'ydata', fdata); set(gca, 'ydir', 'normal')
 %surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
