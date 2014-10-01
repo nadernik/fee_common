@@ -24,5 +24,5 @@ y = [];
 for j = 1:length(edges)-1
     [y_part c] = xcorr(a(edges(j)+1:edges(j+1)),k);
     y_part = y_part(find(c>=-round(sig*num*fs) & c<edges(j+1)-edges(j)-round(sig*num*fs)));
-    y = [y; y_part];
+    y(end+1:end+length(y_part)) = y_part;
 end
