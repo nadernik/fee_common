@@ -14,7 +14,7 @@ for ii = 1:length(fnames)
     end
 end
 
-if ~strcmp(exper.dir(end), filesep)
+if y == true && ~strcmp(exper.dir(end), filesep)
     y = false;
     debugdisp(['NOT an exper because dir does not end in ' filesep])
 end
