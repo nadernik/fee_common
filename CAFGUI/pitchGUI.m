@@ -1432,8 +1432,6 @@ function buttonAllSyllables_Callback(hObject, eventdata, handles)
 handles = Refresh(handles);
 AllSyllables(handles)
 
-guidata(hObject, handles);
-
 % --- Executes on button press in buttonSummary.
 function buttonSummary_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonSummary (see GCBO)
