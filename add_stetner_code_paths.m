@@ -31,6 +31,9 @@ for ii = 1:length(subdirs)
     addpath(paths_to_add)
 end
 
+% Remove Chronux
+rmpath(genpath(fullfile(code_dir, 'toolbox\chronux')))
+
 if verbosity > 0
     fprintf(' Done! \n')
 end
