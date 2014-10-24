@@ -30,6 +30,8 @@ function backupExper(varargin)
 %        Overwrite destination file, if it exists. If this option is not
 %        set and the destination file already exists, the backup will fail
 %        with an error message.
+%
+% See also: EXPERMOVE, ANNOMOVE
 
 %% Default parameter values
 P.RootDir = 'C:\stetner\data';
