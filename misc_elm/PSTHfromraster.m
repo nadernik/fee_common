@@ -1,3 +1,6 @@
+%% Data is compiled separately in 'datacompilation.m'
+
+
 %% During tutoring
 clear all; close all; 
 XLS = importdata('C:/Users/emackev/Documents/NIfDuringTutoring.xlsx');
@@ -83,6 +86,8 @@ for coni = 1:2 % 1 for tutoring 2 for art subsong
                 plot(x,n, 'Color', .8*ones(1,3));
             end
         end
+        X{cati,coni} = x; 
+        N{cati,coni} = n; 
     end
 end
 
@@ -93,6 +98,36 @@ for i = 1:4
         legend(h, CatNames)
     end
 end
+
+% collecting all the tutoring units to plot...
+x = []; 
+n = []; 
+for i = 1:length(CatNames)
+    x = [x X{i,1}];
+    n = [n N{i,1}];
+end
+figure(5); clf;hold on
+for ni = 1:size(x,2)
+    tmp = smooth(n(:,ni), 5); 
+    tmp = (tmp-mean(tmp))/max(tmp); 
+    nn(:,ni) = tmp;  
+    tmp = tmp(x(:,ni)>-.1&x(:,ni)<.1);
+    xtmp = x(x(:,ni)>-.1&x(:,ni)<.1); 
+    tmp2 = find(abs(tmp-mean(tmp))>=2*std(tmp));% & x(:,ni)>-.1&x(:,ni)<.1);
+    if length(tmp2)>0
+        Order(ni) = tmp2(1); 
+    else
+        Order(ni) = 1; 
+    end
+    Val(ni) = tmp(Order(ni)); 
+    %plot(x(:,ni),n(:,ni)+ni)
+end
+[~,ind] = sort(Order); 
+plot(x,nn(:,ind)+repmat((1:length(Order)), size(nn,1),1))
+plot(xtmp(Order(ind)), Val(ind)+(1:length(Order)), 'k.')
+xlabel('time (s)')
+ylabel('unit (sorted by latency)')
+
 
 %% During Singing, categories
 clear all; close all; clc
@@ -151,6 +186,8 @@ for cati = 1:length(Cats)
     end
     figure(2); hold on
     plot(x,n, 'Color', .8*ones(1,3));
+    X{cati} = x; 
+    N{cati} = n; 
 end
 
 for i = 1:2
@@ -162,6 +199,56 @@ for i = 1:2
     gcf
     set(gcf, 'Color', [1 1 1], 'papersize', [5 4], 'paperposition', [0 0 5 4])
 end
+
+%plotting psth sorted by latency (first time to exceed 2std within 100ms of
+%0
+% figure(3); clf;hold on
+% for ni = 1:size(x,2)
+%     tmp = smooth(n(:,ni), 5); 
+%     tmp = (tmp-mean(tmp))/max(tmp); 
+%     nn(:,ni) = tmp;  
+%     tmp = tmp(x(:,ni)>-.1&x(:,ni)<.1);
+%     xtmp = x(x(:,ni)>-.1&x(:,ni)<.1); 
+%     tmp2 = find(abs(tmp-mean(tmp))>=2*std(tmp));% & x(:,ni)>-.1&x(:,ni)<.1);
+%     Order(ni) = tmp2(1); 
+%     Val(ni) = tmp(Order(ni)); 
+%     %plot(x(:,ni),n(:,ni)+ni)
+% end
+% [~,ind] = sort(Order); 
+% plot(x,nn(:,ind)+repmat((1:length(Order)), size(nn,1),1))
+% plot(xtmp(Order(ind)), Val(ind)+(1:length(Order)), 'k.')
+% xlabel('time (s)')
+% ylabel('unit (sorted by latency)')
+
+% collecting all the singing units to plot...
+x = []; 
+n = []; 
+for i = 1:length(CatNames)
+    x = [x X{i}];
+    n = [n N{i}];
+end
+figure(5); clf;hold on
+for ni = 1:size(x,2)
+    tmp = smooth(n(:,ni), 5); 
+    tmp = (tmp-mean(tmp))/max(tmp); 
+    nn(:,ni) = tmp;  
+    tmp = tmp(x(:,ni)>-.1&x(:,ni)<.1);
+    xtmp = x(x(:,ni)>-.1&x(:,ni)<.1); 
+    tmp2 = find(abs(tmp-mean(tmp))>=2*std(tmp));% & x(:,ni)>-.1&x(:,ni)<.1);
+    if length(tmp2)>0
+        Order(ni) = tmp2(1); 
+    else
+        Order(ni) = 1; 
+    end
+    Val(ni) = tmp(Order(ni)); 
+    %plot(x(:,ni),n(:,ni)+ni)
+end
+[~,ind] = sort(Order); 
+plot(x,nn(:,ind)+repmat((1:length(Order)), size(nn,1),1))
+plot(xtmp(Order(ind)), Val(ind)+(1:length(Order)), 'k.')
+xlabel('time (s)')
+ylabel('unit (sorted by latency)')
+
 %% 
 
 %% testing analyses, from data compiled by datacompilation.mat
@@ -185,7 +272,7 @@ dt = data.time(2)-data.time(1);
 tcheck = .15; 
 comp = []; 
 
-conds = [1 4]; 
+conds = 1:4; 
 D1 = {};L1 = {}; I1 = {}; emptylabels = {};
 Colors = Colors(conds,:); 
 for i = 1:length(conds)
