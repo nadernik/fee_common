@@ -243,8 +243,10 @@ for filei = handles.filerange
     % units = handles.egh.chan1(round(ind_time*fs));
     %[handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name '\' handles.chan_files{chan}(filenum).name '''],1)']);
     % time = 0:1/fs:(lims(2)-lims(1));
-    A = zscore(log(conv(A.^2, gausswin(ceil(handles.egh.fs*handles.smoothwin)), 'same')));
-    B = zscore(log(conv(B.^2, gausswin(ceil(handles.egh.fs*handles.smoothwin)), 'same')));
+    A = (log(conv(A.^2, gausswin(ceil(handles.egh.fs*handles.smoothwin)), 'same')));
+    A = A - mean(A); 
+    B = (log(conv(B.^2, gausswin(ceil(handles.egh.fs*handles.smoothwin)), 'same')));
+    B = B - mean(B); 
     [C, lags] = xcorr(A,B, maxlag, 'coeff'); 
     CC = CC + C/length(handles.filerange); 
 end
