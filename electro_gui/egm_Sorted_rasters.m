@@ -5823,6 +5823,7 @@ function menu_ExportFigure_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+handles.cmap = get(gcf, 'colormap'); 
 
 fig = figure;
 
@@ -5840,6 +5841,7 @@ end
 set(ax,'position',[.1 .1 w h]);
 set(ax,'buttondownfcn','');
 set(get(ax,'children'),'buttondownfcn','');
+colormap(handles.cmap); 
 
 if handles.HistShow(1) == 1
     ax = copyobj(handles.axes_PSTH,fig);
