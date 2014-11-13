@@ -130,6 +130,14 @@ if ~isempty(element)
 end
 hold off
 title(sprintf('%s %s file %g', exper.birdname, exper.expername, filenum))
+% set figure width to be equal to screen width
+set(0, 'Units', 'pixels')
+scrnsize = get(0, 'ScreenSize');
+hpos = 1;
+vpos = 1;
+height = 400;
+width = scrnsize(3);
+set(fh, 'Position', [hpos vpos width height])
 
 %% Plot spectrogram
 [audio, timeFileCreated, startTime, startSamp, names, values, info] = loadAudio(exper,filenum);
