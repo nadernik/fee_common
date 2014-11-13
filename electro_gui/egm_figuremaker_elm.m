@@ -1,7 +1,7 @@
 function handles = egm_figuremaker_elm(handles)
 shg;
-figure; 
-h = subplot(2,1,1)
+
+%h = subplot(2,1,1)
 fs = handles.fs;
 lims = get(handles.axes_Sonogram, 'xlim');
 if lims(1) < 1/fs;
@@ -40,18 +40,20 @@ time = 0:1/fs:(lims(2)-lims(1));
 % %set(gca, 'Ydir', 'normal')
 %% using displayspecgramquick
 set(gca, 'xtick', [])
-displaySpecgramQuick(song,fs); 
-temp = get(gca, 'Children'); 
+%displaySpecgramQuick(song,fs); 
+temp = get(handles.axes_Sonogram, 'Children'); 
 cdata = get(temp, 'Cdata');
 fdata = get(temp, 'ydata'); 
-tdata = get(temp, 'xdata'); 
-subplot(2,1,1); 
-Thres = -12;
-cdata(cdata<Thres) = Thres; 
-imagesc(cdata, 'xdata', tdata, 'ydata', fdata); set(gca, 'ydir', 'normal')
+tdata = get(temp, 'xdata'); tdata = time; 
+fig = figure; 
+h = subplot(2,1,1); 
+%Thres = -16.2;
+cdata(cdata<handles.SonogramClim(1)) = handles.SonogramClim(1); 
+cdata(cdata>handles.SonogramClim(2)) = handles.SonogramClim(2); 
+imagesc(cdata, 'xdata', tdata, 'ydata', fdata/1000); set(gca, 'ydir', 'normal')
 %surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
 ylabel('Frequency (kHz)')
-set(gca, 'xtick', [], 'xticklabel', '')
+set(gca, 'xtick', [], 'xticklabel', '');
 cmap = jet; 
 cmap(1,:) = zeros(1,3); % background = black
 colormap(cmap);
@@ -77,8 +79,9 @@ colormap(cmap);
 % plot((1:size(handles.sound))/handles.fs, handles.amplitude)
 g = subplot(2,1,2)
 set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren')
-mini_max_plot(time, units, 'ax', g)
-xlabel('Time(s)'); ylabel('Voltage (mV)')
+plot(time,units, 'linewidth', 1.5); %mini_max_plot(time, units, 'ax', g)
+xlabel('Time(s)'); ylabel('Voltage (mV)'); axis tight
+set(gca, 'ytick', [0 .2], 'yticklabel', {'0', '0.2'})
 
 linkaxes([h g],'x')
 %xlim([lims(1) lims(2)])
@@ -93,4 +96,6 @@ q(4) = m-q(2)-  gap/(2*ShrinkBy);
 set(h, 'pos', p)
 set(g, 'pos', q)
 %%
-set(gcf, 'Color', [1 1 1], 'papersize', [6 3], 'paperposition', [0 0 6 3])
+
+set(gcf, 'Color', [1 1 1], 'papersize', [6 3], 'paperposition', [0 0 6 3]); 
+%print fig -dmeta -r300
