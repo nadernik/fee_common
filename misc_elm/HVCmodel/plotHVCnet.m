@@ -1,7 +1,22 @@
-function plotHVCnet(w, xdyn, m, trainingNeurons)
+function plotHVCnet(w, xdyn, m, trainingNeurons, PlottingParams)
 % Emily Mackevicius 11/25/2014, heavily copied from Hannah Payne's code
 % which builds off Ila Fiete's model, with help from Michale Fee and Tatsuo
 % Okubo. 
+
+if length(PlottingParams) == 0; % set PlottingParams = [] to use defaults
+    PlottingParams.msize = 5;
+    PlottingParams.linewidth = 1; 
+    PlottingParams.Syl1Color = [1 0 0]; 
+    PlottingParams.Syl2Color = [0 0 1];
+    PlottingParams.ProtoSylColor = [1 0 1]; 
+    PlottingParams.pltprct = 0; % plot connections > this percentile
+end
+msize = PlottingParams.msize;
+linewidth = PlottingParams.linewidth;
+Syl1Color = PlottingParams.Syl1Color;
+Syl2Color = PlottingParams.Syl2Color;
+ProtoSylColor = PlottingParams.ProtoSylColor;
+pltprct = PlottingParams.pltprct; 
 
 Latency = findHVClatency(xdyn, m, trainingNeurons);
 % first exclude all neurons that don't fire at a consistent phase
@@ -85,7 +100,7 @@ end
 y1 = y1+0*(Specific1-Specific2);
 
 cla; hold on
-pltprct = 0; 
+
 wplot = w-prctile(w(:),pltprct);
 wplot(wplot<0) = 0;
 wplot = wplot/max(wplot(:));
@@ -99,7 +114,7 @@ for i = 1: length(w)
             longrange = abs(x(i)-x(j))>2; 
             if ff & ~longrange
                 C = ones(1,3)-wplot(j,i)*ones(1,3);
-                plot([x(i), x(j)], [y1(i),y1(j)], 'color', C)
+                plot([x(i), x(j)], [y1(i),y1(j)], 'color', C, 'linewidth', linewidth)
             end
         end
     end
@@ -115,19 +130,20 @@ else
     m2 = 1;
 end
 
-msize = 5;
+
 
 for pli = 1:length(x)
-    plot(x(pli),y1(pli), 'marker', '.', 'color', [c1(pli)'/m1 c2(pli)'/m2 0], 'markersize', msize)
+    tmpC = c1(pli)'/m1*Syl1Color+c2(pli)'/m2*Syl2Color; 
+    plot(x(pli),y1(pli), 'marker', '.', 'color', tmpC, 'markersize', msize)
 end
 
 xlim([-1 m+1])
 
 if sum(Specific1)>0
-    plot(x(trainingset1),y1(trainingset1), 'r.', 'markersize', msize)
-    plot(x(trainingset2),y1(trainingset2), 'g.', 'markersize', msize)
+    plot(x(trainingset1),y1(trainingset1), '.', 'markersize', msize, 'color', Syl1Color)
+    plot(x(trainingset2),y1(trainingset2), '.', 'markersize', msize, 'color', Syl2Color)
 else
-    plot(x([trainingset1 trainingset2]),y1([trainingset1 trainingset2]), 'm.', 'markersize', msize)
+    plot(x([trainingset1 trainingset2]),y1([trainingset1 trainingset2]), '.', 'markersize', msize, 'color', ProtoSylColor)
 end
 
 axis tight; 

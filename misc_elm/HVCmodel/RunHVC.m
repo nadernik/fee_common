@@ -12,6 +12,15 @@ rasterw = plotw-Margin/2;
 rasterh = 3/4; 
 netoffset = Margin/3;
 neth = 1/4-Margin/4-.01; 
+% plotting parameters...
+PlottingParams.msize = 5;
+PlottingParams.linewidth = .01; 
+PlottingParams.Syl1Color = [1 0 0]; 
+PlottingParams.Syl2Color = [0 1 1]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
+PlottingParams.ProtoSylColor = [1 0 1]; 
+PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
+PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
+PlottingParams.pltprct = 75; % in network visualization, plot connections > this percentile
 
 %% Alternating seed neuron differentiation
 figure(1); clf
@@ -56,9 +65,9 @@ indsort =  [trainind'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
-subplot('position', [netoffset+0 Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons)
+subplot('position', [netoffset+0 Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-subplot('position', [Margin/2+0 Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons)
+subplot('position', [Margin/2+0 Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
 % finish forming protosyllable
@@ -79,9 +88,9 @@ indsort =  [trainind'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
-subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons)
+subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-subplot('position', [Margin/2+plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons)
+subplot('position', [Margin/2+plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
 % Early splitting 
@@ -119,9 +128,9 @@ indsort =  [trainind'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
-subplot('position', [netoffset+2*plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons)
+subplot('position', [netoffset+2*plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-subplot('position', [Margin/2+2*plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons)
+subplot('position', [Margin/2+2*plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
 
@@ -143,9 +152,9 @@ indsort =  [trainind'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
-subplot('position', [netoffset+3*plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons)
+subplot('position', [netoffset+3*plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-subplot('position', [Margin/2+3*plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons)
+subplot('position', [Margin/2+3*plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
 
@@ -201,9 +210,9 @@ indsort =  [trainind'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
-subplot('position', [netoffset+0 Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons)
+subplot('position', [netoffset+0 Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-subplot('position', [Margin/2+0 Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons)
+subplot('position', [Margin/2+0 Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
 % finish forming protosyllable
@@ -224,9 +233,9 @@ indsort =  [trainind'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
-subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons)
+subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-subplot('position', [Margin/2+plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons)
+subplot('position', [Margin/2+plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
 % Early splitting 
@@ -258,9 +267,9 @@ indsort =  [trainind'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
-subplot('position', [netoffset+2*plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons)
+subplot('position', [netoffset+2*plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-subplot('position', [Margin/2+2*plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons)
+subplot('position', [Margin/2+2*plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
 
@@ -282,9 +291,9 @@ indsort =  [trainind'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
-subplot('position', [netoffset+3*plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons)
+subplot('position', [netoffset+3*plotw Margin/4+rasterh netw neth]); plotHVCnet(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-subplot('position', [Margin/2+3*plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons)
+subplot('position', [Margin/2+3*plotw Margin+0 rasterw rasterh-Margin]); plotHVCraster(wsort,xsort,8,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
 

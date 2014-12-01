@@ -1,7 +1,16 @@
-function plotHVCraster(w, xsort, m, trainingNeurons)
+function plotHVCraster(w, xsort, m, trainingNeurons, PlottingParams)
 % Emily Mackevicius 11/25/2014, heavily copied from Hannah Payne's code
 % which builds off Ila Fiete's model, with help from Michale Fee and Tatsuo
 % Okubo. 
+
+if length(PlottingParams) == 0; % set PlottingParams = [] to use defaults
+    PlottingParams.Syl1Color = [1 0 0]; 
+    PlottingParams.Syl2Color = [0 0 1];
+    PlottingParams.ProtoSylColor = [1 0 1]; 
+end
+Syl1Color = PlottingParams.Syl1Color;
+Syl2Color = PlottingParams.Syl2Color;
+ProtoSylColor = PlottingParams.ProtoSylColor;
 
 Latency = findHVClatency(xsort, m, trainingNeurons);
 
@@ -22,23 +31,23 @@ set(gca, 'ydir', 'reverse')
 Red = trainingNeurons{1}.nIDs;
 Green = trainingNeurons{2}.nIDs; 
 cmap(cn+1,:) = [0 0 0]; 
-cmap(cn+2,:) = [1 0 0]; % some red training neurons
-cmap(cn+3,:) = [0 1 0]; % some green training neurons
-cmap(cn+4,:) = [1 0 1]; % sometimes magenta
+cmap(cn+2,:) = Syl1Color; % some red training neurons
+cmap(cn+3,:) = Syl2Color; % some green training neurons
+cmap(cn+4,:) = ProtoSylColor; % sometimes magenta
 
 if issame(xplot(Red,:), xplot(Green,:))
     Red = [Red(:); Green(:)]; 
     Green = [];
     xplot(Red,:) = xplot(Red,:)*(1+4/cn); 
-    plot([0.5 7.5]*10, [-3 -3], 'm', 'linewidth', 3)
-    plot([8.5 15.5]*10, [-3 -3], 'm', 'linewidth', 3)
+    plot([0.5 7.5]*10, [-3 -3], 'linewidth', 3, 'color', ProtoSylColor)
+    plot([8.5 15.5]*10, [-3 -3], 'linewidth', 3, 'color', ProtoSylColor)
 else
     xplot(Red,:) = xplot(Red,:)*(1+1/cn); 
     xplot(Green,:) = xplot(Green,:)*(1+2/cn);
     %cmap(cn+1,:) = [1 0 0]; % some red training neurons
     %cmap(cn+2,:) = [0 1 0]; % some green training neurons
-    plot([0.5 7.5]*10, [-3 -3], 'r', 'linewidth', 3)
-    plot([8.5 15.5]*10, [-3 -3], 'g', 'linewidth', 3)
+    plot([0.5 7.5]*10, [-3 -3], 'linewidth', 3, 'color', Syl1Color)
+    plot([8.5 15.5]*10, [-3 -3], 'g', 'linewidth', 3, 'color', Syl2Color)
 end
 
 hold on;
