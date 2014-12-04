@@ -21,28 +21,28 @@
 % Modified 11/14/14 to different between m (number of wmax synapses
 % allowed) and k (each external input targets k neurons)
 
-function [wsort, xdyncleansort, groupings, p] = simSplit(varargin) % consider changing to output xsort, ELM 11/25/2014
+function [wsort, xdyncleansort, groupings, p] = simSplit(varargin)
 p = inputParser;
 addParamValue(p,'n',80);            % n neurons
 addParamValue(p,'m',8);             % desired number of synapses per neuron (wmax = Wmax/m)
 addParamValue(p,'k',8);             % Target chain width - each external input tagets k neurons
 addParamValue(p,'alpha',50);        % strength of neural adaptation
-addParamValue(p,'beta',0.015);      % global inhibition strength
-addParamValue(p,'eta',.002);        % learning rate parameter
-addParamValue(p,'epsilon',.2);      % relative strength of heterosynaptic LTD
 addParamValue(p,'tau',4);           % time-constant of neural adaptation (only used if alpha is not 0)
+addParamValue(p,'beta',0.01);      % global inhibition strength
+addParamValue(p,'eta',0.01);        % learning rate parameter
+addParamValue(p,'epsilon',.2);      % relative strength of heterosynaptic LTD
 addParamValue(p,'wmax',1);          % single synapse hard bound
-addParamValue(p,'pin',0);           % probability of external stimulation of at least one neuron at any time
+addParamValue(p,'pin',.01);           % probability of external stimulation of at least one neuron at any time
 addParamValue(p,'w',[]);            % Initial weight matrix (random if blank)
 addParamValue(p,'split',0);         % Split up inputs into two groups
-addParamValue(p,'trainint',10);      % Time interval between inputs
 addParamValue(p,'gamma',0);         % for splitting, if gamma=1 then neurons will only fire if they are activated more than average compared to other active neurons. 0 = normal rule
+addParamValue(p,'inhscaling',10);    % Scale strength of inhibition with strength of excitatory inputs - avoids spurious chain activation
 addParamValue(p,'recordvid',[]);
 addParamValue(p,'seed',randi(1000));
 addParamValue(p,'psuccess',1);      % Prob of a neuron firing if above thresh
 addParamValue(p,'niters',2000);
 addParamValue(p,'nsteps',100);      % time-steps in one "iteration" - plot generated once per iter
-addParamValue(p,'plotting', 0);     % don't plot anything
+addParamValue(p,'trainint',10);      % Time interval between inputs
 parse(p,varargin{:}); p = p.Results;
 
 niters = p.niters; % Number of iterations total
@@ -57,8 +57,8 @@ trainint = p.trainint;
 rng(p.seed); % Optional set seed
 
 if isempty(p.w)
-    w = rand(n)*2*Wmax/n; % Each row's total weight ~= Wmax
-    %w = zeros(n); %*** 11/20/14 More general case: start ws at 0
+    %   w = rand(n)*2*Wmax/n; % Each row's total weight ~= Wmax
+    w = zeros(n); %*** 11/20/14 More general case: start ws at 0
 else
     w = p.w;
 end
@@ -88,7 +88,6 @@ for iter=1:niters
     for i = 1:nsteps
         % Random activation
         
-        %         c = double(rand(n,1)>= (1-p.pin*(1-sum(w,2)/Wmax))); % Chance of activation dec as incorporated into network
         c = double(rand(n,1)>=(1-p.pin)); % random activation
         c(1:k) = 0; % Don't activate training neurons
         cdyn(:,i) = c>0;
@@ -100,12 +99,12 @@ for iter=1:niters
         y = oldy + 1/p.tau*(-oldy+oldx);
         
         % Neural activity.  beta = inh, alpha = adaptation
-        betaConst = 0;% wmax; %%**** const inhibition
-        inhscaling = 10; %10 %***
-        r = max(0,w*oldx + b*k - p.beta*sum(oldx)/k*(1+inhscaling*sum(w,2)/Wmax)- p.alpha*y); %*** works
-        %         temp = (sum(r)-r)/(nnz(r)-1); % Average of all the other neurons that are active
+        %         inhscaling = 10; %10 %***
+        r = max(0,w*oldx + b - p.beta*sum(oldx)/k - sum(w,2)/Wmax - p.alpha*y); %*** works
+        % r = max(0,w*oldx + b - p.beta*sum(oldx)/k*(1+p.inhscaling*sum(w,2)/Wmax)- p.alpha*y);
+        % temp = (sum(r)-r)/(nnz(r)-1); % Average of all the other neurons that are active
         temp = mean(r(r>0)); %*** Average of all feedforward activity
-        x = r - p.gamma*temp> betaConst;
+        x = r - p.gamma*temp > 0;
         
         % Random failures
         x(rand(size(x))>(p.psuccess + (1-p.psuccess)*r/Wmax)) = 0;
@@ -123,8 +122,7 @@ for iter=1:niters
 %         dw = eta*(w/wmax+1).*(x*double(oldx)'-double(oldx)*x');
                 % This version gives advantage to already-strong weights,
                 % to encourage weights going all the way to 1 (WTA)
-                
-                
+                                
         % Hetersynaptic LTD  (Fiete et al 2010)
         dw2 = ones(n,1)*max(0, sum(w+dw,1)-Wmax);  % Weights leaving cells (pre)
         dw3 = max(0, sum(w+dw,2)-Wmax)*ones(1,n);  % Weights onto cells (post)
@@ -147,10 +145,12 @@ for iter=1:niters
         % Adaptation
         y = oldy + 1/p.tau*(-oldy+oldx);
         % Neural activity
-        r = max(0,w*oldx + bdyn(:,i)*k - p.beta*sum(oldx)/k*(1+inhscaling*sum(w,2)/Wmax) - p.alpha*y); %*** works
+        
+        r = max(0,w*oldx + bdyn(:,i)*k - p.beta*sum(oldx)/k - sum(w,2)/Wmax - p.alpha*y); %*** works
+%         r = max(0,w*oldx + bdyn(:,i)*k - p.beta*sum(oldx)/k*(1+p.inhscaling*sum(w,2)/Wmax) - p.alpha*y); %*** works
         %         temp = (sum(r)-r)/(nnz(r)-1); % Average of all the other neurons that are active
         temp = mean(r(r>0)); %*** Average of all feedforward activity
-        x = r - p.gamma*temp > betaConst;
+        x = r - p.gamma*temp > 0;
         
         x(bdyn(:,i)>0) = 1;
         
@@ -164,7 +164,7 @@ for iter=1:niters
     [~, ind] = sortrows(xdynclean((k+1:end),:)); ind = flipud(ind);
     ind = [1:k ind'+k];
 
-    if 0; %p.split                 % Don't rearrange W further after split % resorting even after split
+    if p.split                 % Don't rearrange W further after split
         xsort = xdyn;
         wsort = w;
         xdyncleansort = xdynclean;
@@ -182,7 +182,6 @@ for iter=1:niters
     %     xdynplot(cdyn>0,
 %     diagnosticplot
     %% Plotting
-    if p.plotting
     if iter==1
         figure(1); clf
         set(gcf,'WindowStyle','docked')
@@ -237,9 +236,6 @@ for iter=1:niters
         for l = 1:slowrate
             writeVideo(writerobj,frame);
         end
-    end
-    else
-        groupings = []; % don't need this when not plotting ELM 11/25/2014
     end
 end
 

@@ -107,18 +107,42 @@ wplot = wplot/max(wplot(:));
 jitter = .05; 
 x = x+jitter*randn(1,length(x));
 y1 = y1+jitter*randn(1,length(x)); 
-for i = 1: length(w)
-    for j = 1:length(w)
-        if wplot(j,i)>0
-            ff = x(i)<=x(j); 
-            longrange = abs(x(i)-x(j))>2; 
-            if ff & ~longrange
-                C = ones(1,3)-wplot(j,i)*ones(1,3);
-                plot([x(i), x(j)], [y1(i),y1(j)], 'color', C, 'linewidth', linewidth)
-            end
+% trying to plot w in order from weakest to strongest
+n = size(wplot,1); 
+js = repmat((1:n)',1,n); 
+is = repmat((1:n),n,1); 
+isVec = is(:);
+jsVec = js(:); 
+wVec = wplot(:); 
+[wSort,indSort] = sort(wVec, 'ascend'); 
+
+for k = 1:length(wSort)
+    i = isVec(indSort(k)); 
+    j = jsVec(indSort(k)); 
+    if wplot(j,i)>0
+        ff = x(i)<=x(j); 
+        longrange = abs(x(i)-x(j))>2; 
+        loopback = (round(x(j)) == round(max(x)))&(round(x(i)) == round(min(x)));
+        if (ff & ~longrange)|loopback
+            C = ones(1,3)-wplot(j,i)*ones(1,3);
+            plot([x(i), x(j)], [y1(i),y1(j)], 'color', C, 'linewidth', linewidth)
         end
     end
 end
+
+
+% for i = 1: length(w)
+%     for j = 1:length(w)
+%         if wplot(j,i)>0
+%             ff = x(i)<=x(j); 
+%             longrange = abs(x(i)-x(j))>2; 
+%             if ff & ~longrange
+%                 C = ones(1,3)-wplot(j,i)*ones(1,3);
+%                 plot([x(i), x(j)], [y1(i),y1(j)], 'color', C, 'linewidth', linewidth)
+%             end
+%         end
+%     end
+% end
 if max(c1)>0
     m1 = max(c1);
 else
@@ -147,7 +171,7 @@ else
 end
 
 axis tight; 
-xlim([-.2 8.2]);
+xlim([-.2 m+.2]);
 axis off; 
 set(gcf, 'color', [1 1 1],'papersize', [4 4], 'paperposition', [0 0 4 4])
 set(gca, 'color', 'none')

@@ -8,18 +8,18 @@
 
 % INPUTS
 k = 8;          % External input drives k neurons simultaneously
-m = k;          % Each neuron can have m*wmax incoming(outgoing) synaptic weight before heterosynaptic LTD kicks in
+m = 8;          % Each neuron can have m*wmax incoming(outgoing) synaptic weight before heterosynaptic LTD kicks in
 n = 100;        % Number of neurons
 trainint = 10;  % Interval between training input
 beta = .1;      % Strength of feed-forward inhibition. .02 for trainint 10
 eta = .01;      % Overall learning rate
-epsilon = .01;  % Relative strength of heterosynaptic LTD
+epsilon = .11;  % Relative strength of heterosynaptic LTD
 pin = .01;      % Probability of random activation of any one neuron
 vidname = [];   % Save video name (leave empty [] if unneeded)
 vidname2 = [];
 psuccess = 1;   % P firing given above thresh activity - leave at 1
-gamma = .1;     % Level of lateral inhibition at baseline
-
+gamma = 0.1;    % Level of lateral inhibition at baseline
+alpha = 50;     % Strength of adaptation (50 good)
 % OUTPUTS
 % w: weight matrix
 % p: structure of parameters
@@ -27,7 +27,7 @@ gamma = .1;     % Level of lateral inhibition at baseline
 [w0, ~, ~, p] = simSplit('w',[],'wmax',1,'split',0,'recordvid',vidname,...
     'n',n,'m',m,'k',k,'beta',beta,'trainint',trainint,...
     'eta',eta,'pin',pin,'gamma',gamma,'epsilon',epsilon,...
-    'niters',100,'psuccess',psuccess);
+    'niters',1000,'psuccess',psuccess,'alpha',alpha,'inhscaling',10);
 
 %% SPLIT
 % 1. Allow fewer, stronger synapses (wmax = 2, m = m/2)
@@ -36,5 +36,5 @@ gamma = .1;     % Level of lateral inhibition at baseline
 [w1, ~, ~, psplit]= simSplit('w',w0,'wmax',2,'split',1,'recordvid',vidname2,...
     'n',n,'m',m/2,'k',k,'beta',beta,'trainint',trainint,...
     'eta',eta*2,'pin',pin,'gamma',.9,'epsilon',epsilon,...
-    'niters',1000,'psuccess',psuccess); %129
+    'niters',1000,'psuccess',psuccess,'alpha',alpha); 
 

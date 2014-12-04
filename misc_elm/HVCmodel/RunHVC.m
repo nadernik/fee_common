@@ -21,6 +21,8 @@ PlottingParams.ProtoSylColor = [1 0 1];
 PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.pltprct = 75; % in network visualization, plot connections > this percentile
+PlottingParams.numFontSize = 10; 
+PlottingParams.labelFontSize = 10; 
 
 %% Alternating seed neuron differentiation
 figure(1); clf
@@ -29,10 +31,11 @@ seed = 21;          % seed random number generator
 Wmax = 1;           % single synapse hard bound
 m = 8;              % desired number of synapses per neuron (wmax = Wmax/m)
 n = 80;             % n neurons
-k = 8;              % target chain width - each external input targets k neurons
 trainint = 8;       % Time interval between inputs
 nsteps = 80;        % time-steps to simulate -- each time-step is 1 burst duration.
 pn = .01;           % probability of external stimulation of at least one neuron at any time
+trainingInd = 1:8;  % index of training neurons
+
 
 wmax = Wmax/m; 
 
@@ -41,11 +44,12 @@ rng(seed);
 w0 = rand(n)*2*Wmax/n;
 
 % training inputs
+k = length(trainingInd);
 trainingNeurons{1}.nIDs = 1:k/2;
 trainingNeurons{2}.nIDs = (k/2+1):k;
 trainingNeurons{1}.tind = repmat([true(1,k) false(1,k)],1,nsteps/k/2);
 trainingNeurons{2}.tind = repmat([true(1,k) false(1,k)],1,nsteps/k/2);
-Input = -1*ones(k, nsteps); % clamp training neurons
+Input = zeros(k, nsteps); % clamp training neurons
 Input(:,mod(1:nsteps,trainint)==1) = 1; % rhythmic activation of training neurons
 
 w = w0; 
@@ -55,7 +59,7 @@ for i = 1:niter
     bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     % One 'bout' of learning
-    [w xdyn] = HVCBout('w', w, 'input', bdyn, 'Wmax', Wmax, 'm', m, 'n', n, 'k', k);
+    [w xdyn] = HVCBout('w', w, 'input', bdyn, 'Wmax', Wmax, 'm', m, 'trainingInd', trainingInd);
 end
 
 % sort by order of firing
@@ -78,7 +82,7 @@ for i = 1:niter
     bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     % One 'bout' of learning
-    [w xdyn] = HVCBout('w', w, 'input', bdyn, 'Wmax', Wmax, 'm', m, 'n', n, 'k', k);
+    [w xdyn] = HVCBout('w', w, 'input', bdyn, 'Wmax', Wmax, 'm', m, 'trainingInd', trainingInd);
 end
 
 % sort by order of firing
@@ -98,7 +102,6 @@ set(gca, 'color', 'none')
 Wmax = 1;           % single synapse hard bound
 m = 3.75;           % desired number of synapses per neuron (wmax = Wmax/m)
 n = 80;             % n neurons
-k = 8;              % target chain width - each external input targets k neurons
 gamma = .6;         % for splitting, if gamma=1 then neurons will only fire if they are activated more than average compared to other active neurons. 0 = normal rule
 trainint = 8;       % Time interval between inputs
 nsteps = 80;        % time-steps to simulate -- each time-step is 1 burst duration.
@@ -108,7 +111,7 @@ trainingNeurons{1}.nIDs = 1:k/2;
 trainingNeurons{2}.nIDs = (k/2+1):k;
 trainingNeurons{1}.tind = repmat([true(1,k) false(1,k)],1,nsteps/k/2);
 trainingNeurons{2}.tind = repmat([false(1,k) true(1,k)],1,nsteps/k/2);
-Input = -1*ones(k, nsteps); % clamp training neurons
+Input = zeros(k, nsteps); % clamp training neurons
 Input(trainingNeurons{1}.nIDs,mod(1:nsteps,2*trainint)==1) = 1; % alternating rhythmic activation of training neurons
 Input(trainingNeurons{2}.nIDs,mod(1:nsteps,2*trainint)==trainint+1) = 1; % alternating rhythmic activation of training neurons
 
@@ -118,7 +121,7 @@ for i = 1:niter
     bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     % One 'bout' of learning
-    [w xdyn] = HVCBout('w', w, 'input', bdyn,'Wmax', Wmax, 'm', m, 'n', n, 'k', k, 'gamma', gamma);
+    [w xdyn] = HVCBout('w', w, 'input', bdyn,'Wmax', Wmax, 'm', m, 'n', n, 'gamma', gamma, 'trainingInd', trainingInd);
 end
 
 % sort by order of firing
@@ -142,7 +145,7 @@ for i = 1:niter
     bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     % One 'bout' of learning
-    [w xdyn] = HVCBout('w', w, 'input', bdyn,'Wmax', Wmax, 'm', m, 'n', n, 'k', k, 'gamma', gamma);
+    [w xdyn] = HVCBout('w', w, 'input', bdyn,'Wmax', Wmax, 'm', m, 'n', n, 'gamma', gamma, 'trainingInd', trainingInd);
 end
 
 % sort by order of firing
@@ -171,10 +174,11 @@ seed = 32;          % seed random number generator
 Wmax = 1;           % single synapse hard bound
 m = 3;              % desired number of synapses per neuron (wmax = Wmax/m)
 n = 80;             % n neurons
-k = 8;              % target chain width - each external input targets k neurons
 trainint = 8;       % Time interval between inputs
 nsteps = 80;        % time-steps to simulate -- each time-step is 1 burst duration.
 pn = .001;           % probability of external stimulation of at least one neuron at any time
+trainingInd = 1:8;  % index of training neurons
+
 
 wmax = Wmax/m; 
 
@@ -184,6 +188,7 @@ w0 = rand(n)*2*Wmax/n;
 w = w0; 
 
 % training inputs
+k = length(trainingInd);
 trainingNeurons{1}.nIDs = 1:k/2;
 trainingNeurons{2}.nIDs = (k/2+1):k;
 trainingNeurons{1}.tind = repmat([true(1,k) false(1,k) false(1,k) ],1,floor(nsteps/k/3));
@@ -200,13 +205,12 @@ for i = 1:niter
     bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     % One 'bout' of learning
-    [w xdyn] = HVCBout('w', w, 'input', bdyn, 'Wmax', Wmax, 'm', m, 'n', n, 'k', k);
+    [w xdyn] = HVCBout('w', w, 'input', bdyn, 'Wmax', Wmax, 'm', m, 'n', n, 'trainingInd', trainingInd);
 end
 
 % sort by order of firing
-trainind = 1:k; 
 [~,indrest] = sortrows(xdyn((k+1):end,:));
-indsort =  [trainind'; k + flipud(indrest)];
+indsort =  [trainingInd'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
@@ -223,13 +227,12 @@ for i = 1:niter
     bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     % One 'bout' of learning
-    [w xdyn] = HVCBout('w', w, 'input', bdyn, 'Wmax', Wmax, 'm', m, 'n', n, 'k', k);
+    [w xdyn] = HVCBout('w', w, 'input', bdyn, 'Wmax', Wmax, 'm', m, 'n', n, 'trainingInd', trainingInd);
 end
 
 % sort by order of firing
-trainind = 1:k; 
 [~,indrest] = sortrows(xdyn((k+1):end,:));
-indsort =  [trainind'; k + flipud(indrest)];
+indsort =  [trainingInd'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
@@ -243,7 +246,6 @@ set(gca, 'color', 'none')
 Wmax = 1;           % single synapse hard bound
 m = 4;              % desired number of synapses per neuron (wmax = Wmax/m)
 n = 80;             % n neurons
-k = 8;              % target chain width - each external input targets k neurons
 gamma = 1;         % for splitting, if gamma=1 then neurons will only fire if they are activated more than average compared to other active neurons. 0 = normal rule
 beta = .005;         % global inhibition strength
 trainint = 8;       % Time interval between inputs
@@ -257,13 +259,12 @@ for i = 1:niter
     bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     % One 'bout' of learning
-    [w xdyn] = HVCBout('w', w, 'input', bdyn,'Wmax', Wmax, 'm', m, 'n', n, 'k', k, 'gamma', gamma, 'beta', beta);
+    [w xdyn] = HVCBout('w', w, 'input', bdyn,'Wmax', Wmax, 'm', m, 'n', n, 'gamma', gamma, 'beta', beta, 'trainingInd', trainingInd);
 end
 
 % sort by order of firing
-trainind = 1:k; 
 [~,indrest] = sortrows(xdyn((k+1):end,:));
-indsort =  [trainind'; k + flipud(indrest)];
+indsort =  [trainingInd'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 
@@ -281,13 +282,12 @@ for i = 1:niter
     bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     % One 'bout' of learning
-    [w xdyn] = HVCBout('w', w, 'input', bdyn,'Wmax', Wmax, 'm', m, 'n', n, 'k', k, 'gamma', gamma, 'beta', beta);
+    [w xdyn] = HVCBout('w', w, 'input', bdyn,'Wmax', Wmax, 'm', m, 'n', n, 'gamma', gamma, 'beta', beta, 'trainingInd', trainingInd);
 end
 
 % sort by order of firing
-trainind = 1:k; 
 [~,indrest] = sortrows(xdyn((k+1):end,:));
-indsort =  [trainind'; k + flipud(indrest)];
+indsort =  [trainingInd'; k + flipud(indrest)];
 wsort = w(indsort,indsort); 
 xsort = xdyn(indsort,:); 
 

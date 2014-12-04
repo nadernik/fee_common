@@ -7,27 +7,31 @@ if length(PlottingParams) == 0; % set PlottingParams = [] to use defaults
     PlottingParams.Syl1Color = [1 0 0]; 
     PlottingParams.Syl2Color = [0 0 1];
     PlottingParams.ProtoSylColor = [1 0 1]; 
+    PlottingParams.numFontSize = 10; 
+    PlottingParams.labelFontSize = 10; 
 end
 Syl1Color = PlottingParams.Syl1Color;
 Syl2Color = PlottingParams.Syl2Color;
 ProtoSylColor = PlottingParams.ProtoSylColor;
+numFontSize = PlottingParams.numFontSize;
+labelFontSize = PlottingParams.labelFontSize;
 
 Latency = findHVClatency(xsort, m, trainingNeurons);
 
 xplot = zeros(size(w,1),2*m);
 for ni = 1:size(w,1) % plotting the mode latency for each syll type
     if Latency{1}.FireDur(ni)
-        xplot(ni,Latency{1}.mode(ni)+1) = 1; 
+        xplot(ni,Latency{1}.mode(ni)) = 1; 
     end
     if Latency{2}.FireDur(ni)
-        xplot(ni,Latency{2}.mode(ni)+1+m) = 1; 
+        xplot(ni,Latency{2}.mode(ni)+m) = 1; 
     end
 end
 cmap = flipud(gray);
 cmap = cmap(1:64,:);
 cn = size(cmap,1);
 hold on; 
-set(gca, 'ydir', 'reverse')
+set(gca, 'ydir', 'reverse', 'fontsize', numFontSize)
 Red = trainingNeurons{1}.nIDs;
 Green = trainingNeurons{2}.nIDs; 
 cmap(cn+1,:) = [0 0 0]; 
@@ -67,10 +71,10 @@ xplot(end+1,end+1) = 1+4/cn; %to rescale colormap
 tplot = (1:(size(xplot,2)))*10; % assuming each bin is 10ms
 imagesc(xplot, 'xdata', tplot); colormap(gca, cmap)
 if length(rest)>0 & sum(sharedind)>0 & length(Green)>0
-    plot([0 size(xplot,2)*10], [sum(sharedind)+.5 sum(sharedind)+.5], 'k', 'linewidth', 1)
+    plot([0 size(xplot,2)*10], [sum(sharedind)+.5 sum(sharedind)+.5], 'k', 'linewidth', PlottingParams.linewidth)
 end
 plot(85*[1 1], [-4 size(xplot,1)], 'k', 'linewidth', 1)
 ylim([-4 size(xplot,1)+1])
 axis tight
-ylabel('neuron'); xlabel('time (ms)'); xlim([0 tplot(end-1)])
+ylabel('Neuron', 'fontsize', labelFontSize); xlabel('Time (ms)', 'fontsize', labelFontSize); xlim([0 tplot(end-1)])
 
