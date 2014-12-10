@@ -1,8 +1,8 @@
 % testing what is a 'significant peak' in the raster to count a simulated
 % neuron as firing during a particular syllable; 
 
-nSyl = 4; % number of syllables of that type in bout; 
-m = 8; % number of timebins in that syllable; 
+nSyl = 5; % number of syllables of that type in bout; 
+m = 10; % number of timebins in that syllable; 
 nBurst = 1; % number of bursts/syllable; 
 
 for iter = 1:1000; 

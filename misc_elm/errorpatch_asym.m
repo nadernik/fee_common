@@ -18,7 +18,8 @@ end;
 plot(X, Y, 'Color', LC)%, 'LineWidth', 2);
 
 xa = [X; X(end:-1:1)];
-ya = [(Y + Eup); (Y(end:-1:1) - Elower(end:-1:1))];
+%ya = [(Y + Eup); (Y(end:-1:1) - Elower(end:-1:1))];
+ya = [(Eup); (Elower(end:-1:1))];
 
 h = patch(xa, ya, PC);
 set(h, ...
