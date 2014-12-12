@@ -71,7 +71,7 @@ PlotIters = 1;
 %
 Wmax = p.wmax*p.m;
 
-Nseeds = 300; 
+Nseeds = 500; 
 c = 1; 
 Nshared = zeros(Nseeds,length(nIters));
 Nspecific = zeros(Nseeds,length(nIters));
@@ -100,7 +100,7 @@ Input(trainingNeurons{1}.nIDs,mod(1:nsteps,2*trainint)==1) = 1; % alternating rh
 Input(trainingNeurons{2}.nIDs,mod(1:nsteps,2*trainint)==trainint+1) = 1; % alternating rhythmic activation of training neurons
 AltInput = Input;
 %
-for seedi = 1:(Nseeds)
+for seedi = 241:(Nseeds)
     tic
     % random initial weights
     rng(seedi);
@@ -151,17 +151,23 @@ for seedi = 1:(Nseeds)
     toc
 end
 %%
-%save(['C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime8.mat'])
+save(['C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime11.mat'])
 % #1: 20 runs; #2: 378 runs #3: 70 runs, bad params for splitting #4: 300,
 % bad params for splitting, #5: 100 runs, bad params for splitting
-% runs, #6: 14 runs #7: 50 runs #8: 69 runs
+% runs, #6: 14 runs #7: 50 runs #8: 69 runs, #9: 240 runs, same params as
+% seed 4039 for figure #10 is a continuation of 9, with 300 runs # 11 is
+% continuation with 405 runs
 %%
-load C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime8
+load C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime11
+%
 cumIters = cumsum(nIters); 
 cumIters = cumIters(cumIters<=1500);
-Nshared = Nshared(1:69,cumIters<=1500); 
-Nspecific = Nspecific(1:69,cumIters<=1500); 
+Nshared = Nshared(1:400,cumIters<=1500); 
+Nspecific = Nspecific(1:400,cumIters<=1500); 
 
+indKeep = (Nshared(:,1)+Nspecific(:,1))>10;
+Nshared = Nshared(indKeep,:);
+Nspecific = Nspecific(indKeep,:);
 
 PlottingParams.numFontSize = 5; 
 PlottingParams.labelFontSize = 8; 
@@ -169,7 +175,7 @@ PlottingParams.labelFontSize = 8;
 figure(1); clf
 PercentShared = 100*Nshared./(Nshared+Nspecific-length(p.trainingInd)+eps); 
 for ni = 1:size(PercentShared,1)
-    PercentShared(ni,:) = smooth(PercentShared(ni,:));
+    PercentShared(ni,:) = smooth(PercentShared(ni,:),5);
 end
 figure; plot(cumIters, PercentShared,'color', [.8 .8 .8])
 errorpatch_asym(cumIters, (prctile(PercentShared,50)), (prctile(PercentShared,25)), (prctile(PercentShared,75)));shg

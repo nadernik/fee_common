@@ -1,5 +1,6 @@
 % testing what is a 'significant peak' in the raster to count a simulated
 % neuron as firing during a particular syllable; 
+% Emily Mackevicius 12/10/2014
 
 nSyl = 5; % number of syllables of that type in bout; 
 m = 10; % number of timebins in that syllable; 

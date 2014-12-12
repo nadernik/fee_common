@@ -13,23 +13,28 @@ rasterw = plotw-Margin/2;
 rasterh = 3/4; 
 netoffset = Margin/3;
 neth = 1/4-Margin/4-.01; 
-PlottingParams.msize = 5;
-PlottingParams.linewidth = .01; 
+PlottingParams.msize = 25;
+PlottingParams.linewidth = 1; 
 PlottingParams.Syl1Color = [1 0 0]; 
 PlottingParams.Syl2Color = [0 1 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
 PlottingParams.ProtoSylColor = [1 0 1]; 
 PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.numFontSize = 5; 
-PlottingParams.labelFontSize = 8; 
+PlottingParams.labelFontSize = 14; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
 
+
 % Alternating seed neuron differentiation
 figure(1); clf
-set(gcf, 'color', ones(1,3));
 
-seed = 7; % 4039
+% figure parameters
+figw = 6;
+figh = 3; 
+set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
+
+seed = 4039
 p.seed = seed;          % seed random number generator
 p.wmax = 1;             % single synapse hard bound
 p.m = 10;               % desired number of synapses per neuron (wmax = Wmax/m)
@@ -54,11 +59,6 @@ p.wmaxSplit = wmaxSplit;
 p.gammaSplit = gammaSplit; 
 p.Niter = Niter; 
 
-% folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
-% timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
-% SavedHere = fullfile(folder, ['Params', timestamp])
-% save(SavedHere,'p');
-
 PlotIters = 1; % set to 1, and increase Niter(3), if you want to plot each step as it goes
 
 Wmax = p.wmax*p.m;
@@ -80,9 +80,18 @@ trainingNeurons{2}.tind = repmat([true(1,trainint) false(1,trainint)],1,nsteps/t
 Input = zeros(k, nsteps); % clamp training neurons
 Input(:,mod(1:nsteps,trainint)==1) = 1; % rhythmic activation of training neurons
 
+
+% set up to record movie
+folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
+timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
+filename = ['NetLearnsSeed' num2str(seed) timestamp];
+writerobj = VideoWriter(fullfile(folder, filename));
+writerobj.FrameRate = 60; 
+open(writerobj);
+
+
 w = w0; 
-niter = Niter(1);        % number of iterations to run
-for i = 1:niter
+for i = 1:500
     % Construct input
     bdyn = (rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
@@ -90,29 +99,19 @@ for i = 1:niter
     p.w = w; 
     p.input = bdyn;
     [w xdyn] = HVCBout(p);
+    if mod(i,2)==0
+        plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
+        title([num2str(i) ' bouts'], 'fontsize', PlottingParams.labelFontSize)
+        set(gca, 'color', 'none');
+        frame = getframe(gcf);
+        slowrate =1;
+        for l = 1:slowrate
+            writeVideo(writerobj,frame);
+        end
+    end
 end
+%
 
-subplot('position', [netoffset+0 Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none'); title(Niter(1))
-PlottingParams.axesPosition = [Margin/2+0 Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none')
-
-% finish forming protosyllable
-niter = Niter(2);     % number of iterations to run
-for i = 1:niter
-    % Construct input
-    bdyn = (rand(n,nsteps)>=(1-pn)); % Random activation
-    bdyn(1:k,:) = Input; 
-    p.w = w; 
-    p.input = bdyn;
-    % One 'bout' of learning
-    [w xdyn] = HVCBout(p);
-end
-
-subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none');title(Niter(2))
-PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none')
 
 % Early splitting 
 
@@ -130,7 +129,7 @@ Input(trainingNeurons{2}.nIDs,mod(1:nsteps,2*trainint)==trainint+1) = 1; % alter
 storeGamma = []; 
 
 niter = Niter(3); 
-for i = 1:niter
+for i = 1:1500
     % Construct input
     bdyn = (rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
@@ -140,50 +139,29 @@ for i = 1:niter
     [w xdyn] = HVCBout(p);
     Latency = findHVClatency(xdyn,trainint,trainingNeurons); 
     Nsplit = sum(xor(Latency{1}.FireDur,Latency{2}.FireDur));
-    if  PlotIters & (Nsplit>14); % if you want to plot each step as it goes
-        i
-        subplot('position', [netoffset+2*plotw Margin/4+rasterh netw neth]); 
-        cla; plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-        PlottingParams.axesPosition = [Margin/2+2*plotw Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
-        pause(.1)
+    if 1%mod(i,5)==0
+        plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
+        title([num2str(i+500) ' bouts'],'fontsize', PlottingParams.labelFontSize)
+        set(gca, 'color', 'none');
+        frame = getframe(gcf);
+        if i>485 & i<505
+            slowrate = 40; 
+        elseif i>400
+            slowrate =4;
+        else
+            slowrate = 1;
+        end
+        for l = 1:slowrate
+            writeVideo(writerobj,frame);
+        end
     end
 end
 
-
-subplot('position', [netoffset+2*plotw Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none');title(Niter(3))
-PlottingParams.axesPosition = [Margin/2+2*plotw Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none')
-
-
-subplot('position', [netoffset+3*plotw Margin/4+rasterh netw neth]);
-plot(storeGamma)
-
-% Later splitting 
-niter = Niter(4); 
-for i = (Niter(3)+1):Niter(4)
-    % Construct input
-    bdyn = (rand(n,nsteps)>=(1-pn)); % Random activation
-    bdyn(1:k,:) = Input; 
-    % One 'bout' of learning
-    p.w = w; 
-    p.input = bdyn;
-    p.gamma = gammas(i); 
-    [w xdyn] = HVCBout(p);
-end
-
-subplot('position', [netoffset+3*plotw Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none');title(Niter(4))
-PlottingParams.axesPosition = [Margin/2+3*plotw Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none')
+close(writerobj);
 
 % calculate how split it is
 Latency = findHVClatency(xdyn,trainint,trainingNeurons); 
 HowSplit = sum(xor(Latency{1}.FireDur,Latency{2}.FireDur))/sum(or(Latency{1}.FireDur,Latency{2}.FireDur))
 
-% figure parameters
-figw = 6;
-figh = 3; 
-set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
-suptitle(['seed ', num2str(seed)])
+%suptitle(['seed ', num2str(seed)])
 print -dmeta -r150

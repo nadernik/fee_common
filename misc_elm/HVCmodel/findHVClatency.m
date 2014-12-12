@@ -1,5 +1,12 @@
 function Latency = findHVClatency(xsort, m, trainingNeurons)
-% Emily Mackevicius 11/25/2014, heavily copied from Hannah Payne's code
+% Calculates the mode latency of each neuron
+% w: weight matrix
+% xdyn: activity of network
+% m: duration of one syllable, in timesteps
+% trainingNeurons: cell array of structures containing neuron and time indices for each syllable type
+% PlottingParams: sets linewidth, etc.  See RunHVC_split
+%
+% Emily Mackevicius 12/10/2014, heavily copied from Hannah Payne's code
 % which builds off Ila Fiete's model, with help from Michale Fee and Tatsuo
 % Okubo. 
 
@@ -9,8 +16,8 @@ for ni = 1:size(xsort,1) % finding the mode latency for each syll type
     tmp1 = intersect(tmp,find(trainingNeurons{1}.tind))'; % times the neuron fired during syl 1
     tmp2 = intersect(tmp,find(trainingNeurons{2}.tind))'; % times the neuron fired during syl 2
     if issame(trainingNeurons{1}.tind,trainingNeurons{2}.tind) % if sylls are the same (protosyllables), split by halves for raster
-        Latency{1}.FireDur(ni) = length(tmp1)>3;
-        Latency{2}.FireDur(ni) = length(tmp2)>3;
+        Latency{1}.FireDur(ni) = length(tmp1)>3; % Include if it fires more than three times (passes significance criteria -- see testLatSig.m)
+        Latency{2}.FireDur(ni) = length(tmp2)>3; % Include if it fires more than three times (passes significance criteria -- see testLatSig.m)
         tmp1 = intersect(tmp,1:(size(xsort,2)/2));
         Latency{1}.mode(ni) = mode(mod(tmp1-1,m))+1;
         tmp2 = intersect(tmp,(size(xsort,2)/2+1):size(xsort,2));
@@ -30,7 +37,7 @@ for ni = 1:size(xsort,1) % finding the mode latency for each syll type
             Latency{2}.mode(ni) = NaN; % mode phase
             Latency{2}.num(ni) = NaN; % number of times it fired at that phase
         end
-        Latency{1}.FireDur(ni) = (Latency{1}.num(ni) > 2); 
-        Latency{2}.FireDur(ni) = (Latency{2}.num(ni) > 2);
+        Latency{1}.FireDur(ni) = (Latency{1}.num(ni) > 2); % Include if it fires more than twice (passes significance criteria -- see testLatSig.m)
+        Latency{2}.FireDur(ni) = (Latency{2}.num(ni) > 2); % Include if it fires more than twice (passes significance criteria -- see testLatSig.m)
     end
 end
