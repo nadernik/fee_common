@@ -29,6 +29,7 @@ for i = 1:nsteps
 
     % Adaptation
     y = oldy + 1/p.tau*(-oldy+oldx);
+    %y(p.trainingInd) = (b(p.trainingInd)==0).*y(p.trainingInd);
 
     % Net feedforward input.  beta = inh, alpha = adaptation
     r = (w*oldx + b - p.beta*sum(oldx) - p.alpha*y); 
@@ -38,7 +39,7 @@ for i = 1:nsteps
     x = r > p.gamma*sum(r); % only fire if r exceeds recurrent inhibition
 
     % Absolute control over training neurons
-    x(p.trainingInd)=b(p.trainingInd); 
+    %x(p.trainingInd)=(x(p.trainingInd)+b(p.trainingInd))>0; 
 
     % STDP rule (Fiete et al 2010)
     dw = eta.*(x*(oldx)'-(oldx)*x');

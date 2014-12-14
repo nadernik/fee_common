@@ -49,6 +49,8 @@ ux = unique(x);
 % keep track of training neuron and syl time indices
 trainingset1 = trainingNeurons{1}.nIDs;
 trainingset2 = trainingNeurons{2}.nIDs; 
+x(trainingset1) = 1; 
+x(trainingset2) = 1; 
 tind1 = find(trainingNeurons{1}.tind);
 tind2 = find(trainingNeurons{2}.tind);
 
@@ -120,7 +122,8 @@ for k = 1:length(wSort)
     if wplot(j,i)>0
         ff = x(i)<=x(j); 
         longrange = abs(x(i)-x(j))>2; 
-        if (ff & ~longrange)
+        loopback = (round(x(i))==round(max(x)))&(round(x(j))==round(min(x)));
+        if (ff & ~longrange)%|loopback
             C = ones(1,3)-wplot(j,i)*ones(1,3);
             plot([x(i), x(j)], [y1(i),y1(j)], 'color', C, 'linewidth', linewidth)
         end
@@ -131,6 +134,15 @@ end
 for pli = 1:length(x)
     tmpC = c1(pli)'/(max(c1)+eps)*Syl1Color+c2(pli)'/(max(c2)+eps)*Syl2Color; 
     tmpC = tmpC/(max(tmpC)+eps); % normalize so colors are bright
+    if Shared(pli)
+        tmpC = zeros(1,3); 
+    end
+    if Specific1(pli)
+        tmpC = Syl1Color; 
+    end
+    if Specific2(pli)
+        tmpC = Syl2Color; 
+    end
     plot(x(pli),y1(pli), 'marker', '.', 'color', tmpC, 'markersize', msize)
 end
 

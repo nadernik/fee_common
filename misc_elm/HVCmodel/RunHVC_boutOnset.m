@@ -24,30 +24,32 @@ PlottingParams.numFontSize = 5;
 PlottingParams.labelFontSize = 8; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
+PlottingParams.totalPanels = 1; 
+PlottingParams.thisPanel = 1; 
 
 % Alternating seed neuron differentiation
 figure(1); clf
 set(gcf, 'color', ones(1,3));
 
-seed = 8015
+seed = 8034
 p.seed = seed;          % seed random number generator
 p.wmax = 1;             % single synapse hard bound
 p.m = 5;               % desired number of synapses per neuron (wmax = Wmax/m)
 p.n = 100;              % n neurons
 p.trainint = 10;        % Time interval between inputs
-p.nsteps = 300;         % time-steps to simulate -- each time-step is 1 burst duration.
+p.nsteps = 100;         % time-steps to simulate -- each time-step is 1 burst duration.
 p.pn = .01;             % probability of external stimulation of at least one neuron at any time
 p.trainingInd = 1:10;   % index of training neurons
-p.beta = .12;           % strength of feedforward inhibition
+p.beta = .1;           % strength of feedforward inhibition
 p.alpha = 30;           % strength of neural adaptation
 p.eta = .025;           % learning rate parameter
-p.epsilon = .2;         % relative strength of heterosynaptic LTD
+p.epsilon = .1;         % relative strength of heterosynaptic LTD
 p.tau = 3;              % time constant of adaptation
 p.gamma= .01;           % strength of recurrent inhibition
 wmaxSplit = 2;          % single synapse hard bound to induce splitting (increased to encourage fewer stronger synapses)
-gammaSplit =.2;        % increased strength of recurrent inhibition to induce splitting
+gammaSplit =.17;        % increased strength of recurrent inhibition to induce splitting
 
-Niter = [1 50 1500 1500]; % number of iterations for each plot (first 2 are protosyll, last 2 are splitting)
+Niter = [1 1500 1500 1500]; % number of iterations for each plot (first 2 are protosyll, last 2 are splitting)
 gammas = sigmf(1:Niter(end),[1/200 500])*gammaSplit; % gradually increase gamma to gammaSplit
 p.gammas = gammas;
 p.wmaxSplit = wmaxSplit; 
@@ -61,12 +63,22 @@ save(SavedHere,'p');
 
 PlotIters = 1; % set to 1, and increase Niter(3), if you want to plot each step as it goes
 
+figure(1); cla
+% set up to record movie
+folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
+timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
+filename = ['NetLearnsSeed' num2str(seed) timestamp];
+writerobj = VideoWriter(fullfile(folder, filename));
+writerobj.FrameRate = 5; 
+open(writerobj);
+
+
 Wmax = p.wmax*p.m;
 
 % random initial weights
 rng(seed);
 w0 = 2*rand(p.n)*Wmax/p.n; 
-
+%
 % training inputs
 k = length(p.trainingInd);
 trainint = p.trainint;
@@ -75,100 +87,113 @@ n = p.n;
 pn = p.pn;
 bOnOffset = 5; 
 CyclesPerBout = 4; 
-trainingNeurons{1}.nIDs = 1:7; %1:k/2;
-trainingNeurons{2}.nIDs = 8:10;%(k/2+1):k;
-% trainingNeurons{1}.tind = repmat([true(1,trainint) false(1,trainint)],1,nsteps/trainint/2);
-% trainingNeurons{2}.tind = repmat([false(1,trainint) true(1,trainint)],1,nsteps/trainint/2);
-Input = zeros(k, nsteps); % clamp training neurons
-Input(trainingNeurons{1}.nIDs,mod(1:nsteps,CyclesPerBout*trainint)==1) = 1; % alternating rhythmic activation of training neurons
+trainingNeurons{1}.nIDs = 1:k/2;
+trainingNeurons{2}.nIDs = (k/2+1):k;
+HowClamped = 100; 
+HowOn = 100; 
+Input = -HowClamped*ones(k, nsteps); %clamp training neurons (effectively giving them higher threshold)
 bOnOffsetVar = randperm(20);  % decouple bout onset and protosyllables
 indPsyl = [];
-Input(trainingNeurons{2}.nIDs,:) = 0;
+indBstart = []; 
+Input(trainingNeurons{2}.nIDs,:) = -HowClamped;
 for i = 1:(nsteps/CyclesPerBout/trainint)
     istart = (i-1)*CyclesPerBout*trainint+1+bOnOffsetVar(i); 
     indPsyl = [indPsyl istart istart+trainint istart+2*trainint];
+    indBstart = [indBstart (i-1)*CyclesPerBout*trainint+1+bOnOffsetVar(end-i)]; 
 end
-Input(trainingNeurons{2}.nIDs,indPsyl) = 1; % alternating rhythmic activation of training neurons
+Input(trainingNeurons{2}.nIDs,indPsyl) = HowOn; % alternating rhythmic activation of training neurons
+Input(trainingNeurons{1}.nIDs,indBstart) = HowOn; % alternating rhythmic activation of training neurons
+
 imagesc(Input)
-% trainingNeurons{1}.nIDs = 1:k/2;
-% trainingNeurons{2}.nIDs = (k/2+1):k;
-% trainingNeurons{1}.tind = repmat([true(1,trainint) false(1,trainint)],1,nsteps/trainint/2);
-% trainingNeurons{2}.tind = repmat([true(1,trainint) false(1,trainint)],1,nsteps/trainint/2);
-% Input = zeros(k, nsteps); % clamp training neurons
-% Input(:,mod(1:nsteps,trainint)==1) = 1; % rhythmic activation of training neurons
-%
 
 w = w0; 
-% niter = Niter(1);        % number of iterations to run
-% for i = 1:niter
-%     % Construct input
-%     indPsyl = [];
-%     bOnOffsetVar = randperm(20);
-%     Input(trainingNeurons{2}.nIDs,:) = 0;
-%     for j = 1:(nsteps/CyclesPerBout/trainint)
-%         istart = (j-1)*CyclesPerBout*trainint+1+bOnOffsetVar(j); 
-%         indPsyl = [indPsyl istart istart+trainint istart+2*trainint];
-%     end
-%     Input(trainingNeurons{2}.nIDs,indPsyl) = 1; 
-%     bdyn = (rand(n,nsteps)>=(1-pn)); % Random activation
-%     bdyn(1:k,:) = Input; 
-%     % One 'bout' of learning
-%     p.w = w; 
-%     p.input = bdyn;
-%     [w xdyn] = HVCBout(p);
-% end
-
-HVCtestRaster(xdyn,Input)
-
+%
 % finish forming protosyllable
 niter = Niter(2);     % number of iterations to run
 for i = 1:niter
     % Construct input
+    Input = -HowClamped*ones(k, nsteps); %clamp training neurons (effectively giving them higher threshold)
+    bOnOffsetVar = randperm(20);  % decouple bout onset and protosyllables
     indPsyl = [];
-    bOnOffsetVar = randperm(20);
-    Input(trainingNeurons{2}.nIDs,:) = 0;
+    indBstart = []; 
+    Input(trainingNeurons{2}.nIDs,:) = -HowClamped;
     for j = 1:(nsteps/CyclesPerBout/trainint)
         istart = (j-1)*CyclesPerBout*trainint+1+bOnOffsetVar(j); 
         indPsyl = [indPsyl istart istart+trainint istart+2*trainint];
+        indBstart = [indBstart (j-1)*CyclesPerBout*trainint+1+bOnOffsetVar(end-j)]; 
     end
-    Input(trainingNeurons{2}.nIDs,indPsyl) = 1; 
-    bdyn = (rand(n,nsteps)>=(1-pn)); % Random activation
+    Input(trainingNeurons{2}.nIDs,indPsyl) = HowOn; % alternating rhythmic activation of training neurons
+    Input(trainingNeurons{1}.nIDs,indBstart) = HowOn; % alternating rhythmic activation of training neurons
+    
+    bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     p.w = w; 
     p.input = bdyn;
     % One 'bout' of learning
     [w xdyn] = HVCBout(p);
-    HVCtestRaster(xdyn,Input)
-    pause(.5)
+    if (mod(i,50) == 1)|i<20
+        HVCtestRaster(xdyn,Input,w,PlottingParams)
+        pause(.5)
+        i
+        frame = getframe(gcf);
+        slowrate = 1; 
+        for l = 1:slowrate
+            writeVideo(writerobj,frame);
+        end
+        pause(.2)
+    end
 end
+HVCtestRaster(xdyn,Input,w,PlottingParams)
 wpsyl = w; 
 
 
 %%
 % splitting 
 
+shg
 w = wpsyl; 
 p.wmax = wmaxSplit;  
 p.m = Wmax/p.wmax;
 
 % training inputs
 
-bOnOffset = 4; 
+bOnOffset = 3; 
+HowClamped = 1; 
+HowOn = 10; 
+HowOnPsyl = 2; 
 trainingNeurons{1}.nIDs = 1:k/2;
 trainingNeurons{2}.nIDs = (k/2+1):k;
-% trainingNeurons{1}.tind = repmat([true(1,trainint) false(1,trainint)],1,nsteps/trainint/2);
-% trainingNeurons{2}.tind = repmat([false(1,trainint) true(1,trainint)],1,nsteps/trainint/2);
-Input = zeros(k, nsteps); % clamp training neurons
-Input(trainingNeurons{1}.nIDs,mod(1:nsteps,4*trainint)==1) = 1; % alternating rhythmic activation of training neurons
-Input(trainingNeurons{2}.nIDs,(mod(1:nsteps,trainint)==bOnOffset)&(mod(1:nsteps,4*trainint)~=3*trainint+bOnOffset)) = 1; % alternating rhythmic activation of training neurons
-%imagesc(Input)
+Input = -HowClamped*ones(k, nsteps); % clamp training neurons
+bOnOffsetVar = [1 randperm(20)];
+indPsyl = [];
+indBstart = [];
+for i = 1:(nsteps/CyclesPerBout/trainint)
+    istart = (i-1)*CyclesPerBout*trainint+1+bOnOffsetVar(i)+bOnOffset; 
+    indPsyl = [indPsyl istart istart+trainint istart+2*trainint];
+    indBstart = [indBstart istart-bOnOffset]; 
+end
+Input(trainingNeurons{2}.nIDs,indPsyl) = HowOnPsyl; % alternating rhythmic activation of training neurons
+Input(trainingNeurons{1}.nIDs,indBstart) = HowOn; % alternating rhythmic activation of training neurons
+imagesc(Input)
 
 %
 
 niter = Niter(3); 
 for i = 1:niter
     % Construct input
-    bdyn = (rand(n,nsteps)>=(1-pn)); % Random activation
+    Input = -HowClamped*ones(k, nsteps); % clamp training neurons
+    bOnOffsetVar = [1 randperm(20)];
+    indPsyl = [];
+    indBstart = [];
+    for j = 1:(nsteps/CyclesPerBout/trainint)
+        istart = (j-1)*CyclesPerBout*trainint+1+bOnOffsetVar(j)+bOnOffset; 
+        indPsyl = [indPsyl istart istart+trainint istart+2*trainint];
+        indBstart = [indBstart istart-bOnOffset]; 
+    end
+    Input(trainingNeurons{2}.nIDs,indPsyl) = HowOnPsyl; % alternating rhythmic activation of training neurons
+    Input(trainingNeurons{1}.nIDs,indBstart) = HowOn; % alternating rhythmic activation of training neurons
+    
+    bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
     bdyn(1:k,:) = Input; 
     p.w = w; 
     p.input = bdyn;
@@ -176,15 +201,19 @@ for i = 1:niter
     [w xdyn] = HVCBout(p);
 %     Latency = findHVClatency(xdyn,trainint,trainingNeurons); 
 %     Nsplit = sum(xor(Latency{1}.FireDur,Latency{2}.FireDur));
-    if  PlotIters & (mod(i,20)==0); % if you want to plot each step as it goes
+    if  PlotIters & (mod(i,10)==0); % if you want to plot each step as it goes
         i
-        HVCtestRaster(xdyn,Input)
+        HVCtestRaster(xdyn,Input,w,PlottingParams)
+        frame = getframe(gcf);
+        for l = 1:slowrate
+            writeVideo(writerobj,frame);
+        end
         pause(.2)
     end
 end
 
 cla;
-HVCtestRaster(xdyn,Input)
+HVCtestRaster(xdyn,Input,w,PlottingParams)
 
 % % Later splitting 
 % niter = Niter(4); 
@@ -209,3 +238,5 @@ HVCtestRaster(xdyn,Input)
 % set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
 % suptitle(['seed ', num2str(seed)])
 % print -dmeta -r150
+
+close(writerobj);
