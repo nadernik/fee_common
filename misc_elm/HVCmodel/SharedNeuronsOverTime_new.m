@@ -69,7 +69,7 @@ Input(trainingNeurons{1}.nIDs,mod(1:nsteps,2*trainint)==1) = HowOn; % alternatin
 Input(trainingNeurons{2}.nIDs,mod(1:nsteps,2*trainint)==trainint+1) = HowOn; % alternating rhythmic activation of training neurons
 AltInput = Input;
 %%
-for seedi = 31:(Nseeds)
+for seedi = 1:(Nseeds)
     tic
     % random initial weights
     rng(seedi);
@@ -120,8 +120,8 @@ for seedi = 31:(Nseeds)
     toc
 end
 %%
-save(['C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime13.mat'])
-% #13: 30 runs, same params as 9038
+%save(['C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime13.mat'])
+% #13: 30 runs, same params as 9038; don't overwrite 14,15,...
 %%
 load C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime13
 %

@@ -14,7 +14,7 @@ rasterh = 3/4;
 netoffset = Margin/3;
 neth = 1/4-Margin/4-.01; 
 PlottingParams.msize = 5;
-PlottingParams.linewidth = .01; 
+PlottingParams.linewidth = 1; 
 PlottingParams.Syl1Color = [1 0 0]; 
 PlottingParams.Syl2Color = [0 1 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
 PlottingParams.ProtoSylColor = [1 0 1]; 
@@ -25,14 +25,15 @@ PlottingParams.labelFontSize = 6;
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
 PlottingParams.totalPanels = 4; 
+PlottingParams.sortby = 'activity'; 
 
 
-PlotIters = 1; 
+PlotIters = 0; 
 % Alternating seed neuron differentiation
 
 
 
-seed = 208
+seed = 210
 p.seed = seed;          % seed random number generator
 p.wmax = 1;             % single synapse hard bound
 p.m = 9;               % desired number of synapses per neuron (wmax = Wmax/m)
@@ -52,7 +53,7 @@ wmaxSplit = 3;          % single synapse hard bound to induce splitting (increas
 gammaSplit =.18;        % increased strength of recurrent inhibition to induce splitting
 
 
-Niter = [1 499 700 2000]; % number of iterations for each plot (first 2 are protosyll, last 2 are splitting)
+Niter = [1 499 690 2000]; % number of iterations for each plot (first 2 are protosyll, last 2 are splitting)
 gammas = sigmf(1:Niter(end),[1/200 500])*gammaSplit; % gradually increase gamma to gammaSplit
 Wmax = p.wmax*p.m;
 
@@ -107,7 +108,7 @@ for i = 1:niter
     %tmp = p; tmp.eta = 0; 
     [w xdyn] = HVCBout(p);
 end
-HVCtestRaster(xdyn,PsylInput,w,PlottingParams);
+HVCtestRaster_intoThree(xdyn,PsylInput,w,PlottingParams);
 wpsyl = w; 
 
 
@@ -125,7 +126,7 @@ for i = 1:niter
     %tmp = p; tmp.eta = 0; 
     [w xdyn] = HVCBout(p);
 end
-HVCtestRaster(xdyn,PsylInput,w,PlottingParams);
+HVCtestRaster_intoThree(xdyn,PsylInput,w,PlottingParams);
 wpsyl = w; 
 
 %%
@@ -155,9 +156,9 @@ for i = 1:niter
         pause(.5)
     end
 end
-HVCtestRaster(xdyn,AltInput,w,PlottingParams);
+HVCtestRaster_intoThree(xdyn,AltInput,w,PlottingParams);
 
-
+%%
 
 PlottingParams.thisPanel = 4;
 % Later splitting 
@@ -172,21 +173,13 @@ for i = (Niter(3)+1):Niter(4)
     p.gamma = gammas(i); 
     [w xdyn] = HVCBout(p);
 end
-HVCtestRaster(xdyn,AltInput,w,PlottingParams);
-% subplot(2,2,3); plotHVCnet(w, xdyn, trainint, trainingNeurons, PlottingParams);
-% 
-% subplot('position', [netoffset+3*plotw Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-% set(gca, 'color', 'none');title(Niter(4))
-% PlottingParams.axesPosition = [Margin/2+3*plotw Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
-% set(gca, 'color', 'none')
+HVCtestRaster_intoThree(xdyn,AltInput,w,PlottingParams);
 
-% calculate how split it is
-% Latency = findHVClatency(xdyn,trainint,trainingNeurons); 
-% HowSplit = sum(xor(Latency{1}.FireDur,Latency{2}.FireDur))/sum(or(Latency{1}.FireDur,Latency{2}.FireDur))
 
+%%
 % figure parameters
 figw = 6;
-figh = 3; 
-suptitle(['seed ', num2str(seed), ' ', num2str(i), ' bouts'])
+figh = 2; 
+%suptitle(['seed ', num2str(seed), ' ', num2str(i), ' bouts'])
 set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw figh])
 print -dmeta -r150

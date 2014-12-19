@@ -2,7 +2,7 @@
 % neuron as firing during a particular syllable; 
 % Emily Mackevicius 12/10/2014
 
-nSyl = 5; % number of syllables of that type in bout; 
+nSyl = 20; % number of syllables of that type in bout; 
 m = 10; % number of timebins in that syllable; 
 nBurst = 1; % number of bursts/syllable; 
 
@@ -16,4 +16,4 @@ for iter = 1:1000;
     raster = sum(simShuff);
     M(iter) = max(raster); 
 end
-figure; hist(M, 0:5)
+figure; hist(M, 0:10)

@@ -29,7 +29,7 @@ PlottingParams.wplotmax = 2; % this should be wmaxSplit
 figure(1); clf
 set(gcf, 'color', ones(1,3));
 
-seed = 9877
+seed = 9038
 p.seed = seed;          % seed random number generator
 p.wmax = 1;             % single synapse hard bound
 p.m = 10;               % desired number of synapses per neuron (wmax = Wmax/m)
