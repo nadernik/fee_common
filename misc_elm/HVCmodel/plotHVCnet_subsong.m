@@ -1,5 +1,5 @@
-function plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
-% Makes network diagram and raster plots, called by RunHVC_boutOnset_net 
+function plotHVCnet_subsong(w, xdyn, trainingNeurons, PlottingParams)
+% Makes network diagram and raster plots, called by RunHVC_split_new
 % w: weight matrix
 % xdyn: activity of network
 % m: duration of one syllable, in timesteps
@@ -27,7 +27,7 @@ subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])
 cla; hold on
 
 % calculate latency of each neuron
-Latency = findHVClatency_boutOnset(xdyn, trainingNeurons);
+Latency = findHVClatency_new(xdyn, trainingNeurons);
 
 % first double plot all neurons that don't fire at a consistent phase
 nsteps = size(xdyn,2); 
@@ -37,8 +37,6 @@ x = zeros(1,n);
 y = zeros(1,n);
 trainingset1 = trainingNeurons{1}.nIDs;
 trainingset2 = trainingNeurons{2}.nIDs; 
-indDoubled = []; 
-cDoub = n+1; 
 for ni = 1:n
     if length(intersect(trainingset1,ni))>0 % if it's a training neuron
         x(ni) = trainingNeurons{1}.candLat(1);
@@ -46,42 +44,27 @@ for ni = 1:n
         x(ni) = trainingNeurons{2}.candLat(1);
     else
         if Latency{1}.FireDur(ni)|Latency{2}.FireDur(ni) % if it fired during either syll
-            if (Latency{1}.FireDur(ni)&Latency{2}.FireDur(ni)) % if it fired during both sylls
-                if (Latency{1}.mode(ni)==Latency{2}.mode(ni)) % if fired during both sylls at same phase
-                    x(ni) = Latency{1}.mode(ni);
-                else % double plot if different phases for both sylls
-                    x(ni) = Latency{1}.mode(ni);
-                    x(cDoub) = Latency{2}.mode(ni); 
-                    indDoubled = [indDoubled ni];
-                    cDoub = cDoub+1;
-                end
-            elseif Latency{1}.FireDur(ni) % if it fired during syll 1 only
-                x(ni) = Latency{1}.mode(ni);
-            else % fired during syll 2 only
-                x(ni) = Latency{2}.mode(ni);
-            end
+            x(ni) = Latency{1}.mode(ni);
         else % if it fired during neither syll
             x(ni) = NaN;
         end
     end
 end
-indkeep = [find(~isnan(x(1:n))) indDoubled];
+indkeep = find(~isnan(x));
 y = y(indkeep); 
 w = w(indkeep,indkeep); 
 xdyn = xdyn(indkeep,:); 
 x = x(indkeep); 
 ux = unique(x); 
-indDoubled
 
 % keep track of which neurons participated in each syllable
 FireDur1 = Latency{1}.FireDur(indkeep); 
 FireDur2= Latency{2}.FireDur(indkeep); 
 
 % classify neurons as specific or shared
-Specific1 = FireDur1&~FireDur2;
-Specific2 = FireDur2&~FireDur1; 
-Shared = (FireDur1&FireDur2); 
-indshared = find(Shared);
+Specific1 = [];
+Specific2 = []; 
+Shared = Latency{1}.FireDur(indkeep); 
 
 % calculate the incoming weights from specific neurons of each type, to
 % determine sorting in y axis and color
@@ -101,15 +84,9 @@ end
 y1 = zeros(1,size(w,1)); 
 for ui = 1:length(ux)
     indshared = (x==ux(ui))&Shared;
-    ind1 = (x==ux(ui))&Specific1; 
-    ind2 = (x==ux(ui))&Specific2;
     [~,y1(indshared)] = sort(y(indshared));
     tocentershared = 1+(numel(find(indshared))-1)/2;
     y1(indshared) = y1(indshared)-tocentershared;
-    [~,y1(ind1)] = sort(y(ind1));
-    y1(ind1) = y1(ind1) + (numel(find(indshared)))/2;
-    [~,y1(ind2)] = sort(y(ind2));
-    y1(ind2) = y1(ind2) -numel(find(ind2))-1-(numel(find(indshared)))/2;
 end
 
 % Color weights white to black between wplotmin and wplotmax
@@ -149,23 +126,13 @@ for k = 1:length(wSort)
     end
 end
 
-% color each neuron based on its relative input from each syllable type
+dotColor = zeros(length(x),3); 
+dotColor(trainingset1,:) = repmat(PlottingParams.SubsongSylColor,length(trainingset1),1); 
 for pli = 1:length(x)
-    tmpC = c1(pli)'/(max(c1)+eps)*Syl1Color+c2(pli)'/(max(c2)+eps)*Syl2Color; 
-    tmpC = tmpC/(max(tmpC)+eps); % normalize so colors are bright
-    if Shared(pli)
-        tmpC = zeros(1,3); 
-    end
-    if Specific1(pli)
-        tmpC = Syl1Color; 
-    end
-    if Specific2(pli)
-        tmpC = Syl2Color; 
-    end
-    plot(x(pli),y1(pli), 'marker', '.', 'color', tmpC, 'markersize', msize)
+    plot(x(pli),y1(pli), 'marker', '.', 'color', dotColor(pli,:), 'markersize', msize)
 end
 
-xlim([trainingNeurons{1}.candLat(1)-.5 trainingNeurons{1}.candLat(end)+.5])
+xlim([trainingNeurons{1}.candLat(1)-.5 trainingNeurons{1}.candLat(end)/2+.5])
 ylim([min(y1)-.5 max(y1)+.5])
 axis off; 
 set(gca, 'color', 'none')
@@ -189,67 +156,32 @@ cmap = cmap(1:64,:);
 cn = size(cmap,1);
 Red = trainingNeurons{1}.nIDs;
 Green = trainingNeurons{2}.nIDs; 
-cmap(cn+1,:) = [0 0 0]; 
+cmap(cn+1,:) = zeros(1,3); 
 cmap(cn+2,:) = Syl1Color; % some red training neurons
 cmap(cn+3,:) = Syl2Color; % some green training neurons
-cmap(cn+4,:) = ProtoSylColor; % sometimes magenta ... never in this case.
-
-xdyn(Red,:) = xdyn(Red,:)*(1+1/cn); 
-xdyn(Green,:) = xdyn(Green,:)*(1+2/cn);
+cmap(cn+4,:) = ProtoSylColor; % sometimes magenta 
+cmap(cn+5,:) = PlottingParams.SubsongSylColor; % for subsong case
+xdyn(trainingset1,:) = xdyn(Red,:)*(1+5/cn); 
 
 %%
 %collecting what I'll plot for the raster
-sylIDtoplot = 7; %(don't choose a protosyllable that's at the beginning of a bout)
+sylIDtoplot = 1; 
 k = length(union(trainingset1, trainingset2)); 
 tindplot1 = trainingNeurons{1}.tind(sylIDtoplot) + trainingNeurons{1}.candLat-1; % time of example syl 1
-tindplot2 = trainingNeurons{2}.tind(sylIDtoplot) + trainingNeurons{2}.candLat-1; % time of example syl 2
-[~,indsort] = (sortrows(xdyn(:,[tindplot1 tindplot2]))); % sort by which fired first
-tmp = xdyn(flipud(indsort), [tindplot1 tindplot2]); % pull out the example data from xdyn
-indShared = sum(tmp,2)>=2; 
-indBO = (sum(tmp(:,1:length(tindplot1)),2)>0) & (sum(tmp(:,(length(tindplot1)+1):end),2)==0);
-rest = ~indShared; 
-tmp = tmp([find(indShared); find(rest)],:); % everything that will be plotted in the rasters
+[~,indsort] = (sortrows(xdyn(:,[tindplot1]))); % sort by which fired first
+tmp = xdyn(flipud(indsort), [tindplot1]); % pull out the example data from xdyn
 
 
 %%
-% plot Bout Onset syllable 
+% plot raster 
 subplot('position', [ploti/nplots-2*spacing, bottom, length(tindplot1)*scale, height])%subplot(3,nHorPlot,(nHorPlot+PlottingParams.thisPanel*4-2)+[0 nHorPlot]+.75)
-tmp1 = tmp(:,1:length(tindplot1)); % just bout onset syllable
-tmp1(end+1,end+1) = 1+4/cn; % to normalize cmap for plotting
+tmp1 = tmp(:,1:length(tindplot1)); 
+tmp1(end+1,end+1) = 1+5/cn; % to normalize cmap for plotting
 imagesc(tmp1, 'xdata', trainingNeurons{1}.candLat*10); colormap(cmap); axis tight
 hold on; box off
 set(gca, 'fontsize', numFontSize)
 set(gca, 'color', 'none', 'xtick', [5 55], 'xticklabel', {'0', '50'}, 'ydir', 'reverse', 'fontsize', numFontSize)
 ylabel('Neuron','fontsize', labelFontSize)
-if PlottingParams.Hor
-    if sum(indShared)>0 % if shared neurons
-        plot([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5], (.5+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
-    end
-    plot([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5], ...
-        (.5+sum(indBO)+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
-end
-plot([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5],...
-    [-2 -2], 'linewidth', 3, 'color', Syl1Color)
 ylim([-3 ntot])
 xlim([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5])
 
-% Plot protosyllable. 
-subplot('position', [ploti/nplots-spacing, bottom, length(tindplot2)*scale, height])%subplot(3,nHorPlot,(nHorPlot+PlottingParams.thisPanel*4)+[0 nHorPlot])
-tmp1 = tmp(:,(length(tindplot1)+1):end); % just for protosyllable
-tmp1(end+1,end+1) = 1+4/cn; % to normalize cmap for plotting
-imagesc(tmp1, 'xdata', trainingNeurons{2}.candLat*10); colormap(cmap); axis tight
-hold on; box off
-set(gca, 'fontsize', numFontSize)
-set(gca, 'color', 'none', 'xtick', [5 55], 'xticklabel', {'0', '50'}, 'ydir', 'reverse', 'fontsize', numFontSize)
-set(gca, 'yticklabel', {})
-if PlottingParams.Hor
-    if sum(indShared)>0 % if shared neurons
-        plot([-5+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10+5], (.5+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
-    end
-    plot([-5+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10+5], ...
-        (.5+sum(indBO)+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
-end
-plot([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10+5],...
-    [-2 -2], 'linewidth', 3, 'color', Syl2Color)
-ylim([-3 ntot])
-xlim([-5+trainingNeurons{2}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5])

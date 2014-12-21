@@ -50,7 +50,9 @@ for i = 1:nsteps
     
     % Update weights:  eta = learning rate, epsilon = heterosynaptic penalty rate
     dwtotal = dw-p.epsilon*(dw2+dw3);
-    w = min(wmax, max(0, w + dwtotal - clampDiagonal));
+    if eta>0
+        w = min(wmax, max(0, w + dwtotal - clampDiagonal));
+    end
     
     oldx = double(x);
     oldy = y;

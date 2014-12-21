@@ -2,6 +2,9 @@
 % which builds off Ila Fiete's model, with help from Michale Fee and Tatsuo
 % Okubo. 
 
+% Alternating seed neuron differentiation, from subsong through
+% protosyllable stage, through splitting.
+
 % plotting setup
 clf;
 clear all;
@@ -20,12 +23,17 @@ PlottingParams.Syl2Color = [0 1 0]; % please choose orthogonal colors.. if you d
 PlottingParams.ProtoSylColor = [1 0 1]; 
 PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
+PlottingParams.SubsongSylColor = [.5 .5 .5]; 
 PlottingParams.numFontSize = 5; 
 PlottingParams.labelFontSize = 8; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
+nplots = 4; 
+bottom = .1; 
+height = .55; 
+scale = .005; 
+spacing = .75/(2*nplots); 
 
-% Alternating seed neuron differentiation
 figure(1); clf
 set(gcf, 'color', ones(1,3));
 
@@ -49,9 +57,14 @@ wmaxSplit = 2;          % single synapse hard bound to induce splitting (increas
 gammaSplit =.18;        % increased strength of recurrent inhibition to induce splitting
 
 
-Niter = [1 499 492 2000]; % number of iterations for each plot (first 2 are protosyll, last 2 are splitting)
+Niter = [1 500 492 2000]; % number of iterations for each plot (first 2 are protosyll, last 2 are splitting)
 gammas = sigmf(1:Niter(end),[1/200 500])*gammaSplit; % gradually increase gamma to gammaSplit
 Wmax = p.wmax*p.m;
+k = length(p.trainingInd);
+trainint = p.trainint;
+nsteps = p.nsteps;
+n = p.n;
+pn = p.pn;
 
 % saving params for later.
 p.gammas = gammas;
@@ -62,29 +75,44 @@ folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
 timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
 SavedHere = fullfile(folder, ['Params', timestamp])
 save(SavedHere,'p');
-%%
 
-% random initial weights
+
+
 rng(seed);
-w0 = 2*rand(p.n)*Wmax/p.n; 
+% constructing inputs
+HowClamped = 10; % give training neurons higher threshold
+HowOn = 10; % higher inputs to training neurons
+% Construct subsong training input
+nstepsSubsong = 1000; 
+trainingNeurons{1}.nIDs = 1:k;
+trainingNeurons{2}.nIDs = 1:k;
+isOnset = rand(1,nstepsSubsong)>.9; 
+trainingNeurons{1}.tind = find(isOnset);
+trainingNeurons{2}.tind = find(isOnset); 
+trainingNeurons{1}.candLat = 1:2*trainint; 
+trainingNeurons{2}.candLat = 1:2*trainint; %1:trainint; 
+trainingNeurons{1}.thres = 12; % criteria for participation during subsong (thres from testLatSig -- must fire at consistent latency more than 12 times in the bout of ~100 syllables to count as participating)
+trainingNeurons{2}.thres = 12; 
+Input =-HowClamped*ones(k, nstepsSubsong); % clamp training neurons (effectively giving them higher threshold)
+Input(trainingNeurons{1}.nIDs,isOnset) = HowOn; 
+Input(trainingNeurons{2}.nIDs,isOnset) = HowOn; 
+bdyn = double(rand(n,nstepsSubsong)>=(1-pn)); % Random activation
+bdyn(1:k,:) = Input; 
+subsongInput = bdyn; 
+trainingNeuronsSubsong = trainingNeurons; clear trainingNeurons;
 
 %Psyl inputs
 % training inputs
-k = length(p.trainingInd);
-trainint = p.trainint;
-nsteps = p.nsteps;
-n = p.n;
-pn = p.pn;
-HowClamped = 10; 
-HowOn = 10; 
-trainingNeurons{1}.nIDs = 1:k/2;
-trainingNeurons{2}.nIDs = (k/2+1):k;
+trainingNeurons{1}.nIDs = 1:k;
+trainingNeurons{2}.nIDs = 1:k;
 trainingNeurons{1}.tind = repmat([true(1,trainint) false(1,trainint)],1,nsteps/trainint/2);
 trainingNeurons{2}.tind = repmat([true(1,trainint) false(1,trainint)],1,nsteps/trainint/2);
+trainingNeurons{1}.candLat = 1:trainint; 
+trainingNeurons{2}.candLat = 1:trainint; 
 Input = -HowClamped*ones(k, nsteps); %clamp training neurons (effectively giving them higher threshold)
 Input(:,mod(1:nsteps,trainint)==1) = HowOn; % rhythmic activation of training neurons
 PsylInput = Input; 
-trainingNeuronsPsyl = trainingNeurons; 
+trainingNeuronsPsyl = trainingNeurons; clear trainingNeurons;
 
 %Alternating Inputs
 % training inputs
@@ -96,30 +124,35 @@ Input =-HowClamped*ones(k, nsteps); % clamp training neurons (effectively giving
 Input(trainingNeurons{1}.nIDs,mod(1:nsteps,2*trainint)==1) = HowOn; % alternating rhythmic activation of training neurons
 Input(trainingNeurons{2}.nIDs,mod(1:nsteps,2*trainint)==trainint+1) = HowOn; % alternating rhythmic activation of training neurons
 AltInput = Input;
-trainingNeuronsAlt = trainingNeurons; 
+trainingNeuronsAlt = trainingNeurons; clear trainingNeurons;
 
-
-
-%  forming protosyllable
+%% subsong
+% random initial weights
+rng(seed);
+w0 = 2*rand(p.n)*Wmax/p.n; 
+trainingNeurons = trainingNeuronsSubsong;
+% subsong stage
+eta = p.eta;
+p.eta = 0; 
+p.nsteps = nstepsSubsong; 
 w = w0; 
-trainingNeurons = trainingNeuronsPsyl; 
-niter = Niter(1);     % number of iterations to run
-for i = 1:niter
-    % Construct input
-    bdyn = double(rand(n,nsteps)>=(1-pn)); % Random activation
-    bdyn(1:k,:) = PsylInput; 
-    p.w = w; 
-    p.input = bdyn;
-    % One 'bout' of learning
-    %tmp = p; tmp.eta = 0; 
-    [w xdyn] = HVCBout(p);
-end
+p.w = w; 
+p.input = subsongInput;
+% One 'bout' of learning
 
-subplot('position', [netoffset+0 Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none'); title(Niter(1))
-PlottingParams.axesPosition = [Margin/2+0 Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none')
+[w xdyn] = HVCBout(p);
+PlottingParams.Hor = 1;
+PlottingParams.totalPanels = 4; 
+PlottingParams.thisPanel = 1; 
+plotHVCnet_subsong(w, xdyn, trainingNeurons, PlottingParams)
 
+% recovering original params
+p.eta = eta; 
+p.nsteps = nsteps; 
+
+
+%% protosyllable stage
+trainingNeurons = trainingNeuronsPsyl;
 niter = Niter(2);     % number of iterations to run
 for i = 1:niter
     % Construct input
@@ -134,15 +167,16 @@ end
 %HVCtestRaster(xdyn,Input,w);
 wpsyl = w; 
 %
-subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
+ploti = 2; 
+subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
+plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');title(Niter(2))
-PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
+PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 25*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-%%
 
-PlotIters = 0;  % set to 1, and increase Niter(3), if you want to plot each step as it goes
+%%  splitting 
 
-%  splitting 
 w = wpsyl;
 p.wmax = wmaxSplit;  
 p.m = Wmax/p.wmax;
@@ -157,23 +191,16 @@ for i = 1:niter
     p.input = bdyn;
     p.gamma = gammas(i); 
     [w xdyn] = HVCBout(p);
-    if  PlotIters &  i>470%& mod(i,1)==0 ; % if you want to plot each step as it goes
-        i
-        %HVCtestRaster(xdyn,Input,w);
-        subplot('position', [netoffset+2*plotw Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-        %plotHVCnet(w, xdyn, trainint, trainingNeurons, PlottingParams);
-        pause(.5)
-    end
 end
 
-% 
-subplot('position', [netoffset+2*plotw Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
+ploti = 3; 
+subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
+plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');title(Niter(3))
-PlottingParams.axesPosition = [Margin/2+2*plotw Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
+PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 25*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
-
-
-% Later splitting 
+%% Later splitting 
 niter = Niter(4); 
 for i = (Niter(3)+1):Niter(4)
     % Construct input
@@ -185,19 +212,17 @@ for i = (Niter(3)+1):Niter(4)
     p.gamma = gammas(i); 
     [w xdyn] = HVCBout(p);
 end
-% HVCtestRaster(xdyn,Input,w);
-% subplot(2,2,3); plotHVCnet(w, xdyn, trainint, trainingNeurons, PlottingParams);
-% 
-subplot('position', [netoffset+3*plotw Margin/4+rasterh netw neth]); plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
+
+ploti = 4; 
+subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
+plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');title(Niter(4))
-PlottingParams.axesPosition = [Margin/2+3*plotw Margin+0 rasterw rasterh-Margin]; plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
+PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 25*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none')
 
-% calculate how split it is
-Latency = findHVClatency(xdyn,trainint,trainingNeurons); 
-HowSplit = sum(xor(Latency{1}.FireDur,Latency{2}.FireDur))/sum(or(Latency{1}.FireDur,Latency{2}.FireDur))
-
-% figure parameters
+%%
+% figure parameters, exporting
 figw = 6;
 figh = 3; 
 set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])

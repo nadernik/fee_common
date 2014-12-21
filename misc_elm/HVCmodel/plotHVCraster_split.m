@@ -41,6 +41,7 @@ cmap(cn+1,:) = [0 0 0];
 cmap(cn+2,:) = Syl1Color; % some red training neurons
 cmap(cn+3,:) = Syl2Color; % some green training neurons
 cmap(cn+4,:) = ProtoSylColor; % sometimes magenta
+cmap(cn+5,:) = PlottingParams.SubsongSylColor;
 
 % If protosyllable stage, just plot all training neurons ProtoSylColor
 if issame(xplot(Red,:), xplot(Green,:))
@@ -79,7 +80,7 @@ for i = 1:2
     axesPos(3) = axesPos(3)*.4;
     subplot('position', axesPos); 
     xplot = xplotall(:,(1:(size(xplotall,2)/2))+(i-1)*(size(xplotall,2)/2));
-    xplot(end+1,end+1) = 1+4/cn; %to rescale colormap
+    xplot(end+1,end+1) = 1+6/cn; %to rescale colormap
     tplot = (1:(size(xplot,2)))*10; % assuming each bin is 10ms
     imagesc(xplot, 'xdata', tplot); colormap(gca, cmap); hold on
     

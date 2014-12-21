@@ -71,6 +71,7 @@ w = w(indkeep,indkeep);
 x = x(indkeep); 
 ux = unique(x); 
 
+
 % keep track of which neurons participated in each syllable
 FireDur1 = Latency{1}.FireDur(indkeep); 
 FireDur2= Latency{2}.FireDur(indkeep); 
