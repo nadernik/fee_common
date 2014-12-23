@@ -39,15 +39,17 @@ for coni = 1:2 % 1 for tutoring 2 for art subsong
         for i = 1:numel(trigInfo.eventOnsets{1});
             times = [times; trigInfo.eventOnsets{1}{i}];
         end
-        [n1,x1] = hist(times, timepts); 
-        n1 = n1/numel(trigInfo.eventOnsets{1});
-        %n1 = n1/mean(n1); % normalize
-        n1 = smooth(n1,10); x1 = smooth(x1,10); %smooth in dt*10 windows
-        n{coni}(:,c) = n1; 
-        x{coni}(:,c) = x1; 
-        c = c+1;
-        if coni == 2
-            indArtSub(fi) = c; 
+        if length(times)>200 % skipping units with less than 100 total spikes
+            [n1,x1] = hist(times, timepts); 
+            n1 = n1/numel(trigInfo.eventOnsets{1});
+            %n1 = n1/mean(n1); % normalize
+            n1 = smooth(n1,10); x1 = smooth(x1,10); %smooth in dt*10 windows
+            n{coni}(:,c) = n1; 
+            x{coni}(:,c) = x1; 
+            c = c+1;
+            if coni == 2
+                indArtSub(fi) = c; 
+            end
         end
     end
     n{coni} = n{coni}/dt; 

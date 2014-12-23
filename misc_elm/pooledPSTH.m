@@ -1,3 +1,6 @@
+%% Data is compiled separately in 'datacompilation.m'
+
+
 % 
 %%
 %all the HVC neurons where I analyzed their responses to the live
