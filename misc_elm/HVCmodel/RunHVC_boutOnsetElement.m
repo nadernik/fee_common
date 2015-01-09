@@ -5,16 +5,16 @@
 % plotting setup
 clf;
 clear all;
-Margin = 1/5; 
-nplots = 4;
-plotw = .23; 
-netw = plotw-.01;
-rasterw = plotw-Margin/2;
-rasterh = 3/4; 
-netoffset = Margin/3;
-neth = 1/4-Margin/4-.01; 
-PlottingParams.msize = 5;
-PlottingParams.linewidth = .01; 
+
+isEPS = 0; 
+
+if isEPS 
+    PlottingParams.msize = 3; % change to what is best for EPS figure
+    PlottingParams.linewidth = .25; 
+else
+    PlottingParams.msize = 3;
+    PlottingParams.linewidth = .25; 
+end
 PlottingParams.Syl1Color = [1 0 0]; 
 PlottingParams.Syl2Color = [0 1 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
 PlottingParams.ProtoSylColor = [1 0 1]; 
@@ -24,15 +24,17 @@ PlottingParams.numFontSize = 5;
 PlottingParams.labelFontSize = 8; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
+PlottingParams.wprctile = 0; % plot all weights above this percentile. 
 PlottingParams.totalPanels = 3; 
 PlottingParams.thisPanel = 1; 
 PlottingParams.sortby = 'weightMatrix'; 
+PlottingParams.boutOnsetElement = 1; 
 
 % Alternating seed neuron differentiation
 figure(1); clf
 set(gcf, 'color', ones(1,3));
 
-seed = 3009; %978, 1009, 1012, 1021,1022, 1023
+seed = 3010; %978, 1009, 1012, 1021,1022, 1023
 p.seed = seed; 
 p.wmax = 1;             % single synapse hard bound
 p.m = 5;                % desired number of synapses per neuron (wmax = Wmax/m)
@@ -156,7 +158,7 @@ p.eta = eta;
 
 PlottingParams.thisPanel = 1;
 PlottingParams.Hor = 0; 
-plotHVCnet_boutOnsetElement(w, xdyn, trainingNeurons, PlottingParams)
+plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 PlottingParams.Hor = 1;
 
 
@@ -200,7 +202,7 @@ p.eta = 0; p.input = probeInput;
 p.eta = eta; 
 
 PlottingParams.thisPanel = 2;
-plotHVCnet_boutOnsetElement(w, xdyn, trainingNeurons, PlottingParams)
+plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 
 wpsyl = w; 
 
@@ -297,7 +299,7 @@ p.eta = 0; p.input = probeInput;
 p.eta = eta; 
 
 PlottingParams.thisPanel = 3;
-plotHVCnet_boutOnsetElement(w, xdyn, trainingNeurons, PlottingParams)
+plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 
 
 %%
@@ -305,4 +307,4 @@ plotHVCnet_boutOnsetElement(w, xdyn, trainingNeurons, PlottingParams)
 figw = 6*3/4;
 figh = 4; 
 set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw figh])
-print -dmeta -r150
+%print -dmeta -r150

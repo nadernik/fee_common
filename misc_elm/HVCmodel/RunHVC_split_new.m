@@ -8,26 +8,32 @@
 % plotting setup
 clf;
 clear all;
-Margin = 1/5; 
+
 nplots = 4;
-plotw = .23; 
-netw = plotw-.01;
-rasterw = plotw-Margin/2;
-rasterh = 3/4; 
-netoffset = Margin/3;
-neth = 1/4-Margin/4-.01; 
-PlottingParams.msize = 5;
-PlottingParams.linewidth = .01; 
+isEPS = 0; 
+
+if isEPS 
+    PlottingParams.msize = 3; % change to what is best for EPS figure
+    PlottingParams.linewidth = .25; 
+else
+    PlottingParams.msize = 3;
+    PlottingParams.linewidth = 1e-3; 
+end
 PlottingParams.Syl1Color = [1 0 0]; 
-PlottingParams.Syl2Color = [0 1 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
+PlottingParams.Syl2Color = [0 0 1]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
 PlottingParams.ProtoSylColor = [1 0 1]; 
 PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
-PlottingParams.SubsongSylColor = [.5 .5 .5]; 
+PlottingParams.SubsongSylColor = [1 0 1]; 
 PlottingParams.numFontSize = 5; 
-PlottingParams.labelFontSize = 8; 
+PlottingParams.labelFontSize = 7; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
+PlottingParams.wprctile = 0; % plot all weights above this percentile.  If nonzero, ignores wplotmin, wplotmax
+%PlottingParams.wsparcify = 0; % drop this fraction of weights from the plot, leaving out random weights
+PlottingParams.wperneuron = 6; % max outgoing weights plotted
+PlottingParams.wperneuronIn = 9; % min incoming weights plotted
+PlottingParams.wprctileSubsong = 0;
 nplots = 4; 
 bottom = .1; 
 height = .55; 
@@ -71,17 +77,19 @@ p.gammas = gammas;
 p.wmaxSplit = wmaxSplit; 
 p.gammaSplit = gammaSplit; 
 p.Niter = Niter; 
-folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
-timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
-SavedHere = fullfile(folder, ['Params', timestamp])
-save(SavedHere,'p');
 
-
+if ~isEPS % saving params 
+    folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
+    timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
+    SavedHere = fullfile(folder, ['Params', timestamp])
+    save(SavedHere,'p');
+end
 
 rng(seed);
 % constructing inputs
 HowClamped = 10; % give training neurons higher threshold
 HowOn = 10; % higher inputs to training neurons
+
 % Construct subsong training input
 nstepsSubsong = 1000; 
 trainingNeurons{1}.nIDs = 1:k;
@@ -139,16 +147,18 @@ w = w0;
 p.w = w; 
 p.input = subsongInput;
 % One 'bout' of learning
-
 [w xdyn] = HVCBout(p);
 PlottingParams.Hor = 1;
 PlottingParams.totalPanels = 4; 
 PlottingParams.thisPanel = 1; 
+wprctile = PlottingParams.wprctile; 
+PlottingParams.wprctile = PlottingParams.wprctileSubsong; 
 plotHVCnet_subsong(w, xdyn, trainingNeurons, PlottingParams)
 
 % recovering original params
 p.eta = eta; 
 p.nsteps = nsteps; 
+PlottingParams.wprctile = wprctile; 
 
 
 %% protosyllable stage
@@ -170,9 +180,9 @@ wpsyl = w;
 ploti = 2; 
 subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none');title(Niter(2))
-PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 25*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
+set(gca, 'color', 'none');%title(Niter(2))
+PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
 set(gca, 'color', 'none')
 
 %%  splitting 
@@ -196,9 +206,9 @@ end
 ploti = 3; 
 subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none');title(Niter(3))
-PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 25*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
+set(gca, 'color', 'none');%title(Niter(3))
+PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
 set(gca, 'color', 'none')
 %% Later splitting 
 niter = Niter(4); 
@@ -216,9 +226,9 @@ end
 ploti = 4; 
 subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
-set(gca, 'color', 'none');title(Niter(4))
-PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 25*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split(w,xdyn,trainint,trainingNeurons,PlottingParams)
+set(gca, 'color', 'none');%title(Niter(4))
+PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
 set(gca, 'color', 'none')
 
 %%
@@ -226,5 +236,7 @@ set(gca, 'color', 'none')
 figw = 6;
 figh = 3; 
 set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
-suptitle(['seed ', num2str(seed)])
-print -dmeta -r150
+%suptitle(['seed ', num2str(seed)])
+if ~isEPS
+    %print -dmeta -r150
+end

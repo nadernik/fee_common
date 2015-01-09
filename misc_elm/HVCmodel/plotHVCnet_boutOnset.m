@@ -113,11 +113,11 @@ for ui = 1:length(ux)
 end
 
 % Color weights white to black between wplotmin and wplotmax
+wplot = w; 
 wplot = w-PlottingParams.wplotmin; 
 wplot(wplot<0) = 0;
-offset = .5; % so you can see even faint weights
-wplot(wplot>0) = wplot(wplot>0)+offset;
-wplot = wplot/(offset+ PlottingParams.wplotmax-PlottingParams.wplotmin);
+wplot = wplot/(PlottingParams.wplotmax-PlottingParams.wplotmin);
+wplot(wplot<prctile(wplot(:), PlottingParams.wprctile)) = 0; 
 
 % jitter a little in x and y, so it doesn't look like a grid
 jitter = .1; 
@@ -184,18 +184,21 @@ scale = .005;
 
 spacing = .75/(2*nplots); 
 
-cmap = flipud(gray);
-cmap = cmap(1:64,:);
-cn = size(cmap,1);
+% cmap = flipud(gray);
+% cmap = cmap(1:64,:);
+% cn = size(cmap,1);
 Red = trainingNeurons{1}.nIDs;
 Green = trainingNeurons{2}.nIDs; 
-cmap(cn+1,:) = [0 0 0]; 
-cmap(cn+2,:) = Syl1Color; % some red training neurons
-cmap(cn+3,:) = Syl2Color; % some green training neurons
-cmap(cn+4,:) = ProtoSylColor; % sometimes magenta ... never in this case.
+IsTrain1 = zeros(1,length(xdyn)); IsTrain1(Red) = 1; 
+IsTrain2 = zeros(1,length(xdyn)); IsTrain2(Green) = 1;
 
-xdyn(Red,:) = xdyn(Red,:)*(1+1/cn); 
-xdyn(Green,:) = xdyn(Green,:)*(1+2/cn);
+% cmap(cn+1,:) = [0 0 0]; 
+% cmap(cn+2,:) = Syl1Color; % some red training neurons
+% cmap(cn+3,:) = Syl2Color; % some green training neurons
+% cmap(cn+4,:) = ProtoSylColor; % sometimes magenta ... never in this case.
+% 
+% xdyn(Red,:) = xdyn(Red,:)*(1+1/cn); 
+% xdyn(Green,:) = xdyn(Green,:)*(1+2/cn);
 
 %%
 %collecting what I'll plot for the raster
@@ -205,51 +208,92 @@ tindplot1 = trainingNeurons{1}.tind(sylIDtoplot) + trainingNeurons{1}.candLat-1;
 tindplot2 = trainingNeurons{2}.tind(sylIDtoplot) + trainingNeurons{2}.candLat-1; % time of example syl 2
 [~,indsort] = (sortrows(xdyn(:,[tindplot1 tindplot2]))); % sort by which fired first
 tmp = xdyn(flipud(indsort), [tindplot1 tindplot2]); % pull out the example data from xdyn
-indShared = sum(tmp,2)>=2; 
+IsTrain1 = IsTrain1(flipud(indsort));
+IsTrain2 = IsTrain2(flipud(indsort));
+indShared = (sum(tmp(:,1:length(tindplot1)),2)>0) & (sum(tmp(:,(length(tindplot1)+1):end),2)>0); 
 indBO = (sum(tmp(:,1:length(tindplot1)),2)>0) & (sum(tmp(:,(length(tindplot1)+1):end),2)==0);
 rest = ~indShared; 
 tmp = tmp([find(indShared); find(rest)],:); % everything that will be plotted in the rasters
+IsTrain1 = IsTrain1([find(indShared); find(rest)]);
+IsTrain2 = IsTrain2([find(indShared); find(rest)]);
 
 
 %%
 % plot Bout Onset syllable 
 subplot('position', [ploti/nplots-2*spacing, bottom, length(tindplot1)*scale, height])%subplot(3,nHorPlot,(nHorPlot+PlottingParams.thisPanel*4-2)+[0 nHorPlot]+.75)
 tmp1 = tmp(:,1:length(tindplot1)); % just bout onset syllable
-tmp1(end+1,end+1) = 1+4/cn; % to normalize cmap for plotting
-imagesc(tmp1, 'xdata', trainingNeurons{1}.candLat*10); colormap(cmap); axis tight
+%tmp1(end+1,end+1) = 1+4/cn; % to normalize cmap for plotting
+PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, length(tindplot1)*scale, height]; 
+
+tOffset = trainingNeurons{1}.candLat(1)-1; 
+for j=1:size(tmp1,2) % for all the time steps
+    Idx = find(tmp1(1:end-1,j)>0); % find the indices of active neurons    
+    if ~isempty(Idx)
+        for k=1:length(Idx) % for all the active neurons
+            Color = IsTrain1(Idx(k))*PlottingParams.Syl1Color + ...
+                IsTrain2(Idx(k))*PlottingParams.Syl2Color;
+            h = patch(10*([j-1,j,j,j-1]+tOffset),[Idx(k)-1,Idx(k)-1,Idx(k),Idx(k)],Color,'edgecolor','none');
+        end  
+    end
+end
+
 hold on; box off
 set(gca, 'fontsize', numFontSize)
-set(gca, 'color', 'none', 'xtick', [5 55], 'xticklabel', {'0', '50'}, 'ydir', 'reverse', 'fontsize', numFontSize)
+set(gca, 'color', 'none', 'xtick', [0 50 100], 'xticklabel', {'0', '50', '100'}, 'ydir', 'reverse', 'fontsize', numFontSize)
+set(gca, 'ydir', 'reverse','tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'fontsize', numFontSize,'tickdir','out');
 ylabel('Neuron','fontsize', labelFontSize)
 if PlottingParams.Hor
     if sum(indShared)>0 % if shared neurons
-        plot([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5], (.5+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
+        plot([-10+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10], (sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
     end
-    plot([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5], ...
-        (.5+sum(indBO)+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
+    plot([-10+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10], ...
+        (sum(indBO)+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
 end
-plot([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5],...
-    [-2 -2], 'linewidth', 3, 'color', Syl1Color)
-ylim([-3 ntot])
-xlim([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5])
+if isfield(PlottingParams,'boutOnsetElement')
+    patch([-10+trainingNeurons{1}.candLat(1)*10 -10 -10 -10+trainingNeurons{1}.candLat(1)*10],[-4 -4 -2 -2],Syl1Color);
+    patch([-10+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10 trainingNeurons{2}.candLat(end)*10 -10+trainingNeurons{2}.candLat(1)*10],[-4 -4 -2 -2],Syl2Color);
+else
+    patch([-10+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10 trainingNeurons{1}.candLat(end)*10 -10+trainingNeurons{1}.candLat(1)*10],[-4 -4 -2 -2],Syl1Color);
+end
+ylim([-5 ntot])
+xlim([-10+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+10])
+%%
 
 % Plot protosyllable. 
 subplot('position', [ploti/nplots-spacing, bottom, length(tindplot2)*scale, height])%subplot(3,nHorPlot,(nHorPlot+PlottingParams.thisPanel*4)+[0 nHorPlot])
 tmp1 = tmp(:,(length(tindplot1)+1):end); % just for protosyllable
-tmp1(end+1,end+1) = 1+4/cn; % to normalize cmap for plotting
-imagesc(tmp1, 'xdata', trainingNeurons{2}.candLat*10); colormap(cmap); axis tight
+%tmp1(end+1,end+1) = 1+4/cn; % to normalize cmap for plotting
+PlottingParams.axesPosition = [ploti/nplots-spacing, bottom, length(tindplot2)*scale, height]; 
+
+tOffset = trainingNeurons{2}.candLat(1)-1; 
+for j=1:size(tmp1,2) % for all the time steps
+    Idx = find(tmp1(1:end-1,j)>0); % find the indices of active neurons    
+    if ~isempty(Idx)
+        for k=1:length(Idx) % for all the active neurons
+            Color = IsTrain1(Idx(k))*PlottingParams.Syl1Color + ...
+                IsTrain2(Idx(k))*PlottingParams.Syl2Color;
+            h = patch(10*([j-1,j,j,j-1]+tOffset),[Idx(k)-1,Idx(k)-1,Idx(k),Idx(k)],Color,'edgecolor','none');
+        end  
+    end
+end
+
+% PlottingParams.tOffset = trainingNeurons{2}.candLat(1)-1; 
+% plotRaster(tmp1,PlottingParams,0,2)
+%imagesc(tmp1, 'xdata', trainingNeurons{2}.candLat*10); colormap(cmap); axis tight
 hold on; box off
 set(gca, 'fontsize', numFontSize)
-set(gca, 'color', 'none', 'xtick', [5 55], 'xticklabel', {'0', '50'}, 'ydir', 'reverse', 'fontsize', numFontSize)
+set(gca, 'color', 'none', 'xtick', [0 50 100], 'xticklabel', {'0', '50', '100'}, 'ydir', 'reverse', 'fontsize', numFontSize)
 set(gca, 'yticklabel', {})
+set(gca, 'ydir', 'reverse','tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'fontsize', numFontSize,'tickdir','out');
 if PlottingParams.Hor
     if sum(indShared)>0 % if shared neurons
-        plot([-5+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10+5], (.5+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
+        plot([-10+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10], (sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
     end
-    plot([-5+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10+5], ...
-        (.5+sum(indBO)+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
+    plot([-10+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10], ...
+        (sum(indBO)+sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
 end
-plot([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10+5],...
-    [-2 -2], 'linewidth', 3, 'color', Syl2Color)
-ylim([-3 ntot])
-xlim([-5+trainingNeurons{2}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5])
+
+patch([-10+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10 trainingNeurons{2}.candLat(end)*10 -10+trainingNeurons{2}.candLat(1)*10],[-4 -4 -2 -2],Syl2Color);
+
+ylim([-5 ntot])
+xlim([-10+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10+10])

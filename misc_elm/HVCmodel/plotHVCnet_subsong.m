@@ -89,12 +89,40 @@ for ui = 1:length(ux)
     y1(indshared) = y1(indshared)-tocentershared;
 end
 
-% Color weights white to black between wplotmin and wplotmax
-wplot = w-PlottingParams.wplotmin; 
+
+% keep only feedforward part of weight matrix
+wplot = w; 
+n = size(wplot,1); 
+for i = 1:n
+    for j = 1:n
+        ff = x(i)<x(j);
+        longrange = abs(x(i)-x(j))>2; 
+        if (~ff) | longrange
+            wplot(j,i) = 0; 
+        end
+    end
+end
+
+%Color weights white to black between wplotmin and wplotmax
+offset = .5;
+wplot = wplot-PlottingParams.wplotmin+offset; 
 wplot(wplot<0) = 0;
-offset = .5; % so you can see even faint weights
-wplot(wplot>0) = wplot(wplot>0)+offset;
-wplot = wplot/(offset+ PlottingParams.wplotmax-PlottingParams.wplotmin);
+wplot = wplot/(PlottingParams.wplotmax-PlottingParams.wplotmin);
+wplot(wplot<prctile(wplot(:), PlottingParams.wprctile)) = 0; 
+wplotold = wplot; 
+for i = 1:size(wplot,1)
+    [~,ind] = sort(wplot(:,i), 'descend'); 
+    indplot = zeros(size(wplot,1),1); 
+    indplot(ind(1:min(PlottingParams.wperneuron,length(ind)))) = 1;   
+    wplot(~indplot,i) = 0; 
+end
+for i = 1:size(wplot,1) 
+    if sum(wplot(i,:)>0)<PlottingParams.wperneuronIn
+        [~,ind] = sort(wplotold(i,:), 'descend'); 
+        indplot = zeros(size(wplot,1),1); 
+        wplot(i,ind(1:min(PlottingParams.wperneuron,length(ind)))) = wplotold(i,ind(1:min(PlottingParams.wperneuron,length(ind))));
+    end
+end
 
 % jitter a little in x and y, so it doesn't look like a grid
 jitter = .1; 
@@ -176,12 +204,22 @@ tmp = xdyn(flipud(indsort), [tindplot1]); % pull out the example data from xdyn
 % plot raster 
 subplot('position', [ploti/nplots-2*spacing, bottom, length(tindplot1)*scale, height])%subplot(3,nHorPlot,(nHorPlot+PlottingParams.thisPanel*4-2)+[0 nHorPlot]+.75)
 tmp1 = tmp(:,1:length(tindplot1)); 
-tmp1(end+1,end+1) = 1+5/cn; % to normalize cmap for plotting
-imagesc(tmp1, 'xdata', trainingNeurons{1}.candLat*10); colormap(cmap); axis tight
+%tmp1(end+1,end+1) = 1+5/cn; % to normalize cmap for plotting
+IsTrain = zeros(size(tmp,1)); IsTrain(trainingNeurons{1}.nIDs) = 1; 
+tOffset = trainingNeurons{1}.candLat(1)-1; 
+for j=1:size(tmp1,2) % for all the time steps
+    Idx = find(tmp1(1:end-1,j)>0); % find the indices of active neurons    
+    if ~isempty(Idx)
+        for k=1:length(Idx) % for all the active neurons
+            Color = IsTrain(Idx(k))*PlottingParams.SubsongSylColor;
+            h = patch(10*([j-1,j,j,j-1]+tOffset),[Idx(k)-1,Idx(k)-1,Idx(k),Idx(k)],Color,'edgecolor','none');
+        end  
+    end
+end
 hold on; box off
 set(gca, 'fontsize', numFontSize)
-set(gca, 'color', 'none', 'xtick', [5 55], 'xticklabel', {'0', '50'}, 'ydir', 'reverse', 'fontsize', numFontSize)
+set(gca, 'color', 'none', 'xtick', [0 50 100], 'xticklabel', {'0', '50', '100'}, 'ydir', 'reverse', 'fontsize', numFontSize)
 ylabel('Neuron','fontsize', labelFontSize)
 ylim([-3 ntot])
-xlim([-5+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10+5])
+xlim([0 trainingNeurons{1}.candLat(end)*10+10])
 

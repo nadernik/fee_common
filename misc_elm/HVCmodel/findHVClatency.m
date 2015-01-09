@@ -16,8 +16,8 @@ for ni = 1:size(xsort,1) % finding the mode latency for each syll type
     tmp1 = intersect(tmp,find(trainingNeurons{1}.tind))'; % times the neuron fired during syl 1
     tmp2 = intersect(tmp,find(trainingNeurons{2}.tind))'; % times the neuron fired during syl 2
     if issame(trainingNeurons{1}.tind,trainingNeurons{2}.tind) % if sylls are the same (protosyllables), split by halves for raster
-        Latency{1}.FireDur(ni) = length(tmp1)>3; % Include if it fires more than three times (passes significance criteria -- see testLatSig.m)
-        Latency{2}.FireDur(ni) = length(tmp2)>3; % Include if it fires more than three times (passes significance criteria -- see testLatSig.m)
+        Latency{1}.FireDur(ni) = length(tmp1)>4; % Include if it fires more than four times (passes significance criteria -- see testLatSig.m)
+        Latency{2}.FireDur(ni) = length(tmp2)>4; % Include if it fires more than four times (passes significance criteria -- see testLatSig.m)
         tmp1 = intersect(tmp,1:(size(xsort,2)/2));
         Latency{1}.mode(ni) = mode(mod(tmp1-1,m))+1;
         tmp2 = intersect(tmp,(size(xsort,2)/2+1):size(xsort,2));

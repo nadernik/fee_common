@@ -5,25 +5,35 @@
 % plotting setup
 clf;
 clear all;
-Margin = 1/5; 
-nplots = 4;
-plotw = .23; 
-netw = plotw-.01;
-rasterw = plotw-Margin/2;
-rasterh = 3/4; 
-netoffset = Margin/3;
-neth = 1/4-Margin/4-.01; 
-PlottingParams.msize = 5;
-PlottingParams.linewidth = .01; 
+% Margin = 1/5; 
+% nplots = 4;
+% plotw = .23; 
+% netw = plotw-.01;
+% rasterw = plotw-Margin/2;
+% rasterh = 3/4; 
+% netoffset = Margin/3;
+% neth = 1/4-Margin/4-.01; 
+
+isEPS = 0; 
+
+if isEPS 
+    PlottingParams.msize = 3; % change to what is best for EPS figure
+    PlottingParams.linewidth = .25; 
+else
+    PlottingParams.msize = 3;
+    PlottingParams.linewidth = 1e-3; 
+end
+
 PlottingParams.Syl1Color = [1 0 0]; 
-PlottingParams.Syl2Color = [0 1 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
+PlottingParams.Syl2Color = [0 0 1]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
 PlottingParams.ProtoSylColor = [1 0 1]; 
 PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.numFontSize = 5; 
-PlottingParams.labelFontSize = 8; 
+PlottingParams.labelFontSize = 7; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
+PlottingParams.wprctile = 0; % plot all weights above this percentile. 
 PlottingParams.totalPanels = 4; 
 PlottingParams.thisPanel = 1; 
 PlottingParams.sortby = 'weightMatrix'; 
@@ -57,10 +67,12 @@ p.wmaxSplit = wmaxSplit;
 p.gammaSplit = gammaSplit; 
 p.Niter = Niter; 
 
-folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
-timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
-SavedHere = fullfile(folder, ['Params', timestamp])
-save(SavedHere,'p');
+if ~isEPS
+    folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
+    timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
+    SavedHere = fullfile(folder, ['Params', timestamp])
+    save(SavedHere,'p');
+end
 
 PlotIters = 0; % set to 1, and increase Niter(3), if you want to plot each step as it goes
 
@@ -281,5 +293,7 @@ plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 % figure parameters
 figw = 6;
 figh = 4; 
-set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw figh])
-print -dmeta -r150
+if ~isEPS
+    set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw figh])
+%     print -dmeta -r200
+end
