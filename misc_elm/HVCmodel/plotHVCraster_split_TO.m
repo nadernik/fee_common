@@ -1,4 +1,4 @@
-function plotHVCraster_split_TO(w, xsort, m, trainingNeurons, PlottingParams)
+function plotHVCraster_split_TO(w, xsort, m, trainingNeurons, PlottingParams, ploti)
 % Makes network activity plot, called by RunHVC_split 
 % w: weight matrix
 % xsort: activity of network
@@ -117,12 +117,13 @@ for i = 1:2
     
     % plotting parameters
     ylim([-5 size(xplot,1)-1]); % TO 
-    if i == 2; 
-        set(gca, 'yticklabel', {})
-    else
-        ylabel('Neuron', 'fontsize', labelFontSize);
-    end
     box off
-    set(gca, 'ydir', 'reverse','tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'xtick', 0:50:100, 'ytick',0:20:100,'fontsize', numFontSize,'tickdir','out');
+    set(gca, 'ydir', 'reverse','tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'xtick', 0:50:100,'fontsize', numFontSize,'tickdir','out');
     xlim([-2 100]);
+    if ploti==1
+        ylabel('Neuron', 'fontsize', labelFontSize);
+        set(gca,'ytick',0:20:100,'fontsize',numFontSize)
+    else
+        set(gca,'ytick',0:20:100,'yticklabel', {})
+    end
 end

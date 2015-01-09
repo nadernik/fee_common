@@ -218,7 +218,8 @@ for j=1:size(tmp1,2) % for all the time steps
 end
 hold on; box off
 set(gca, 'fontsize', numFontSize)
-set(gca, 'color', 'none', 'xtick', [0 50 100], 'xticklabel', {'0', '50', '100'}, 'ydir', 'reverse', 'fontsize', numFontSize)
+set(gca, 'color', 'none', 'xtick', 0:50:200, 'ytick',0:20:100,'ydir', 'reverse',...
+    'tickdir','out','ticklength',[0.025 0.025],'fontsize', numFontSize)
 ylabel('Neuron','fontsize', labelFontSize)
 ylim([-3 ntot])
 xlim([0 trainingNeurons{1}.candLat(end)*10+10])

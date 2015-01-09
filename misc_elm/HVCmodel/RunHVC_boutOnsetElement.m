@@ -6,10 +6,10 @@
 clf;
 clear all;
 
-isEPS = 0; 
+isEPS = 1; 
 
 if isEPS 
-    PlottingParams.msize = 3; % change to what is best for EPS figure
+    PlottingParams.msize = 8; % change to what is best for EPS figure
     PlottingParams.linewidth = .25; 
 else
     PlottingParams.msize = 3;
@@ -33,6 +33,9 @@ PlottingParams.boutOnsetElement = 1;
 % Alternating seed neuron differentiation
 figure(1); clf
 set(gcf, 'color', ones(1,3));
+if isEPS
+    set(gcf, 'units','centimeters', 'position', [5 5 14 9])
+end
 
 seed = 3010; %978, 1009, 1012, 1021,1022, 1023
 p.seed = seed; 
@@ -59,10 +62,12 @@ p.wmaxSplit = wmaxSplit;
 p.gammaSplit = gammaSplit; 
 p.Niter = Niter; 
 
-folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
-timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
-SavedHere = fullfile(folder, ['Params', timestamp])
-save(SavedHere,'p');
+if ~isEPS
+    folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
+    timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
+    SavedHere = fullfile(folder, ['Params', timestamp])
+    save(SavedHere,'p');
+end
 
 PlotIters = 0; % set to 1, and increase Niter(3), if you want to plot each step as it goes
 
@@ -303,8 +308,14 @@ plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 
 
 %%
-% figure parameters
-figw = 6*3/4;
-figh = 4; 
-set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw figh])
-%print -dmeta -r150
+if isEPS
+    cd('Z:\Fee_lab\Papers\HVC_differentiation\Figures\EPS_files');
+    export_fig(1,'SuppFig10a.eps','-transparent','-eps','-painters');
+else
+    figure parameters, exporting
+    figw = 6*3/4;
+    figh = 4; 
+    set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
+    suptitle(['seed ', num2str(seed)])
+    print -dmeta -r150
+end

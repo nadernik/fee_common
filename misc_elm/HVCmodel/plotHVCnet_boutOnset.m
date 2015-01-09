@@ -239,9 +239,16 @@ end
 
 hold on; box off
 set(gca, 'fontsize', numFontSize)
-set(gca, 'color', 'none', 'xtick', [0 50 100], 'xticklabel', {'0', '50', '100'}, 'ydir', 'reverse', 'fontsize', numFontSize)
+set(gca, 'color', 'none', 'xtick', [0 50 100], 'xticklabel', {'0', '50', '100'},'ydir', 'reverse', 'fontsize', numFontSize)
 set(gca, 'ydir', 'reverse','tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'fontsize', numFontSize,'tickdir','out');
-ylabel('Neuron','fontsize', labelFontSize)
+
+if PlottingParams.thisPanel==1
+    ylabel('Neuron','fontsize', labelFontSize)
+    set(gca,'ytick',0:20:100,'fontsize', numFontSize)
+else
+    set(gca,'ytick',0:20:100,'yticklabel',{});
+end
+
 if PlottingParams.Hor
     if sum(indShared)>0 % if shared neurons
         plot([-10+trainingNeurons{1}.candLat(1)*10 trainingNeurons{1}.candLat(end)*10], (sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 
@@ -283,8 +290,8 @@ end
 hold on; box off
 set(gca, 'fontsize', numFontSize)
 set(gca, 'color', 'none', 'xtick', [0 50 100], 'xticklabel', {'0', '50', '100'}, 'ydir', 'reverse', 'fontsize', numFontSize)
-set(gca, 'yticklabel', {})
 set(gca, 'ydir', 'reverse','tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'fontsize', numFontSize,'tickdir','out');
+set(gca, 'ytick',0:20:100,'yticklabel',{})
 if PlottingParams.Hor
     if sum(indShared)>0 % if shared neurons
         plot([-10+trainingNeurons{2}.candLat(1)*10 trainingNeurons{2}.candLat(end)*10], (sum(indShared))*ones(1,2), 'k', 'linewidth', PlottingParams.linewidth); 

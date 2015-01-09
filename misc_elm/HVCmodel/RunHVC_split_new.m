@@ -10,10 +10,10 @@ clf;
 clear all;
 
 nplots = 4;
-isEPS = 0; 
+isEPS = 1; 
 
 if isEPS 
-    PlottingParams.msize = 3; % change to what is best for EPS figure
+    PlottingParams.msize = 8; % change to what is best for EPS figure
     PlottingParams.linewidth = .25; 
 else
     PlottingParams.msize = 3;
@@ -182,7 +182,7 @@ subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('positi
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');%title(Niter(2))
 PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams, ploti)
 set(gca, 'color', 'none')
 
 %%  splitting 
@@ -208,7 +208,7 @@ subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('positi
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');%title(Niter(3))
 PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams, ploti)
 set(gca, 'color', 'none')
 %% Later splitting 
 niter = Niter(4); 
@@ -228,15 +228,19 @@ subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('positi
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');%title(Niter(4))
 PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams, ploti)
 set(gca, 'color', 'none')
 
 %%
 % figure parameters, exporting
-figw = 6;
-figh = 3; 
-set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
-%suptitle(['seed ', num2str(seed)])
-if ~isEPS
-    %print -dmeta -r150
+if isEPS
+    cd('Z:\Fee_lab\Papers\HVC_differentiation\Figures\EPS_files');
+    export_fig(1,'Fig6a.eps','-transparent','-eps','-painters');
+else
+    figure parameters, exporting
+    figw = 6;
+    figh = 3;
+    set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
+    suptitle(['seed ', num2str(seed)])
+    print -dmeta -r150
 end

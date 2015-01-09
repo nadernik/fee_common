@@ -76,7 +76,10 @@ set(gca, 'ydir', 'reverse')
 k = size(Input,1);
 %imagesc(xplot, 'xdata',tind*10); colormap(cmap)%(flipud(gray))
 xlabel('Time (ms)', 'fontsize', labelFontSize)
-ylabel('Neuron', 'fontsize', labelFontSize)
+
+if plottingParams.thisPanel==1
+    ylabel('Neuron', 'fontsize', labelFontSize)
+end
 hold on
 plot([0 size(xplot,2)*10], (k)*ones(1,2), 'k', 'linewidth',  plottingParams.linewidth); 
 
@@ -97,6 +100,12 @@ set(gca, 'fontsize', numFontSize)
 axis tight
 ylim([-5 size(xdyn,1)]); 
 set(gca,'tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'fontsize', numFontSize);
+
+if plottingParams.thisPanel==1
+    set(gca,'ytick',0:20:100)
+else
+    set(gca,'ytick',0:20:100,'yticklabel',{})
+end
 
 if plottingParams.thisPanel == 4
     tStart = [1 10 20]; 
