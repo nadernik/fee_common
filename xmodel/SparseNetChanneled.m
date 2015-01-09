@@ -44,7 +44,8 @@ classdef SparseNetChanneled < SparseNetHardwired
             % BIRD! HE WILL LIVE FOREVER IN-SILICO!
             obj.noise = zeros(obj.nlman, obj.nhvc, obj.niter);
             for ii = 1:obj.nlman
-                obj.noise(ii,:,:) = generate_lman_noise_mes010(obj.nhvc, obj.niter);
+                z = generate_lman_noise_mes010(obj.nhvc, obj.niter);
+                obj.noise(ii,:,:) = z./std(z(:))*obj.lmanstd;
             end
             
             % Set up multiple parallel channels through the anterior
