@@ -7,17 +7,21 @@
 
 % plotting setup
 clf;
-clear all;
+clear;
 
 nplots = 4;
 isEPS = 1; 
 
 if isEPS 
     PlottingParams.msize = 8; % change to what is best for EPS figure
-    PlottingParams.linewidth = .25; 
+    PlottingParams.linewidth = .25;
+    set(0,'defaultAxesFontName', 'Arial')
+    set(0,'defaultTextFontName', 'Arial')
+    PlottingParams.labelFontSize = 7; 
 else
     PlottingParams.msize = 3;
-    PlottingParams.linewidth = 1e-3; 
+    PlottingParams.linewidth = 1e-3;
+    PlottingParams.labelFontSize = 7; 
 end
 PlottingParams.Syl1Color = [1 0 0]; 
 PlottingParams.Syl2Color = [0 0 1]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
@@ -26,7 +30,7 @@ PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.SubsongSylColor = [1 0 1]; 
 PlottingParams.numFontSize = 5; 
-PlottingParams.labelFontSize = 7; 
+
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
 PlottingParams.wprctile = 0; % plot all weights above this percentile.  If nonzero, ignores wplotmin, wplotmax
@@ -42,6 +46,9 @@ spacing = .75/(2*nplots);
 
 figure(1); clf
 set(gcf, 'color', ones(1,3));
+if isEPS
+    set(gcf, 'units','centimeters', 'position', [5 5 13.5 9])
+end
 
 seed = 9038
 p.seed = seed;          % seed random number generator
@@ -177,12 +184,12 @@ end
 %HVCtestRaster(xdyn,Input,w);
 wpsyl = w; 
 %
-ploti = 2; 
-subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
+PlottingParams.thisPanel = 2; 
+subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');%title(Niter(2))
-PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams, ploti)
+PlottingParams.axesPosition = [PlottingParams.thisPanel/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
 set(gca, 'color', 'none')
 
 %%  splitting 
@@ -203,12 +210,12 @@ for i = 1:niter
     [w xdyn] = HVCBout(p);
 end
 
-ploti = 3; 
-subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
+PlottingParams.thisPanel = 3; 
+subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');%title(Niter(3))
-PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams, ploti)
+PlottingParams.axesPosition = [PlottingParams.thisPanel/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
 set(gca, 'color', 'none')
 %% Later splitting 
 niter = Niter(4); 
@@ -223,19 +230,19 @@ for i = (Niter(3)+1):Niter(4)
     [w xdyn] = HVCBout(p);
 end
 
-ploti = 4; 
-subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
+PlottingParams.thisPanel = 4;
+subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .7, .9/nplots, .2])%subplot('position', [netoffset+plotw Margin/4+rasterh netw neth]); 
 plotHVCnet(w,xdyn,trainint,trainingNeurons,PlottingParams)
 set(gca, 'color', 'none');%title(Niter(4))
-PlottingParams.axesPosition = [ploti/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
-plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams, ploti)
+PlottingParams.axesPosition = [PlottingParams.thisPanel/nplots-2*spacing, bottom, 40*scale, height];%PlottingParams.axesPosition = [Margin/2+plotw Margin+0 rasterw rasterh-Margin]; 
+plotHVCraster_split_TO(w, xdyn, trainint, trainingNeurons, PlottingParams)
 set(gca, 'color', 'none')
 
 %%
 % figure parameters, exporting
 if isEPS
     cd('Z:\Fee_lab\Papers\HVC_differentiation\Figures\EPS_files');
-    export_fig(1,'Fig6a.eps','-transparent','-eps','-painters');
+    export_fig(1,'Fig5a.eps','-transparent','-eps','-painters');
 else
     figure parameters, exporting
     figw = 6;

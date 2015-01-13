@@ -89,6 +89,16 @@ if ~issame(Input(1,:), Input(end,:)) % if in splitting phase
     for i = 1:6
         Color = (mod(i,3)==0)*[1 0 0] + (mod(i,3)==1)*[0 0 1] + (mod(i,3)==2)*[0 1 1];
         patch([0 80 80 0]+sylStarts(i),[-4 -4 -2 -2],Color);
+        
+        %% TO
+        switch mod(i,3)
+            case 1
+                text(25+sylStarts(i),-6,'A','fontsize',7)
+            case 2
+                text(25+sylStarts(i),-6,'B','fontsize',7)
+            case 0
+                text(25+sylStarts(i),-6,'C','fontsize',7)
+        end
     end
 else
     sylStarts = 0:100:500; 
@@ -99,7 +109,7 @@ end
 set(gca, 'fontsize', numFontSize)
 axis tight
 ylim([-5 size(xdyn,1)]); 
-set(gca,'tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'fontsize', numFontSize);
+set(gca,'tickdir','out','ticklength',[0.015 0.015], 'color', 'none', 'fontsize', numFontSize);
 
 if plottingParams.thisPanel==1
     set(gca,'ytick',0:20:100)

@@ -15,8 +15,8 @@ else
     PlottingParams.msize = 3;
     PlottingParams.linewidth = .25; 
 end
-PlottingParams.Syl1Color = [1 0 0]; 
-PlottingParams.Syl2Color = [0 1 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
+PlottingParams.Syl1Color = [0 0 1]; 
+PlottingParams.Syl2Color = [1 0 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
 PlottingParams.ProtoSylColor = [1 0 1]; 
 PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
@@ -166,9 +166,7 @@ PlottingParams.Hor = 0;
 plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 PlottingParams.Hor = 1;
 
-
-%%
-% finish forming protosyllable
+%% finish forming protosyllable
 PlottingParams.thisPanel = 2;
 niter = Niter(2);     % number of iterations to run
 for j = 1:niter
@@ -211,10 +209,7 @@ plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 
 wpsyl = w; 
 
-
-%%
-% splitting 
-
+%% splitting 
 shg
 w = wpsyl; 
 p.wmax = wmaxSplit;  
@@ -310,7 +305,7 @@ plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 %%
 if isEPS
     cd('Z:\Fee_lab\Papers\HVC_differentiation\Figures\EPS_files');
-    export_fig(1,'SuppFig10a.eps','-transparent','-eps','-painters');
+    export_fig(1,'SuppFig10e.eps','-transparent','-eps','-painters');
 else
     figure parameters, exporting
     figw = 6*3/4;

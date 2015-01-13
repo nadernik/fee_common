@@ -1,4 +1,4 @@
-function plotHVCraster_split_TO(w, xsort, m, trainingNeurons, PlottingParams, ploti)
+function plotHVCraster_split_TO(w, xsort, m, trainingNeurons, PlottingParams)
 % Makes network activity plot, called by RunHVC_split 
 % w: weight matrix
 % xsort: activity of network
@@ -109,19 +109,22 @@ for i = 1:2
     % plot colored bars above each syllable
     if length(Green) == 0
         patch([0 90 90 0],[-4 -4 -2 -2],ProtoSylColor); % TO
+        text(40,-7,'\alpha','fontsize',7); % TO
     elseif i == 1
         patch([0 90 90 0],[-4 -4 -2 -2],Syl1Color); % TO
+        text(40,-7,'\beta','fontsize',7) % TO
     else
         patch([0 90 90 0],[-4 -4 -2 -2],Syl2Color); % TO
+        text(40,-7,'\gamma','fontsize',7); % TO
     end
     
     % plotting parameters
     ylim([-5 size(xplot,1)-1]); % TO 
     box off
-    set(gca, 'ydir', 'reverse','tickdir','out','ticklength',[0.025 0.025], 'color', 'none', 'xtick', 0:50:100,'fontsize', numFontSize,'tickdir','out');
+    set(gca, 'ydir', 'reverse','tickdir','out','ticklength',[0.015 0.015], 'color', 'none', 'xtick', 0:50:100,'fontsize', numFontSize,'tickdir','out');
     xlim([-2 100]);
-    if ploti==1
-        ylabel('Neuron', 'fontsize', labelFontSize);
+    if PlottingParams.thisPanel==1
+        ylabel('Neuron', 'fontsize', labelFontSize,'fontname','arial');
         set(gca,'ytick',0:20:100,'fontsize',numFontSize)
     else
         set(gca,'ytick',0:20:100,'yticklabel', {})

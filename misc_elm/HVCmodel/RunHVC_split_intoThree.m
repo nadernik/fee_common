@@ -4,7 +4,22 @@
 
 % plotting setup
 clf;
-clear all;
+clear;
+
+isEPS = 1; 
+
+if isEPS 
+    PlottingParams.msize = 8; % change to what is best for EPS figure
+    PlottingParams.linewidth = .25;
+    set(0,'defaultAxesFontName', 'Arial')
+    set(0,'defaultTextFontName', 'Arial')
+    PlottingParams.labelFontSize = 7; 
+else
+    PlottingParams.msize = 5;
+    PlottingParams.linewidth = 1;
+    PlottingParams.labelFontSize = 6; 
+end
+
 Margin = 1/5; 
 nplots = 4;
 plotw = .23; 
@@ -13,25 +28,19 @@ rasterw = plotw-Margin/2;
 rasterh = 3/4; 
 netoffset = Margin/3;
 neth = 1/4-Margin/4-.01; 
-PlottingParams.msize = 5;
-PlottingParams.linewidth = 1; 
 PlottingParams.Syl1Color = [1 0 0]; 
 PlottingParams.Syl2Color = [0 1 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
 PlottingParams.ProtoSylColor = [1 0 1]; 
 PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.numFontSize = 5; 
-PlottingParams.labelFontSize = 6; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
 PlottingParams.totalPanels = 4; 
 PlottingParams.sortby = 'activity'; 
 
-
 PlotIters = 0; 
 % Alternating seed neuron differentiation
-
-
 
 seed = 210
 p.seed = seed;          % seed random number generator
@@ -62,12 +71,14 @@ p.gammas = gammas;
 p.wmaxSplit = wmaxSplit; 
 p.gammaSplit = gammaSplit; 
 p.Niter = Niter; 
-folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
-timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
-SavedHere = fullfile(folder, ['Params', timestamp])
-save(SavedHere,'p');
-%%
 
+if ~isEPS
+    folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
+    timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
+    SavedHere = fullfile(folder, ['Params', timestamp])
+    save(SavedHere,'p');
+end
+%%
 % random initial weights
 rng(seed);
 w0 = 2*rand(p.n)*Wmax/p.n; 
@@ -95,6 +106,10 @@ AltInput = Input;
 
 figure(1); clf
 set(gcf, 'color', ones(1,3));
+if isEPS
+    set(gcf, 'units','centimeters', 'position', [5 5 18 9])
+end
+
 PlottingParams.thisPanel = 1; 
 w = w0;
 niter = Niter(1);     % number of iterations to run
@@ -111,9 +126,7 @@ end
 HVCtestRaster_intoThree(xdyn,PsylInput,w,PlottingParams);
 wpsyl = w; 
 
-
 PlottingParams.thisPanel = 2;
-
 
 niter = Niter(2);     % number of iterations to run
 for i = 1:niter
@@ -130,9 +143,7 @@ HVCtestRaster_intoThree(xdyn,PsylInput,w,PlottingParams);
 wpsyl = w; 
 
 %%
-
 PlottingParams.thisPanel = 3;
-
 
 %  splitting 
 w = wpsyl;
@@ -159,7 +170,6 @@ end
 HVCtestRaster_intoThree(xdyn,AltInput,w,PlottingParams);
 
 %%
-
 PlottingParams.thisPanel = 4;
 % Later splitting 
 niter = Niter(4); 
@@ -177,9 +187,14 @@ HVCtestRaster_intoThree(xdyn,AltInput,w,PlottingParams);
 
 
 %%
-% figure parameters
-figw = 6;
-figh = 2; 
-%suptitle(['seed ', num2str(seed), ' ', num2str(i), ' bouts'])
-set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw figh])
-print -dmeta -r150
+if isEPS
+    cd('Z:\Fee_lab\Papers\HVC_differentiation\Figures\EPS_files');
+    export_fig(1,'Fig7a.eps','-transparent','-eps','-painters');
+else
+    figure parameters, exporting
+    figw = 6;
+    figh = 2;
+    set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw figh])
+    suptitle(['seed ', num2str(seed)])
+    print -dmeta -r150
+end

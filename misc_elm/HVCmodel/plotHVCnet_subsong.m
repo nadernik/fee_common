@@ -23,7 +23,8 @@ nplots = PlottingParams.totalPanels;
 ploti = PlottingParams.thisPanel; 
 
 %% network diagram
-subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])
+%subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])
+subplot('position', [ploti/nplots-.7/nplots, .7, .7/nplots, .2]) % TO
 cla; hold on
 
 % calculate latency of each neuron
@@ -202,7 +203,8 @@ tmp = xdyn(flipud(indsort), [tindplot1]); % pull out the example data from xdyn
 
 %%
 % plot raster 
-subplot('position', [ploti/nplots-2*spacing, bottom, length(tindplot1)*scale, height])%subplot(3,nHorPlot,(nHorPlot+PlottingParams.thisPanel*4-2)+[0 nHorPlot]+.75)
+%subplot('position', [ploti/nplots-2*spacing, bottom, length(tindplot1)*scale, height])%subplot(3,nHorPlot,(nHorPlot+PlottingParams.thisPanel*4-2)+[0 nHorPlot]+.75)
+subplot('position', [ploti/nplots-1.4*spacing, bottom, length(tindplot1)*scale, height])% TO
 tmp1 = tmp(:,1:length(tindplot1)); 
 %tmp1(end+1,end+1) = 1+5/cn; % to normalize cmap for plotting
 IsTrain = zeros(size(tmp,1)); IsTrain(trainingNeurons{1}.nIDs) = 1; 
@@ -219,7 +221,7 @@ end
 hold on; box off
 set(gca, 'fontsize', numFontSize)
 set(gca, 'color', 'none', 'xtick', 0:50:200, 'ytick',0:20:100,'ydir', 'reverse',...
-    'tickdir','out','ticklength',[0.025 0.025],'fontsize', numFontSize)
+    'tickdir','out','ticklength',[0.015 0.015],'fontsize', numFontSize)
 ylabel('Neuron','fontsize', labelFontSize)
 ylim([-3 ntot])
 xlim([0 trainingNeurons{1}.candLat(end)*10+10])

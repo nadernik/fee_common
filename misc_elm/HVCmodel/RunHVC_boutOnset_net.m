@@ -4,7 +4,7 @@
 
 % plotting setup
 clf;
-clear all;
+clear;
 % Margin = 1/5; 
 % nplots = 4;
 % plotw = .23; 
@@ -14,23 +14,26 @@ clear all;
 % netoffset = Margin/3;
 % neth = 1/4-Margin/4-.01; 
 
-isEPS = 0; 
+isEPS = 1; 
 
 if isEPS 
-    PlottingParams.msize = 3; % change to what is best for EPS figure
-    PlottingParams.linewidth = .25; 
+    PlottingParams.msize = 8; % change to what is best for EPS figure
+    PlottingParams.linewidth = .25;
+    set(0,'defaultAxesFontName', 'Arial')
+    set(0,'defaultTextFontName', 'Arial')
+    PlottingParams.labelFontSize = 7; 
 else
     PlottingParams.msize = 3;
-    PlottingParams.linewidth = 1e-3; 
+    PlottingParams.linewidth = 1e-3;
+    PlottingParams.labelFontSize = 7; 
 end
 
-PlottingParams.Syl1Color = [1 0 0]; 
-PlottingParams.Syl2Color = [0 0 1]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
+PlottingParams.Syl1Color = [0 0 1]; 
+PlottingParams.Syl2Color = [1 0 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
 PlottingParams.ProtoSylColor = [1 0 1]; 
 PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
 PlottingParams.numFontSize = 5; 
-PlottingParams.labelFontSize = 7; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
 PlottingParams.wprctile = 0; % plot all weights above this percentile. 
@@ -41,6 +44,9 @@ PlottingParams.sortby = 'weightMatrix';
 % Alternating seed neuron differentiation
 figure(1); clf
 set(gcf, 'color', ones(1,3));
+if isEPS
+    set(gcf, 'units','centimeters', 'position', [5 5 13.5 9])
+end
 
 seed = 1009; %978, 1009, 1012, 1021,1022, 1023
 p.seed = seed; 
@@ -291,9 +297,14 @@ plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 
 %%
 % figure parameters
-figw = 6;
-figh = 4; 
-if ~isEPS
-    set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw figh])
-%     print -dmeta -r200
+if isEPS
+    cd('Z:\Fee_lab\Papers\HVC_differentiation\Figures\EPS_files');
+    export_fig(1,'Fig5j.eps','-transparent','-eps','-painters');
+else
+    figure parameters, exporting
+    figw = 6;
+    figh = 4;
+    set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
+    suptitle(['seed ', num2str(seed)])
+    print -dmeta -r150
 end
