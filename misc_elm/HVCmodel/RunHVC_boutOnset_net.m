@@ -124,7 +124,8 @@ Input(trainingNeurons{1}.nIDs,indBstart) = HowOn; % alternating rhythmic activat
 Input(:,indOff) = -HowClamped; % clamp all neurons between bouts
 trainingNeurons{1}.candLat = (-bOnOffset+1):trainint;
 trainingNeurons{2}.candLat =  1:trainint; 
-
+trainingNeurons{1}.thres = 4;
+trainingNeurons{2}.thres = 6;
 
 w = w0; 
 PlottingParams.thisPanel = 1;
@@ -245,7 +246,7 @@ for j = 1:niter
     bdyn(1:k,:) = Input; 
     p.w = w; 
     p.input = bdyn;
-    p.gamma = gammas(i); 
+    p.gamma = gammas(j); % was bug: used to say gammas(i)
     [w xdyn] = HVCBout(p);
     if  PlotIters & (mod(j,50)==0); % if you want to plot each step as it goes
         j
@@ -288,8 +289,8 @@ for j = (Niter(3)+1):Niter(4)
     bdyn(1:k,:) = Input; 
     p.w = w; 
     p.input = bdyn;
-    p.gamma = gammas(i); 
-    [w xdyn] = HVCBout(p);
+    p.gamma = gammas(j); % was bug: used to say gammas(i)
+    [w xdyn] = HVCIter(p);
 end
 PlottingParams.thisPanel = 4;
 plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)

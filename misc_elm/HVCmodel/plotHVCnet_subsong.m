@@ -23,12 +23,11 @@ nplots = PlottingParams.totalPanels;
 ploti = PlottingParams.thisPanel; 
 
 %% network diagram
-%subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])
 subplot('position', [ploti/nplots-.7/nplots, .7, .7/nplots, .2]) % TO
 cla; hold on
 
 % calculate latency of each neuron
-Latency = findHVClatency_new(xdyn, trainingNeurons);
+Latency = findLatency(xdyn, trainingNeurons);
 
 % first double plot all neurons that don't fire at a consistent phase
 nsteps = size(xdyn,2); 

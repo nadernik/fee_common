@@ -27,4 +27,3 @@ for syli = 1:length(trainingNeurons)
         Latency{syli}.FireDur(ni) = max(nFired(ni,:))>trainingNeurons{1}.thres*(syli==1)+trainingNeurons{2}.thres*(syli==2); %.25*length(trainingNeurons{syli}.tind);  % count if it fired at that latency in more than 1/4 of the syllables
     end
 end
-
