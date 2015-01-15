@@ -6,7 +6,7 @@
 clf;
 clear all;
 
-isEPS = 1; 
+isEPS = 0; 
 
 if isEPS 
     PlottingParams.msize = 8; % change to what is best for EPS figure
@@ -53,10 +53,10 @@ p.epsilon = .15;        % relative strength of heterosynaptic LTD
 p.tau = 4;              % time constant of adaptation
 p.gamma= .01;           % strength of recurrent inhibition
 wmaxSplit = 2;          % single synapse hard bound to induce splitting (increased to encourage fewer stronger synapses)
-gammaSplit =.26;        % increased strength of recurrent inhibition to induce splitting
+gammaSplit =.05;        % increased strength of recurrent inhibition to induce splitting
 
 Niter = [5    95   30   500]; % number of iterations for each plot (first 2 are protosyll, last 2 are splitting)
-gammas = sigmf(1:Niter(end),[1/100 200])*gammaSplit; % gradually increase gamma to gammaSplit
+gammas = sigmf(1:Niter(end),[1/200 250])*gammaSplit; % gradually increase gamma to gammaSplit
 p.gammas = gammas;
 p.wmaxSplit = wmaxSplit; 
 p.gammaSplit = gammaSplit; 
@@ -94,6 +94,10 @@ HowOn = 25;
 HowOnPsyl = 25; 
 trainingNeurons{1}.nIDs = 1:k/2;
 trainingNeurons{2}.nIDs = (k/2+1):k;
+trainingNeurons{1}.candLat = (-bOnOffset+1):p.trainint;
+trainingNeurons{2}.candLat =  1:p.trainint; 
+trainingNeurons{1}.thres = 4;
+trainingNeurons{2}.thres = 6;
 Input = -HowClamped*ones(k, nsteps); % clamp training neurons
 bOnOffsetVar = [1 randperm(20)];
 indPsyl = [];
@@ -243,7 +247,7 @@ for j = 1:niter
     bdyn(1:k,:) = Input; 
     p.w = w; 
     p.input = bdyn;
-    p.gamma = gammas(i); 
+    p.gamma = gammas(j); 
     [w xdyn] = HVCBout(p);
     if  PlotIters & (mod(j,50)==0); % if you want to plot each step as it goes
         j
@@ -290,7 +294,7 @@ for j = (Niter(3)+1):Niter(4)
     bdyn(1:k,:) = Input; 
     p.w = w; 
     p.input = bdyn;
-    p.gamma = gammas(i); 
+    p.gamma = gammas(j); 
     [w xdyn] = HVCBout(p);
 end
 
@@ -307,7 +311,7 @@ if isEPS
     cd('Z:\Fee_lab\Papers\HVC_differentiation\Figures\EPS_files');
     export_fig(1,'SuppFig10e.eps','-transparent','-eps','-painters');
 else
-    figure parameters, exporting
+    %figure parameters, exporting
     figw = 6*3/4;
     figh = 4; 
     set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])

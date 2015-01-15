@@ -27,7 +27,7 @@ subplot('position', [ploti/nplots-.9/nplots, .7, .9/nplots, .2])
 cla; hold on
 
 % calculate latency of each neuron
-Latency = findHVClatency_boutOnset(xdyn, trainingNeurons);
+Latency = findLatency(xdyn, trainingNeurons);
 
 % first double plot all neurons that don't fire at a consistent phase
 nsteps = size(xdyn,2);
@@ -202,7 +202,7 @@ IsTrain2 = zeros(1,length(xdyn)); IsTrain2(Green) = 1;
 
 %%
 %collecting what I'll plot for the raster
-sylIDtoplot = 7; %(don't choose a protosyllable that's at the beginning of a bout)
+sylIDtoplot = 5; %(don't choose a protosyllable that's at the beginning of a bout)
 k = length(union(trainingset1, trainingset2));
 tindplot1 = trainingNeurons{1}.tind(sylIDtoplot) + trainingNeurons{1}.candLat-1; % time of example syl 1
 tindplot2 = trainingNeurons{2}.tind(sylIDtoplot) + trainingNeurons{2}.candLat-1; % time of example syl 2

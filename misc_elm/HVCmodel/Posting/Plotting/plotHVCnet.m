@@ -1,12 +1,12 @@
 function plotHVCnet(w, xdyn, m, trainingNeurons, PlottingParams)
-% Makes network diagram, called by RunHVC_split 
+% Makes network diagram for alternating differentiation
 % w: weight matrix
 % xdyn: activity of network
 % m: duration of one syllable, in timesteps
-% trainingNeurons: cell array of structures containing neuron and time indices for each syllable type
-% PlottingParams: sets linewidth, etc.  See RunHVC_split
+% trainingNeurons: cell array of structures containing neuron and time indices for each training neuron type
+% PlottingParams: sets linewidth, etc. 
 %
-% Emily Mackevicius 12/10/2014, heavily copied from Hannah Payne's code
+% Emily Mackevicius 1/14/2015, heavily copied from Hannah Payne's code
 % which builds off Ila Fiete's model, with help from Michale Fee and Tatsuo
 % Okubo.
 
@@ -16,7 +16,7 @@ Syl1Color = PlottingParams.Syl1Color;
 Syl2Color = PlottingParams.Syl2Color;
 ProtoSylColor = PlottingParams.ProtoSylColor;
 
-Latency = findHVClatency(xdyn, m, trainingNeurons);
+Latency = findLatency(xdyn, trainingNeurons);
 
 % first exclude all neurons that don't fire at a consistent phase
 cla; hold on
@@ -187,5 +187,6 @@ end
 
 
 axis tight; axis off; 
-xlim([-.2 m+.2]);
+xlim([-.5 m+.5]);
+ylim([min(y1)-1 max(y1)+1])
 set(gca, 'color', 'none')
