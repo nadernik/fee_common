@@ -1,21 +1,13 @@
-%% Supplemental code for model of HVC syllable differentiation in Okubo et al. manuscript
+%% Main text figure 5
 
-% Emily Mackevicius 1/14/2015, heavily copied from Hannah Payne's code
-% which builds off Ila Fiete's model, with help from Michale Fee and Tatsuo
-% Okubo. 
+% see Posting folder: 
 
-%% set path
-% make sure all functions, including those in the plotting folder, are in
-% your path.
-
-addpath(fullfile(cd, 'Plotting'))
-
-%% Alternating Differentiation
+% Alternating Differentiation
 % Code to generate figure 5 a-f, which shows alternating seed neuron 
 % differentiation, from subsong through protosyllable stage through 
 % splitting.
 
-AlternatingDifferentiation  % run this file.  It may take several minutes.
+edit AlternatingDifferentiation  % run this file
 
 % relies on: 
 
@@ -32,10 +24,10 @@ AlternatingDifferentiation  % run this file.  It may take several minutes.
 % findLatency               % called by plotting functions, tests what neurons
                             % participate in each syllable, and at what latencies
                     
-%% Bout onset differentiation
+% Bout onset differentiation
 % Code to generate figure 5 j-m, which shows bout onset differentiation
 
-BoutOnsetDifferentiation    % run this file. It may take several minutes.
+edit BoutOnsetDifferentiation    % run this file
 
 % relies on: 
 
@@ -47,3 +39,40 @@ BoutOnsetDifferentiation    % run this file. It may take several minutes.
                     
 % findLatency               % called by plotting functions, tests what neurons
                             % participate in each syllable, and at what latencies
+
+%% latency distribution over development    
+
+edit SigLatDistOverDev.m
+%load 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\sigLatDistOverDev1'; 
+
+
+%% Shared Neurons Over Time
+
+% main model: 
+edit SharedNeuronsOverTime_new.m
+% load C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime13
+
+% denovo: 
+edit SharedNeuronsOverTime_denovo.m
+%load C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime14
+
+
+%% Bout onset element
+
+edit RunHVC_boutOnsetElement.m
+
+%% Motif learning
+
+edit RunHVC_split_intoThree.m
+
+%% Alternating differentiation movie for supp
+
+edit runHVC_split_movie.m
+
+%% Bout onset movie for supp
+
+edit boutOnsetDifferentiation_movie.m
+
+%% Bout onset movie, sorting weight matrix and multi-dimensional scaling
+
+edit RunHVC_boutOnset_Movies

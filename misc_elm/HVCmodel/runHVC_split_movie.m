@@ -13,6 +13,9 @@ rasterw = plotw-Margin/2;
 rasterh = 3/4; 
 netoffset = Margin/3;
 neth = 1/4-Margin/4-.01; 
+
+highQual = 1; 
+
 % PlottingParams.msize = 25;
 % PlottingParams.linewidth = 1; 
 % PlottingParams.Syl1Color = [1 0 0]; 
@@ -168,11 +171,14 @@ w = wSubsong;
 figure
 set(gcf, 'color', ones(1,3));
 plotHVCnet(wSubsong, xdynSubsong, p.trainint, trainingNeuronsSubsong, PlottingParams)
-title('Subsong', 'fontsize', PlottingParams.labelFontSize)
+title('Subsong', 'fontsize', PlottingParams.labelFontSize, 'color', [1 1 1], 'backgroundcolor', [1 0 1], 'fontweight', 'bold')
+
 set(gca, 'color', 'none');
-s = rng; 
-myaa % anti-aliasing
-rng(s);
+if highQual
+    s = rng; 
+    myaa % anti-aliasing
+    rng(s);
+end
 F = getframe(gcf)
 slowrate =20;
 for l = 1:slowrate
@@ -181,6 +187,7 @@ end
 close all
 %%
 % learning stages
+wOld = w; 
 for i = 1:(nIterProto+nIterPlotSplit2)
     p.w = w;
     % set parameters that change over development
@@ -193,99 +200,143 @@ for i = 1:(nIterProto+nIterPlotSplit2)
     p.input = bdyn;
     % run one iteration
     [w xdyn] = HVCIter(p);
-    
+    dw(i) = norm(w(:) - wOld(:));
+    wOld = w; 
     % add frames to movie
-    if i<5
-        slowrate = 20;
+    if dw(i)>.1 | i == (nIterProto+nIterPlotSplit2)
+        if i < 5
+            slowrate = 20;
+        else
+            slowrate = 1;
+        end
         figure
         set(gcf, 'color', ones(1,3));
-        plotHVCnet(w,xdyn,p.trainint,trainingNeuronsPsyl,PlottingParams)
-        title(['Protosyllable stage: iteration ', num2str(i)], 'fontsize', PlottingParams.labelFontSize)
-        set(gca, 'color', 'none');
-        s = rng; 
-        myaa % anti-aliasing
-        rng(s);
-        F = getframe(gcf) 
-        for l = 1:slowrate
-            aviobj = addframe(aviobj,F);
-        end
-        close all
-    elseif i < nIterProto
-        speedrate = 10; 
-        if mod(i,speedrate)==0
-            figure
-            set(gcf, 'color', ones(1,3));
+        if protosyllableStage(i)
             plotHVCnet(w,xdyn,p.trainint,trainingNeuronsPsyl,PlottingParams)
-            title(['Protosyllable stage: iteration ', num2str(i)], 'fontsize',PlottingParams.labelFontSize)
-            set(gca, 'color', 'none');
-            s = rng; 
-            myaa % anti-aliasing
-            rng(s);
-            F = getframe(gcf)
-            aviobj = addframe(aviobj,F);
-            close all
-        end
-    elseif i < 990
-        speedrate = 10; 
-        if mod(i,speedrate)==0
-            figure
-            set(gcf, 'color', ones(1,3));
+            title(['Protosyllable stage: iteration ', num2str(i)], ...
+                'fontsize', PlottingParams.labelFontSize, 'color', [1 1 1], 'backgroundcolor', [1 0 1], 'fontweight', 'bold')
+        else
             plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
-            title(['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize',PlottingParams.labelFontSize)
-            set(gca, 'color', 'none');
+            title(['Splitting stage: iteration ', num2str(i - nIterProto)],  ...
+                'fontsize', PlottingParams.labelFontSize, 'color', [0 0 1], 'backgroundcolor', [1 0 0], 'fontweight', 'bold')
+        end
+        set(gca, 'color', 'none');
+        if highQual
             s = rng; 
             myaa % anti-aliasing
             rng(s);
-            F = getframe(gcf)
-            aviobj = addframe(aviobj,F);
-            close all
         end
-    elseif i < 998 
-        slowrate = 20;
-        figure
-        set(gcf, 'color', ones(1,3));
-        plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
-        title(['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize',PlottingParams.labelFontSize)
-        set(gca, 'color', 'none');
-        s = rng; 
-        myaa % anti-aliasing
-        rng(s);
         F = getframe(gcf) 
         for l = 1:slowrate
             aviobj = addframe(aviobj,F);
         end
         close all
-    elseif i < 1200
-        speedrate = 2; 
-        if mod(i,speedrate)==0
-            figure
-            set(gcf, 'color', ones(1,3));
-            plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
-            title(['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize',PlottingParams.labelFontSize)
-            set(gca, 'color', 'none');
-            s = rng; 
-            myaa % anti-aliasing
-            rng(s);
-            F = getframe(gcf)
-            aviobj = addframe(aviobj,F);
-            close all
-        end
-    elseif i <= nIterProto + nIterPlotSplit2
-        speedrate = 20; 
-        if mod(i,speedrate)==0
-            figure
-            set(gcf, 'color', ones(1,3));
-            plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
-            title(['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize',PlottingParams.labelFontSize)
-            set(gca, 'color', 'none');
-            s = rng; 
-            myaa % anti-aliasing
-            rng(s);
-            F = getframe(gcf)
-            aviobj = addframe(aviobj,F);
-            close all
-        end
     end
+
+%     
+%     if i<5
+%         slowrate = 20;
+%         figure
+%         set(gcf, 'color', ones(1,3));
+%         plotHVCnet(w,xdyn,p.trainint,trainingNeuronsPsyl,PlottingParams)
+%         title(['Protosyllable stage: iteration ', num2str(i)], 'fontsize', PlottingParams.labelFontSize)
+%         set(gca, 'color', 'none');
+%         if highQual
+%             s = rng; 
+%             myaa % anti-aliasing
+%             rng(s);
+%         end
+%         F = getframe(gcf) 
+%         for l = 1:slowrate
+%             aviobj = addframe(aviobj,F);
+%         end
+%         close all
+%     elseif i < nIterProto
+%         speedrate = 10; 
+%         if mod(i,speedrate)==0
+%             figure
+%             set(gcf, 'color', ones(1,3));
+%             plotHVCnet(w,xdyn,p.trainint,trainingNeuronsPsyl,PlottingParams)
+%             title(['Protosyllable stage: iteration ', num2str(i)], 'fontsize',PlottingParams.labelFontSize)
+%             set(gca, 'color', 'none');
+%             if highQual
+%                 s = rng; 
+%                 myaa % anti-aliasing
+%                 rng(s);
+%             end
+%             F = getframe(gcf)
+%             aviobj = addframe(aviobj,F);
+%             close all
+%         end
+%     elseif i < 990
+%         speedrate = 10; 
+%         if mod(i,speedrate)==0
+%             figure
+%             set(gcf, 'color', ones(1,3));
+%             plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
+%             title(['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize',PlottingParams.labelFontSize)
+%             set(gca, 'color', 'none');
+%             if highQual
+%                 s = rng; 
+%                 myaa % anti-aliasing
+%                 rng(s);
+%             end
+%             F = getframe(gcf)
+%             aviobj = addframe(aviobj,F);
+%             close all
+%         end
+%     elseif i < 998 
+%         slowrate = 20;
+%         figure
+%         set(gcf, 'color', ones(1,3));
+%         plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
+%         title(['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize',PlottingParams.labelFontSize)
+%         set(gca, 'color', 'none');
+%         if highQual
+%             s = rng; 
+%             myaa % anti-aliasing
+%             rng(s);
+%         end
+%         F = getframe(gcf) 
+%         for l = 1:slowrate
+%             aviobj = addframe(aviobj,F);
+%         end
+%         close all
+%     elseif i < 1200
+%         speedrate = 2; 
+%         if mod(i,speedrate)==0
+%             figure
+%             set(gcf, 'color', ones(1,3));
+%             plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
+%             title(['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize',PlottingParams.labelFontSize)
+%             set(gca, 'color', 'none');
+%             if highQual
+%                 s = rng; 
+%                 myaa % anti-aliasing
+%                 rng(s);
+%             end
+%             F = getframe(gcf)
+%             aviobj = addframe(aviobj,F);
+%             close all
+%         end
+%     elseif i <= nIterProto + nIterPlotSplit2
+%         speedrate = 20; 
+%         if mod(i,speedrate)==0
+%             figure
+%             set(gcf, 'color', ones(1,3));
+%             plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
+%             title(['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize',PlottingParams.labelFontSize)
+%             set(gca, 'color', 'none');
+%             if highQual
+%                 s = rng; 
+%                 myaa % anti-aliasing
+%                 rng(s);
+%             end
+%             F = getframe(gcf)
+%             aviobj = addframe(aviobj,F);
+%             close all
+%         end
+%     end
 end
 slowrate = 20; % leave last network state on screen longer
 for l = 1:slowrate

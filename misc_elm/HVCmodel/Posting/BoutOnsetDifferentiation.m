@@ -2,7 +2,7 @@
 % which builds off Ila Fiete's model, with help from Michale Fee and Tatsuo
 % Okubo. 
 
-% Alternating seed neuron differentiation
+% Code to generate figure 5 j-m, which shows bout onset differentiation
 
 clear all; 
 
@@ -122,7 +122,7 @@ end
 
 %% plotting parameters
 
-isEPS = 0; 
+isEPS = 1; 
 figure(1); clf
 set(gcf, 'color', ones(1,3));
 
@@ -132,10 +132,10 @@ if isEPS
     set(0,'defaultAxesFontName', 'Arial')
     set(0,'defaultTextFontName', 'Arial')
     PlottingParams.labelFontSize = 7; 
-    set(gcf, 'units','centimeters', 'position', [5 5 13.5 9])
+    set(gcf, 'units','centimeters', 'position', [5 5 13.5 6])
 else
-    PlottingParams.msize = 3;
-    PlottingParams.linewidth = 1e-3;
+    PlottingParams.msize = 10;
+    PlottingParams.linewidth = .25;
     PlottingParams.labelFontSize = 7; 
 end
 

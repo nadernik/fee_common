@@ -79,6 +79,7 @@ pSubsong.gamma = gammas(1);
 pSubsong.wmax = wmaxs(1); 
 pSubsong.m = ms(1); 
 pSubsong.eta = 0; 
+pSubsong.epsilon = 0; 
 pSubsong.nsteps = nstepsSubsong; 
 pSubsong.w = w0; 
 pSubsong.input = subsongInput;
@@ -126,10 +127,10 @@ if isEPS
     set(0,'defaultAxesFontName', 'Arial')
     set(0,'defaultTextFontName', 'Arial')
     PlottingParams.labelFontSize = 7; 
-    set(gcf, 'units','centimeters', 'position', [5 5 13.5 9])
+    set(gcf, 'units','centimeters', 'position', [5 5 13.5 6])
 else
-    PlottingParams.msize = 3;
-    PlottingParams.linewidth = 1e-3;
+    PlottingParams.msize = 10;
+    PlottingParams.linewidth = .25;
     PlottingParams.labelFontSize = 7; 
 end
 
@@ -146,7 +147,7 @@ PlottingParams.wperneuronIn = 9; % min incoming weights plotted
 PlottingParams.totalPanels = 4; 
 nplots = 4;
 bottom = .1; 
-height = .55; 
+height = .45; 
 scale = .005; 
 spacing = .75/(2*nplots); 
 
@@ -172,7 +173,7 @@ trainingNeuronsPsyl{1}.thres = 4; % criteria for participation during subsong (t
 trainingNeuronsPsyl{2}.thres = 4; 
 
 PlottingParams.thisPanel = 2; 
-subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .7, .9/nplots, .2])
+subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .6, .9/nplots, .35])
 plotHVCnet(wProto,xdynProto,p.trainint,trainingNeuronsPsyl,PlottingParams)
 set(gca, 'color', 'none');
 PlottingParams.axesPosition = [PlottingParams.thisPanel/nplots-2*spacing, bottom, 40*scale, height];
@@ -191,7 +192,7 @@ trainingNeuronsAlt{1}.thres = 2; % criteria for participation during subsong (th
 trainingNeuronsAlt{2}.thres = 2; 
 
 PlottingParams.thisPanel = 3;
-subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .7, .9/nplots, .2])
+subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .6, .9/nplots, .35])
 plotHVCnet(wSplit1,xdynSplit1,p.trainint,trainingNeuronsAlt,PlottingParams)
 set(gca, 'color', 'none');
 PlottingParams.axesPosition = [PlottingParams.thisPanel/nplots-2*spacing, bottom, 40*scale, height];
@@ -199,7 +200,7 @@ plotAlternating(wSplit1, xdynSplit1, p.trainint, trainingNeuronsAlt, PlottingPar
 set(gca, 'color', 'none')
 
 PlottingParams.thisPanel = 4;
-subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .7, .9/nplots, .2])
+subplot('position', [PlottingParams.thisPanel/nplots-.9/nplots, .6, .9/nplots, .35])
 plotHVCnet(wSplit2,xdynSplit2,p.trainint,trainingNeuronsAlt,PlottingParams)
 set(gca, 'color', 'none');
 PlottingParams.axesPosition = [PlottingParams.thisPanel/nplots-2*spacing, bottom, 40*scale, height];
@@ -213,7 +214,7 @@ if isEPS
 else
     %figure parameters, exporting
     figw = 6;
-    figh = 3;
+    figh = 2;
     set(gcf, 'color', [1 1 1],'papersize', [figw figh], 'paperposition', [0 0 figw*.9 figh])
     print -dmeta -r150
 end
