@@ -73,8 +73,6 @@ if(~isempty(varargin) && strcmpi(varargin{1},'parameters'))
     handles.output = 'params';
 elseif(~isempty(varargin) && ~strcmpi(varargin{1},'batch'))
     handles.vcdb = varargin{1};
-else % batch
-    handles.vcdb = varargin{2};
 end
 
 % Update handles structure
@@ -112,17 +110,6 @@ set(hObject, 'Units', OldUnits);
 set(handles.figure1,'WindowStyle','modal')
 
 % UIWAIT makes vc_imp_ProcessedAnnotationFiles wait for user response (see UIRESUME)
-if isfield(handles.vcdb,'pathName') & isfield(handles.vcdb,'fileName')
-    pn = handles.vcdb.pathName;
-    fn = handles.vcdb.fileName;
-end
-if(exist('fn') & ~isempty(fn))   
-    %set(handles.editMiscFileName, 'String', [pn,fn]);
-    fn = regexprep(fn,'*','misc'); % TO
-    set(handles.editMiscFileName, 'String', [pn,filesep,fn]); % TO
-end
-guidata(hObject, handles);
-
 if(~strcmpi(handles.output,'params') && ~(~isempty(varargin) && strcmpi(varargin{1},'batch')))
     uiwait(handles.figure1);
 else
@@ -212,14 +199,7 @@ uiresume(handles.figure1);
 function [handles,bSuccess] = export(handles, filename)
 try
     vcdb = handles.vcdb;
-%     if ~isfield(vcdb,'pathName') | ~isfield(vcdb,'fileName') % either pathName or fileName doesn't exist %%%%%
-%         [fileName,pathName] = uigetfile('*.mat','Open misc file');
-%     else
-%         pathName = vcdb.pathName;
-%         fileName = vcdb.fileName;
-%     end
-%     load([pathName, fileName]);
-        
+    
     load(filename);
     if(~exist('misc'))
         error('Selected file was not a misc processed annotation file.');
@@ -236,21 +216,17 @@ try
     end
     
     %Export the cluster numbers
-    MaskIdx = find(strcmp(vcdb.f.sfname,'IsMask'));
-    StimIdx = find(strcmp(vcdb.f.sfname,'IsStim'));
-    MaskTimeIdx = find(strcmp(vcdb.f.vfname,'maskTime'));
-    StimTimeIdx = find(strcmp(vcdb.f.vfname,'stimTime'));
     for nv = 1:length(vcdb.d.v)
         if(~isnan(vcdb.d.cn(nv)))
             misc.segs(nv).segType = vcdb.d.cn(nv);
         else
             misc.segs(nv).segType = -1; %the unlabeled indicator for processed annotations..
         end
-    end   
+    end
     
     %save
     save(filename, 'misc', '-v6');
-    msgbox('Export complete!') %%% TO
+    
 catch
     handles.output = lasterr;
 end
@@ -281,7 +257,7 @@ function buttonBrowse_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonBrowse (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[fn,pn] = uigetfile('*misc*.mat','Select the associated misc processed annotation file:',''); %%% TO
+[fn,pn] = uigetfile('*.mat','Select the associated misc processed annotation file:','');
 if(~isempty(fn))   
     set(handles.editMiscFileName, 'String', [pn,fn]);
 end

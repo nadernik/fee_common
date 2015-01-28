@@ -1,50 +1,50 @@
-function varargout = vc_exp_ToProcessedAnnotationFile(varargin)
+function varargout = vc_exp_ToMatlabWorkspaceVariable(varargin)
 % Usages:
 %
 % GUI MODE
-% errstr = vc_exp_ToProcessedAnnotationFile(vcdb)
+% errstr = vc_exp_ToMatlabWorkspaceVariable(vcdb)
 %     errstr: [] if successful, 'cancel' if canceled
 %
 % PARAMETER QUERY MODE
-% parameters = vc_exp_ToProcessedAnnotationFile('parameters')
+% parameters = vc_exp_ToMatlabWorkspaceVariable('parameters')
 %     returns structure containing a name field.
 %
 % BATCH MODE 
-% errstr = vc_exp_ToProcessedAnnotationFile('batch', vcdb, variableNames)
+% errstr = vc_exp_ToMatlabWorkspaceVariable('batch', vcdb, variableNames)
 %      variableNames: cell array containing workspace variables to export
 %      to.
 
-% VC_EXP_TOPROCESSEDANNOTATIONFILE M-file for vc_exp_ToProcessedAnnotationFile.fig
-%      VC_EXP_TOPROCESSEDANNOTATIONFILE by itself, creates a new VC_EXP_TOPROCESSEDANNOTATIONFILE or raises the
+% VC_EXP_TOMATLABWORKSPACEVARIABLE M-file for vc_exp_ToMatlabWorkspaceVariable.fig
+%      VC_EXP_TOMATLABWORKSPACEVARIABLE by itself, creates a new VC_EXP_TOMATLABWORKSPACEVARIABLE or raises the
 %      existing singleton*.
 %
-%      H = VC_EXP_TOPROCESSEDANNOTATIONFILE returns the handle to a new VC_EXP_TOPROCESSEDANNOTATIONFILE or the handle to
+%      H = VC_EXP_TOMATLABWORKSPACEVARIABLE returns the handle to a new VC_EXP_TOMATLABWORKSPACEVARIABLE or the handle to
 %      the existing singleton*.
 %
-%      VC_EXP_TOPROCESSEDANNOTATIONFILE('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in VC_EXP_TOPROCESSEDANNOTATIONFILE.M with the given input arguments.
+%      VC_EXP_TOMATLABWORKSPACEVARIABLE('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in VC_EXP_TOMATLABWORKSPACEVARIABLE.M with the given input arguments.
 %
-%      VC_EXP_TOPROCESSEDANNOTATIONFILE('Property','Value',...) creates a new VC_EXP_TOPROCESSEDANNOTATIONFILE or raises the
+%      VC_EXP_TOMATLABWORKSPACEVARIABLE('Property','Value',...) creates a new VC_EXP_TOMATLABWORKSPACEVARIABLE or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before vc_exp_ToProcessedAnnotationFile_OpeningFunction gets called.  An
+%      applied to the GUI before vc_exp_ToMatlabWorkspaceVariable_OpeningFunction gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to vc_exp_ToProcessedAnnotationFile_OpeningFcn via varargin.
+%      stop.  All inputs are passed to vc_exp_ToMatlabWorkspaceVariable_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help vc_exp_ToProcessedAnnotationFile
+% Edit the above text to modify the response to help vc_exp_ToMatlabWorkspaceVariable
 
-% Last Modified by GUIDE v2.5 31-May-2008 19:44:40
+% Last Modified by GUIDE v2.5 31-May-2008 11:25:13
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @vc_exp_ToProcessedAnnotationFile_OpeningFcn, ...
-                   'gui_OutputFcn',  @vc_exp_ToProcessedAnnotationFile_OutputFcn, ...
+                   'gui_OpeningFcn', @vc_exp_ToMatlabWorkspaceVariable_OpeningFcn, ...
+                   'gui_OutputFcn',  @vc_exp_ToMatlabWorkspaceVariable_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -58,13 +58,13 @@ else
 end
 % End initialization code - DO NOT EDIT
 
-% --- Executes just before vc_exp_ToProcessedAnnotationFile is made visible.
-function vc_exp_ToProcessedAnnotationFile_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before vc_exp_ToMatlabWorkspaceVariable is made visible.
+function vc_exp_ToMatlabWorkspaceVariable_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to vc_exp_ToProcessedAnnotationFile (see VARARGIN)
+% varargin   command line arguments to vc_exp_ToMatlabWorkspaceVariable (see VARARGIN)
 
 % Become true if data successfully exported.
 handles.output = 'none';
@@ -73,8 +73,6 @@ if(~isempty(varargin) && strcmpi(varargin{1},'parameters'))
     handles.output = 'params';
 elseif(~isempty(varargin) && ~strcmpi(varargin{1},'batch'))
     handles.vcdb = varargin{1};
-else % batch
-    handles.vcdb = varargin{2};
 end
 
 % Update handles structure
@@ -112,17 +110,6 @@ set(hObject, 'Units', OldUnits);
 set(handles.figure1,'WindowStyle','modal')
 
 % UIWAIT makes vc_imp_ProcessedAnnotationFiles wait for user response (see UIRESUME)
-if isfield(handles.vcdb,'pathName') & isfield(handles.vcdb,'fileName')
-    pn = handles.vcdb.pathName;
-    fn = handles.vcdb.fileName;
-end
-if(exist('fn') & ~isempty(fn))   
-    %set(handles.editMiscFileName, 'String', [pn,fn]);
-    fn = regexprep(fn,'*','misc'); % TO
-    set(handles.editMiscFileName, 'String', [pn,filesep,fn]); % TO
-end
-guidata(hObject, handles);
-
 if(~strcmpi(handles.output,'params') && ~(~isempty(varargin) && strcmpi(varargin{1},'batch')))
     uiwait(handles.figure1);
 else
@@ -131,14 +118,13 @@ end
 
 if(~isempty(varargin) && strcmpi(varargin{1},'batch'))
     handles.vcdb = varargin{2};
-    miscfilename = varargin{3};
-    handles = export(handles, miscfilename);   
+    handles = export(handles, varargin{3:end});   
     guidata(hObject, handles);
 end
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = vc_exp_ToProcessedAnnotationFile_OutputFcn(hObject, eventdata, handles)
+function varargout = vc_exp_ToMatlabWorkspaceVariable_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -147,7 +133,7 @@ function varargout = vc_exp_ToProcessedAnnotationFile_OutputFcn(hObject, eventda
 if(strcmpi(handles.output,'none'))
     if(nargout>0), varargout{1} = 'cancel'; end
 elseif(strcmpi(handles.output,'params'))
-    params.name = 'Export clusters to processed annotation file.';
+    params.name = 'Export to Matlab Workspace';
     if(nargout>0), varargout{1} = params; end
 elseif(strcmpi(handles.output,'export'))
     if(nargout>0), varargout{1} = []; end
@@ -189,8 +175,11 @@ function buttonExport_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonExport (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-miscfilename = get(handles.editMiscFileName,'String');
-handles = export(handles, miscfilename);
+strs{1} = get(handles.editClusterNumberVar,'String');
+strs{2} = get(handles.editClusterNameVar,'String');
+strs{3} = get(handles.editVectIdentityVar,'String');
+strs{4} = get(handles.editVectTimeVar,'String');
+handles = export(handles, strs{:});
 guidata(hObject, handles);
 
 % Use UIRESUME instead of delete because the OutputFcn needs
@@ -209,64 +198,46 @@ function buttonCancel_Callback(hObject, eventdata, handles)
 uiresume(handles.figure1);
 
 % --- export ------------
-function [handles,bSuccess] = export(handles, filename)
+function [handles,bSuccess] = export(handles, cnumName, cstrName, videnName, vtimeName)
 try
     vcdb = handles.vcdb;
-%     if ~isfield(vcdb,'pathName') | ~isfield(vcdb,'fileName') % either pathName or fileName doesn't exist %%%%%
-%         [fileName,pathName] = uigetfile('*.mat','Open misc file');
-%     else
-%         pathName = vcdb.pathName;
-%         fileName = vcdb.fileName;
-%     end
-%     load([pathName, fileName]);
-        
-    load(filename);
-    if(~exist('misc'))
-        error('Selected file was not a misc processed annotation file.');
-    end
-    if(length(misc.segs)~=length(vcdb.d.v))
-        error('Vector clust does not have the same number of segments as the misc file.');
-    end
-    miscT = [misc.segs.absStart];
-    if(size(miscT,2)>size(miscT,1))
-        miscT = miscT';
-    end
-    if(~isequal(miscT,vcdb.d.t))
-        error('The vector clust times do not match the segment times in the misc file.');
-    end
-    
-    %Export the cluster numbers
-    MaskIdx = find(strcmp(vcdb.f.sfname,'IsMask'));
-    StimIdx = find(strcmp(vcdb.f.sfname,'IsStim'));
-    MaskTimeIdx = find(strcmp(vcdb.f.vfname,'maskTime'));
-    StimTimeIdx = find(strcmp(vcdb.f.vfname,'stimTime'));
-    for nv = 1:length(vcdb.d.v)
+    cnum = nan(size(vcdb.d.v));
+    cstr = cell(size(vcdb.d.v));
+    for(nv = 1:length(vcdb.d.v))
         if(~isnan(vcdb.d.cn(nv)))
-            misc.segs(nv).segType = vcdb.d.cn(nv);
-        else
-            misc.segs(nv).segType = -1; %the unlabeled indicator for processed annotations..
+            cnum(nv) = vcdb.d.cn(nv);
+            cstr{nv} = vcdb.c(vcdb.d.cn(nv)).str;
         end
-    end   
-    
-    %save
-    save(filename, 'misc', '-v6');
-    msgbox('Export complete!') %%% TO
+    end
+    if(~isempty(cnumName))
+        assignin('base',cnumName, cnum);
+    end
+    if(~isempty(cstrName))
+        assignin('base',cstrName, cstr);
+    end
+    if(~isempty(videnName))
+        assignin('base',videnName, vcdb.d.i);
+    end
+    if(~isempty(vtimeName))
+        assignin('base',vtimeName, vcdb.d.t);
+    end
+    handles.output = 'export';
 catch
     handles.output = lasterr;
 end
 
-function editMiscFileName_Callback(hObject, eventdata, handles)
-% hObject    handle to editMiscFileName (see GCBO)
+function editClusterNumberVar_Callback(hObject, eventdata, handles)
+% hObject    handle to editClusterNumberVar (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of editMiscFileName as text
-%        str2double(get(hObject,'String')) returns contents of editMiscFileName as a double
+% Hints: get(hObject,'String') returns contents of editClusterNumberVar as text
+%        str2double(get(hObject,'String')) returns contents of editClusterNumberVar as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function editMiscFileName_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to editMiscFileName (see GCBO)
+function editClusterNumberVar_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to editClusterNumberVar (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -276,15 +247,73 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-% --- Executes on button press in buttonBrowse.
-function buttonBrowse_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonBrowse (see GCBO)
+
+
+function editClusterNameVar_Callback(hObject, eventdata, handles)
+% hObject    handle to editClusterNameVar (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[fn,pn] = uigetfile('*misc*.mat','Select the associated misc processed annotation file:',''); %%% TO
-if(~isempty(fn))   
-    set(handles.editMiscFileName, 'String', [pn,fn]);
+
+% Hints: get(hObject,'String') returns contents of editClusterNameVar as text
+%        str2double(get(hObject,'String')) returns contents of editClusterNameVar as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function editClusterNameVar_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to editClusterNameVar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
-guidata(hObject, handles);
+
+
+
+function editVectIdentityVar_Callback(hObject, eventdata, handles)
+% hObject    handle to editVectIdentityVar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of editVectIdentityVar as text
+%        str2double(get(hObject,'String')) returns contents of editVectIdentityVar as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function editVectIdentityVar_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to editVectIdentityVar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function editVectTimeVar_Callback(hObject, eventdata, handles)
+% hObject    handle to editVectTimeVar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of editVectTimeVar as text
+%        str2double(get(hObject,'String')) returns contents of editVectTimeVar as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function editVectTimeVar_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to editVectTimeVar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
 

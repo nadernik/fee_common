@@ -149,7 +149,6 @@ function handles = refreshResults(handles)
 clf
 for i=1:size(handles.range,2)
     subplot(handles.row,handles.column,i)
-    %axes('position',
     displaySpecgramQuick(handles.vcdb.d.v{handles.Ndx(handles.range(i))},handles.sp.fs, handles.sp.freqRange, handles.sp.colorRange);
     axis square
     axis off

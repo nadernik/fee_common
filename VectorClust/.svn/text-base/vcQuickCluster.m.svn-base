@@ -1,7 +1,7 @@
 function bSuccess = vcQuickCluster(birdname,datestr,polygonfile,displayCluster, varargin) 
 
 P.prefix = 'all';
-P.root = 'Z:\Data\CAF';
+P.root = 'c:\aadata\AuditoryFeedback';
 P = parseargs(P, varargin{:});
 
 %Get all the relevant files.
@@ -10,9 +10,6 @@ dFiles = dir(fileSearch);
 
 for(nFile = 1:length(dFiles))
     searchString = [P.root, filesep, birdname, filesep, strrep(dFiles(nFile).name, '_misc_', '_*_')];
-    
-    handles.vcdb.fileName = dFiles(nFile).name; %%% TO
-    handles.vcdb.pathName = [P.root, filesep, birdname, filesep];%%% TO
     
     %load data.
     [v, sf, vf, icn, t, i, sfname, vfname] = vc_imp_ProcessedAnnotationFiles('batch', searchString, false, false, false);
@@ -103,7 +100,7 @@ for(nFile = 1:length(dFiles))
     varargout = vc_exp_ToProcessedAnnotationFile('batch', handles.vcdb, [P.root, filesep, birdname, filesep, dFiles(nFile).name])
 
     %display clusters
-    if(exist('displayCluster') && ~isempty(displayCluster)) %% TO
+    if(exist('displayCluster') && ~isempty(displayCluster))
         d = handles.vcdb.d;
         c = handles.vcdb.c;
         %find matching cluster.
@@ -129,7 +126,6 @@ for(nFile = 1:length(dFiles))
         end
     end
 end
-bSuccess = true;
 
 % ------------------------------------------------------------------------
 function f = getSF(vcdb, nFeat, bndx)
