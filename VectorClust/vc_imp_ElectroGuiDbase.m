@@ -638,21 +638,36 @@ try
             handles.identity{nVect,1}.dbaseEventTime = alignS(ne);
             handles.identity{nVect,1}.dbaseEventNdx = eventNdx(ne);
             handles.scalar_features(nVect,1) = duration(ne);
+            
+            % sound amplitue (dB) Tatsuo
+            filtered_sound = egf_BandPass860to8600(syllAudio,dbase.Fs); %  bandpass from 860 to 8600
+            wind = round(0.0025*dbase.Fs); % 2.5 ms sliding window
+            amp = smooth(10*log10(filtered_sound.^2+eps),wind);
+            amp = amp-min(amp(wind:length(amp)-wind));
+            amp(find(amp<0))=0;
+                        
             [pi, pg, hp, pt, ent] = estimatePitch(syllAudio, dbase.Fs); %%% Tatsuo
-            handles.scalar_features(nVect,2:7) = [mean(pi), std(pi), mean(pg), std(pg), mean(ent),std(ent)];
-            handles.scalar_features(nVect,8:10) =  [timeInFile(ne), isi(ne), interval(ne)];
-            Pitch{nVect,1} = pi;
-            PitchGoodness{nVect,1} = pg;
-            Entropy{nVect,1} = ent; 
             [features labels] = egf_SAPfeatures(syllAudio, dbase.Fs); % written by Sigal Saar  
             FM{nVect,1} = features{2};
             Mean_frequency{nVect,1} = features{9}; % also known as gravity center
+            Spectral_width{nVect,1} = features{10}; % second-order statistics
+            
+            handles.scalar_features(nVect,2:14) = [mean(pi), std(pi), mean(pg), std(pg), mean(ent),std(ent),...
+                mean(FM{nVect}),std(FM{nVect}),mean(Mean_frequency{nVect}),std(Mean_frequency{nVect}),...
+                mean(Spectral_width{nVect}), std(Spectral_width{nVect}), clust(ne)];
+            handles.scalar_features(nVect,15:17) =  [timeInFile(ne), isi(ne), interval(ne)];
+            Pitch{nVect,1} = pi;
+            PitchGoodness{nVect,1} = pg;
+            Entropy{nVect,1} = ent;
+            Amplitude{nVect,1} = amp; % Tatsuo
         end
     end    
     handles.scalar_feature_names = {'duration';'mean_pitch';'std_pitch';'mean_pitchGoodness';'std_pitchGoodness';...
-        'mean_entropy';'std_entropy';'timeInFile';'isi';'interval';}; %%% changed to column vector, Tatsuo
-    handles.vector_features = {Pitch,PitchGoodness,Entropy,FM,Mean_frequency}; %%% Tatsuo
-    handles.vector_feature_names = {'pitch';'pitchGoodness';'entropy';'FM';'Mean_frequency'};  %%% Tatsuo
+        'mean_entropy';'std_entropy';'mean_FM'; 'std_FM';'mean_Mean_frequency';'std_Mean_frequency';...
+        'mean_Spectral_width';'std_Spectral_width';'clust';'timeInFile';'isi';'interval';}; %%% changed to column vector, Tatsuo
+    handles.vector_features = {Pitch,PitchGoodness,Entropy,FM,Mean_frequency, Amplitude, Spectral_width}; %%% Tatsuo
+    handles.vector_feature_names = {'pitch';'pitchGoodness';'entropy';'FM';'Mean_frequency'; 'Amplitude';...
+        'Spectral_width'};  %%% Tatsuo
     
     delete(h_waitbar) % not close but delete %%% Tatsuo
     bSuccess = true;

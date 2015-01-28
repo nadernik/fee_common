@@ -23,16 +23,16 @@ function varargout = vectorClust(varargin)
 
 % Edit the above text to modify the response to help vectorClust
 
-% Last Modified by GUIDE v2.5 12-Apr-2013 15:44:54
+% Last Modified by GUIDE v2.5 02-Oct-2009 10:46:21
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-    'gui_Singleton',  gui_Singleton, ...
-    'gui_OpeningFcn', @vectorClust_OpeningFcn, ...
-    'gui_OutputFcn',  @vectorClust_OutputFcn, ...
-    'gui_LayoutFcn',  [] , ...
-    'gui_Callback',   []);
+                   'gui_Singleton',  gui_Singleton, ...
+                   'gui_OpeningFcn', @vectorClust_OpeningFcn, ...
+                   'gui_OutputFcn',  @vectorClust_OutputFcn, ...
+                   'gui_LayoutFcn',  [] , ...
+                   'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -43,6 +43,7 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
+
 
 % --- Executes just before vectorClust is made visible.
 function vectorClust_OpeningFcn(hObject, eventdata, handles, varargin)
@@ -105,7 +106,7 @@ vcg.options.maxSets = 20;
 handles.vcdb = vcdb;
 handles.vcg = vcg;
 
-%Vector Cluster
+%Vector Cluster 
 d = dir([handles.vcg.vcdir,filesep,'vc_cmf_*.m']);
 name = cell(size(d));
 for nD = 1:length(d)
@@ -113,24 +114,15 @@ for nD = 1:length(d)
 end
 set(handles.popupComputeFeature,'String',name);
 
-% load path and file names automatically (TO)
-P.pathName = [];
-P.fileName = [];
-P = parseargs(P, varargin{:});
-handles.pathName = P.pathName;
-handles.fileName = P.fileName;
-% if ~(exist([handles.pathName,handles.fileName])==0)
-%     buttonImport_Callback(hObject, eventdata, handles);
-% end
-
 % Update handles structure
 guidata(hObject, handles);
+
 % UIWAIT makes vectorClust wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = vectorClust_OutputFcn(hObject, eventdata, handles)
+function varargout = vectorClust_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -171,7 +163,6 @@ if(isempty(handles.vcg.vcdbFilename)) % no preexisting file
     handles.vcg.vcdbFilename = [p,filesep,f];
 end
 save(handles.vcg.vcdbFilename, '-struct','handles','vcdb'); % save only handles.vcdb
-msgbox(['Saved to ',handles.vcg.vcdbFilename]); % TO DO remove two fileseps
 
 % --- Executes on button press in buttonImport.
 function buttonImport_Callback(hObject, eventdata, handles)
@@ -202,35 +193,25 @@ if(ok)
         handles.vcdb.fileName = fileName; %%% TO
         handles.vcdb.pathName = pathName; %%% TO
         set(handles.text_FileName,'string',fileName); %%% TO
-    elseif strcmp(name{sel},'ProcessedAnnotationFiles_TO'); %%% TO
-        %if isempty(handles.pathName) | isempty(handles.fileName)
-        [v, sf, vf, icn, t, i, sfname, vfname, fileName, pathName] = feval(func{sel}); %%% TO
-        %else
-        %    [v, sf, vf, icn, t, i, sfname, vfname, fileName, pathName] = feval(func{sel},...
-        %        'batch',handles.pathName,handles.fileName);
-        %end
-        handles.vcdb.fileName = fileName; %%% TO
-        handles.vcdb.pathName = pathName; %%% TO
-        set(handles.text_FileName,'string',fileName); %%% TO
     else %%% TO
-        [v, sf, vf, icn, t, i, sfname, vfname] = feval(func{sel});
+        [v, sf, vf, icn, t, i, sfname, vfname] = feval(func{sel});    
     end %%% TO
     guidata(hObject, handles);
-
+    
     %If import successful
     if(~isempty(v))
-
-        if(bClosed)
+        
+        if(bClosed)           
             %add basic features to the scalar feature list.
-            sf(:,end+1) = cellfun(@length,v);
-            sfname{end+1} = 'length';
+            sf(:,end+1) = cellfun(@length,v);  
+            sfname{end+1} = 'length';               
             sf(:,end+1) = t;
             sfname{end+1} = 'time';
             sf(:,end+1) = (t - floor(t))*24;
             sfname{end+1} = 'hourOfDay';
             sf(:,end+1) = icn;
-            sfname{end+1} = 'imported cluster';
-
+            sfname{end+1} = 'imported cluster';      
+            
             %import the data.
             handles.vcdb.d.v = v;
             handles.vcdb.d.sf = sf;
@@ -268,8 +249,7 @@ function buttonLoad_Callback(hObject, eventdata, handles)
 if(isequal(f,0))
     return;
 end
-%load([p,filesep,f]);
-load([p,f]);
+load([p,filesep,f]);
 if(~exist('vcdb'))
     warndlg('Specifed file is not a vectorClust data file.');
     return;
@@ -305,7 +285,7 @@ if(~isempty(handles.vcdb.d.v))
     end
     if(strcmp(button,'Yes') | strcmp(button,'No'))
         bClosed = true;
-
+        
         %blank data and data descriptions.
         handles.vcdb.d.v = {};
         handles.vcdb.d.sf = [];
@@ -326,7 +306,7 @@ if(~isempty(handles.vcdb.d.v))
         for nc = 1:length(handles.vcdb.c)
             handles.vcdb.c(nc).incs = {};
             handles.vcdb.c(nc).excs = {};
-        end
+        end      
         %blank vcdb filename.
         handles.vcg.vcdbFilename = [];
         handles.vcg.bSel = [];
@@ -336,7 +316,7 @@ if(~isempty(handles.vcdb.d.v))
         handles.vcg.hVect = [];
         handles.vcg.mVectMat = [];
     end
-end
+end 
 
 % --- Executes on button press in buttonExport.
 function buttonExport_Callback(hObject, eventdata, handles)
@@ -353,7 +333,7 @@ end
 [sel, ok] = listdlg('ListString', name, 'Name', 'Select an export function:', 'OKString', 'Export','SelectionMode','single');
 if(ok)
     errString = feval(func{sel}, handles.vcdb);
-
+   
     if(~isempty(errString) && ~strcmpi(errString,'cancel'))
         warndlg(['Export did not complete successfully: ',errString]);
     end
@@ -426,7 +406,7 @@ if(strcmpi(clusterStr,'New Cluster'))
     prompt = {'New cluster number:','New cluster name:'};
     dlg_title = 'Create a new cluster:';
     num_lines = 1;
-    answer = inputdlg(prompt,dlg_title,num_lines);
+    answer = inputdlg(prompt,dlg_title,num_lines);    
     if(isempty(answer))
         set(handles.popupClusterSelect,'Value',1);
         return;
@@ -562,19 +542,19 @@ if(~isempty(clust) & clust<=length(handles.vcdb.c))
     set(handles.axesFeatureScatter, 'ButtonDownFcn', []);
     bCancel = false;
     bComplete = false;
-
+    
     [p1,p2,bKey] = rbline(handles.axesFeatureScatter);
     if(bKey)
         bCancel = true;
-    end
+    end    
     polyx = [p1(1),p2(1)];
     polyy = [p1(2),p2(2)];
     polylines(end+1) = line(polyx,polyy,'EraseMode','xor');
     tic;
     while(~bCancel & ~bComplete)
         [p1,p2,bKey] = rbline(handles.axesFeatureScatter,polyx(end),polyy(end));
-        dt = toc;
-
+        dt = toc;  
+        
         %get state...
         if(bKey)
             key = get(fig, 'CurrentCharacter') + 0;
@@ -589,8 +569,8 @@ if(~isempty(clust) & clust<=length(handles.vcdb.c))
             end
             pause(.001);
             bDoubleClick = strcmp('open', get(fig, 'SelectionType'));
-        end
-
+        end    
+        
         %take appropriate action.
         bCancel = (key == 27);
         bComplete = (~bKey & bDoubleClick) | (bKey & (key == 13));
@@ -616,9 +596,9 @@ if(~isempty(clust) & clust<=length(handles.vcdb.c))
     else
         delete(polylines);
     end
-
+    
     set(hObject, 'BackgroundColor', [236,233,216]./255);
-    set(handles.axesFeatureScatter, 'buttonDownFcn', {@axesFeatureScatter_ButtonDownFcn});
+    set(handles.axesFeatureScatter, 'buttonDownFcn', {@axesFeatureScatter_ButtonDownFcn}); 
 end
 buttonHistogram_Callback(hObject, eventdata, handles); % update histogram
 guidata(hObject, handles);
@@ -751,7 +731,7 @@ if(~bOK)
     end
 else
     %valid number entered, adjust number of sets.
-    if(bPerc)
+    if(bPerc)  
         numer = 100;
     else
         numer = length(handles.vcdb.d.v);
@@ -1032,11 +1012,11 @@ end
 if(styleType == 4)
     minF = min(getSF(handles.vcdb, handles.vcg.feat2colorFeat));
     maxF = max(getSF(handles.vcdb, handles.vcg.feat2colorFeat));
-    prompt = {['What is minimum mapped feature value (',num2str(minF),'):'], ['What is maximum mapped feature value (',num2str(maxF),'):']};
+    prompt = {['What is minimum mapped feature value (',num2str(minF),'):'], ['What is maximum mapped feature value (',num2str(maxF),'):']};    
     dlg_title = 'Choose the color range';
     num_lines = 1;
     default = {num2str(minF),num2str(maxF)};
-    answer = inputdlg(prompt,dlg_title,num_lines,default);
+    answer = inputdlg(prompt,dlg_title,num_lines,default);    
     if(isempty(answer))
         handles.vcg.feat2colorRange = [minF,maxF];
     else
@@ -1100,7 +1080,7 @@ function buttonPrev_Callback(hObject, eventdata, handles)
 % ndx = min(find(handles.vcg.bSel));
 % if(ndx-1>=1)
 %     bSel = false(size(handles.vcg.bSel));
-%     bSel(ndx-1) = true;
+%     bSel(ndx-1) = true;    
 %     handles = refreshScatterSelection(handles);
 %     handles = refreshVectorSelection(handles);
 %     guidata(hObject, handles);
@@ -1159,7 +1139,7 @@ function buttonLoadClusters_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 if(isempty(handles.vcdb.d.v))
     warndlg('Vector data must be loaded/imported before cluster polygons.');
-    return;
+    return;   
 end
 
 button = 'Overwrite';
@@ -1170,7 +1150,7 @@ if(~isempty(handles.vcdb.c))
     end
 end
 
-[file,path] = uigetfile('*polygon*.mat','Import cluster polygons:');
+[file,path] = uigetfile('*.mat','Import cluster polygons:');
 if(isequal(file,0))
     return;
 end
@@ -1225,10 +1205,10 @@ else
     else
         prompt = ['A feature named ',importName,' is being imported.  Please select its match:'];
         [sel,ok] = listdlg('PromptString',prompt ,...
-            'SelectionMode','single',...
-            'ListString',featNames, ...
-            'OKString', 'OK', ...
-            'CancelString', 'NO MATCH FOUND');
+                           'SelectionMode','single',...
+                           'ListString',featNames, ...
+                           'OKString', 'OK', ...
+                           'CancelString', 'NO MATCH FOUND');
         if(ok)
             featNum = sel;
         else
@@ -1250,23 +1230,23 @@ axes(handles.axesFeatureScatter);
 
 if(strcmp(mouseMode,'normal')) % drag
     rect = rbbox;
-    p2 = get(gca,'CurrentPoint');
+    p2 = get(gca,'CurrentPoint'); 
     p2 = p2(1,1:2);
-    ll = min(p1,p2);
+    ll = min(p1,p2);             
     ur = max(p1,p2);
-    offset = abs(ur-ll);
+    offset = abs(ur-ll); 
     if(ur(1)>ll(1) && ur(2)>ll(2))
-        xlim([ll(1),ur(1)]);
-        ylim([ll(2),ur(2)]);
+        xlim([ll(1),ur(1)]); 
+        ylim([ll(2),ur(2)]); 
     end
 elseif(strcmp(mouseMode,'open')) % double click
     axis tight; % zoom out
 elseif(strcmp(mouseMode,'alt')) % right click (Ctrl + click)
     %get the rectangle
     rect = rbbox;
-    p2 = get(gca,'CurrentPoint');
+    p2 = get(gca,'CurrentPoint'); 
     p2 = p2(1,1:2);
-    ll = min(p1,p2);
+    ll = min(p1,p2);             
     ur = max(p1,p2);
 
     %find points in rectangle
@@ -1308,14 +1288,14 @@ axes(handles.axesVector);
 
 if(strcmp(mouseMode,'normal')) % left click
     rect = rbbox;
-    p2 = get(gca,'CurrentPoint');
+    p2 = get(gca,'CurrentPoint'); 
     p2 = p2(1,1:2);
-    ll = min(p1,p2);
+    ll = min(p1,p2);             
     ur = max(p1,p2);
-    offset = abs(ur-ll);
+    offset = abs(ur-ll); 
     if(ur(1)>ll(1) && ur(2)>ll(2))
-        xlim([ll(1),ur(1)]);
-        ylim([ll(2),ur(2)]);
+        xlim([ll(1),ur(1)]); 
+        ylim([ll(2),ur(2)]); 
     end
 elseif(strcmp(mouseMode,'open')) % double click
     axis tight;
@@ -1323,9 +1303,9 @@ elseif(strcmp(mouseMode,'alt')) % right click
     if(~isempty(handles.vcg.hVect)) %&& strcmp(get(handles.menuDisplayOnlySelectedVectors,'Checked'),'off')
         %get the rectangle
         rect = rbbox;
-        p2 = get(gca,'CurrentPoint');
+        p2 = get(gca,'CurrentPoint'); 
         p2 = p2(1,1:2);
-        ll = min(p1,p2);
+        ll = min(p1,p2);             
         ur = max(p1,p2);
 
         %get the currently visible vectors
@@ -1333,12 +1313,12 @@ elseif(strcmp(mouseMode,'alt')) % right click
         if(strcmp(get(handles.menuDisplayOnlySelectedVectors,'Checked'),'on'))
             bVis = handles.vcg.bSel & bVis;
         end
-
+        
         %find which visible vectors are in the rectangle.
         vm = handles.vcg.mVectMat;
         vm = vm(floor(ll(1)):ceil(ur(1)), :);
         bVisSel = any(vm>ll(2) & vm<ur(2), 1); %has length of bVis.
-
+        
         if(strcmp(get(handles.menuDisplayOnlySelectedVectors,'Checked'),'on'))
             handles.vcg.bSel(bVis) = ~bVisSel;
         else
@@ -1367,12 +1347,12 @@ if(~isempty(handles.vcdb.d.v))
     set(handles.popupFilterSetFeature,'String',[{'none'}; handles.vcdb.f.sfname]);
     if(get(handles.popupFilterSetFeature,'Value')>length(handles.vcdb.f.sfname)+1)
         set(handles.popupFilterSetFeature,'Value',1);
-    end
+    end    
     set(handles.popupVectorFeature, 'String', [{'vectors'}; handles.vcdb.f.vfname]);
     if(get(handles.popupVectorFeature,'Value')>length(handles.vcdb.f.vfname))
         set(handles.popupVectorFeature,'Value',1);
     end
-
+    
     %Set up cluster related popups:
     clustStrs = cell(length(handles.vcdb.c) + 1,1);
     for nc = 1:length(handles.vcdb.c)
@@ -1390,11 +1370,11 @@ function handles = refreshClusters(handles)
 if(~isempty(handles.vcdb.d.v))
     d = handles.vcdb.d;
     c = handles.vcdb.c;
-
+    
     %construct cluster popup
     sVal = {};
     for nc = 1:length(c)
-        sVal{nc} = ['<HTML><FONT bgCOLOR=#', rgbconv(c(nc).color),'>',num2str(c(nc).number),':',c(nc).str,'</FONT></HTML>'];
+        sVal{nc} = ['<HTML><FONT bgCOLOR=#', rgbconv(c(nc).color),'>',num2str(c(nc).number),':',c(nc).str,'</FONT></HTML>'];    
     end
     sVal{end+1} = 'New Cluster';
     set(handles.popupClusterSelect,'String',sVal);
@@ -1402,27 +1382,19 @@ if(~isempty(handles.vcdb.d.v))
     if(nc>length(c))
         set(handles.popupClusterSelect,'Value',1);
     end
-
-
+        
+    
     %Assign vectors to clusters
     handles.vcdb.d.cn = nan(size(d.v));
     for(nc = 1:length(c))
         %Find vectors in all polygons.
         if(length(c(nc).polys)>0)
-            if get(handles.checkboxOR,'Value') % OR mode instead of AND mode if checkbox is true: TO
-                bIN = false(size(d.v)); % set all values to false
-                for(nPoly = 1:length(c(nc).polys)) % all the polygons
-                    poly = c(nc).polys{nPoly};
-                    bIN = bIN | inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
-                end
-            else
-                bIN = true(size(d.v)); % set all values to true
-                for(nPoly = 1:length(c(nc).polys)) % all the polygons
-                    poly = c(nc).polys{nPoly};
-                    bIN = bIN & inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
-                end
+            bIN = true(size(d.v));
+            for(nPoly = 1:length(c(nc).polys))
+                poly = c(nc).polys{nPoly};
+                bIN = bIN & inpolygon(getSF(handles.vcdb,poly.xfeat),getSF(handles.vcdb,poly.yfeat), poly.xverts, poly.yverts);
             end
-        else % no polygon
+        else
             bIN = false(size(d.v));
         end
         %Overide with manual modifications.
@@ -1446,24 +1418,24 @@ if(nc <= length(handles.vcdb.c))
     polyStrs = cell(length(handles.vcdb.c(nc).polys),1);
     for(nPoly = 1:length(handles.vcdb.c(nc).polys))
         poly = handles.vcdb.c(nc).polys{nPoly};
-        polyStrs{nPoly} = [num2str(nPoly),' : ', getSFName(handles.vcdb, poly.xfeat),' x ', getSFName(handles.vcdb, poly.yfeat)];
+        polyStrs{nPoly} = [num2str(nPoly),' : ', getSFName(handles.vcdb, poly.xfeat),' x ', getSFName(handles.vcdb, poly.yfeat)];        
     end
     set(handles.listboxClusterPolygons, 'Value',1);
     set(handles.listboxClusterPolygons, 'String',polyStrs);
-
+    
     %set up manual modification listbox
     modsStrs = {};
     for(nIncs = 1:length(handles.vcdb.c(nc).incs))
-        modsStrs{end+1} = ['incs_', num2str(nIncs)];
+        modsStrs{end+1} = ['incs_', num2str(nIncs)];        
     end
     for(nExcs = 1:length(handles.vcdb.c(nc).excs))
-        modsStrs{end+1} = ['excs_', num2str(nExcs)];
+        modsStrs{end+1} = ['excs_', num2str(nExcs)];        
     end
     set(handles.listboxManualMods, 'Value',1);
     set(handles.listboxManualMods, 'String',modsStrs);
 else
     set(handles.listboxClusterPolygons, 'Value',[]);
-    set(handles.listboxClusterPolygons, 'String',{});
+    set(handles.listboxClusterPolygons, 'String',{});    
     set(handles.listboxManualMods, 'Value',[]);
     set(handles.listboxManualMods, 'String',{});
 end
@@ -1480,8 +1452,6 @@ handles = refreshVectorPlot(handles);
 
 % --- Update the scatter axes.
 function handles = refreshScatter(handles)
-set(gcf,'Renderer','OpenGL'); % optimaze speed. Try painters or zbuffer for more accurate image (TO)
-
 d = handles.vcdb.d;
 c = handles.vcdb.c;
 xfeat = getFeaturePopupValue(handles.popupXFeature, handles.vcdb);
@@ -1489,7 +1459,7 @@ yfeat = getFeaturePopupValue(handles.popupYFeature, handles.vcdb);
 
 %Apply subset / filter
 handles.vcg.bFilt = computeFilterVector(handles);
-
+    
 %Determine which vectors should be drawn (independant of filter/subset)
 handles.vcg.bDraw = computeDrawVector(handles);
 
@@ -1498,22 +1468,16 @@ handles.vcg.bDraw = computeDrawVector(handles);
 
 %draw the markers
 bVis = handles.vcg.bDraw & handles.vcg.bFilt & ~isnan(getSF(handles.vcdb,xfeat)) & ~isnan(getSF(handles.vcdb,yfeat));
-
 axes(handles.axesFeatureScatter);
 hold off;
 % screenImage = zeros(xPix, yPix, 3) color code
 % N = size(handles.vcdb.d.cn,1); % number of points
 % for n=1:N
-%   handles.vcdb.d(n).cn
+%   handles.vcdb.d(n).cn    
 % end
 %codes which changes the pixeles in the screen image.
 %image(screenImage);
 handles.vcg.hScat = scatter(getSF(handles.vcdb,xfeat,bVis), getSF(handles.vcdb,yfeat,bVis), msize(bVis), mcolor(bVis,:));
-
-xl = xlim; % expand the axis TO
-yl = ylim; % expand the axis TO
-xlim([xl(1)*0.9 xl(2)*1.1]); % expand the axis TO
-ylim([yl(1)*0.9 yl(2)*1.1]); % expand the axis TO
 
 if isfield(handles,'keepLimits') && handles.keepLimits
     xlim(handles.xlim); %%% TO
@@ -1535,13 +1499,13 @@ for(nc = 1:length(handles.vcdb.c))
     for(nPoly = 1:length(handles.vcdb.c(nc).polys))
         poly = handles.vcdb.c(nc).polys{nPoly};
         if((poly.xfeat==xfeat) && (poly.yfeat==yfeat))
-            hp = patch(poly.xverts,poly.yverts,'black','FaceColor','none','EdgeColor',handles.vcdb.c(nc).color);
+            hp = patch(poly.xverts,poly.yverts,'black','FaceColor','none','EdgeColor',handles.vcdb.c(nc).color); 
         elseif((poly.xfeat==yfeat) && (poly.yfeat==xfeat))
             hp = patch(poly.yverts,poly.xverts,'black','FaceColor','none','EdgeColor',handles.vcdb.c(nc).color);
         else
             hp = [];
         end
-        if(~isempty(hp))
+        if(~isempty(hp)) 
             set(hp,'HitTest','off');
             if(nc==cc && np==nPoly)
                 set(hp,'LineWidth',2);
@@ -1551,7 +1515,7 @@ for(nc = 1:length(handles.vcdb.c))
 end
 
 handles = refreshScatterSelection(handles);
-set(handles.axesFeatureScatter, 'buttonDownFcn', {@axesFeatureScatter_ButtonDownFcn});
+set(handles.axesFeatureScatter, 'buttonDownFcn', {@axesFeatureScatter_ButtonDownFcn}); 
 
 % --- Compute bFilt based on subsetting and filtering
 function bFilt = computeFilterVector(handles)
@@ -1578,7 +1542,7 @@ if(bOk & (nSetSize > 0))
     %Next get the selected set
     nSet = get(handles.popupFilterSet, 'Value');
     bPerc = (get(handles.popupFilterSetType,'Value')==1);
-    if(bPerc)
+    if(bPerc)        
         numPerSet = ceil(length(d.v) * (nSetSize/100));
     else
         numPerSet = ceil(nSetSize);
@@ -1608,24 +1572,7 @@ switch scatType
         bDraw = isnan(d.cn);
     case 4 %only selected clustered
         nc = get(handles.popupClusterSelect,'Value');
-        %nc=1; %% TO
-        bDraw = (d.cn==c(nc).number);
-        %     case 5 % IsMask TO
-        %         temp1 = strcmp(handles.vcdb.f.sfname(:),'IsMask');
-        %         if ~isempty(temp1)
-        %             featureNum1 = find(temp1);
-        %         else
-        %             error('No IsMask feature')
-        %         end
-        %         bDraw1 = d.sf(:,featureNum1);
-        %         temp2 = strcmp(handles.vcdb.f.sfname(:),'IsStim');
-        %         if ~isempty(temp2)
-        %             featureNum2 = find(temp2);
-        %         else
-        %             error('No IsStim feature')
-        %         end
-        %         bDraw2 = d.sf(:,featureNum2);
-        %         bDraw = bDraw1 | bDraw2;
+        bDraw = (d.cn==c(nc).number);       
     otherwise
 end
 
@@ -1638,21 +1585,21 @@ mcolor = repmat(handles.vcg.options.unclusteredColor,size(d.v));
 msize = repmat(handles.vcg.options.unclusteredSize,length(d.v),1);
 mstyle = repmat({handles.vcg.options.unclusteredMarker}, length(d.v),1);
 switch styleType
-    case 1 % style by cluster
+    case 1
         for(nc = 1:length(c))
             bIN = d.cn==c(nc).number;
             mcolor(bIN,:) = repmat(c(nc).color,sum(bIN),1);
             msize(bIN,:) = repmat(handles.vcg.options.unclusteredSize, sum(bIN),1); %clusters don't yet have a size
             mstyle(bIN,:) = repmat({handles.vcg.options.unclusteredMarker},sum(bIN),1); %clusters don't yet have a style
-        end
-    case 2 % unstyled
-    case 3 % style selected cluster only
+        end     
+    case 2        
+    case 3
         nc = get(handles.popupClusterSelect,'Value');
         bIN = d.cn==c(nc).number;
         mcolor(bIN,:) = repmat(c(nc).color,sum(bIN),1);
         msize(bIN,:) = repmat(handles.vcg.options.unclusteredSize, sum(bIN),1); %clusters don't yet have a size
-        mstyle(bIN,:) = repmat({handles.vcg.options.unclusteredMarker},sum(bIN),1); %clusters don't yet have a style
-    case 4 % color by feature value
+        mstyle(bIN,:) = repmat({handles.vcg.options.unclusteredMarker},sum(bIN),1); %clusters don't yet have a style    
+    case 4
         f2cF = handles.vcg.feat2colorFeat;
         f2cM = handles.vcg.feat2colorMap;
         f2cR = handles.vcg.feat2colorRange;
@@ -1663,34 +1610,13 @@ switch styleType
         colorVal = round(colorVal*(length(f2cM)-1) + 1);
         colorVal(isnan(colorVal)) = 256;
         mcolor = f2cM(colorVal,:);
-    case 5 % color by feature sort order
+    case 5
         f2cF = handles.vcg.feat2colorFeat;
         f2cM = handles.vcg.feat2colorMap;
         [junk, colorVal] = sort(getSF(handles.vcdb,f2cF));
         colorVal = (colorVal-1) ./ (length(colorVal)-1);
         colorVal = round(colorVal*(length(f2cM)-1) + 1);
         mcolor = f2cM(colorVal,:);
-    case 6 % mask (blue), stim (red)
-        %nc = get(handles.popupClusterSelect,'Value');
-        %bIN = d.cn==c(nc).number;
-        temp1 = strcmp(handles.vcdb.f.sfname(:),'IsMask');
-        if ~isempty(temp1)
-            featureNum1 = find(temp1);
-        else
-            error('No IsMask feature')
-        end
-        IsMask = logical(d.sf(:,featureNum1));
-        %IsMask = logical(d.sf(:,featureNum1)) & bIN;
-        temp2 = strcmp(handles.vcdb.f.sfname(:),'IsStim');
-        if ~isempty(temp2)
-            featureNum2 = find(temp2);
-        else
-            error('No IsStim feature')
-        end
-        IsStim = logical(d.sf(:,featureNum2));
-        %IsStim = logical(d.sf(:,featureNum2)) & bIN;
-        mcolor(IsMask,:) = repmat([0,0,1],sum(IsMask),1); % mask in blue
-        mcolor(IsStim,:) = repmat([1,0,0],sum(IsStim),1); % stim in red
     otherwise
 end
 
@@ -1704,12 +1630,12 @@ yfeat = getFeaturePopupValue(handles.popupYFeature, handles.vcdb);
 vfeat = get(handles.popupVectorFeature,'Value');
 if(vfeat == 1)
     vects = d.v; % vector itself
-else % other vector features
+else
     vects = d.vf{vfeat-1};
 end
 
 %Apply subset / filter
-handles.vcg.bFilt = computeFilterVector(handles);
+handles.vcg.bFilt = computeFilterVector(handles); 
 %Determine which vectors should be drawn (independant of filter/subset)
 handles.vcg.bDraw = computeDrawVector(handles);
 %Determine the current color and size and marker type of each vector
@@ -1726,33 +1652,27 @@ end
 [vectMat, status] = preprocessAndAlignVectors(vects(bVis),handles);
 if(strcmp(status,'OutOfMemory'))
     axes(handles.axesVector);
+    cla;
     text(mean(xlim),mean(ylim),'Too Much To Plot','HorizontalAlignment','center','Color','red','FontSize',20);
     return;
 end
 
-if(~isempty(vectMat))
+if(~isempty(vectMat))  
     nVectorPlotType = get(handles.popupVectorType,'Value');
     axes(handles.axesVector);
     hold off;
-
-    %figure(61)
-
-    if get(handles.checkboxOutlier,'Value')
-        vectMat = OutlierRemoval(vectMat,100,false); % TO
-    end
-
+    
     vectMat = vectMat';
-    %%% stop here
     switch nVectorPlotType
-        case {1,8,9,10} % raw
+        case {1,8,9,10} %all typical          
             if(nVectorPlotType == 8) % residuals from mean
-                vectMat = vectMat - repmat(nanmean(vectMat,2), 1, size(vectMat,2));
+                vectMat = vectMat - repmat(nanmean(vectMat,2), 1, size(vectMat,2));               
             elseif(nVectorPlotType == 9) % residuals from median
                 vectMat = vectMat - repmat(nanmedian(vectMat,2), 1, size(vectMat,2));
             elseif(nVectorPlotType == 10) % diff
                 vectMat = diff(vectMat);
             end
-
+            
             handles.vcg.hVect = plot(vectMat);
             handles.vcg.mVectMat = vectMat;
             set(handles.vcg.hVect, {'Color'}, ccolor(bVis));
@@ -1775,95 +1695,38 @@ if(~isempty(vectMat))
             mu = nanmean(vectMat,2);
             plot(mu,'LineWidth', 3, 'Color', 'black');
             handles.vcg.hVect = [];
-
-            if get(handles.popupScatterStyle, 'Value') == 6; % mask and stim
-                nc = get(handles.popupClusterSelect,'Value');
-                bIN = d.cn==handles.vcdb.c(nc).number;
-                temp1 = strcmp(handles.vcdb.f.sfname(:),'IsMask');
-                if ~isempty(temp1)
-                    featureNum1 = find(temp1);
-                else
-                    error('No IsMask feature')
-                end
-                IsMask = logical(d.sf(:,featureNum1)) & bIN;
-                temp2 = strcmp(handles.vcdb.f.sfname(:),'IsStim');
-                if ~isempty(temp2)
-                    featureNum2 = find(temp2);
-                else
-                    error('No IsStim feature')
-                end
-                IsStim = logical(d.sf(:,featureNum2)) & bIN;
-
-                % for control
-                %IsMask = ~logical(d.sf(:,featureNum2)) & bIN;
-
-                MaskNum = find(IsMask); % index of IsMask
-                StimNum = find(IsStim); % index of IsStim
-                vectMatMask = vectMat(:,MaskNum);
-                vectMatStim = vectMat(:,StimNum);
-                muMask = nanmean(vectMatMask,2);
-                muStim = nanmean(vectMatStim,2);
-                axes(handles.axesVector);
-                hold on
-                plot(muMask,'Linewidth',3,'color','b');
-                plot(muStim,'Linewidth',3,'color','r');
-                hold off
-                %                 MaskL = floor(length(MaskNum)/2); % divide data into first and second half
-                %                 StimL = floor(length(StimNum)/2); % divide data into first and second half
-                %                 FirstMask = MaskNum(1:MaskL);
-                %                 SecondMask = MaskNum(MaskL+1:end);
-                %                 FirstStim = StimNum(1:StimL);
-                %                 SecondStim = StimNum(StimL+1:end);
-                %
-                %                 vectMatFirstMask = vectMat(:,FirstMask);
-                %                 vectMatSecondMask = vectMat(:,SecondMask);
-                %                 vectMatFirstStim = vectMat(:,FirstStim);
-                %                 vectMatSecondStim = vectMat(:,SecondStim);
-                %
-                %                 muFirstMask = nanmean(vectMatFirstMask,2);
-                %                 muSecondMask = nanmean(vectMatSecondMask,2);
-                %                 muFirstStim = nanmean(vectMatFirstStim,2);
-                %                 muSecondStim = nanmean(vectMatSecondStim,2);
-                %                 hold on
-                %                 plot(muFirstMask,'Linewidth',3,'color','b','linestyle',':');
-                %                 plot(muSecondMask,'Linewidth',3,'color','b','linestyle','-');
-                %                 plot(muFirstStim,'Linewidth',3,'color','r','linestyle',':');
-                %                 plot(muSecondStim,'Linewidth',3,'color','r','linestyle','-');
-                %                 hold off
-            end
-
         case 4 % median
             med = nanmedian(vectMat,2);
             plot(med,'LineWidth', 3, 'Color', 'black');
-            handles.vcg.hVect = [];
+            handles.vcg.hVect = []; 
         case 5  % mean with std error
             mu = nanmean(vectMat,2);
             std = nanstd(vectMat,0,2);
             cnt = nansum(~isnan(vectMat),2);
             ste = std ./ sqrt(cnt);
-            errorbar(mu,ste,'LineWidth', 1, 'Color', 'blue');
+            errorbar(mu,ste,'LineWidth', 1, 'Color', 'blue');            
             hold on;
             plot(mu,'LineWidth', 3, 'Color', 'black');
-            handles.vcg.hVect = [];
+            handles.vcg.hVect = []; 
         case 6 % mean with std dev
             mu = nanmean(vectMat,2);
-            std = nanstd(vectMat,0,2);
+            std = nanstd(vectMat,0,2);            
             errorbar(mu,std,'LineWidth', 1, 'Color', 'blue');
             hold on;
-            plot(mu,'LineWidth', 3, 'Color', 'black');
-            handles.vcg.hVect = [];
+            plot(mu,'LineWidth', 3, 'Color', 'black');                     
+            handles.vcg.hVect = []; 
         case 7 % standard deviation
-            std = nanstd(vectMat,0,2);
+            std = nanstd(vectMat,0,2);            
             plot(std,'LineWidth', 3, 'Color', 'black');
             handles.vcg.hVect = [];
         case 11 % value overlayed on top of spectrogram (TO)
-            %%% TO DO: have two y-axes, don't take the mean
+            %%% TO DO: have y-axis, don't take the mean
             SyllNum = find(handles.vcg.bSel);
             FeatureList = get(handles.popupVectorFeature,'String');
             if ~strcmp(FeatureList(vfeat),'vectors') % not amplitude
                 %axes(handles.axesVector);
-                sp = handles.vcg.specgram;
-                SyllAudio = handles.vcdb.d.v{SyllNum(1)};
+                sp = handles.vcg.specgram; 
+                SyllAudio = handles.vcdb.d.v{SyllNum(1)};                
                 if ~strcmp(FeatureList(vfeat),'pitch') % rescale value for features other than pitch
                     lm(1) = floor(min(vectMat));
                     lm(2) = ceil(max(vectMat));
@@ -1875,16 +1738,16 @@ if(~isempty(vectMat))
                 hold on
                 displaySpecgramQuick(SyllAudio, sp.fs, sp.freqRange, sp.colorRange);
                 plot(Time,vectMat,'r','linewidth',4);
-                hold off
+                hold off   
             end
-
-            handles.vcg.hVect = [];
+         
+            handles.vcg.hVect = []
     end
 else
     axes(handles.axesVector);
     cla;
 end
-set(handles.axesVector, 'buttonDownFcn', {@axesVector_ButtonDownFcn});
+set(handles.axesVector, 'buttonDownFcn', {@axesVector_ButtonDownFcn});  
 
 % ----Preprocess and align vectors ---
 function [vectMat, status] = preprocessAndAlignVectors(vects, handles)
@@ -1938,7 +1801,7 @@ for nVect = 1:length(vects)
         vectMat(nVect,1:len(nVect)) = vects{nVect};
     elseif(align==0) %center
         sndx = floor((mlen - len(nVect))/2)+1;
-        vectMat(nVect,sndx:sndx+len(nVect)-1) = vects{nVect};
+        vectMat(nVect,sndx:sndx+len(nVect)-1) = vects{nVect};        
     elseif(align==1) %right
         vectMat(nVect,mlen-len(nVect)+1:mlen) = vects{nVect};
     end
@@ -1956,7 +1819,7 @@ function handles = refreshScatterSelection(handles)
 %msize(handles.vcg.bSel,:) = msize(handles.vcg.bSel,:) * 2;
 %mcolor(handles.vcg.bSel,:) = 1 - ((1 - mcolor(handles.vcg.bSel,:))./2);
 %WARNING IF YOU CHANGE A PROPERTY ON THE SCATTERGROUP, the Children
-%handles change and individual properties are lost.  have to change children properies.
+%handles change and individual properties are lost.  have to change children properies. 
 %hc = get(handles.vcg.hScat,'Children');
 %[junk,ndx] = sort([get(hc,'UserData')]);
 %hc = hc(ndx);
@@ -2062,9 +1925,9 @@ set(handles.menuStretchAlignVectors, 'Checked', 'on');
 prompt = {'Number of samples to stretch to:'};
 dlg_title = 'Stretch Alignment';
 num_lines = 1;
-answer = inputdlg(prompt,dlg_title,num_lines,{num2str(handles.vcg.stretch.n)});
+answer = inputdlg(prompt,dlg_title,num_lines,{num2str(handles.vcg.stretch.n)});    
 if(isempty(answer) || isempty(str2num(answer{1})))
-
+    
 else
     handles.vcg.stretch.n = str2num(answer{1});
 end
@@ -2084,7 +1947,7 @@ else
     prompt = {'This many samples:', 'For every:'};
     dlg_title = 'Subsampling';
     num_lines = 1;
-    answer = inputdlg(prompt,dlg_title,num_lines,{num2str(handles.vcg.subsamp.p),num2str(handles.vcg.subsamp.q)});
+    answer = inputdlg(prompt,dlg_title,num_lines,{num2str(handles.vcg.subsamp.p),num2str(handles.vcg.subsamp.q)});    
     if(isempty(answer) || isempty(str2num(answer{1})) || isempty(str2num(answer{2})))
     else
         handles.vcg.subsamp.p = str2num(answer{1});
@@ -2107,7 +1970,7 @@ else
     prompt = {'The minimum acceptable value:', 'The  maximum acceptable value:'};
     dlg_title = 'Set vector outlier range';
     num_lines = 1;
-    answer = inputdlg(prompt,dlg_title,num_lines,{num2str(handles.vcg.vectRange(1)),num2str(handles.vcg.vectRange(2))});
+    answer = inputdlg(prompt,dlg_title,num_lines,{num2str(handles.vcg.vectRange(1)),num2str(handles.vcg.vectRange(2))});    
     if(isempty(answer) || isempty(str2num(answer{1})) || isempty(str2num(answer{2})))
     else
         handles.vcg.vectRange(1) = str2num(answer{1});
@@ -2140,7 +2003,7 @@ prompt = {'What is the sampling rate:'};
 dlg_title = 'Specgram Properties';
 num_lines = 1;
 default = {num2str(handles.vcg.specgram.fs)};
-answer = inputdlg(prompt,dlg_title,num_lines,default);
+answer = inputdlg(prompt,dlg_title,num_lines,default);    
 if(isempty(answer) || isempty(str2num(answer{1})))
 else
     handles.vcg.specgram.fs = str2num(answer{1});
@@ -2156,7 +2019,7 @@ prompt = {'What is the minimum frequency:','What is the maximum frequency:'};
 dlg_title = 'Specgram Properties';
 num_lines = 1;
 default = {num2str(handles.vcg.specgram.freqRange(1)), num2str(handles.vcg.specgram.freqRange(2))};
-answer = inputdlg(prompt,dlg_title,num_lines,default);
+answer = inputdlg(prompt,dlg_title,num_lines,default);    
 if(isempty(answer) || isempty(str2num(answer{1})) || isempty(str2num(answer{2})))
 else
     handles.vcg.specgram.freqRange(1) = str2num(answer{1});
@@ -2176,7 +2039,7 @@ default = {'[]'};
 if(isempty(handles.vcg.specgram.colorRange))
     default = {num2str(handles.vcg.specgram.colorRange(1)), num2str(handles.vcg.specgram.colorRange(2))};
 end
-answer = inputdlg(prompt,dlg_title,num_lines,default);
+answer = inputdlg(prompt,dlg_title,num_lines,default);    
 if(isempty(answer) || isempty(str2num(answer{1})) || isempty(str2num(answer{2})))
     handles.vcg.specgram.colorRange = [];
 else
@@ -2191,16 +2054,16 @@ if(nFeat>0)
     f = vcdb.d.sf(:,nFeat);
 elseif(nFeat == -1)
     f = [nan; vcdb.d.cn(1:end-1)];
-    f = f+0.2*rand(size(f))-0.1; % add noise for better visibility, TO
+    f = f+0.2*rand(size(f))-0.2; % add noise for better visibility, TO
 elseif(nFeat == -2)
     f = [vcdb.d.cn(2:end); nan];
-    f = f+0.2*rand(size(f))-0.1; % add noise for better visibility, TO
+    f = f+0.2*rand(size(f))-0.2; % add noise for better visibility, TO
 elseif(nFeat == -3)
     f = [nan; nan; vcdb.d.cn(1:end-2)];
-    f = f+0.2*rand(size(f))-0.1; % add noise for better visibility, TO
+    f = f+0.2*rand(size(f))-0.2; % add noise for better visibility, TO
 elseif(nFeat == -4)
     f = [vcdb.d.cn(3:end); nan; nan];
-    f = f+0.2*rand(size(f))-0.1; % add noise for better visibility, TO
+    f = f+0.2*rand(size(f))-0.2; % add noise for better visibility, TO  
 else
     error(['getSF: requested feature does not exist: ', num2str(nFeat)]);
 end
@@ -2276,7 +2139,7 @@ hold on
 for n=1:ClusterNum
     Number(n) = handles.vcdb.c(n).number;
     Count(n)=sum(ClusterArray==Number(n));
-
+    
     h = bar(Number(n),Count(n));
     set(h,'facecolor',handles.vcdb.c(n).color,'edgecolor','k')
     text(Number(n)-0.1,30,handles.vcdb.c(n).str,'fontweight','bold','fontsize',12,'color','w')
@@ -2315,63 +2178,23 @@ sp = handles.vcg.specgram;
 
 Ndx = find(vcdb.d.cn==ClusterNum);
 if isempty(Ndx)
-    errordlg('No syllables in the cluster!')
+    errordlg('No points in the cluster!')
     return
 end
 
+figure(132)
+%set(132,'KeyPressFcn',@next)
 %- TO DO: predetermine figure size
 % user input ArrayNum
 % make the figure clickable to delete it
 % be able to go to next page
-
-figure(132)
-set(132,'KeyPressFcn',@next) % assign key press function
-ud.fig = 132;
-ud.i = 1; % initialize
-ud.Column = 8;
-ud.Row = 8;
-ud.Chunk = ud.Column*ud.Row;
-ud.vcdb = vcdb;
-ud.sp = sp;
-ud.Ndx = Ndx;
-ud.Length = length(Ndx); % number of syllables within the current cluster
-set(132,'UserData',ud);
-plotResults(ud)
-
-function plotResults(ud)
-figure(ud.fig)
-clf; % clear
-j = 1; % index for subplot
-if ud.i+ud.Chunk-1 <= ud.Length
-    End = ud.i+ud.Chunk-1;
-else
-    End = ud.Length;
-end
-
-for i=ud.i:End
-    subplot(ud.Row,ud.Column,j)
-    displaySpecgramQuick(ud.vcdb.d.v{ud.Ndx(i)},ud.sp.fs, ud.sp.freqRange, ud.sp.colorRange);
+COLUMN = 8;
+ROW = 6;
+for i=1:COLUMN*ROW
+    subplot(ROW,COLUMN,i)
+    displaySpecgramQuick(vcdb.d.v{Ndx(i)},sp.fs, sp.freqRange, sp.colorRange);
     axis off
-    if j==1
-        title(num2str(ud.i));
-    end
-    j = j+1;
 end
-title(num2str(ud.i+ud.Chunk-1));
-
-function next(src,evnt) % key press
-ud = get(src,'UserData');
-if strcmp(evnt.Character,'n') % next syllable
-    if ud.i+ud.Chunk <= ud.Length
-        ud.i = ud.i+ud.Chunk; % go to next chunk
-    end
-elseif strcmp(evnt.Character,'p') % previous syllable
-    if ud.i-ud.Chunk>0
-        ud.i = ud.i-ud.Chunk
-    end
-end
-set(src,'UserData',ud);
-plotResults(ud);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -2402,7 +2225,7 @@ axes(handles.axesBar)
 zoom off
 buttonHistogram_Callback(hObject, eventdata, handles); % reset
 
-%
+%%
 % --- call vectorClust with file name (TO)
 function AutomaticImport_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonImport (see GCBO)
@@ -2455,215 +2278,3 @@ end
 
 buttonHistogram_Callback(hObject, eventdata, handles); % update histogram
 guidata(hObject, handles);
-
-
-% --- Executes on button press in buttonSubcluster.
-function buttonSubcluster_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonSubcluster (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-nc = get(handles.popupClusterSelect,'Value'); % currently selected cluster numbers
-if nc==5
-    handles.vcdb.c(nc).polys = {handles.vcdb.c(4).polys{1}};
-else
-    handles.vcdb.c(nc).polys = {handles.vcdb.c(1).polys{1}};
-end
-%handles = refreshClusters(handles);
-guidata(hObject, handles);
-
-
-% --- Executes on button press in buttonAnalysis.
-function buttonAnalysis_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonAnalysis (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-temp1 = strcmp(handles.vcdb.f.sfname(:),'IsMask');
-if ~isempty(temp1)
-    featureNum1 = find(temp1);
-else
-    error('No IsMask feature')
-end
-IsMask = logical(handles.vcdb.d.sf(:,featureNum1)); % for all the syllables
-
-temp2 = strcmp(handles.vcdb.f.sfname(:),'IsStim');
-if ~isempty(temp2)
-    featureNum2 = find(temp2);
-else
-    error('No IsStim feature')
-end
-IsStim = logical(handles.vcdb.d.sf(:,featureNum2)); % for all the syllables
-
-IsSyll = {};
-for SyllNum = 6:8
-    IsSyll{SyllNum-5} = (handles.vcdb.d.cn==SyllNum); % Is the syllable we are looking for?
-end
-
-%%% for experimetal days to1145
-A1mask = IsSyll{1} & IsMask;
-A1stim = IsSyll{1} & IsStim;
-A2mask = IsSyll{2} & IsMask;
-A2stim = IsSyll{2} & IsStim;
-A3mask = IsSyll{3} & IsMask;
-A3stim = IsSyll{3} & IsStim;
-% prepare vectMat
-vfeat = get(handles.popupVectorFeature,'Value');
-if(vfeat == 1)
-    vects = handles.vcdb.d.v; % vector itself
-else % other vector features
-    vects = handles.vcdb.d.vf{vfeat-1};
-end
-[vectMatMask{1}, status] = preprocessAndAlignVectors(vects(A1mask),handles);
-[vectMatStim{1}, status] = preprocessAndAlignVectors(vects(A1stim),handles);
-[vectMatMask{2}, status] = preprocessAndAlignVectors(vects(A2mask),handles);
-[vectMatStim{2}, status] = preprocessAndAlignVectors(vects(A2stim),handles);
-[vectMatMask{3}, status] = preprocessAndAlignVectors(vects(A3mask),handles);
-[vectMatStim{3}, status] = preprocessAndAlignVectors(vects(A3stim),handles);
-%cd('Z:\Data\LMANstim\to1145')
-%save to1145_vectMat_2009-12-18_pitch vectMatMask vectMatStim
-
-%% picking random 5 syllables
-clear IsSyll
-IsSyll = (handles.vcdb.d.cn==1)
-A1mask = IsSyll & IsMask;
-A1stim = IsSyll & IsStim;
-tempMask = find(A1mask);
-tempStim = find(A1stim);
-randMask = randperm(length(tempMask)); % random permutation
-randStim = randperm(length(tempStim)); % random permutation
-randMask = tempMask(1:5); % just take the first five
-randStim = tempStim(randStim(1:5)); % just take the first five
-
-figure(60)
-clf
-hold on
-for n=1:5
-    subplot(2,5,n)
-    displaySpecgramQuick(handles.vcdb.d.v{randMask(n)},40000);
-    xlabel('')
-    ylabel('')
-    axis off
-    subplot(2,5,n+5)
-    displaySpecgramQuick(handles.vcdb.d.v{randStim(n)},40000);
-    xlabel('')
-    ylabel('')
-    axis off
-end
-
-
-%% for washout to1145
-A1 = IsSyll{1};
-A2 = IsSyll{2};
-A3 = IsSyll{3};
-
-vfeat = get(handles.popupVectorFeature,'Value');
-if(vfeat == 1)
-    vects = handles.vcdb.d.v; % vector itself
-else % other vector features
-    vects = handles.vcdb.d.vf{vfeat-1};
-end
-[vectMat{1}, status] = preprocessAndAlignVectors(vects(A1),handles);
-[vectMat{2}, status] = preprocessAndAlignVectors(vects(A2),handles);
-[vectMat{3}, status] = preprocessAndAlignVectors(vects(A3),handles);
-
-%cd('Z:\Data\LMANstim\to1145')
-%save to1145_vectMat_2009-12-16_pitchGoodness vectMat
-
-
-muMask = mean(vectMatMask{2});
-muStim = mean(vectMatStim{2});
-figure(60)
-hold on
-plot(muMask,'b')
-plot(muStim,'r')
-hold off
-
-%%
-% --- Executes on button press in buttonStimTime.
-function buttonStimTime_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonStimTime (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-nc = get(handles.popupClusterSelect,'Value');
-SyllNum = handles.vcdb.c(nc).number;
-StimRange = 50; % valid stimulus onset range (ms)
-
-StimIdx = find(strcmp(handles.vcdb.f.vfname,'stimTime'));
-DurationIdx = find(strcmp(handles.vcdb.f.sfname,'duration'));
-SyllIdx = find(handles.vcdb.d.cn==SyllNum);
-duration = handles.vcdb.d.sf(SyllIdx,DurationIdx);
-median(duration)*1000;
-stimTimes = handles.vcdb.d.vf{StimIdx}(SyllIdx);
-for n=1:length(stimTimes)
-    if ~isempty(stimTimes{n})
-        stimOnset(n) = stimTimes{n}(1)*1000; % in ms
-        stimOffset(n) = stimTimes{n}(end)*1000; % in ms
-    else
-        stimOnset(n) = NaN;
-        stimOffset(n) = NaN;
-    end
-end
-
-ValidStimOnset = stimOnset(find(stimOnset < StimRange));
-ValidStimOffset = stimOffset(find(stimOnset < StimRange));
-N = length(ValidStimOnset);
-MedianOnset = median(ValidStimOnset);
-MedianOffset = median(ValidStimOffset);
-Mean = mean(ValidStimOnset);
-Std = std(ValidStimOnset);
-% plot the histogram
-figure(30)
-Edges = 0:1:50;
-M = histc(ValidStimOnset,Edges)./N;
-bar(Edges,M,'histc')
-xlim([Edges(1),Edges(end)])
-xlabel('Stim onset(ms)','fontsize',16)
-ylabel('Probability','fontsize',16)
-h=line([nanmedian(stimOnset),nanmedian(stimOnset)],ylim);
-set(h,'color','r','linewidth',2)
-xl = xlim;
-yl = ylim;
-text(2,0.9*yl(2),['Count = ',num2str(N)],'fontsize',12);
-text(2,0.8*yl(2),['Median onset = ',num2str(MedianOnset,3),' ms'],'fontsize',12);
-text(2,0.72*yl(2),['Mean onset = ',num2str(Mean,3),' ms'],'fontsize',12);
-text(2,0.64*yl(2),['Std onset= ',num2str(Std,3),' ms'],'fontsize',12);
-
-
-% --- Executes on button press in checkboxOutlier.
-function checkboxOutlier_Callback(hObject, eventdata, handles)
-% hObject    handle to checkboxOutlier (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of checkboxOutlier
-
-
-% --- Executes on button press in pushExternalFigure.
-function pushExternalFigure_Callback(hObject, eventdata, handles)
-% hObject    handle to pushExternalFigure (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% open new figure and plot scatter plot in that window (TO)
-figure(15); clf;
-d = handles.vcdb.d;
-c = handles.vcdb.c;
-xfeat = getFeaturePopupValue(handles.popupXFeature, handles.vcdb);
-yfeat = getFeaturePopupValue(handles.popupYFeature, handles.vcdb);
-
-%Apply subset / filter
-handles.vcg.bFilt = computeFilterVector(handles);
-
-%Determine which vectors should be drawn (independant of filter/subset)
-handles.vcg.bDraw = computeDrawVector(handles);
-
-%Determine the current color and size and marker type of each vector
-[mcolor, msize, mstyle] = computeScatterStyle(handles);
-
-%draw the markers
-bVis = handles.vcg.bDraw & handles.vcg.bFilt & ~isnan(getSF(handles.vcdb,xfeat)) & ~isnan(getSF(handles.vcdb,yfeat));
-handles.vcg.hScat = scatter(getSF(handles.vcdb,xfeat,bVis), getSF(handles.vcdb,yfeat,bVis), msize(bVis), mcolor(bVis,:));
-%handles.vcg.hScat = scatterhist(getSF(handles.vcdb,xfeat,bVis), getSF(handles.vcdb,yfeat,bVis));
-xlabel(handles.vcdb.f.sfname{xfeat},'fontsize',16,'interpreter','none');
-ylabel(handles.vcdb.f.sfname{yfeat},'fontsize',16,'interpreter','none');

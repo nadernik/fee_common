@@ -1,6 +1,6 @@
 function [features labels] = egf_SAPfeatures(TS,fs,par);
 
-labels = {'AM', 'FM' ,'Entropy' , 'Amplitude' , 'Pitch goodness' , 'Pitch' ,'Pitch chose', 'Pitch weight','Gravity center'};
+labels = {'AM', 'FM' ,'Entropy' , 'Amplitude' , 'Pitch goodness' , 'Pitch' ,'Pitch chose', 'Pitch weight','Gravity center', 'Spectral width'};
 if isstr(TS) & strcmp(TS,'params')
     features.Names = {};
     features.Values = {};
@@ -8,6 +8,7 @@ if isstr(TS) & strcmp(TS,'params')
 end
 
 %        Writen by Sigal Saar August 08 2005
+% Spectral width added by Yael and Tatsuo, 2013
 
 if size(TS,2)>size(TS,1)
     TS=TS';
@@ -71,12 +72,19 @@ log_power=m_time_deriv(:,freq_winer_ampl_index).^2+m_freq_deriv(:,freq_winer_amp
 m_SumLog=sum(log(m_powSpec(:,freq_winer_ampl_index)+eps),2);
 m_LogSum=(sum(m_powSpec(:,freq_winer_ampl_index),2)); 
 
-gravity_center=sum((ones(size(log_power,1),1)*(freq_winer_ampl_index)).*log_power,2);
-gc_base=sum(log_power,2);
+%gravity_center=sum((ones(size(log_power,1),1)*(freq_winer_ampl_index)).*log_power,2); % weighted sum of frequency
+%gc_base=sum(log_power,2); % total power for each point in time
 m_AM=sum(m_time_deriv(:,freq_winer_ampl_index),2);
 
+%gravity_center=gravity_center./max(gc_base,1)*fs/param.pad; % normalizing with total power and converting to Hz
 
-gravity_center=gravity_center./max(gc_base,1)*fs/param.pad;
+% Yael
+[m,n]=size(log_power);
+gravityINDEX=(freq_winer_ampl_index*log_power')./sum(log_power'); % weighted sum of frequency
+gravity_center=(gravityINDEX*fs/param.pad)'; % converting to [Hz]
+spectral_SD=sqrt(sum((repmat(freq_winer_ampl_index,m,1)-repmat(gravityINDEX',1,n))'.^2.*log_power')./sum(log_power'))*fs/param.pad;
+spectral_SD = spectral_SD';
+
 m_AM=m_AM./(m_amplitude+eps);
 m_amplitude=log10(m_amplitude+1)*10-70; %units in Db
 if 1 %nargout==16
@@ -171,7 +179,7 @@ m_FM=m_FM*180/pi;
 % m_Pitch = pitch';
 % m_PitchGoodness = pitchGoodness';
 
-features = {m_AM, m_FM , m_Entropy, m_amplitude, m_PitchGoodness , m_Pitch, Pitch_chose, Pitch_weight, gravity_center};
+features = {m_AM, m_FM , m_Entropy, m_amplitude, m_PitchGoodness , m_Pitch, Pitch_chose, Pitch_weight, gravity_center, spectral_SD};
 
 
 function E = mtap
@@ -617,7 +625,7 @@ if 1
            matrix_is_8=eval([ '[' eval_matrix(size(eval_matrix,1)*(floor(size(eval_matrix,2)/8))*7:end)  ]);
    %        windowed_matrix=eval(tmp_char(1:(size(tmp_char,1)*size(tmp_char,2))));
 
-windowed_data=data([ matrix_is_1 ; matrix_is_2 ;matrix_is_3 ;matrix_is_4 ;matrix_is_5 ;matrix_is_6 ;matrix_is_7 ;;matrix_is_8]);
+windowed_data=data([ matrix_is_1 ; matrix_is_2 ;matrix_is_3 ;matrix_is_4 ;matrix_is_5 ;matrix_is_6 ;matrix_is_7 ;matrix_is_8]);
 else
 matrix_is=eval( eval_matrix(1:size(eval_matrix,1)*size(eval_matrix,2)));
 windowed_data=data([ matrix_is]);
