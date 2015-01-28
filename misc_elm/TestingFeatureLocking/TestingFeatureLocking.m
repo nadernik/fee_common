@@ -1,5 +1,5 @@
 clear all; clc 
-%%
+%% loading data
 %nname = 'Neuron1333';
 nname = 'Neuron1083'; 
 figure(1);clf
@@ -19,7 +19,7 @@ end
 t  = decimate(t,rsmpf);
 S = S1;
 
-%
+%% Test locking with each feature
 Features = {'Pitch','Entropy', 'PitchGoodness', 'Amplitude', 'PitchChose'};
 
 for fi = 1:length(Features)
@@ -36,9 +36,7 @@ for fi = 1:length(Features)
         F1(i,:) = decimate(F(i,:),rsmpf);
     end
     F = F1;
-    %F = [zeros(107,2) S(:,1:(end-2))];
     t = decimate(t,rsmpf);
-    %imagesc(F, 'xdata', t); shg
     
     % shuffling
     dt = t(2)-t(1); 
@@ -52,12 +50,13 @@ for fi = 1:length(Features)
         for lagi = 1:length(lags)
             lag = lags(lagi); 
             Stemp = zeros(size(S,1), size(S,2)); 
-            indold = (1:length(t)) + lag;  
-            indnew = 1:length(t); 
-            indnew = indnew(indold>=1&indold<=length(t)); indold = indold(indold>=1&indold<=length(t));
-            Stemp(:,indnew) = SShuff(:,indold);
-            COVtmp = mean(F.*Stemp);
-            COVShuff(shuffi,lagi) =sum(abs(COVtmp));
+            indold = (1:length(t)) + lag; % to shift spike data by lag
+            indnew = 1:length(t); % to shift spike data by lag
+            indnew = indnew(indold>=1&indold<=length(t)); % make sure within range
+            indold = indold(indold>=1&indold<=length(t)); % make sure within range
+            Stemp(:,indnew) = SShuff(:,indold); % spike data shifted by lag
+            COVtmp = mean(F.*Stemp); % cov at every time bin for this lag
+            COVShuff(shuffi,lagi) =mean(COVtmp); % average cov across all time bins
         end
     end
 
@@ -71,13 +70,14 @@ for fi = 1:length(Features)
     for lagi = 1:length(lags)
         lag = lags(lagi); 
         Stemp = zeros(size(S,1), size(S,2)); 
-        indold = (1:length(t)) + lag;  
-        indnew = 1:length(t); 
-        indnew = indnew(indold>=1&indold<=length(t)); indold = indold(indold>=1&indold<=length(t));
-        Stemp(:,indnew) = S(:,indold);
-        COVtmp = mean(F.*Stemp);
-        COV(lagi) = sum(abs(COVtmp));
-        COVSIG(lagi) = sum(COVShuff(:,lagi)<COV(lagi))/nshuff; 
+        indold = (1:length(t)) + lag; % to shift spike data by lag
+        indnew = 1:length(t); % to shift spike data by lag
+        indnew = indnew(indold>=1&indold<=length(t)); % make sure within range
+        indold = indold(indold>=1&indold<=length(t)); % make sure within range
+        Stemp(:,indnew) = S(:,indold); % spike data shifted by lag
+        COVtmp = mean(F.*Stemp); % cov at every time bin for this lag
+        COV(lagi) = mean(COVtmp); % average cov across all time bins
+        %COVSIG(lagi) = sum(COVShuff(:,lagi)<COV(lagi))/nshuff; 
     end
     subplot(3,2,fi); hold on
 %     subplot(2,1,1)
@@ -86,14 +86,15 @@ for fi = 1:length(Features)
     Alp = 5; 
     BonCorAlpha = Alp/length(lags); 
     errorpatch_asym(lags*dt, prctile(COVShuff,50), ...
-        prctile(COVShuff,50)-prctile(COVShuff, BonCorAlpha/2), ...
-        prctile(COVShuff, 100-BonCorAlpha/2)-prctile(COVShuff,50)); 
+        prctile(COVShuff, BonCorAlpha/2), ...
+        prctile(COVShuff, 100-BonCorAlpha/2)); 
     %plot(lags*dt, COVShuff, 'color', [.8 .8 .8])
+    plot(lags*dt, prctile(COVShuff, 50), 'k'); 
     plot(lags*dt, COV, 'r'); axis tight
     xlabel('lag (s)') % positive lag of X s means spikes occur X s after feature
-    ylabel('mean covariance (au)')
+    ylabel('mean cov (au)')
     title(Features{fi}); 
-    set(gcf, 'Color', [1 1 1], 'papersize', [6 3], 'paperposition', [0 0 6 3])
+    set(gcf, 'Color', [1 1 1], 'papersize', [6 6], 'paperposition', [0 0 6 6])
 end
 
 
