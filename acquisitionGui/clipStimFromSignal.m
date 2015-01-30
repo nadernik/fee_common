@@ -39,5 +39,7 @@ stimClips = zeros(length(leadingEdge), samplesPre + samplesPost + 1);
 for nstim = 1:length(leadingEdge)
     samp1 = leadingEdge(nstim) - samplesPre;
     samp2 = leadingEdge(nstim) + samplesPost;
+    try
     stimClips(nstim, :) = sig(samp1:samp2);
+    end
 end
