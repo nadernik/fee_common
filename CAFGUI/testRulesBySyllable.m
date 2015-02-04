@@ -26,6 +26,7 @@ pitchfiles = getProcessedDataFiles(exper.birdname,'experNames',exper.expername, 
 
 all_syll_noise = [];
 all_syll_type = [];
+all_filenum = [];
 all_pitch = [];
 files_processed = 0;
 for ii = 1:length(miscfiles)
@@ -64,6 +65,9 @@ for ii = 1:length(miscfiles)
                 pitch_loaded = true;
             end
             all_pitch = [all_pitch {pitch.segs(idx_seg_file).pitch}];                
+            % file number
+            filenum = P.File(jj) * ones(1,total_syllables);
+            all_filenum = [all_filenum, filenum];
         end
         waitbar(files_processed / total_files)
     end %file
@@ -129,3 +133,20 @@ stairs(bins, y_esc, 'Color', [0 0 1], 'LineWidth', 4)
 hold on
 stairs(bins, y_hit, 'Color', [1 0 0], 'LineWidth', 4)
 hold off
+
+%% Print list of files
+numdisplayed = 10;
+files_with_hits = all_filenum(is_hit);
+files_with_escs = all_filenum(is_esc);
+files_with_hits_only     = setdiff(files_with_hits, files_with_escs);
+files_with_escs_only     = setdiff(files_with_escs, files_with_hits);
+files_with_hits_and_escs = intersect(files_with_escs, files_with_hits);
+disp('Files with only hits:')
+lastindex = min(numdisplayed, length(files_with_hits_only));
+disp(int2str(files_with_hits_only(1:lastindex)))
+disp('Files with only escapes:')
+lastindex = min(numdisplayed, length(files_with_escs_only));
+disp(int2str(files_with_escs_only(1:lastindex)))
+disp('Files with a mixture of hits and escapes:')
+lastindex = min(numdisplayed, length(files_with_hits_and_escs));
+disp(int2str(files_with_hits_and_escs(1:lastindex)))
