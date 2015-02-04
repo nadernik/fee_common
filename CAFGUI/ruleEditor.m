@@ -84,9 +84,11 @@ handles.filestr = arrayfun(@int2str, filenum, 'UniformOutput', false); % cell ar
 % Invisibility is accomplished by setting the 'visible' property to false
 % and also removing the corresponding entry in handles.list2rule
 handles.DELETED_RULE = struct(handles.rules);
+handles.DELETED_RULE = handles.DELETED_RULE([]); % make empty struct with same format as handles.rules
 handles.DELETED_RULE(1).name = 'DELETED';
 handles.DELETED_RULE(1).visible = false;
 handles.DELETED_RULE(1).summary = 'This is a deleted rule. You should never see this text.';
+handles.DELETED_RULE(1).tdtPartagSuffix = NaN;
 
 handles.rSel = 1; % selected rule
 handles = updateDisplay(handles);
