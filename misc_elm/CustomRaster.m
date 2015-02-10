@@ -9,10 +9,17 @@
 % bird = '4202'; 
 % day = '2013-12-02-NIf'; 
 % depth = 's340'; 
-bird = '4032'; 
-day = '2013-09-27-NIf'; 
-depth = 's3XXa'; 
+% bird = '4032'; 
+% day = '2013-09-27-NIf'; 
+% depth = 's3XXa'; 
+% 
+bird = '5530'; 
+day = '2015-01-30-NIf'; 
+depth = 's472'; 
 
+% bird = '4202'; 
+% day = '2013-12-02-NIf'; 
+% depth = 's325'; 
 
 % bird = '4202'; 
 % day = '2013-12-02-NIf'; 
@@ -33,14 +40,14 @@ depth = 's3XXa';
 % day = '2013-12-17-NIf'; 
 % depth = 's213'; 
 
-load(fullfile('Z:\emackev\AcqGui\', bird, day, depth, 'rasterMotif'));
+load(fullfile('Z:\emackev\AcqGui\', bird, day, depth, 'raster'));
 
 dt = .001; 
 PSTHdt = .005; 
 timepts = -.2:dt:.3;
 PSTHtimepts = -.2:PSTHdt:.3;
-timepts = -.5:dt:3.5;
-PSTHtimepts = -.5:PSTHdt:3.5;
+timepts = -.2:dt:.3;
+PSTHtimepts = -.2:PSTHdt:.3;
 SPIKES = zeros(numel(trigInfo.eventOnsets{1}),length(timepts)); 
 PSTHSPIKES = zeros(numel(trigInfo.eventOnsets{1}),length(PSTHtimepts)); 
 g = subplot(3,2,3:6); hold on; 
