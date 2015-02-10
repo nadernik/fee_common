@@ -123,12 +123,6 @@ else
 end
 
 if(~isempty(varargin) && strcmpi(varargin{1},'batch'))
-    P.pathName = [];
-    P.fileName = [];
-    P = parseargs(P, varargin{:});
-    handles.pathName = P.pathName;
-    handles.fileName = P.fileName;
-    handles.searchString = regexprep([handles.pathName,handles.fileName],'misc','*');
     handles = import(handles, varargin{2});   
     guidata(hObject, handles);
 end
@@ -321,7 +315,11 @@ for nFile = 1:length(d)
     if(~isempty(s))
         load([pathstr, filesep, d(nFile).name])
         handles.scalar_features(:,1) = [misc.segs(:).duration]';        
-        handles.scalar_feature_names{1,1} = 'duration';      
+        handles.scalar_feature_names{1,1} = 'duration';
+        if ~isempty([misc.segs(:).maskTime])
+            handles.scalar_features(:,2) = [misc.segs(:).maskTime]';
+            handles.scalar_feature_names{2,1} = 'maskTime';
+        end
         handles.cluster = [misc.segs(:).segType]';
         %handles.scalar_features(:,3) = [misc.segs(:).initialCluster]';
         %handles.scalar_feature_names{3} = {'initialCluster'};         

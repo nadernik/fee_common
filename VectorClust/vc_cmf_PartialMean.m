@@ -22,7 +22,7 @@ function varargout = vc_cmf_PartialMean(varargin)
 
 % Edit the above text to modify the response to help vc_cmf_PartialMean
 
-% Last Modified by GUIDE v2.5 16-Feb-2010 16:14:15
+% Last Modified by GUIDE v2.5 23-Feb-2011 16:16:44
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -128,22 +128,22 @@ elseif(strcmpi(handles.output,'params'))
     params.name = 'Matlab Workspace Variable';
     if(nargout>0), varargout{1} = params; end
 elseif(strcmpi(handles.output,'success'))
-    handles.vcdb.d.sf = [handles.vcdb.d.sf, handles.sf];
-    handles.vcdb.d.vf = [handles.vcdb.d.vf, handles.vf];
-    handles.vcdb.f.sfname = [handles.vcdb.f.sfname; handles.sfname];
-    handles.vcdb.f.sffcn = [handles.vcdb.f.sffcn; handles.sffcn];
-    handles.vcdb.f.sfparam = [handles.vcdb.f.sfparam; handles.sfparam];
-    handles.vcdb.f.vfname = [handles.vcdb.f.vfname; handles.vfname];
-    handles.vcdb.f.vffcn = [handles.vcdb.f.vffcn; handles.vffcn];
-    handles.vcdb.f.vfparam = [handles.vcdb.f.vfparam; handles.vfparam];    
+%     handles.vcdb.d.sf = [handles.vcdb.d.sf, handles.sf];
+%     handles.vcdb.d.vf = [handles.vcdb.d.vf, handles.vf];
+%     handles.vcdb.f.sfname = [handles.vcdb.f.sfname; handles.sfname];
+%     handles.vcdb.f.sffcn = [handles.vcdb.f.sffcn; handles.sffcn];
+%     handles.vcdb.f.sfparam = [handles.vcdb.f.sfparam; handles.sfparam];
+%     handles.vcdb.f.vfname = [handles.vcdb.f.vfname; handles.vfname];
+%     handles.vcdb.f.vffcn = [handles.vcdb.f.vffcn; handles.vffcn];
+%     handles.vcdb.f.vfparam = [handles.vcdb.f.vfparam; handles.vfparam];    
     if(nargout>0), varargout{1} = handles.vcdb; end
     if(nargout>1), varargout{2} = 'success'; end
-    if(nargout>2), varargout{3} = handles.sf; end
-    if(nargout>3), varargout{4} = handles.vf; end
-    if(nargout>4), varargout{5} = handles.sfname; end
-    if(nargout>5), varargout{6} = handles.vfname; end
-    if(nargout>6), varargout{7} = handles.sfparam; end
-    if(nargout>7), varargout{8} = handles.vfparam; end
+%     if(nargout>2), varargout{3} = handles.sf; end
+%     if(nargout>3), varargout{4} = handles.vf; end
+%     if(nargout>4), varargout{5} = handles.sfname; end
+%     if(nargout>5), varargout{6} = handles.vfname; end
+%     if(nargout>6), varargout{7} = handles.sfparam; end
+%     if(nargout>7), varargout{8} = handles.vfparam; end
 else
     if(nargout>0), varargout{1} = handles.vcdb; end
     if(nargout>1), varargout{2} = handles.output; end
@@ -190,10 +190,8 @@ vectorNdx = vectorNdx-1;
 
 handles.Start = str2double(get(handles.text_Start,'String'));
 handles.End = str2double(get(handles.text_End,'String'));
-
-if handles.Start < 0 | handles.End > 100
-    error('Input value has to be 0-100')
-end
+temp = get(handles.popupUnits,'String');
+handles.Units = temp{get(handles.popupUnits,'Value')};
 
 handles = compute(handles, vectorNdx);
 guidata(hObject, handles);
@@ -244,37 +242,21 @@ end
 
 % --- imports
 function handles = compute(handles, vectorNdx)
+vf_name = handles.vcdb.f.vfname{vectorNdx};
 try
-    if(vectorNdx == 0)
-        vects = handles.vcdb.d.v;
-        vname = 'vector';
-    else
-        vects = handles.vcdb.d.vf{vectorNdx};
-        L = cellfun(@length,vects);
-        Start = round(L.*(handles.Start/100)+1);
-        End = round(L.*(handles.End/100)); 
-        partial_vects = cell(size(vects));
-        for i=1:length(vects)
-            partial_vects{i} = vects{i}(Start(i):End(i)); %%
-        end
-        vname = handles.vcdb.f.vfname{vectorNdx};
+    switch handles.Units
+        case 'percent'
+            handles.vcdb = vc_feat_mean(handles.vcdb, vf_name, 'percent_range', [handles.Start handles.End]);
+            handles.vcdb = vc_feat_std(handles.vcdb , vf_name, 'percent_range', [handles.Start handles.End]);
+        case 'seconds'
+            handles.vcdb = vc_feat_mean(handles.vcdb, vf_name, 'time_range', [handles.Start handles.End]);
+            handles.vcdb = vc_feat_std(handles.vcdb , vf_name, 'time_range', [handles.Start handles.End]);
+        case 'samples' 
+            handles.vcdb = vc_feat_mean(handles.vcdb, vf_name, 'samples_range', [handles.Start handles.End]);
+            handles.vcdb = vc_feat_std(handles.vcdb , vf_name, 'samples_range', [handles.Start handles.End]);
+        otherwise
+            error('Unknown units')
     end
-    
-    handles.sf = cellfun(@mean,partial_vects);
-    handles.sfname{1,1} = [num2str(handles.Start) '_' num2str(handles.End) '_mean_',vname];
-    handles.sffcn{1,1} = 'vc_cmf_PartialMean';
-    handles.sfparam{1,1} = [];
-    
-    handles.sf(:,2) = cellfun(@std,partial_vects);
-    handles.sfname{2,1} = [num2str(handles.Start) '_' num2str(handles.End) '_std_',vname];
-    handles.sffcn{2,1} = 'vc_cmf_PartialMean';
-    handles.sfparam{2,1} = [];
-    
-    handles.vf = {};
-    handles.vfname = {};
-    handles.vffcn = {};
-    handles.vfparam = {};
-    
     handles.output = 'success';
 catch
     handles.output = ['Compute basic statistic failed: ', lasterr];
@@ -322,3 +304,28 @@ function text_End_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on selection change in popupUnits.
+function popupUnits_Callback(hObject, eventdata, handles)
+% hObject    handle to popupUnits (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = get(hObject,'String') returns popupUnits contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupUnits
+
+
+% --- Executes during object creation, after setting all properties.
+function popupUnits_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupUnits (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
