@@ -27,7 +27,7 @@ function varargout = electro_gui(varargin)
 
 % Edit the above text to modify the response to help electro_gui
 
-% Last Modified by GUIDE v2.5 17-Jun-2014 14:51:00
+% Last Modified by GUIDE v2.5 11-Feb-2015 14:55:13
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1422,6 +1422,12 @@ for c = 1:length(handles.LabelHandles)
             set(handles.LabelHandles(c),'visible','on');
         end
     end
+end
+
+% If the event viewer is showing events from the zoom box, we should redraw
+% the events because the zoom box has changed.
+if strcmp(get(handles.menu_EventsFromZoomBox, 'checked'), 'on')
+    handles = UpdateEventBrowser(handles);
 end
 
 handles = eg_Overlay(handles);
@@ -4334,6 +4340,13 @@ tmall = handles.EventTimes{f}(:,filenum);
 tm = handles.EventTimes{f}{g,filenum};
 sel = handles.EventSelected{f}{g,filenum};
 
+if strcmp(get(handles.menu_EventsFromZoomBox, 'checked'), 'on')
+    % determine which events are in the window
+    xd = get(handles.xlimbox,'xdata');
+    xdsamples = xd * handles.fs;
+    inwindow = (xdsamples(1) <= tm) & (tm <= xdsamples(2));
+    sel = sel & inwindow'; % display if is selected AND is in window
+end
 
 if strcmp(get(handles.menu_DisplayValues,'checked'),'on')
     handles.EventWaveHandles = [];
@@ -4512,7 +4525,6 @@ delete(findobj('parent',handles.axes_Events,'linewidth',2));
 
 
 function click_eventaxes(hObject, eventdata, handles)
-
 if strcmp(get(gcf,'selectiontype'),'normal')
     set(gca,'units','pixels');
     set(get(gca,'parent'),'units','pixels');
@@ -8924,3 +8936,37 @@ function list_Files_KeyPressFcn(hObject, eventdata, handles)
 %	Character: character interpretation of the key(s) that was pressed
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function menu_EventsFrom_Callback(hObject, eventdata, handles)
+% hObject    handle to menu_EventsFrom (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --------------------------------------------------------------------
+function menu_EventsFromWholeFile_Callback(hObject, eventdata, handles)
+% hObject    handle to menu_EventsFromWholeFile (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+set(handles.menu_EventsFromWholeFile, 'checked', 'on')
+set(handles.menu_EventsFromZoomBox,   'checked', 'off')
+
+handles = UpdateEventBrowser(handles);
+
+guidata(hObject, handles);
+
+% --------------------------------------------------------------------
+function menu_EventsFromZoomBox_Callback(hObject, eventdata, handles)
+% hObject    handle to menu_EventsFromZoomBox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+set(handles.menu_EventsFromWholeFile, 'checked', 'off')
+set(handles.menu_EventsFromZoomBox,   'checked', 'on')
+
+handles = UpdateEventBrowser(handles);
+
+guidata(hObject, handles);
