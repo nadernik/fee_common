@@ -131,6 +131,7 @@ if(length(inChannels) > 0)
 %             ai = analoginput('nidaq', 'Dev2');
 %         end
 %     end
+    ai = s;
     GAI = ai;
     %Trigger Type (setting Manual prevents BLUE*SCREEN*!!!!)
     set(ai,'TriggerType','Manual');
