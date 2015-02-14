@@ -108,15 +108,29 @@ end
 %Open a session: the available contructors (Device Ids) are revealed by daqhwinfo('nidaq')
 if(length(inChannels) > 0)
     GINCHANS = inChannels;
-    try
-        ai = analoginput('nidaq', 1);
-    catch
-        try
-            ai = analoginput('nidaq', 'Dev1');
-        catch
-            ai = analoginput('nidaq', 'Dev2');
+    d = daq.getDevices();
+    assert(numel(d) > 0, 'No DAQ found');
+    niIdx = 0;
+    for dNo = 1:numel(d)
+        if strcmp(d(dNo).Vendor.ID, 'ni')
+            niIdx = dNo;
         end
     end
+    assert(niIdx > 0, 'No working NI daq found');
+    dID = d(niIdx).ID;
+    s = daq.createSession('ni');
+    for chanNo = 1:numel(inChannels)
+        addAnalogInputChannel(s, dID, inChannels(chanNo),'Voltage');
+    end
+%     try
+%         ai = analoginput('nidaq', 1);
+%     catch
+%         try
+%             ai = analoginput('nidaq', 'Dev1');
+%         catch
+%             ai = analoginput('nidaq', 'Dev2');
+%         end
+%     end
     GAI = ai;
     %Trigger Type (setting Manual prevents BLUE*SCREEN*!!!!)
     set(ai,'TriggerType','Manual');
