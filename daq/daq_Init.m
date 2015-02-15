@@ -1,4 +1,4 @@
-function [ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(inChannels, inSampleRate, outChannels, outSampleRate, bufferSecs, updateFreq, logFile, realtimeFcnHandle)
+function [s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(inChannels, inSampleRate, outChannels, outSampleRate, bufferSecs, updateFreq, logFile, realtimeFcnHandle)
 %This function initializes the continuous data acquisition buffers and
 %configures the daq hardware appropriately.  After this function has
 %completed, daq_Start must be called to begin acquisition.
@@ -139,7 +139,7 @@ if hasChan
     else
         rate = outSampleRate;
     end
-    assert(rate <= s.RateLimit, 'Hardware cannot support that sampling rate');
+    %assert(rate <= s.RateLimit, 'Hardware cannot support that sampling rate');
     s.Rate = rate;% up to 200000
     actRate = s.Rate;
     s.IsContinuous = true; %DAQ will continuously acquire data!
@@ -205,7 +205,7 @@ if hasOut
     lho = addlistener(s, 'DataRequired', @(src, event) queueOutputData(src, outData));
     GLISTENERS = [GLISTENERS, {lho}];
 end
-lhe = addlistener(s, 'ErrorOccured', @daq_errcleanup);
+lhe = addlistener(s, 'ErrorOccurred', @daq_errcleanup);
 GLISTENERS = [GLISTENERS, {lhe}];
 daq_log(['Done Initing: BufferUnitSize: ', num2str(BUFFERUNITSIZE)]);
 end
