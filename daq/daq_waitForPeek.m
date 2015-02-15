@@ -12,7 +12,8 @@ while(NPEEK ~= 0)
     pause(.05); 
     n = n + 1;
     if(n == 100)
-        daqreset;
+        daq_deleteListeners();
+        daq.reset;
         error('peek failed');
     end
 end

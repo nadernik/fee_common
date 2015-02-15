@@ -1,15 +1,11 @@
 function daq_Quit
 %Quit the data acquisition toolbox.
 
-global GAI
-global GAO
-
-ai = GAI;
-ao = GAO;
-stop([ai,ao]);
-
+global GS
+s = GS;
+stop(s);
+daq_deleteListeners();
+delete(s);
+clear s;
+daq.reset;
 %clean up
-delete(ai);
-clear ai;
-delete(ao);
-clear ao;

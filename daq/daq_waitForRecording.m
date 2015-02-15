@@ -7,16 +7,17 @@ function daq_waitForRecording(channels)
 global BTRIGGER;
 global GINCHANS;
 
-if(daq_isUpdating)
+if daq_isUpdating
     error('daq_waitForRecording function has interrupted daq_bufferUpdate.  This must be prevented.');
 end
 
 %Convert hardward channel numbers to matlab channel indices.
-matchannels = [];
-for(i = 1:length(channels))
-    matchannels(i) = find(GINCHANS == channels(i));
+nChan = numel(channels);
+matchannels = nan(1, nChan);
+for chanNo = 1:nChan
+    matchannels(chanNo) = find(GINCHANS == channels(chanNo));
 end
 
-while(find(BTRIGGER(matchannels)))
+while any(BTRIGGER(matchannels))
     pause(.5);
 end
