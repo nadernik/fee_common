@@ -7,8 +7,8 @@ global GOUTCHANS
 % global GAI
 % global GAO
 assert(~isempty(GS), 'daq_Init failed');
-hasIn = ~empty(GINCHANS);
-hasOut = ~empty(GOUTCHANS);
+hasIn = ~isempty(GINCHANS);
+hasOut = ~isempty(GOUTCHANS);
 %Start the daq
 
 if hasIn || hasOut
