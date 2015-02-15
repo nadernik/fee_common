@@ -34,7 +34,7 @@ daq_log(['numBufferUnits: ', num2str(NUMBUFFERUNITS)]);
 %get data and add to buffer
 data = event.Data;
 time = event.TimeStamps;
-abstime = event.TriggerTime;
+abstime = datevec(event.TriggerTime);
 %Not collecting native data -- this is just to maintain file compatibility
 nativeDataType = class(event.Data);
 buffLocation = mod(NUMBUFFERUNITS, bufferLength); %Circular buffer
@@ -48,7 +48,6 @@ NUMBUFFERUNITS = NUMBUFFERUNITS + 1;
 for chanNo = 1:numel(BTRIGGER)
     if BTRIGGER(chanNo) %there is a trigger
         if (TRIGGERSTART(chanNo)==-1) || (NUMBUFFERUNITS * bufferUnitSamps >= TRIGGERSTART(chanNo)) %it has started (storing data to disk has started?)
-            
             trigStartNdx = startNdx;
             %If this is first bufferUpdate since trigger started, then open the
             %file and prepare to write to it.
@@ -78,8 +77,8 @@ for chanNo = 1:numel(BTRIGGER)
                 %channel. %With current version there is always one channel per file.
                 %No longer collecting data in native format replacing
                 %"NativeScaling" with 1 and "NativeOffset" with 0
-                fwrite(TRIGGERFID(chanNo), 1, 'float64');%NativeScaling
-                fwrite(TRIGGERFID(chanNo), 0, 'float64');%NativeOffset
+                fwrite(TRIGGERFID(chanNo), 1.0, 'float64');%NativeScaling
+                fwrite(TRIGGERFID(chanNo), 0.0, 'float64');%NativeOffset
                 %Next write the native data type followed by file format id.
                 fwrite(TRIGGERFID(chanNo), double(nativeDataType), 'float64');
                 fwrite(TRIGGERFID(chanNo), FILEFORMATID, 'float64');
