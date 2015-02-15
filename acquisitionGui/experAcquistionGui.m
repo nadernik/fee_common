@@ -699,7 +699,7 @@ dgd.inChans = [dgd.inChans, dgd.exper.sigCh];
 %parameters
 buffer= 90; %Seconds
 updateFreq = 4; %Hz
-[ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(dgd.inChans, dgd.exper.desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
+[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(dgd.inChans, dgd.exper.desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
 
 dgd.daqSetup.actInSampleRate = actInSampleRate;
 dgd.daqSetup.actOutSampleRate = actOutSampleRate;

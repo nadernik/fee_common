@@ -956,7 +956,7 @@ end
 %parameters
 buffer=15; %Seconds %parameterize
 updateFreq = 4; %Hz %parameterize
-[ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
+[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
 daqSetup.actInSampleRate = actInSampleRate;
 daqSetup.actOutSampleRate = actOutSampleRate;
 daqSetup.buffer = buffer;
@@ -1077,7 +1077,7 @@ else
     %parameters
     buffer= 90; %Seconds %parameterize
     updateFreq = 4; %Hz %parameterize
-    [ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
+    [s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
     daqSetup.actInSampleRate = actInSampleRate;
     daqSetup.actOutSampleRate = actOutSampleRate;
     daqSetup.buffer = buffer;
