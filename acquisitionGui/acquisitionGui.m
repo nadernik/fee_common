@@ -949,7 +949,7 @@ end
 
 %START THE DAQ
 %reset 
-daqreset;
+daq.reset;
 if(isempty(timerfind('Name','trigOnSong')))
     delete(timerfind('Name','trigOnSong'));
 end
@@ -1050,7 +1050,7 @@ if(length(dgd.expers) == 0)
     experStrings{experNdx} = '';
     set(handles.popupExperiments, 'String', experStrings);
     set(handles.popupExperiments, 'Value', 1);
-    daqreset;
+    daq_Quit();
     dgd.ce = 0;
     cla(handles.axesAudio);
     cla(handles.axesSignal);
@@ -1070,7 +1070,7 @@ else
     set(handles.popupExperiments, 'Value', 1);
     dgd.ce = 1;
     %reset 
-    daqreset;
+    daq_Quit();
     if(isempty(timerfind('Name','trigOnSong')))
         delete(timerfind('Name','trigOnSong'));
     end

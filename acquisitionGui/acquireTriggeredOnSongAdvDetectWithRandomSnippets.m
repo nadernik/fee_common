@@ -5,7 +5,7 @@ function acquireTriggeredOnSongAdvDetectWithRandomSnippets(exper)
 %exper: An experiment structured created using createExper.
 
 %Initialize the daq toolbox
-daqreset;
+daq.reset;
 
 %input channels
 inChans = [];
@@ -140,7 +140,7 @@ while(true)
                 timeV = datevec(now);
                 if(((timeV(4) == 24) | (timeV(4) == 0)) & (timeV(5) > 3))
                     disp('Stopping for night.  Restart timer set.');
-                    daqreset;
+                    daq.reset;
                     timerAcqRestart = timer('TimerFcn', {'CBacquireTriggeredOnSongAdvDetect', exper});
                     startat(timerAcqRestart,now+(8/24)); %Restart 8 hours later.
                     return;
@@ -220,7 +220,7 @@ while(true)
                 elseif(char == 'd')
                     bDisplay = ~bDisplay
                 elseif(char == 'q')
-                    daqreset;
+                    daq.reset;
                     return;
                 end
                 pause(.05);

@@ -170,7 +170,7 @@ while(true)
                     currnum = filenum;
                     nextPeek = recSampNum;
                 elseif(char == 'q')
-                    daqreset;
+                    daq.reset;
                     return;
                 end
                 pause(.05);

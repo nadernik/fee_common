@@ -16,7 +16,7 @@ if(~isempty(timerfind('Name','trigOnSong')))
     stop(timerfind('Name','trigOnSong'));
     delete(timerfind('Name','trigOnSong'));
 end
-daqreset;
+daq.reset;
 
 %stop the restart-timer from trying to restart.  The deed is done.
 stop(obj);
@@ -33,7 +33,7 @@ stopHour = str2double(get(handles.editStopTime, 'String'));
 
 %close the gui.
 close(guifig);
-daqreset;
+daq.reset;
 
 %can't pause here, can't just wait, because timers are stop and deleted
 %asynchronously.  Not sure why matlab does that.

@@ -27,11 +27,11 @@ function varargout = daqAcquire(varargin)
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @daqAcquire_OpeningFcn, ...
-                   'gui_OutputFcn',  @daqAcquire_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @daqAcquire_OpeningFcn, ...
+    'gui_OutputFcn',  @daqAcquire_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -39,7 +39,7 @@ end
 if nargout
     [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
 else
-gui_State.gui_Name='daqAcquire';
+    gui_State.gui_Name='daqAcquire';
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
@@ -60,6 +60,7 @@ handles.channels = zeros(1,8);
 handles.Times = {};
 handles.Files = {};
 handles.RecChannels = {};
+handles.DataAvailableInfo = {};
 
 % Choose default command line output for daqAcquire
 handles.output = hObject;
@@ -72,7 +73,7 @@ guidata(hObject, handles);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = daqAcquire_OutputFcn(hObject, eventdata, handles) 
+function varargout = daqAcquire_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -119,7 +120,7 @@ set(findobj(handles.fig_daq,'style','checkbox'),'backgroundcolor',[.5 .5 .5]);
 
 for c = 1:length(handles.RecChannels{indx})
     plot((0:size(data,1)-1)/rec.Fs,data(:,c),'color',cols(c,:));
-%     plot((0:size(data,1)-1)/rec.Fs,filter(ones(1000,1),1,data(:,c).^2),'color',cols(c,:));
+    %     plot((0:size(data,1)-1)/rec.Fs,filter(ones(1000,1),1,data(:,c).^2),'color',cols(c,:));
     set(handles.(['check' num2str(handles.RecChannels{indx}(c))]),'backgroundcolor',cols(c,:));
 end
 xlim([0 size(data,1)-1]/rec.Fs);
@@ -363,39 +364,45 @@ sampRate = str2num(get(handles.edit_Rate,'string'));
 chans = find(handles.channels==1)-1;
 
 
-daqreset;
-ai = analoginput('nidaq','Dev1');
-
-for(nChan = 1:length(chans))
-    addchannel(ai,[chans(nChan)]);
+daq.reset;
+d = daq.getDevices();
+assert(numel(d) > 0, 'No DAQ found');
+niIdx = 0;
+for dNo = 1:numel(d)
+    if strcmp(d(dNo).Vendor.ID, 'ni')
+        niIdx = dNo;
+    end
 end
-actInSampRate = setverify(ai,'SampleRate', sampRate);
-set(ai,'TriggerType','Manual');
-set(ai,'SamplesPerTrigger', sampleTime*sampRate);
-
-start([ai]);
+assert(niIdx > 0, 'No working NI daq found');
+dID = d(niIdx).ID;
+s = daq.createSession('ni');
+s.Rate = sampRate;% up to 200000
+actRate = s.Rate;
+addAnalogInputChannel(s, dID, chans, 'Voltage');
+s.DurationInSeconds = sampleTime;
+lh = addlistener(s, 'DataAvailable', @(src, event) DataAvailableCallback(hObject, src, event));
+startBackground(s);
 rec.Time = now;
-trigger([ai]);
 bck = get(handles.push_Record,'callback');
 set(handles.push_Record,'callback','set(gco,''foregroundcolor'',[0 0 0])')
-while (now - rec.Time)*24*60*60 < sampleTime & sum(get(handles.push_Record,'foregroundcolor'))>0
+while (now - rec.Time)*24*60*60 < sampleTime && sum(get(handles.push_Record,'foregroundcolor'))>0
     set(handles.text_Count,'string',num2str(round((now - rec.Time)*24*60*60*10)/10));
     drawnow;
-%     if abs(round((now - rec.Time)*24*60*60*10)/10-1)<0.0001 %%%YM  15 Dec %%%%
-%         sound(SoundData(1:min(length(SoundData),(sampleTime-1)*44100)),44100);
-%         t=(now - rec.Time)*24*60*60;
-%     end
+    %     if abs(round((now - rec.Time)*24*60*60*10)/10-1)<0.0001 %%%YM  15 Dec %%%%
+    %         sound(SoundData(1:min(length(SoundData),(sampleTime-1)*44100)),44100);
+    %         t=(now - rec.Time)*24*60*60;
+    %     end
     pause(0.1);
 end
 set(handles.push_Record,'callback',bck);
-stop([ai]);
+stop(s);
 set(handles.text_Count,'string','');
-samps = get(ai,'SamplesAvailable');
-data = getdata(ai,samps);
+DataAvailableInfo = get(handles.DataAvailableInfo);
+data = DataAvailableInfo.Data;
+rec.Time = DataAvailableInfo.TriggerTime;
+daq.reset;
 
-daqreset;
-
-rec.Fs = sampRate;
+rec.Fs = actRate;
 
 rec.Properties.Names = {'Comment'};
 rec.Properties.Types = [1];
@@ -532,5 +539,8 @@ function check_Chirp_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of check_Chirp
-
+function DataAvailableCallback(hObject, src, event)
+handles = guidata(hObject);
+handles.DataAvailableInfo = event;
+guidata(hObject, handles);
 
