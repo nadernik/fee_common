@@ -1,5 +1,5 @@
 %script quick data test
-daq.reset;
+daq_Quit();
 sampRate = 40000;
 chan = [1,2];
 [s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(chan, sampRate, [], sampRate, 20, 1);

@@ -64,7 +64,23 @@ handles.DataAvailableInfo = {};
 
 % Choose default command line output for daqAcquire
 handles.output = hObject;
-
+daq.reset;
+d = daq.getDevices();
+assert(numel(d) > 0, 'No DAQ found');
+niIdx = 0;
+for dNo = 1:numel(d)
+    if strcmp(d(dNo).Vendor.ID, 'ni')
+        niIdx = dNo;
+    end
+end
+assert(niIdx > 0, 'No working NI daq found');
+dID = d(niIdx).ID;
+s = daq.createSession('ni');
+handles.s = s;
+handles.dID = dID;
+lh = addlistener(s, 'DataAvailable', @(src, event) DataAvailableCallback(hObject, src, event));
+handles.listeners = {lh};
+set(handles, 'CloseRequestFcn', @my_closereq);
 % Update handles structure
 guidata(hObject, handles);
 
@@ -339,9 +355,16 @@ guidata(hObject, handles);
 
 
 function handles = readChecks(handles)
-
+oldChannels = handles.channels;
 for c = 0:7
     handles.channels(c+1) = get(handles.(['check' num2str(c)]),'value');
+    if handles.channels(c+1) ~= oldChannels(c+1) %Status has changed
+        if handles.channels(c+1) %channel has been added
+            addAnalogInputChannel(handles.s, handles.dID, c, 'Voltage');
+        else %channel has been removed
+            removeChannel(handles.s, c);
+        end
+    end
 end
 
 
@@ -362,31 +385,16 @@ drawnow;
 sampleTime = str2num(get(handles.edit_Duration,'string'));
 sampRate = str2num(get(handles.edit_Rate,'string'));
 chans = find(handles.channels==1)-1;
-
-
-daq.reset;
-d = daq.getDevices();
-assert(numel(d) > 0, 'No DAQ found');
-niIdx = 0;
-for dNo = 1:numel(d)
-    if strcmp(d(dNo).Vendor.ID, 'ni')
-        niIdx = dNo;
-    end
-end
-assert(niIdx > 0, 'No working NI daq found');
-dID = d(niIdx).ID;
-s = daq.createSession('ni');
+s = handles.s;
 s.Rate = sampRate;% up to 200000
 actRate = s.Rate;
-addAnalogInputChannel(s, dID, chans, 'Voltage');
 s.DurationInSeconds = sampleTime;
-lh = addlistener(s, 'DataAvailable', @(src, event) DataAvailableCallback(hObject, src, event));
 startBackground(s);
-rec.Time = now;
+recTime = now;
 bck = get(handles.push_Record,'callback');
 set(handles.push_Record,'callback','set(gco,''foregroundcolor'',[0 0 0])')
-while (now - rec.Time)*24*60*60 < sampleTime && sum(get(handles.push_Record,'foregroundcolor'))>0
-    set(handles.text_Count,'string',num2str(round((now - rec.Time)*24*60*60*10)/10));
+while (now - recTime)*24*60*60 < sampleTime && sum(get(handles.push_Record,'foregroundcolor'))>0
+    set(handles.text_Count,'string',num2str(round((now - recTime)*24*60*60*10)/10));
     drawnow;
     %     if abs(round((now - rec.Time)*24*60*60*10)/10-1)<0.0001 %%%YM  15 Dec %%%%
     %         sound(SoundData(1:min(length(SoundData),(sampleTime-1)*44100)),44100);
@@ -397,19 +405,25 @@ end
 set(handles.push_Record,'callback',bck);
 stop(s);
 set(handles.text_Count,'string','');
-DataAvailableInfo = get(handles.DataAvailableInfo);
-data = DataAvailableInfo.Data;
-rec.Time = DataAvailableInfo.TriggerTime;
-daq.reset;
 
-rec.Fs = actRate;
+% rec.Data=[zeros(t*44100,1) ;SoundData(1:min(length(SoundData),(sampleTime-1)*44100))];
+% rec.Fs=44100;
+%save([filename(1:end-4) 'sound.mat'],'rec');
+set(handles.push_Record,'ForegroundColor',[0 0 0],'string','RECORD');
 
+guidata(hObject, handles);
+
+
+function DataAvailableCallback(hObject, src, event)
+handles = guidata(hObject);
+handles.DataAvailableInfo = event;
+data = event.Data;
+rec.Time = event.TriggerTime;
+rec.Fs = handles.s.Rate;
 rec.Properties.Names = {'Comment'};
 rec.Properties.Types = [1];
 rec.Properties.Values = {''};
-
 cd(get(handles.edit_Folder,'string'));
-
 cols = hsv(size(data,2))*.8;
 set(findobj(handles.fig_daq,'style','checkbox'),'backgroundcolor',[.5 .5 .5]);
 fls = {};
@@ -420,11 +434,6 @@ for c = 1:length(chans)
     save(filename,'rec');
     set(handles.(['check' num2str(chans(c))]),'backgroundcolor',cols(c,:));
 end
-% rec.Data=[zeros(t*44100,1) ;SoundData(1:min(length(SoundData),(sampleTime-1)*44100))];
-% rec.Fs=44100;
-%save([filename(1:end-4) 'sound.mat'],'rec');
-set(handles.push_Record,'ForegroundColor',[0 0 0],'string','RECORD');
-
 subplot(handles.axes_Main);
 cla
 hold on
@@ -439,7 +448,6 @@ zoom on
 handles.Times{end+1} = datestr(rec.Time);
 handles.Files{end+1} = fls;
 handles.RecChannels{end+1} = chans;
-
 str = handles.Times;
 for c = 1:length(str)
     str{c} = [num2str(c) ') ' str{c}];
@@ -455,9 +463,7 @@ if get(handles.check_Chirp,'value')==1
         sound(y,10000*2^c);
     end
 end
-
 guidata(hObject, handles);
-
 
 
 function edit_Comment_Callback(hObject, eventdata, handles)
@@ -531,6 +537,24 @@ end
 
 guidata(hObject, handles);
 
+function my_closereq(src,callbackdata)
+% Close request function
+% to display a question dialog box
+keyboard;
+daq_cleanup(src);
+cosereq();
+end
+
+function daq_cleanup(hObject)
+    handles = guidata(hObject);
+    for lNo = 1:numel(handles.listeners)
+        delete(handles.listeners{lNo});
+    end
+    handles.listeners = {};
+    delete(handles.s);
+    daq.reset;
+    guidata(hObject, handles);
+end
 
 % --- Executes on button press in check_Chirp.
 function check_Chirp_Callback(hObject, eventdata, handles)
@@ -539,8 +563,5 @@ function check_Chirp_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of check_Chirp
-function DataAvailableCallback(hObject, src, event)
-handles = guidata(hObject);
-handles.DataAvailableInfo = event;
-guidata(hObject, handles);
+
 

@@ -656,11 +656,11 @@ function buttonStop_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonStop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-daq.reset;
+daq_Quit();
 
 %%%%%%%%%%%%%%%%%%%%%%%%% HELPER FUNCTIONS *********************
 
-function updateExperiment(guifig);
+function updateExperiment(guifig)
 handles = guidata(guifig);
 [dgd,status] = aa_checkoutAppData(guifig, 'daqguidata');
 if(~status)
@@ -685,7 +685,7 @@ set(handles.popupChannel,'String', chanstrings);
 dgd.currChan = dgd.exper.audioCh;
 
 %Initialize the daq toolbox
-daq.reset;
+daq_Quit();
 
 %input channels
 dgd.inChans = [];

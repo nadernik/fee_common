@@ -62,7 +62,6 @@ function [s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(inChan
 %informational globals
 %global GAI;
 global GS;
-%global GAO;
 global GINCHANS;
 global GOUTCHANS;
 global COUNT;
@@ -211,11 +210,6 @@ daq_log(['Done Initing: BufferUnitSize: ', num2str(BUFFERUNITSIZE)]);
 end
 
 function daq_errcleanup(src, event)
-disp(event.Error.getReport());
-daq_deleteListeners();
-stop(src);
-release(src);
-daq.reset;
-delete(src);
+daq_Quit();
 end
 

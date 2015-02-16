@@ -949,7 +949,7 @@ end
 
 %START THE DAQ
 %reset 
-daq.reset;
+daq_Quit();
 if(isempty(timerfind('Name','trigOnSong')))
     delete(timerfind('Name','trigOnSong'));
 end
