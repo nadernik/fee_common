@@ -80,7 +80,7 @@ handles.s = s;
 handles.dID = dID;
 lh = addlistener(s, 'DataAvailable', @(src, event) DataAvailableCallback(hObject, src, event));
 handles.listeners = {lh};
-set(handles, 'CloseRequestFcn', @my_closereq);
+set(hObject, 'CloseRequestFcn', @my_closereq);
 % Update handles structure
 guidata(hObject, handles);
 
@@ -416,6 +416,7 @@ guidata(hObject, handles);
 
 function DataAvailableCallback(hObject, src, event)
 handles = guidata(hObject);
+chans = find(handles.channels==1)-1;
 handles.DataAvailableInfo = event;
 data = event.Data;
 rec.Time = event.TriggerTime;
@@ -543,7 +544,6 @@ function my_closereq(src,callbackdata)
 keyboard;
 daq_cleanup(src);
 cosereq();
-end
 
 function daq_cleanup(hObject)
     handles = guidata(hObject);
@@ -554,7 +554,6 @@ function daq_cleanup(hObject)
     delete(handles.s);
     daq.reset;
     guidata(hObject, handles);
-end
 
 % --- Executes on button press in check_Chirp.
 function check_Chirp_Callback(hObject, eventdata, handles)
