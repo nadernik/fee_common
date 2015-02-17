@@ -47,15 +47,23 @@ else %session is open, need to clean up
     %Data files (trigger files)
     for fNo = 1:numel(TRIGGERFID)
         try
-            flcose(TRIGGERFID(fNo));
+            fclose(TRIGGERFID(fNo));
         catch err
-            warning(err.message);
+            switch err.identifier
+                case 'MATLAB:badfid_mx'
+                otherwise
+                    warning(err.message);
+            end
         end
     end
     try
-        flcose(DAQLOGFID);
+        fclose(DAQLOGFID);
     catch err
-        warning(err.message);
+        switch err.identifier
+            case 'MATLAB:badfid_mx'
+            otherwise
+                warning(err.message);
+        end
     end
     %% Clear global variables
     clearvars('-global', 'GS', 'GINCHANS', 'GOUTCHANS', 'COUNT',...
