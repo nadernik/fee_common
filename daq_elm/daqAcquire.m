@@ -388,6 +388,7 @@ s = handles.s;
 s.Rate = sampRate;% up to 200000
 actRate = s.Rate;
 s.DurationInSeconds = sampleTime;
+s.NotifyWhenDataAvailableExceeds = s.NumberOfScans;
 startBackground(s);
 recTime = now;
 bck = get(handles.push_Record,'callback');
@@ -434,11 +435,12 @@ for c = 1:length(chans)
     save(filename,'rec');
     set(handles.(['check' num2str(chans(c))]),'backgroundcolor',cols(c,:));
 end
+keyboard
 subplot(handles.axes_Main);
 cla
 hold on
 for c = 1:length(chans)
-    plot((0:size(data,1)-1)/sampRate,data(:,c),'color',cols(c,:));
+    plot((0:size(data,1)-1)/rec.Fs,data(:,c),'color',cols(c,:));
 end
 xlim([0 size(data,1)-1]/rec.Fs);
 
@@ -540,9 +542,8 @@ guidata(hObject, handles);
 function my_closereq(src,callbackdata)
 % Close request function
 % to display a question dialog box
-keyboard;
 daq_cleanup(src);
-cosereq();
+closereq();
 
 function daq_cleanup(hObject)
 handles = guidata(hObject);
