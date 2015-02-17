@@ -441,7 +441,6 @@ for c = 1:length(chans)
     save(filename,'rec');
     set(handles.(['check' num2str(chans(c))]),'backgroundcolor',cols(c,:));
 end
-keyboard
 subplot(handles.axes_Main);
 cla
 hold on
