@@ -354,17 +354,10 @@ guidata(hObject, handles);
 
 
 function handles = readChecks(handles)
-oldChannels = handles.channels;
 for c = 0:7
     handles.channels(c+1) = get(handles.(['check' num2str(c)]),'value');
-    if handles.channels(c+1) ~= oldChannels(c+1) %Status has changed
-        if handles.channels(c+1) %channel has been added
-            addAnalogInputChannel(handles.s, handles.dID, c, 'Voltage');
-        else %channel has been removed
-            removeChannel(handles.s, c);
-        end
-    end
 end
+
 
 
 % --- Executes on button press in push_Record.
@@ -385,6 +378,11 @@ sampleTime = str2num(get(handles.edit_Duration,'string'));
 sampRate = str2num(get(handles.edit_Rate,'string'));
 chans = find(handles.channels==1)-1;
 s = handles.s;
+if ~isempty(s.Channels) %This should always be true
+    warning('Channels from previous recording were not removed!');
+    removeChannel(s, 1:numel(s.Channels)); %Remove all channels currently in session
+end
+addAnalogInputChannel(s, handles.dID, chans, 'Voltage');
 s.Rate = sampRate;% up to 200000
 actRate = s.Rate;
 s.DurationInSeconds = sampleTime;
@@ -393,7 +391,11 @@ startBackground(s);
 recTime = now;
 bck = get(handles.push_Record,'callback');
 set(handles.push_Record,'callback','set(gco,''foregroundcolor'',[0 0 0])')
-while (now - recTime)*24*60*60 < sampleTime && sum(get(handles.push_Record,'foregroundcolor'))>0
+pressedStop = false;
+while (now - recTime)*24*60*60 < sampleTime && ~pressedStop
+    if sum(get(handles.push_Record,'foregroundcolor'))== 0
+        pressedStop = true;
+    end
     set(handles.text_Count,'string',num2str(round((now - recTime)*24*60*60*10)/10));
     drawnow;
     %     if abs(round((now - rec.Time)*24*60*60*10)/10-1)<0.0001 %%%YM  15 Dec %%%%
@@ -403,9 +405,13 @@ while (now - recTime)*24*60*60 < sampleTime && sum(get(handles.push_Record,'fore
     pause(0.1);
 end
 set(handles.push_Record,'callback',bck);
-stop(s);
+if pressedStop
+    stop(s);
+else
+    wait(s);
+end
 set(handles.text_Count,'string','');
-
+removeChannel(s, 1:numel(s.Channels));
 % rec.Data=[zeros(t*44100,1) ;SoundData(1:min(length(SoundData),(sampleTime-1)*44100))];
 % rec.Fs=44100;
 %save([filename(1:end-4) 'sound.mat'],'rec');
@@ -542,7 +548,11 @@ guidata(hObject, handles);
 function my_closereq(src,callbackdata)
 % Close request function
 % to display a question dialog box
-daq_cleanup(src);
+try
+    daq_cleanup(src);
+catch err
+    warning(err.message);
+end
 closereq();
 
 function daq_cleanup(hObject)

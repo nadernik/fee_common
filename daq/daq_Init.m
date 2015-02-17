@@ -204,12 +204,7 @@ if hasOut
     lho = addlistener(s, 'DataRequired', @(src, event) queueOutputData(src, outData));
     GLISTENERS = [GLISTENERS, {lho}];
 end
-lhe = addlistener(s, 'ErrorOccurred', @daq_errcleanup);
+lhe = addlistener(s, 'ErrorOccurred', @(src, event) daq_Quit());
 GLISTENERS = [GLISTENERS, {lhe}];
 daq_log(['Done Initing: BufferUnitSize: ', num2str(BUFFERUNITSIZE)]);
 end
-
-function daq_errcleanup(src, event)
-daq_Quit();
-end
-

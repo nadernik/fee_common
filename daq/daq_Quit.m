@@ -37,19 +37,25 @@ else %session is open, need to clean up
     %% Stop session and clear listeners
     s = GS;
     stop(s);
-    daq_deleteListeners();
-    delete(s);
+    try
+        daq_deleteListeners();
+        delete(s);
+    catch err
+        warning(err.message);
+    end
     %% Try to close files
     %Data files (trigger files)
     for fNo = 1:numel(TRIGGERFID)
         try
             flcose(TRIGGERFID(fNo));
         catch err
+            warning(err.message);
         end
     end
     try
         flcose(DAQLOGFID);
     catch err
+        warning(err.message);
     end
     %% Clear global variables
     clearvars('-global', 'GS', 'GINCHANS', 'GOUTCHANS', 'COUNT',...
