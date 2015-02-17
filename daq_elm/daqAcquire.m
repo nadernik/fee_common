@@ -53,14 +53,13 @@ function daqAcquire_OpeningFcn(hObject, eventdata, handles, varargin)
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to daqAcquire (see VARARGIN)
 
-
+guifig = hObject; %For this function only
 set(handles.edit_Folder,'string',pwd);
 handles.channels = zeros(1,8);
 
 handles.Times = {};
 handles.Files = {};
 handles.RecChannels = {};
-handles.DataAvailableInfo = {};
 
 % Choose default command line output for daqAcquire
 handles.output = hObject;
@@ -78,7 +77,7 @@ dID = d(niIdx).ID;
 s = daq.createSession('ni');
 handles.s = s;
 handles.dID = dID;
-lh = addlistener(s, 'DataAvailable', @(src, event) DataAvailableCallback(hObject, src, event));
+lh = addlistener(s, 'DataAvailable', @(src, event) DataAvailableCallback(guifig, src, event));
 handles.listeners = {lh};
 set(hObject, 'CloseRequestFcn', @my_closereq);
 % Update handles structure
@@ -377,7 +376,7 @@ function push_Record_Callback(hObject, eventdata, handles)
 if sum(handles.channels)==0
     return
 end
-
+%do NOT put data into handles inside this function, I am not returning handles to gui!
 set(handles.push_Record,'ForegroundColor',[1 0 0],'string','STOP');
 set(handles.edit_Comment,'string','');
 drawnow;
@@ -411,13 +410,13 @@ set(handles.text_Count,'string','');
 %save([filename(1:end-4) 'sound.mat'],'rec');
 set(handles.push_Record,'ForegroundColor',[0 0 0],'string','RECORD');
 
-guidata(hObject, handles);
-
 
 function DataAvailableCallback(hObject, src, event)
+%Beware of concurrency problems... this is called at some time after "push
+%record" and there could very well be some other function that will
+%overwrite handles
 handles = guidata(hObject);
 chans = find(handles.channels==1)-1;
-handles.DataAvailableInfo = event;
 data = event.Data;
 rec.Time = event.TriggerTime;
 rec.Fs = handles.s.Rate;
@@ -546,14 +545,14 @@ daq_cleanup(src);
 cosereq();
 
 function daq_cleanup(hObject)
-    handles = guidata(hObject);
-    for lNo = 1:numel(handles.listeners)
-        delete(handles.listeners{lNo});
-    end
-    handles.listeners = {};
-    delete(handles.s);
-    daq.reset;
-    guidata(hObject, handles);
+handles = guidata(hObject);
+for lNo = 1:numel(handles.listeners)
+    delete(handles.listeners{lNo});
+end
+handles.listeners = {};
+delete(handles.s);
+daq.reset;
+guidata(hObject, handles);
 
 % --- Executes on button press in check_Chirp.
 function check_Chirp_Callback(hObject, eventdata, handles)
