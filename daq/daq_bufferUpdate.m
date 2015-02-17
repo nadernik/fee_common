@@ -28,7 +28,6 @@ global PEEKDATASTORE;
 global PEEKTIMESTORE;
 
 FILEFORMATID = -4;
-
 daq_log(['numBufferUnits: ', num2str(NUMBUFFERUNITS)]);
 
 %get data and add to buffer

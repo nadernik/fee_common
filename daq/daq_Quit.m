@@ -31,7 +31,10 @@ global TRIGGERFID;
 global PEEKDATASTORE;
 global PEEKTIMESTORE;
 
-if isempty(GS) %session has not been created
+if isempty(GS) || ~GS.isvalid %session has not been created
+    if ~isempty(GS)
+        warning('Something fishy is going on here...  GS points to a deleted object');
+    end
     daq.reset;
 else %session is open, need to clean up
     %% Stop session and clear listeners
@@ -51,6 +54,7 @@ else %session is open, need to clean up
         catch err
             switch err.identifier
                 case 'MATLAB:badfid_mx'
+                case 'MATLAB:FileIO:InvalidFid'
                 otherwise
                     warning(err.message);
             end
@@ -61,7 +65,9 @@ else %session is open, need to clean up
     catch err
         switch err.identifier
             case 'MATLAB:badfid_mx'
+            case 'MATLAB:FileIO:InvalidFid'
             otherwise
+                keyboard
                 warning(err.message);
         end
     end
