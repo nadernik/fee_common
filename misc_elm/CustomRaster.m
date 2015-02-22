@@ -13,13 +13,13 @@
 % day = '2013-09-27-NIf'; 
 % depth = 's3XXa'; 
 % 
-bird = '5530'; 
-day = '2015-01-30-NIf'; 
-depth = 's472'; 
+% bird = '5530'; 
+% day = '2015-01-30-NIf'; 
+% depth = 's472'; 
 
-% bird = '4202'; 
-% day = '2013-12-02-NIf'; 
-% depth = 's325'; 
+bird = '4202'; 
+day = '2013-12-02-NIf'; 
+depth = 's325'; 
 
 % bird = '4202'; 
 % day = '2013-12-02-NIf'; 
@@ -64,7 +64,7 @@ for i = 1:numel(trigInfo.eventOnsets{1});
 end
 %%
 figure(1); clf; 
-MaxToPlot = 100; 
+MaxToPlot = 100; % sometimes need to go lower to export if there's a lot of spikes
 if numel(trigInfo.eventOnsets{1})>MaxToPlot
     ind = randperm(numel(trigInfo.eventOnsets{1})); 
     ind = sort(ind(1:MaxToPlot)); 
@@ -110,6 +110,7 @@ m = mean([p(2) q(2)+q(4)]);
 gap = p(2) - (q(2)+q(4));
 p(2) = m + gap/(2*ShrinkBy);
 q(4) = m-q(2)-  gap/(2*ShrinkBy);
+%ylim([0 700])
 set(h, 'pos', p)
 set(g, 'pos', q)
 %%
