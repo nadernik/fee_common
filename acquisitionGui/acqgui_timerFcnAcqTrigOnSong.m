@@ -1,4 +1,4 @@
-function acqgui_timerFcnAcqTrigOnSong(obj, evnt, guifig)
+function acqgui_timerFcnAcqTrigOnSong(~, ~, guifig)
 
 %It is crucial, that this function, which accesses daq_data, does not
 %interrupt the daq_bufferUpdate.  Interruptions result in crashes and
@@ -33,13 +33,13 @@ if(abs(nextPeek - daq_getCurrSampNum) > dgd.actInSampRate*10)
     nextPeek = daq_getCurrSampNum - dgd.actInSampRate;
 end
 [data, time, sampNum] = daq_peek(round(nextPeek-dgd.actInSampRate/10));
-for(nExper = find(dgd.bTrigOnSong))
+for nExper = find(dgd.bTrigOnSong)
     params(nExper).nextPeek = sampNum+length(time);
 end
 daq_log('Peek Completed.');
 
 if(~dgd.bTrigOnSong(dgd.ce))
-    set(handles.textSongScore, 'String', ['Song Score: --']);
+    set(handles.textSongScore, 'String', 'Song Score: --');
 end
 if(isequal(get(handles.textSongScore, 'BackgroundColor'),[1,1,1]))
     set(handles.textSongScore, 'BackgroundColor', [1,1,.5]);
@@ -48,13 +48,13 @@ else
 end
 
 bNewFile = false(1,length(dgd.expers));
-for(nExper = find(dgd.bTrigOnSong))
+for nExper = find(dgd.bTrigOnSong)
     fs = dgd.expers{nExper}.desiredInSampRate;
     audio = data(:,dgd.experData(nExper).ndxOfAudioChan);
     sd = dgd.experData(nExper).songDetection;
     srp = tsd.songTrigParams(nExper);
     %Take specgram and measure power in each time-slice
-    [b,f,t] = specgram(audio, sd.windowSize, dgd.actInSampRate, sd.windowSize, sd.windowOverlap);
+    [b,~,t] = specgram(audio, sd.windowSize, dgd.actInSampRate, sd.windowSize, sd.windowOverlap);
     powerSong = mean(abs(b(sd.minNdx:sd.maxNdx,:)), 1);
     powerNonSong = mean(abs(b([1:sd.minNdx-1,sd.maxNdx+1:end],:)), 1) + eps;
     songRatio = powerSong./powerNonSong;
@@ -65,8 +65,8 @@ for(nExper = find(dgd.bTrigOnSong))
         set(handles.textSongScore, 'String', ['Song Score: ', num2str(maxSongScore)]);
     end
     daq_log('Song score computed');
-    bNewFile(nExper) = false; %#ok<AGROW>
-    if(~recinfo(nExper).bSongTrigRecording & ~recinfo(nExper).bForcedRecording)%(~daq_isRecording(dgd.expers{dgd.ce}.audioCh))
+    bNewFile(nExper) = false;
+    if ~recinfo(nExper).bSongTrigRecording && ~recinfo(nExper).bForcedRecording%(~daq_isRecording(dgd.expers{dgd.ce}.audioCh))
         %Since not currently recording this bird, check for song start.
         if( (maxSongScore > sd.durationThreshold) )
             %If sufficient power to signify song, then begin recording            
@@ -93,13 +93,13 @@ for(nExper = find(dgd.bTrigOnSong))
     elseif(recinfo(nExper).bSongTrigRecording)
         %Since already recording this bird, check for silence and file
         %getting too long.
-        if( (maxSongScore > sd.durationThreshold) & (sampNum - params(nExper).songStartSampNum < round(srp.maxFileLength*fs)))
+        if (maxSongScore > sd.durationThreshold) && (sampNum - params(nExper).songStartSampNum < round(srp.maxFileLength*fs))
             params(nExper).stopSamp = sampNum + length(time) - 1;
         end
         if( sampNum + length(audio) - 1 - params(nExper).stopSamp > round(srp.postSecs*fs) )
             daq_log('Attempt to stop song triggered recordings.');
             songEndSampNum = sampNum + length(audio) - 1;
-            [bStatus, endSamp] = daq_recordStop(songEndSampNum, dgd.experData(nExper).inChans);
+            [bStatus, ~] = daq_recordStop(songEndSampNum, dgd.experData(nExper).inChans);
             if(~bStatus)
                 beep;
                 warning('Song stop recording failed.'); %#ok<WNTAG>
@@ -108,7 +108,7 @@ for(nExper = find(dgd.bTrigOnSong))
                     set(handles.textRecordingStatus, 'String', ['Finished recording.', num2str(recinfo(nExper).recfilenum), '.   Ready to record.']);
                     set(handles.textRecordingStatus, 'BackgroundColor', 'green');            
                 end                           
-                bNewFile(nExper) = true; %#ok<AGROW>
+                bNewFile(nExper) = true;
                 daq_log('Requested finish song recordings.');
             end    
         end
@@ -121,7 +121,7 @@ for nExper = find(bNewFile)
     daq_log('Wait for new file to be written.');
     daq_waitForRecording(dgd.experData(nExper).inChans);
     if(dgd.sutterStatus)
-        [microsteps, micronsApprox, Status] = sutterGetCurrentPosition(dgd.sutterConnection);        
+        [~, micronsApprox, Status] = sutterGetCurrentPosition(dgd.sutterConnection);        
         if(Status)
             daq_appendProperty(params(nExper).filenames{1}, 'SutterMicronsX',  sprintf('%4.2f', micronsApprox(1)));
             daq_appendProperty(params(nExper).filenames{1}, 'SutterMicronsY',  sprintf('%4.2f', micronsApprox(2)));
@@ -158,7 +158,7 @@ setappdata(guifig, 'threadSafeData', tsd);
 aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
 aa_checkinAppData(guifig, 'songtrigdata', params);
 
-if(bNewFile(dgd.ce) & dgd.experData(dgd.ce).autoUpdate)
+if bNewFile(dgd.ce) && dgd.experData(dgd.ce).autoUpdate
     daq_log('Updating Display.');
     acqgui_updateDisplayFile(guifig, recinfo(dgd.ce).filenum);
     daq_log('Completed waiting and display.');

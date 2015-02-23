@@ -370,7 +370,7 @@ if(~dgd.bTrigOnSong(nExper))
 
     %start the recurring song check timer...
     if(isempty(dgd.trigOnSongTimer))
-        dgd.trigOnSongTimer = timer;
+        dgd.trigOnSongTimer = timer();
         set(dgd.trigOnSongTimer,'Name', 'trigOnSong');
         set(dgd.trigOnSongTimer,'TimerFcn','acqgui_timerFcnAcqTrigOnSong(timerfind(''Name'', ''trigOnSong''), [], findobj(''Name'', ''acquisitionGui''))');
         set(dgd.trigOnSongTimer,'Period',1);
