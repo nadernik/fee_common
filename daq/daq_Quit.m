@@ -52,24 +52,13 @@ else %session is open, need to clean up
         try
             fclose(TRIGGERFID(fNo));
         catch err
-            switch err.identifier
-                case 'MATLAB:badfid_mx'
-                case 'MATLAB:FileIO:InvalidFid'
-                otherwise
-                    warning(err.message);
-            end
+            handle_file_err(err);
         end
     end
     try
         fclose(DAQLOGFID);
     catch err
-        switch err.identifier
-            case 'MATLAB:badfid_mx'
-            case 'MATLAB:FileIO:InvalidFid'
-            otherwise
-                keyboard
-                warning(err.message);
-        end
+        handle_file_err(err);
     end
     %% Clear global variables
     clearvars('-global', 'GS', 'GINCHANS', 'GOUTCHANS', 'COUNT',...
@@ -80,4 +69,14 @@ else %session is open, need to clean up
     %% Clear memory of all DAQ related files, release hardware
     daq.reset;
 end
-%clean up
+end
+
+function handle_file_err(err)
+switch err.identifier
+    case 'MATLAB:badfid_mx'
+    case 'MATLAB:FileIO:InvalidFid'
+    otherwise
+        keyboard
+        warning(err.message);
+end
+end
