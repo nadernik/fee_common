@@ -27,7 +27,8 @@ function updated_specgram_quick(signal, Fs, varargin)
 %   'colorMap': default jet(256), colormap to use for spectrogram
 %   See also DISPLAYSPECGRAMQUICK, ELECTRO_SONOGRAM_CLONER
 %   
-%   REQUIRES: FreezeColors: http://www.mathworks.com/matlabcentral/fileexchange/7943-freezecolors---unfreezecolors
+%   REQUIRES (If Matlab 2014a or lower): FreezeColors:
+%   http://www.mathworks.com/matlabcentral/fileexchange/7943-freezecolors---unfreezecolors
 %   getParentFigure
 %   Galen Lynch, 8/22/2014
 options = struct('freqRange', [500 7500], 'startTime', 0, 'nCourse', 1,...
@@ -153,10 +154,16 @@ if ~holdState %Restore hold state at call
 end
 xlim(ud.ax, [times(1), times(end)]);
 ylim(ud.ax, [freqs(1), freqs(end)]);
-cmapCache = colormap();
-axis xy; colormap(ud.ax, ud.cMap);
-freezeColors(ud.ax);%Stop colormap from interacting with others
-colormap(ud.ax, cmapCache);
+axis xy;
+if verLessThan('matlab','8.4.0')
+    cmapCache = colormap();
+    colormap(ud.ax, ud.cMap);
+    freezeColors(ud.ax);%Stop colormap from interacting with others
+    colormap(ud.ax, cmapCache);
+else
+    colormap(ud.ax, ud.cMap);
+end
+
 set(img,'HitTest', 'off');
 set(ud.ax,'children',flipud(get(ud.ax,'children')));%Reorder plots on this axis to place the spectrogram on the bottom (won't cover up other plots)
 ud.hIm = img;

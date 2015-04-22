@@ -370,7 +370,7 @@ if(~dgd.bTrigOnSong(nExper))
 
     %start the recurring song check timer...
     if(isempty(dgd.trigOnSongTimer))
-        dgd.trigOnSongTimer = timer;
+        dgd.trigOnSongTimer = timer();
         set(dgd.trigOnSongTimer,'Name', 'trigOnSong');
         set(dgd.trigOnSongTimer,'TimerFcn','acqgui_timerFcnAcqTrigOnSong(timerfind(''Name'', ''trigOnSong''), [], findobj(''Name'', ''acquisitionGui''))');
         set(dgd.trigOnSongTimer,'Period',1);
@@ -949,14 +949,14 @@ end
 
 %START THE DAQ
 %reset 
-daqreset;
+daq_Quit();
 if(isempty(timerfind('Name','trigOnSong')))
     delete(timerfind('Name','trigOnSong'));
 end
 %parameters
 buffer=15; %Seconds %parameterize
 updateFreq = 4; %Hz %parameterize
-[ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
+[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
 daqSetup.actInSampleRate = actInSampleRate;
 daqSetup.actOutSampleRate = actOutSampleRate;
 daqSetup.buffer = buffer;
@@ -1050,7 +1050,7 @@ if(length(dgd.expers) == 0)
     experStrings{experNdx} = '';
     set(handles.popupExperiments, 'String', experStrings);
     set(handles.popupExperiments, 'Value', 1);
-    daqreset;
+    daq_Quit();
     dgd.ce = 0;
     cla(handles.axesAudio);
     cla(handles.axesSignal);
@@ -1070,14 +1070,14 @@ else
     set(handles.popupExperiments, 'Value', 1);
     dgd.ce = 1;
     %reset 
-    daqreset;
+    daq_Quit();
     if(isempty(timerfind('Name','trigOnSong')))
         delete(timerfind('Name','trigOnSong'));
     end
     %parameters
     buffer= 90; %Seconds %parameterize
     updateFreq = 4; %Hz %parameterize
-    [ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
+    [s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
     daqSetup.actInSampleRate = actInSampleRate;
     daqSetup.actOutSampleRate = actOutSampleRate;
     daqSetup.buffer = buffer;

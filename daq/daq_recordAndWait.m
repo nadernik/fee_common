@@ -40,9 +40,8 @@ function [bStatus, startSamp, endSamp, filenames] = daq_recordAndWait(startSamp,
 %to the existing file.  This can result in unreadable files or
 %discontinuous files, unless used carefully.
 
-
-[bStatus, ss, es, filenames]  = daq_trigger(startSamp, endSamp, filename, channels);
-if(bStatus)
+[bStatus, startSamp, endSamp, filenames]  = daq_record(startSamp, endSamp, filename, channels);
+if any(bStatus)
     daq_waitForRecording(channels);
 end
 

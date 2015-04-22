@@ -12,7 +12,7 @@ while(NPEEK ~= 0)
     pause(.05); 
     n = n + 1;
     if(n == 100)
-        daqreset;
+        daq_Quit();
         error('peek failed');
     end
 end

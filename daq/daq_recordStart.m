@@ -35,5 +35,5 @@ function [bStatus, startSamp, filenames] = daq_recordStart(startSamp, filename, 
 %discontinuous files.
 
 OPEN_ENDED = -2;
-[bStatus,ss,se,filenames] = daq_record(startSamp, OPEN_ENDED, filename, channels);
+[bStatus,startSamp,~,filenames] = daq_record(startSamp, OPEN_ENDED, filename, channels);
 

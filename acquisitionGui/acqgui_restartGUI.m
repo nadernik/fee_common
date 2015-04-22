@@ -30,7 +30,7 @@ if(~isempty(timerfind('Name','trigOnSong')))
     stop(timerfind('Name','trigOnSong'));
     delete(timerfind('Name','trigOnSong'));
 end
-daqreset;
+daq_Quit();
 aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
 
 %stop the restart-timer from trying to restart.  The deed is done.
@@ -42,7 +42,7 @@ status = true;
 
 %close the gui.
 close(guifig);
-daqreset;
+daq_Quit();
 
 %can't pause here, can't just wait, because timers are stopped and deleted
 %asynchronously.  Not sure why matlab does that.

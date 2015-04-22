@@ -13,8 +13,8 @@ function bUpdating = daq_isUpdating
 
 st = dbstack;
 bUpdating = false;
-for(i=1:length(st))
-    if(strcmp(st(i).name,'daq_bufferUpdate') || strcmp(st(i).name,'analoginput'))
+for stackNo = 1:length(st)
+    if strcmp(st(stackNo).name,'daq_bufferUpdate') || strcmp(st(stackNo).name,'Channel.onDataReceived') || strcmp(st(stackNo).name,'@(source,data)obj.onDataReceived()')
         bUpdating = true;
         return;
     end

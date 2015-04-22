@@ -5,6 +5,6 @@ function bRecording = daq_isRecording(channel)
 global BTRIGGER;
 global GINCHANS;
 
-matchannel = find(GINCHANS == channel);
+matchannel = GINCHANS == channel;
 
 bRecording = BTRIGGER(matchannel);
