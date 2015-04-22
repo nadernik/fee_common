@@ -639,19 +639,6 @@ try
             handles.identity{nVect,1}.dbaseEventNdx = eventNdx(ne);
             handles.scalar_features(nVect,1) = duration(ne);
             
-            %compute scalar feature which is number of spikes in 50ms window
-            %around syl onset
-            Premotor{1} = []; 
-            Premotor{2} = []; 
-            for ei = 1:length(dbase.EventTimes)
-                Premotor{ei} = sum((dbase.EventTimes{ei}{1,nFile}>((alignS(ne)-.050*dbase.Fs))) & ...
-                        (dbase.EventTimes{ei}{1,nFile}<(alignS(ne))) & ...
-                        (dbase.EventIsSelected{ei}{1,nFile})'); 
-                    %display([num2str(Premotor{ei}), 'file', num2str(nFile), 'syl', num2str(ne)])
-            end
-
-            
-            
             % sound amplitue (dB) Tatsuo
             filtered_sound = egf_BandPass860to8600(syllAudio,dbase.Fs); %  bandpass from 860 to 8600
             wind = round(0.0025*dbase.Fs); % 2.5 ms sliding window
@@ -665,11 +652,10 @@ try
             Mean_frequency{nVect,1} = features{9}; % also known as gravity center
             Spectral_width{nVect,1} = features{10}; % second-order statistics
             
-            
-            handles.scalar_features(nVect,2:(14 + length(dbase.EventTimes))) = [mean(pi), std(pi), mean(pg), std(pg), mean(ent),std(ent),...
+            handles.scalar_features(nVect,2:14) = [mean(pi), std(pi), mean(pg), std(pg), mean(ent),std(ent),...
                 mean(FM{nVect}),std(FM{nVect}),mean(Mean_frequency{nVect}),std(Mean_frequency{nVect}),...
-                mean(Spectral_width{nVect}), std(Spectral_width{nVect}), clust(ne), Premotor{1}, Premotor{2}];
-            handles.scalar_features(nVect,(14 + length(dbase.EventTimes)) + (1:3)) =  [timeInFile(ne), isi(ne), interval(ne)];
+                mean(Spectral_width{nVect}), std(Spectral_width{nVect}), clust(ne)];
+            handles.scalar_features(nVect,15:17) =  [timeInFile(ne), isi(ne), interval(ne)];
             Pitch{nVect,1} = pi;
             PitchGoodness{nVect,1} = pg;
             Entropy{nVect,1} = ent;
@@ -678,11 +664,7 @@ try
     end    
     handles.scalar_feature_names = {'duration';'mean_pitch';'std_pitch';'mean_pitchGoodness';'std_pitchGoodness';...
         'mean_entropy';'std_entropy';'mean_FM'; 'std_FM';'mean_Mean_frequency';'std_Mean_frequency';...
-        'mean_Spectral_width';'std_Spectral_width';'clust';}; %%% changed to column vector, Tatsuo
-    for ei = 1:length(dbase.EventTimes)
-        handles.scalar_feature_names{end+1} = ['spikesIn50msInterval', dbase.EventSources{ei}]; 
-    end
-    handles.scalar_feature_names((end+1):(end+3)) = {'timeInFile';'isi';'interval';}; 
+        'mean_Spectral_width';'std_Spectral_width';'clust';'timeInFile';'isi';'interval';}; %%% changed to column vector, Tatsuo
     handles.vector_features = {Pitch,PitchGoodness,Entropy,FM,Mean_frequency, Amplitude, Spectral_width}; %%% Tatsuo
     handles.vector_feature_names = {'pitch';'pitchGoodness';'entropy';'FM';'Mean_frequency'; 'Amplitude';...
         'Spectral_width'};  %%% Tatsuo
