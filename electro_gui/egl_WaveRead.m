@@ -1,9 +1,9 @@
-function [data fs dateandtime label props] = egl_WaveRead(filename, loaddata)
+function [data, fs, dateandtime, label, props] = egl_WaveRead(filename, loaddata)
 % ElectroGui file loader
 % Reads wavefiles
 % Extracts date and time information from the file info
 if loaddata == 1
-    [data fs] = wavread(filename);
+    [data, fs] = audioread(filename);
     data = mean(data,2);
     mt = dir(filename);
     dateandtime = datenum(mt(1).date);
