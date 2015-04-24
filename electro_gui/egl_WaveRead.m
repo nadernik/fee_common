@@ -3,7 +3,11 @@ function [data, fs, dateandtime, label, props] = egl_WaveRead(filename, loaddata
 % Reads wavefiles
 % Extracts date and time information from the file info
 if loaddata == 1
-    [data, fs] = audioread(filename);
+    if verLessThan('matlab','8.0.0')
+        [data, fs] = wavread(filename);
+    else
+        [data, fs] = audioread(filename);
+    end
     data = mean(data,2);
     mt = dir(filename);
     dateandtime = datenum(mt(1).date);
