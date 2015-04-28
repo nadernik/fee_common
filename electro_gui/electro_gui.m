@@ -3685,7 +3685,7 @@ for c = 1:length(handles.EventHandles{axnum})
     end
 end
 
-
+%FIXME
 function ClickEventSymbol(hObject, eventdata, handles)
 
 if get(hObject,'parent')==handles.axes_Channel1
@@ -4340,11 +4340,14 @@ tmall = handles.EventTimes{f}(:,filenum);
 tm = handles.EventTimes{f}{g,filenum};
 sel = handles.EventSelected{f}{g,filenum};
 
+eventNumber = cumsum(sel);
 if strcmp(get(handles.menu_EventsFromZoomBox, 'checked'), 'on') && ~isempty(sel)
-    sel = sel & eventInZoomBox(handles, f);
+    isDisplayed = sel & eventInZoomBox(handles, f);
+else
+    isDisplayed = sel;
 end
 
-handles.eventsInViewer = find(sel);
+handles.eventsInViewer = eventNumber(isDisplayed);
 
 if strcmp(get(handles.menu_DisplayValues,'checked'),'on')
     handles.EventWaveHandles = [];
@@ -4352,7 +4355,7 @@ if strcmp(get(handles.menu_DisplayValues,'checked'),'on')
         for c = 1:length(tm)
             mn = max([1 tm(c)-round(handles.EventLims(get(handles.popup_EventList,'value'),1)*handles.fs)]);
             mx = min([length(chan) tm(c)+round(handles.EventLims(get(handles.popup_EventList,'value'),2)*handles.fs)]);
-            if sel(c)==1
+            if isDisplayed(c)==1 %FIXME
                 h = plot(((mn:mx)-tm(c))/handles.fs*1000,chan(mn:mx),'color','k');
                 handles.EventWaveHandles = [handles.EventWaveHandles h];
             end
@@ -4378,7 +4381,7 @@ else
         [feature2 name2] = eval(['ega_' str '(chan,handles.fs,tmall,g,round(handles.EventLims(get(handles.popup_EventList,''value''),:)*handles.fs))']);
 
         for c = 1:length(feature1)
-            if sel(c)==1
+            if isDisplayed(c)==1 %FIXME
                 h = plot(feature1(c),feature2(c),'o','markerfacecolor','k','markeredgecolor','k','markersize',2);
                 handles.EventWaveHandles = [handles.EventWaveHandles h];
             end
@@ -4435,13 +4438,17 @@ end
 
 i = find(handles.EventWaveHandles==hObject);
 sel = handles.EventSelected{f}{g,filenum};
-sel_and_inbox = sel & eventInZoomBox(handles, f);
-plottedevents = find(sel_and_inbox);
-selectedevent = plottedevents(i);
+
+if strcmp(get(handles.menu_EventsFromZoomBox, 'checked'), 'on') && ~isempty(sel)
+    sel = sel & eventInZoomBox(handles, f);
+end
+
+selectedevent = handles.eventsInViewer(i);
 ii = sum(sel(1:selectedevent));
 
+
 if strcmp(get(gcf,'selectiontype'),'normal')%normal click
-    handles = SelectEvent(handles,ii);
+    handles = SelectEvent(handles,selectedevent);
     guidata(hObject, handles);
 elseif strcmp(get(gcf,'selectiontype'),'extend')%Shift click
     set(hObject,'xdata',[],'ydata',[]);
@@ -4456,7 +4463,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function handles = SelectEvent(handles,i)
-
+% handles is the guidata from electro_gui
+% i is the number of the event to select
 if isempty(i)
     return
 end
@@ -4464,8 +4472,8 @@ delete(findobj('parent',handles.axes_Events,'linewidth',2));
 delete(findobj('linestyle','-.'));
 handles.SelectedEvent = i;
 
-if ismember(selectedEventNumber(handles, i), handles.eventsInViewer)
-    ndx = handles.eventsInViewer == selectedEventNumber(handles, i);
+if ismember( i, handles.eventsInViewer)
+    ndx = handles.eventsInViewer == i;
     subplot(handles.axes_Events);
     hold on
     xl = xlim;
@@ -4694,6 +4702,8 @@ for axn = 1:2
 end
 
 set(handles.axes_Events,'xlim',xlb,'ylim',ylb);
+
+handles = UpdateEventBrowser(handles);
 
 
 % --- Executes during object creation, after setting all properties.
