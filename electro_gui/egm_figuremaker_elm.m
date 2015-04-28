@@ -1,6 +1,8 @@
 function handles = egm_figuremaker_elm(handles)
 shg;
-
+filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
+FS = 10; % labels 
+FS_axes = 10; % axis labels
 %h = subplot(2,1,1)
 fs = handles.fs;
 lims = get(handles.axes_Sonogram, 'xlim');
@@ -14,6 +16,18 @@ ind_time = lims(1):1/fs:lims(2);
 song = handles.sound(round(ind_time*fs));
 units = handles.chan1(round(ind_time*fs));
 time = 0:1/fs:(lims(2)-lims(1));
+SegmentTimes = handles.dbase.SegmentTimes{filenum}/handles.fs-lims(1); 
+SelectedSyls = handles.dbase.SegmentIsSelected{filenum}; 
+SegmentNames = handles.dbase.SegmentTitles{filenum}; 
+
+for si = 1:size(SegmentTimes,1)
+    if length(SegmentNames{si})==0
+        SegmentNames{si} = ''; 
+    end
+    if SegmentTimes(si,1) < 0 | SegmentTimes(si,2)>diff(lims)
+        SelectedSyls(si) = 0; 
+    end
+end
 
 %% using chronux. It is prettier this way, but the figures are huge.
 % Thres = -95; % threshold for being in black background
@@ -50,13 +64,32 @@ h = subplot(2,1,1);
 %Thres = -16.2;
 cdata(cdata<handles.SonogramClim(1)) = handles.SonogramClim(1); 
 cdata(cdata>handles.SonogramClim(2)) = handles.SonogramClim(2); 
-imagesc(cdata, 'xdata', tdata, 'ydata', fdata/1000); set(gca, 'ydir', 'normal')
+imagesc(cdata, 'xdata', tdata, 'ydata', fdata/1000); set(gca, 'ydir', 'normal', 'ytick', 2:2:6)
 %surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
-ylabel('Frequency (kHz)')
+ylabel('Frequency (kHz)','fontsize',FS)
 set(gca, 'xtick', [], 'xticklabel', '');
 cmap = jet; 
 cmap(1,:) = zeros(1,3); % background = black
 colormap(cmap);
+
+
+%% adding patches for syllables
+Syls = unique(SegmentNames); 
+sColors = [.5 .5 .5; hsv(length(Syls)-1)]; 
+hold on
+for si = 1:size(SegmentTimes,1)
+    sylID = find(strncmp(SegmentNames{si}, Syls,2));
+    if SelectedSyls(si)
+        patch(SegmentTimes(si,[1 2 2 1 1]), 8+.5*[0 0 1 1 0], sColors(sylID,:), 'EdgeAlpha',0)
+        text(mean(SegmentTimes(si,:)), 8.5, SegmentNames{si}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom','fontsize',FS_axes)
+    end
+end
+set(gca, 'color', 'none')
+ylim([min(fdata/1000) 8.5])
+box off
+set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
+set(gca,'fontsize',FS_axes)
+
 
 %% using MATLAB spectrogram function
 
@@ -79,9 +112,14 @@ colormap(cmap);
 % plot((1:size(handles.sound))/handles.fs, handles.amplitude)
 g = subplot(2,1,2)
 set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren')
-plot(time,units, 'linewidth', 1.5); %mini_max_plot(time, units, 'ax', g)
-xlabel('Time(s)'); ylabel('Voltage (mV)'); axis tight
+plot(time,units, 'linewidth', 1); %mini_max_plot(time, units, 'ax', g)
+xlabel('Time(s)','fontsize',FS); ylabel('Voltage (mV)','fontsize',FS); axis tight
 set(gca, 'ytick', [0 .2], 'yticklabel', {'0', '0.2'})
+
+box off
+
+set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
+set(gca,'fontsize',FS_axes)
 
 linkaxes([h g],'x')
 %xlim([lims(1) lims(2)])

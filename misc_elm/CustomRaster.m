@@ -17,9 +17,13 @@
 % day = '2015-01-30-NIf'; 
 % depth = 's472'; 
 
-bird = '4202'; 
-day = '2013-12-02-NIf'; 
-depth = 's325'; 
+% bird = '4202'; 
+% day = '2013-12-02-NIf'; 
+% depth = 's325'; 
+
+bird = '4238'; 
+day = '2013-12-12-NIf'; 
+depth = 's408'; 
 
 % bird = '4202'; 
 % day = '2013-12-02-NIf'; 
@@ -40,7 +44,7 @@ depth = 's325';
 % day = '2013-12-17-NIf'; 
 % depth = 's213'; 
 
-load(fullfile('Z:\emackev\AcqGui\', bird, day, depth, 'raster'));
+load(fullfile('Z:\emackev\AcqGui\', bird, day, depth, 'rasterB'));
 
 dt = .001; 
 PSTHdt = .005; 
@@ -110,7 +114,7 @@ m = mean([p(2) q(2)+q(4)]);
 gap = p(2) - (q(2)+q(4));
 p(2) = m + gap/(2*ShrinkBy);
 q(4) = m-q(2)-  gap/(2*ShrinkBy);
-%ylim([0 700])
+ylim([0 100])
 set(h, 'pos', p)
 set(g, 'pos', q)
 %%

@@ -235,40 +235,22 @@ try
         error('The vector clust times do not match the segment times in the misc file.');
     end
     
-    % load annotation file too
-    % assumes name of misc file is in the standard format, like
-    % birdname_all_misc_expername.mat
-    hashfilename = strrep(filename,'_all_misc_','_annotation_');
-    hash = aaLoadHashtable(hashfilename);
-    
     %Export the cluster numbers
     MaskIdx = find(strcmp(vcdb.f.sfname,'IsMask'));
     StimIdx = find(strcmp(vcdb.f.sfname,'IsStim'));
     MaskTimeIdx = find(strcmp(vcdb.f.vfname,'maskTime'));
     StimTimeIdx = find(strcmp(vcdb.f.vfname,'stimTime'));
     for nv = 1:length(vcdb.d.v)
-        key = misc.segs(nv).key;
-        element = hash.get(key);
-        idx = misc.segs(nv).absStart == element.segAbsStartTimes;
-        if sum(idx) == 0
-            warning('VectorClust:Export:Mismatch','no matching syllable in annotation for %g',nv)
-        elseif sum(idx) > 1
-            warning('VectorClust:Export:Mismatch','more than one matching syllable in annotation for %g',nv)
-        end
         if(~isnan(vcdb.d.cn(nv)))
             misc.segs(nv).segType = vcdb.d.cn(nv);
-            element.segType(idx) = vcdb.d.cn(nv);
         else
             misc.segs(nv).segType = -1; %the unlabeled indicator for processed annotations..
-            element.segType(idx) = -1;
         end
-        hash.put(key, element);
     end   
     
     %save
     save(filename, 'misc', '-v6');
-    aaSaveHashtable(hashfilename, hash)
-    disp('Export complete!') %%% TO
+    msgbox('Export complete!') %%% TO
 catch
     handles.output = lasterr;
 end

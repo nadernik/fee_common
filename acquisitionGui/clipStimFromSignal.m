@@ -1,6 +1,6 @@
 function stimClips = clipStimFromSignal(sig, fs, stimThreshold, preStimMs, postStimMs, maxStimPeakWidthMs, minStimSpacingSecs)
-samplesPre = preStimMs / 1000 * fs
-samplesPost = postStimMs / 1000 * fs
+samplesPre = preStimMs / 1000 * fs;
+samplesPost = postStimMs / 1000 * fs;
 minSpacingSamples = minStimSpacingSecs * fs;
 maxWidthSamples = maxStimPeakWidthMs / 1000 * fs;
 
