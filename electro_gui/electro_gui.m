@@ -4347,7 +4347,7 @@ else
     isDisplayed = sel;
 end
 
-handles.eventsInViewer = eventNumber(isDisplayed);
+handles.eventsInViewer = eventNumber(logical(isDisplayed));
 
 if strcmp(get(handles.menu_DisplayValues,'checked'),'on')
     handles.EventWaveHandles = [];
