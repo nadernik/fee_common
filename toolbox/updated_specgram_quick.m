@@ -152,7 +152,11 @@ end
 if ~holdState %Restore hold state at call
     hold(ud.ax, 'off');
 end
-xlim(ud.ax, [times(1), times(end)]);
+if numel(times) > 1
+    xlim(ud.ax, [times(1), times(end)]);
+else
+    xlim(ud.ax, [times(1)-eps, times(end)+eps]);
+end
 ylim(ud.ax, [freqs(1), freqs(end)]);
 axis xy;
 if verLessThan('matlab','8.4.0')
@@ -180,9 +184,8 @@ ud = get(src, 'UserData');
 axes(ud.ax);
 mouseMode = get(gcf, 'SelectionType');
 clickLocation = get(ud.ax, 'CurrentPoint');
-
 if(strcmp(mouseMode, 'alt'))
-    rect = rbbox;
+    rbbox();
     endPoint = get(gca,'CurrentPoint');
     point1 = clickLocation(1,1:2);              % extract x and y
     point2 = endPoint(1,1:2);
@@ -192,19 +195,19 @@ if(strcmp(mouseMode, 'alt'))
     shiftNdx = shiftNdx - min(0, ud.startndx + shiftNdx -1);
     ud.startndx = ud.startndx + shiftNdx;
     ud.endndx = ud.endndx + shiftNdx;
-elseif(strcmp(mouseMode, 'open'))
+elseif(strcmp(mouseMode, 'open') || strcmp(mouseMode, 'extend'))
     %double click to zoom out
     ud.startndx = 1;
     ud.endndx = length(ud.signal);
 elseif(strcmp(mouseMode, 'normal'))
     %left click to zoom in.
-    rect = rbbox;
+    rbbox();
     endPoint = get(gca,'CurrentPoint');
     point1 = clickLocation(1,1:2);              % extract x and y
     point2 = endPoint(1,1:2);
     p1 = min(point1,point2);             % calculate locations
     offset = abs(point1-point2);         % and dimensions
-    if(offset(1)/diff(xlim) < .001)
+    if(offset(1)/diff(xlim) < .001) %Very small selection
         quarter = round((ud.endndx - ud.startndx) / 4);
         midndx = round((p1(1) - ud.startTime)*ud.Fs + 1);
         ud.startndx = max(1,midndx - quarter);

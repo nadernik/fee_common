@@ -15,7 +15,7 @@ options = struct('lineWidth', .5, 'lineColor', [0,0,0]);
 options = gl_parse_args(options, varargin);
 
 assert(ishghandle(axisHandle), 'axesHandle must be a matlab handle');
-assert(yBase<=yHeight, 'non sensical height parameters');
+assert(yHeight > 0, 'non sensical height parameters');
 holdStatus = ishold(axisHandle);
 nPoint = length(rasterTimes);
 xx = nan(nPoint*3, 1);
