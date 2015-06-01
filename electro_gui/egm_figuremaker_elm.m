@@ -1,8 +1,8 @@
 function handles = egm_figuremaker_elm(handles)
 shg;
 filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
-FS = 10; % labels 
-FS_axes = 10; % axis labels
+FS = 8; % labels 
+FS_axes = 8; % axis labels
 %h = subplot(2,1,1)
 fs = handles.fs;
 lims = get(handles.axes_Sonogram, 'xlim');
@@ -61,6 +61,8 @@ fdata = get(temp, 'ydata');
 tdata = get(temp, 'xdata'); tdata = time; 
 fig = figure; 
 h = subplot(2,1,1); 
+tmp = suptitle([handles.path_name ' #' num2str(filenum)])
+set(tmp, 'fontsize', FS);
 %Thres = -16.2;
 cdata(cdata<handles.SonogramClim(1)) = handles.SonogramClim(1); 
 cdata(cdata>handles.SonogramClim(2)) = handles.SonogramClim(2); 
@@ -80,7 +82,7 @@ hold on
 for si = 1:size(SegmentTimes,1)
     sylID = find(strncmp(SegmentNames{si}, Syls,2));
     if SelectedSyls(si)
-        patch(SegmentTimes(si,[1 2 2 1 1]), 8+.5*[0 0 1 1 0], sColors(sylID,:), 'EdgeAlpha',0)
+        patch(SegmentTimes(si,[1 2 2 1 1]), 8+.5*[0 0 1 1 0], sColors(sylID,:), 'Edgecolor','none')
         text(mean(SegmentTimes(si,:)), 8.5, SegmentNames{si}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom','fontsize',FS_axes)
     end
 end
@@ -112,8 +114,10 @@ set(gca,'fontsize',FS_axes)
 % plot((1:size(handles.sound))/handles.fs, handles.amplitude)
 g = subplot(2,1,2)
 set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren')
-plot(time,units, 'linewidth', 1); %mini_max_plot(time, units, 'ax', g)
-xlabel('Time(s)','fontsize',FS); ylabel('Voltage (mV)','fontsize',FS); axis tight
+plot(time,units, 'linewidth', 1.5); %mini_max_plot(time, units, 'ax', g)
+xlabel('Time(s)','fontsize',FS); 
+ylabel(get(get(handles.axes_Channel1, 'ylabel'), 'string'),'fontsize',FS); 
+axis tight
 set(gca, 'ytick', [0 .2], 'yticklabel', {'0', '0.2'})
 
 box off
@@ -135,5 +139,5 @@ set(h, 'pos', p)
 set(g, 'pos', q)
 %%
 
-set(gcf, 'Color', [1 1 1], 'papersize', [6 3], 'paperposition', [0 0 6 3]); 
+set(gcf, 'Color', [1 1 1], 'papersize', [4 2], 'paperposition', [0 0 4 2]); 
 %print fig -dmeta -r300
