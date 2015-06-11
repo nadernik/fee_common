@@ -1,4 +1,4 @@
-for row = 13:14
+for row = 15 % 
     display(row)
     clearvars -except row
     %% load and compile data 
@@ -38,19 +38,20 @@ for row = 13:14
             'Mov', 'VIDEOdata', '-v7.3')
         display('saved data')
     else
-        filename = fullfile('C:\Users\emackev\Documents\MATLAB\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
         load(char(XLS.textdata.Sheet1(row,strmatch('MatlabDatafilename', Columns)))); 
+        filename = fullfile('C:\Users\emackev\Documents\MATLAB\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
     end
     display('compiled data')
     %% make some ROIs (or, skip this and load previous ROIs)
     figure(3); clf; colormap gray;shg
     % smooth across time a little... or not -- takes a long time
-%   sm = arrayfun(@smooth, VIDEOdata);
-    smallVdata = VIDEOdata(1:100,:,:); 
+    smallVdata = VIDEOdata(1:min(100, size(VIDEOdata,1)),:,:); 
     mSubTime = bsxfun(@minus,smallVdata,median(smallVdata,1)); 
     mSubPixel = bsxfun(@minus, mSubTime, median(median(mSubTime,2),3)); 
     plotForRois = squeeze(prctile(mSubPixel,99, 1)); % max proj
     plotForRois((plotForRois-mean(plotForRois(:)))>4*std(plotForRois(:))) = mean(plotForRois(:)); % throw out noise/dead pixels
+    
+%     
     imagesc(plotForRois)
     axis equal; axis off
     hold on
@@ -69,10 +70,9 @@ for row = 13:14
     end
     ROIx = x; 
     ROIy = y; 
-    %    scatter(ROIx,ROIy, 5+DFF(:,Vind).*(DFF(:,Vind)>0)*60000, lines(length(ROIx))); 
     %% save ROIs (or load old ones)
     %save C:\Users\emackev\Documents\MATLAB\FirstCalciumImagingROIs ROIx ROIy
-    
+    %save C:\Users\emackev\Documents\MATLAB\June8ROIs3 ROIx ROIy
     filenameroi = char(XLS.textdata.Sheet1(row,strmatch('ROIfilename', Columns))); 
     load(filenameroi); 
     
@@ -105,6 +105,7 @@ for row = 13:14
     F = zeros(length(ROIx), nFrames);
     F0 = zeros(length(ROIx), nFrames);
     DFF = zeros(length(ROIx), nFrames);
+    DFFmedFil = zeros(length(ROIx), nFrames);
 
     % Calculate the F(t) for each ROI
     for roi = 1:length(ROIx)
@@ -132,6 +133,7 @@ for row = 13:14
         w = exp(-(1:fi)/(tau0*VIDEOfs)); 
         w = repmat(w(:)', length(ROIx),1); 
         DFF(:,fi) = sum(R(:,fi:-1:1).*w,2)./sum(w,2); 
+        DFFmedFil(:,fi) = median(R(:,abs((1:nFrames)-fi)<(tau0*VIDEOfs)),2);
     end
     display('calculated deltaF/F')
     %% plot deltaF/F (or raw F) for each ROI
@@ -174,7 +176,7 @@ for row = 13:14
     hold on
     for roi = 1:length(ROIx)
         %plot(tMovie,F(roi,:)- F(roi,1) + (roi-1)*yspace*3e6, 'color', roicolors(roi,:))
-        plot(tMovie,DFF(roi,:)+(roi-1)*yspace, 'color', roicolors(roi,:))
+        plot(tMovie,DFFmedFil(roi,:)+(roi-1)*yspace, 'color', roicolors(roi,:))
     end
     box off; axis tight
     set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
@@ -188,7 +190,7 @@ for row = 13:14
     display('saved figure')
     %% Making movie
 
-    plotROIs = 1; 
+    plotROIs = 0; 
 
     figure(23); shg; set(gcf, 'color', [1 1 1])
 
