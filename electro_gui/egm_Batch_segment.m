@@ -32,7 +32,7 @@ for j = 1:length(fls) % counter for files to be segmented
         break
     end
     
-    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(c).name '''],1)']);
+    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(c).name '''],1)']);
         
     % make snd a column vector
     if size(snd,2)>size(snd,1)

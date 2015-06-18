@@ -23,7 +23,7 @@ function varargout = vectorClust(varargin)
 
 % Edit the above text to modify the response to help vectorClust
 
-% Last Modified by GUIDE v2.5 12-Apr-2013 15:44:54
+% Last Modified by GUIDE v2.5 02-Jun-2015 16:25:57
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
