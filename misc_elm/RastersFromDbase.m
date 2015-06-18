@@ -60,9 +60,9 @@ DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Shee
 
 rows = find(SINGING&PUTPROJ);
 SortBy = 'elecpos'; % 'age' or 'elecpos' or 'latency'
-p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
-p.sylName = {'A'}; % specify sylable to align to, Only used when p.sylType = 'specified'
-p.PSTHaxisMax = []; % [] to leave automatic
+p.sylType = 'tutor'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+p.sylName = {'C'}; % specify sylable to align to, Only used when p.sylType = 'specified'
+p.PSTHaxisMax = 50; % [] to leave automatic
 p.alignTo = 'onset'; 
 p.XLS = XLS; 
 p.rasterRange = [-.5 .5];
@@ -77,7 +77,7 @@ p.papersize = 2*[3.5 2.5];
 p.fontsize = 2*6; 
 
 % to plot just one row
-p.makeFig = 1; p.MaxToPlot = 100; analyzeRow(236, p, 'PSTH'); p.makeFig = 0;
+p.makeFig = 1; p.MaxToPlot = 100; analyzeRow(33, p, 'PSTH'); p.makeFig = 0;
 %% calculating reliability and latency for each row. Takes 20 seconds. 
 
 p.Nsigma = 5; % must exceed mean by Nsigma*sigma to be considered 'reliable'
