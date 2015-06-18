@@ -1,4 +1,4 @@
-for row = 15 % 
+for row = 39 % 
     display(row)
     clearvars -except row
     %% load and compile data 
@@ -32,14 +32,14 @@ for row = 15 %
             VIDEOdata(i,:,:) = imread([filename '.tif'], i);
         end
         toc
-        filename = fullfile('C:\Users\emackev\Documents\MATLAB\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
+        filename = fullfile('Q:\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
         save(filename, 'SOUNDdata', 'SOUNDfs', 'SOUNDabsstarttime', 'SOUNDdur',...
             'VIDEOabsstarttime', 'VIDEOfs', 'tiffInfo', 'nFrames', 'VIDEOdur', ...
             'Mov', 'VIDEOdata', '-v7.3')
         display('saved data')
     else
         load(char(XLS.textdata.Sheet1(row,strmatch('MatlabDatafilename', Columns)))); 
-        filename = fullfile('C:\Users\emackev\Documents\MATLAB\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
+        filename = fullfile('Q:\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
     end
     display('compiled data')
     %% make some ROIs (or, skip this and load previous ROIs)
@@ -72,7 +72,7 @@ for row = 15 %
     ROIy = y; 
     %% save ROIs (or load old ones)
     %save C:\Users\emackev\Documents\MATLAB\FirstCalciumImagingROIs ROIx ROIy
-    %save C:\Users\emackev\Documents\MATLAB\June8ROIs3 ROIx ROIy
+    %save Q:\GCaMP\June16ROIs ROIx ROIy
     filenameroi = char(XLS.textdata.Sheet1(row,strmatch('ROIfilename', Columns))); 
     load(filenameroi); 
     
@@ -90,7 +90,7 @@ for row = 15 %
         ys = ROIy(roi) + [-20 -20 20 20 -20]; 
         patch(xs, ys, roicolors(roi,:), 'edgecolor', roicolors(roi,:), 'facecolor', 'none'); 
     end
-    savefig(fullfile('C:\Users\emackev\Documents\MATLAB\GCaMP', ['ROIs5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
+    savefig(fullfile('Q:\GCaMP', ['ROIs5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
 
     %% calculating delta F over F (following Jia et al Nature Protocols 2011)
 
@@ -186,7 +186,7 @@ for row = 15 %
     set(gcf, 'papersize', [5 8], 'paperposition',[0 0 5 8])
     shg
 
-    savefig(fullfile('C:\Users\emackev\Documents\MATLAB\GCaMP', ['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
+    savefig(fullfile('Q:\GCaMP', ['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
     display('saved figure')
     %% Making movie
 
@@ -199,7 +199,7 @@ for row = 15 %
     meanVIDEO = squeeze(median(VIDEOdata,1)); 
 
     %
-    folder = 'C:\Users\emackev\Documents\MATLAB\GCaMP';
+    folder = 'Q:\GCaMP';
     timestamp = datestr(now, 'dd-mmm-yyyy-HH-MM-SS');
     filename = ['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS') 'Saved' timestamp];
     obj = vision.VideoFileWriter(fullfile(folder, [filename, '.avi']), 'AudioInputPort', 1);%,  'fps', 20);
