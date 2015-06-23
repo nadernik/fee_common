@@ -1,4 +1,4 @@
-for row = 39 % 
+for row = 65:70;
     display(row)
     clearvars -except row
     %% load and compile data 
@@ -38,41 +38,45 @@ for row = 39 %
             'Mov', 'VIDEOdata', '-v7.3')
         display('saved data')
     else
-        load(char(XLS.textdata.Sheet1(row,strmatch('MatlabDatafilename', Columns)))); 
+        filename1 = char(XLS.textdata.Sheet1(row,strmatch('InscopixFilename', Columns))); 
+        VIDEOabsstarttime = datenum(filename1((end-14):end), 'yyyymmdd_HHMMSS');
         filename = fullfile('Q:\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
+        if 1~=XLS.data.Sheet1(row,strmatch('MatlabDatafilename', Columns)) 
+            filename = char(XLS.textdata.Sheet1(row,strmatch('MatlabDatafilename', Columns))); 
+        end
+        load(filename); 
     end
     display('compiled data')
     %% make some ROIs (or, skip this and load previous ROIs)
     figure(3); clf; colormap gray;shg
-    % smooth across time a little... or not -- takes a long time
-    smallVdata = VIDEOdata(1:min(100, size(VIDEOdata,1)),:,:); 
+    smallVdata = VIDEOdata(1:min(150, size(VIDEOdata,1)),:,:); % just beginning so it takes less time
     mSubTime = bsxfun(@minus,smallVdata,median(smallVdata,1)); 
     mSubPixel = bsxfun(@minus, mSubTime, median(median(mSubTime,2),3)); 
     plotForRois = squeeze(prctile(mSubPixel,99, 1)); % max proj
     plotForRois((plotForRois-mean(plotForRois(:)))>4*std(plotForRois(:))) = mean(plotForRois(:)); % throw out noise/dead pixels
     
 %     
-    imagesc(plotForRois)
-    axis equal; axis off
-    hold on
-    clicking = 1; 
-    x = []; 
-    y = []; 
-    i = 1; 
-    while clicking
-        [x(i),y(i)] = ginput(1);
-        plot(x(i),y(i), 'r.') 
-        if x(i)<0 | y(i)<0
-            x = x(1:end-1); y = y(1:end-1); 
-            clicking = 0;
-        end
-        i = i+1;
-    end
-    ROIx = x; 
-    ROIy = y; 
+%     imagesc(plotForRois)
+%     axis equal; axis off
+%     hold on
+%     clicking = 1; 
+%     x = []; 
+%     y = []; 
+%     i = 1; 
+%     while clicking
+%         [x(i),y(i)] = ginput(1);
+%         plot(x(i),y(i), 'r.') 
+%         if x(i)<0 | y(i)<0
+%             x = x(1:end-1); y = y(1:end-1); 
+%             clicking = 0;
+%         end
+%         i = i+1;
+%     end
+%     ROIx = x; 
+%     ROIy = y; 
     %% save ROIs (or load old ones)
     %save C:\Users\emackev\Documents\MATLAB\FirstCalciumImagingROIs ROIx ROIy
-    %save Q:\GCaMP\June16ROIs ROIx ROIy
+    %save Q:\GCaMP\June19ROIs ROIx ROIy
     filenameroi = char(XLS.textdata.Sheet1(row,strmatch('ROIfilename', Columns))); 
     load(filenameroi); 
     
@@ -214,7 +218,7 @@ for row = 39 %
         set(gca, 'ydir', 'reverse')
         if Vind>0 & Vind<=nFrames
             % If doing median
-            clims = [0 200];
+            clims = [-100 200];
             imagesc(squeeze(VIDEOdata(Vind,:,:))-meanVIDEO, clims)
             hold on
             umPerPixel = 900/1440; 
