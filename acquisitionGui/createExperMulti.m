@@ -81,7 +81,7 @@ catch
         handles.val.(sprintf('editSamprate%g', ch)) = '40000';
     end
     
-    handles.val.editRootdir = 'c:\stetner\data';
+    handles.val.editRootdir = 'C:\Users\emackev\Documents\MATLAB\AcqGui2';
 end
 
 update_display(handles)
