@@ -59,7 +59,7 @@ set(handles.popup_HistCount,'position',get(handles.popup_PSTHCount,'position'));
     
 handles.BackupHandles = [];
 
-if length(varargin)==1
+if length(varargin) >= 1
     % Copy ElectroGui handles
     handles.egh = varargin{1};
     handles.BackupHandles = handles.egh;
@@ -236,7 +236,12 @@ function varargout = egm_Sorted_rasters_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = handles.BackupHandles;
+if nargout >= 1
+    varargout{1} = handles.BackupHandles;
+end
+if nargout >= 2
+    varargout{2} = handles.output % handle to the figure
+end
 
 
 % --- Executes on selection change in popup_TriggerSource.

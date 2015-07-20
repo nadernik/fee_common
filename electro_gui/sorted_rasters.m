@@ -2,26 +2,30 @@ function sorted_rasters(dbase, varargin)
 
 %eg = openfig('electro_gui');
 eg = electro_gui;
-handles = guidata(eg);
-electro_gui('push_Open_Callback', handles.push_Open, [], handles)
-
-%MacrosMenuclick
-handles = guidata(eg);
-macroNames = get(handles.menu_Macros, 'label');
-hObject = handles.menu_Macros(strcmp(macroNames, 'Sorted_rasters')); % menu item corresponding to to Sorted_rasters
-electro_gui('MacrosMenuclick', hObject, [], handles)
-
-
-% f = find(handles.menu_Macros==hObject);
-% if isempty(f)
-%     warning('Could not find the appropriate macro')
-%     keyboard()
-% end
-% mcr = get(handles.menu_Macros(f),'label');
-% handles = eval(['egm_' mcr '(handles)']);
+egh = guidata(eg);
+electro_gui('push_Open_Callback', egh.push_Open, [], egh)
+egh = guidata(eg);
+egh.dbase = electro_gui('GetDBase', egh);
+[~, sr] = egm_Sorted_rasters(egh);
+srcallback(sr, 'push_GenerateRaster_Callback', 'push_GenerateRaster')
+% fcnname = 'push_GenerateRaster_Callback'; %%%FIXME
+% objname = 'push_GenerateRaster'; %%%FIXME
 
 
-%h = egm_Sorted_rasters(handles, 'ReturnFigureHandle')
+function srcallback(sr, fcnname, objname)
+%SRCALLBACK Call callback from egm_Sorted_rasters.m
+%
+%Usage:
+%    SRCALLBACK(SR, FCNNAME, OBJNAME)
+%
+%SR is the handle to the sorted rasters figure
+%FCNNAME is the name of the function to call
+%OBJNAME is the name of the object to pass to the function
+
+srh = guidata(sr);
+hObject = srh.(objname);
+egm_Sorted_rasters(fcnname, hObject, [], srh);
+
 
 
 
