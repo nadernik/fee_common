@@ -4,6 +4,18 @@ function sorted_rasters(dbase, varargin)
 % Time warping - because no one knows how to use it
 % Selected files only - because need to have electro_gui open
 % Continuous function - because menu option isn't there? need electro_gui?
+% Deleting events - beacuse this is only for when you make a mistake
+% When hold is on, can still change disabled controls. This is dangerous.
+% Select triggers button - because no one knows what it does
+% PPT export - because it doesn't work on my computer
+
+% things that will require editing egm_Sorted_rasters.m
+%   remove overlaps on opening
+
+%%%TODO
+% Export to MATLAB (triginfo)
+% Export figure? What is the output of this function?
+
 
 
 %% Create sorted rasters figure if not passed a handle to it
@@ -60,14 +72,48 @@ addParameter(p, 'FilterByNumberOfEvents',    unlimited, isFilterLimits)
 addParameter(p, 'FilterByIsInEvent',         unlimited, isFilterLimits)
 
 addParameter(p, 'BackgroundColor', [1 1 1])
+addParameter(p, 'Hold', 'off')
+addParameter(p, 'SkipSorting', false)
 
+% Window
+addParameter(p, 'LockLimitsToTrigger', true)
+addParameter(p, 'ExcludePartialWindows', true)
+addParameter(p, 'ExcludePartialEvents', false)
+addParameter(p, 'WindowLimits', [0.15 0.15], isFilterLimits)
+addParameter(p, 'StartReference', 'Current offset')
+addParameter(p, 'StopReference', 'Current offset')
 
+% Exporting
+addParameter(p, 'ExportHeightUnits', 'Absolute')
+addParameter(p, 'ExportWidthUnits', 'Absolute')
+addParameter(p, 'ExportPSTHHeight', 2)
+addParameter(p, 'ExportHistHeight', 2)
+addParameter(p, 'ExportInterval', 0.25)
+addParameter(p, 'ExportResolution', 300);
+addParameter(p, 'ExportWidth', 6);
+addParameter(p, 'ExportHeight', 4);
 
+% Sorting
+addParameter(p, 'PrimarySortBy', 'Trigger duration')
+addParameter(p, 'PrimarySortDirection', 'ascending')
+addParameter(p, 'PrimarySortGroupLabels', false)
+addParameter(p, 'SecondarySortBy', 'Absolute time')
+addParameter(p, 'SecondarySortDirection', 'ascending')
 
-parse(p, varargin)
+% Raster
+defaultRaster(1).Name
+defaultRaster(1).Include
+defaultRaster(1).Continuous
+defaultRaster(1).Color
+defaultRaster(1).Param
+addParameter(p, 'RasterElements', defaultRaster)
+
+parse(p, varargin{:})
 r = p.Results;
 
 %% Set things
+setHold(h, r.Hold)
+
 setFileRange(h, r.FileRange)
 setTriggerSource(h, r.TriggerSource)
 setEventSource(h, r.EventSource)
@@ -95,6 +141,29 @@ setFiltering(h, 'Number of events',        r.FilterByNumberOfEvents)
 setFiltering(h, 'Is in event',             r.FilterByIsInEvent)
 
 setBackgroundColor(h, r.BackgroundColor)
+setSkipSorting(h, r.SkipSorting)
+setLockLimitsToTrigger(h, r.LockLimitsToTrigger)
+setExcludePartialWindows(h, r.ExcludePartialWindows)
+setExcludePartialEvents(h, r.ExcludePartialEvents)
+setWindowLimits(h, r.WindowLimits)
+setStartReference(h, r.StartReference)
+setStopReference(h, r.StopReference)
 
+% Exporting
+setExportHeightUnits(h, r.ExportHeightUnits)
+setExportWidthUnits(h, r.ExportWidthUnits)
+setExportPSTHHeight(h, r.ExportPSTHHeight)
+setExportHistHeight(h, r.ExportHistHeight)
+setExportInterval(h, r.ExportInterval)
+setExportResolution(h, r.ExportResolution)
+setExportWidth(h, r.ExportWidth)
+setExportHeight(h, r.ExportHeight)
 
+% Sorting
+setPrimarySortBy(h, r.PrimarySortBy)
+setPrimarySortDirection(h, r.PrimarySortDirection)
+setPrimarySortGroupLabels(h, r.PrimarySortGroupLabels)
+setSecondarySortBy(h, r.SecondarySortBy)
+setSecondarySortDirection(h, r.SecondarySortDirection)
 
+% Raster
