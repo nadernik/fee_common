@@ -1,4 +1,4 @@
-function sorted_rasters(dbase, varargin)
+function varargout = sorted_rasters(dbase, varargin)
 
 % NOT IMPLEMENTED:
 % Time warping - because no one knows how to use it
@@ -8,6 +8,8 @@ function sorted_rasters(dbase, varargin)
 % When hold is on, can still change disabled controls. This is dangerous.
 % Select triggers button - because no one knows what it does
 % PPT export - because it doesn't work on my computer
+% Auto color by label - because not sure if needed and woudl be hard to
+%    specify which things should be autocolored
 
 % things that will require editing egm_Sorted_rasters.m
 %   remove overlaps on opening
@@ -101,11 +103,11 @@ addParameter(p, 'SecondarySortBy', 'Absolute time')
 addParameter(p, 'SecondarySortDirection', 'ascending')
 
 % Raster
-defaultRaster(1).Name
-defaultRaster(1).Include
-defaultRaster(1).Continuous
-defaultRaster(1).Color
-defaultRaster(1).Param
+defaultRaster(1).Name = 'Current trigger onset';
+defaultRaster(1).Include = 1;
+defaultRaster(1).Continuous = 1;
+defaultRaster(1).Color = [1 0 0];
+defaultRaster(1).Param = 1;
 addParameter(p, 'RasterElements', defaultRaster)
 
 parse(p, varargin{:})

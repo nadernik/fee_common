@@ -2837,15 +2837,21 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in push_PlotColor.
-function push_PlotColor_Callback(hObject, eventdata, handles)
+function push_PlotColor_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_PlotColor (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 str = get(handles.list_Plot,'string');
 val = get(handles.list_Plot,'value');
-query = [str{val}(26:end-14) ' color'];
-c = uisetcolor(handles.PlotColor(val,:),query);
+
+if nargin < 4
+    query = [str{val}(26:end-14) ' color'];
+    c = uisetcolor(handles.PlotColor(val,:),query);
+else
+    c = varargin{1};
+end
+
 if length(c)<3
     return
 end
@@ -2918,7 +2924,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in push_PlotWidth.
-function push_PlotWidth_Callback(hObject, eventdata, handles)
+function push_PlotWidth_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_PlotWidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2927,21 +2933,31 @@ str = get(handles.list_Plot,'string');
 val = get(handles.list_Plot,'value');
 
 if strcmp(get(handles.push_PlotWidth,'string'),'Width')
-    query = [str{val}(26:end-14) ' line width'];
-    answer = inputdlg(query,'Line width',1,{num2str(handles.PlotLineWidth(val))});
-    if isempty(answer)
-        return
+    if nargin < 4
+        query = [str{val}(26:end-14) ' line width'];
+        answer = inputdlg(query,'Line width',1,{num2str(handles.PlotLineWidth(val))});
+        if isempty(answer)
+            return
+        end
+        wdth = str2num(answer{1});
+    else
+        wdth = varargin{1};
     end
 
-    handles.PlotLineWidth(val) = str2num(answer{1});
+    handles.PlotLineWidth(val) = wdth;
 else
-    query = [str{val}(26:end-14) ' transparency'];
-    answer = inputdlg(query,'Transparency',1,{num2str(handles.PlotAlpha(val))});
-    if isempty(answer)
-        return
+    if nargin < 4
+        query = [str{val}(26:end-14) ' transparency'];
+        answer = inputdlg(query,'Transparency',1,{num2str(handles.PlotAlpha(val))});
+        if isempty(answer)
+            return
+        end
+        alpha = str2num(answer{1});
+    else
+        alpha = varargin{1};
     end
 
-    handles.PlotAlpha(val) = str2num(answer{1});
+    handles.PlotAlpha(val) = alpha;
 end
 
 if isempty(handles.PlotHandles{val})

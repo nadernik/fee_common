@@ -2,7 +2,17 @@ function setRasterElement(h, elem)
 
 % Select the raster element in the list
 handles = guidata(h);
-val = popupLookup(handles.list_Plot, elem.Name);
+% In this list box, all of the entries have HTML tags to control the text
+% color. Extract the text from the HTML and compare it to elem.Name
+html = get(handles.list_Plot, 'String');
+str = cell(size(html));
+for ii = 1:length(html)
+    str{ii} = html{ii}(26:end-14);
+end
+val = find(strcmp(elem.Name, str));
+if isempty(val)
+    error('Invalid raster element name: ''%s''', elem.Name)
+end
 set(handles.list_Plot, 'Value', val)
 egm_Sorted_rasters('list_Plot_Callback', handles.list_Plot, [], handles)
 
@@ -23,4 +33,11 @@ if elem.Continuous == true
 end
 
 % Set color
+handles = guidata(h);
+egm_Sorted_rasters('push_PlotColor_Callback', ...
+    handles.push_PlotColor, [], handles, elem.Color)
 
+% Set parameter (width or transparency)
+handles = guidata(h);
+egm_Sorted_rasters('push_PlotWidth_Callback', ...
+    handles.push_PlotWidth, [], handles, elem.Param)
