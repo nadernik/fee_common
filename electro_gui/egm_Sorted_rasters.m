@@ -3726,12 +3726,14 @@ end
 
 
 % --- Executes on button press in push_PSTHBinSize.
-function push_PSTHBinSize_Callback(hObject, eventdata, handles)
+function push_PSTHBinSize_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_PSTHBinSize (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 if strcmp(get(handles.push_HistHoriz,'fontweight'),'bold')
+    % If PSTH selected
+    
     str = get(handles.popup_PSTHUnits,'string');
     val = get(handles.popup_PSTHUnits,'value');
     str = str{val};
@@ -3741,7 +3743,20 @@ if strcmp(get(handles.push_HistHoriz,'fontweight'),'bold')
         val = val + 3;
     end
     
-    answer = inputdlg({'PSTH bin size (sec)','Smoothing window (# of bins)',['Min ' str],['Max ' str]},'Options',1,{num2str(handles.PSTHBinSize),num2str(handles.PSTHSmoothingWindow),num2str(handles.PSTHYLim(val,1)),num2str(handles.PSTHYLim(val,2))});
+    if nargin < 4
+        prompt{ 1} = 'PSTH bin size (sec)';
+        default{1} = num2str(handles.PSTHBinSize);
+        prompt{ 2} = 'Smoothing window (# of bins)';
+        default{2} = num2str(handles.PSTHSmoothingWindow);
+        prompt{ 3} = ['Min ' str];
+        default{3} = num2str(handles.PSTHYLim(val,1));
+        prompt{ 4} = ['Max ' str];
+        default{4} = num2str(handles.PSTHYLim(val,2));
+        answer = inputdlg(prompt, 'Options', 1, default);
+    else
+        answer = varargin{1};
+    end
+    
     if isempty(answer)
         return
     end
@@ -3754,7 +3769,7 @@ if strcmp(get(handles.push_HistHoriz,'fontweight'),'bold')
     if get(handles.radio_PSTHManual,'value')==1
         set(handles.axes_PSTH,'ylim',handles.PSTHYLim(val,:));
     end
-else
+else % Vert. selected
     str = get(handles.popup_HistUnits,'string');
     valm = get(handles.popup_HistUnits,'value');
     strm = str{valm};
@@ -3770,7 +3785,25 @@ else
         val = 2;
     end
     str = {'trials','sec'};
-    answer = inputdlg({['Histogram bin size (' str{val} ')'],'Smoothing window (# of bins)','ROI start (sec)','ROI stop (sec)',['Min ' strm],['Max ' strm]},'Options',1,{num2str(handles.HistBinSize(val)),num2str(handles.HistSmoothingWindow),num2str(handles.ROILim(1)),num2str(handles.ROILim(2)),num2str(handles.HistYLim(val,1)),num2str(handles.HistYLim(val,2))});
+    
+    if nargin < 4
+        prompt{ 1} = ['Histogram bin size (' str{val} ')'];
+        default{1} = num2str(handles.HistBinSize(val));
+        prompt{ 2} = 'Smoothing window (# of bins)';
+        default{2} = num2str(handles.HistSmoothingWindow);
+        prompt{ 3} = 'ROI start (sec)';
+        default{3} = num2str(handles.ROILim(1));
+        prompt{ 4} = 'ROI stop (sec)';
+        default{4} = num2str(handles.ROILim(2));
+        prompt{ 5} = ['Min ' strm];
+        default{5} = num2str(handles.HistYLim(val,1));
+        prompt{ 6} = ['Max ' strm];
+        default{6} = num2str(handles.HistYLim(val,2));
+        answer = inputdlg(prompt,'Options',1,default);
+    else
+        answer = varargin{1};
+    end
+    
     if isempty(answer)
         return
     end

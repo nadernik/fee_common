@@ -17,6 +17,9 @@ function varargout = sorted_rasters(dbase, varargin)
 %%%TODO
 % Export to MATLAB (triginfo)
 % Export figure? What is the output of this function?
+% Trial height
+% Time axis
+% Y axis
 
 
 
@@ -110,6 +113,21 @@ defaultRaster(1).Color = [1 0 0];
 defaultRaster(1).Param = 1;
 addParameter(p, 'RasterElements', defaultRaster)
 
+% Histograms
+addParameter(p, 'PsthShow', true)
+addParameter(p, 'PsthBinSize', 0.01)
+addParameter(p, 'PsthYLim', 'Auto')
+addParameter(p, 'PsthSmoothing', 1)
+addParameter(p, 'PsthYUnits', 'Rate (Hz)')
+addParameter(p, 'PsthCount', 'Onsets')
+
+addParameter(p, 'VerticalHistogramShow', true)
+addParameter(p, 'VerticalHistogramBinSize', 0.01)
+addParameter(p, 'VerticalHistogramYLim', 'Auto')
+addParameter(p, 'VerticalHistogramSmoothing', 1)
+addParameter(p, 'VerticalHistogramYUnits', 'Rate (Hz)')
+addParameter(p, 'VerticalHistogramCount', 'Onsets')
+addParameter(p, 'VerticalHistogramROI', [-Inf, Inf])
 parse(p, varargin{:})
 r = p.Results;
 
@@ -169,3 +187,26 @@ setSecondarySortBy(h, r.SecondarySortBy)
 setSecondarySortDirection(h, r.SecondarySortDirection)
 
 % Raster
+for ii = 1:length(r.RasterElements)
+    setRasterElement(h, r.RasterElements(ii))
+end
+
+% Histogram
+setHistShow(      h, 'psth', r.PsthShow)
+setHistBinSize(   h, 'psth', r.PsthBinSize)
+setHistYLim(      h, 'psth', r.PsthYLim)
+setHistSmoothing( h, 'psth', r.PsthSmoothing)
+setHistYUnits(    h, 'psth', r.PsthYUnits)
+setHistCount(     h, 'psth', r.PsthCount)
+
+setHistShow(      h, 'vert', r.VerticalHistogramShow)
+setHistBinSize(   h, 'vert', r.VerticalHistogramBinSize)
+setHistYLim(      h, 'vert', r.VerticalHistogramYLim)
+setHistSmoothing( h, 'vert', r.VerticalHistogramSmoothing)
+setHistYUnits(    h, 'vert', r.VerticalHistogramYUnits)
+setHistCount(     h, 'vert', r.VerticalHistogramCount)
+setHistROI(       h, 'vert', r.VerticalHistogramROI)
+
+%% GENERATE RASTER!
+handles = guidata(h);
+callbackIfEnabled('push_GenerateRaster_Callback', handles.push_GenerateRaster, [], handles)
