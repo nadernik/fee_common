@@ -52,7 +52,29 @@ addParameter(p, 'EventSource',   'Sound')
 addParameter(p, 'TriggerType', 'Syllables');
 addParameter(p, 'EventType',   'Syllables');
 
-% Options - FIXME
+% Trigger source options 
+addParameter(p, 'TriggerSyllIncluded',     ''     )
+addParameter(p, 'TriggerSyllExcluded',     ''     )
+addParameter(p, 'TriggerMotifSequence',    {}     )
+addParameter(p, 'TriggerMotifMaxGap',        0.2  )
+addParameter(p, 'TriggerBoutInterval',       2    )
+addParameter(p, 'TriggerBoutMinDuration',    0.2  )
+addParameter(p, 'TriggerBoutMinSyllCount',   2    )
+addParameter(p, 'TriggerBurstMinFreq',     100    )
+addParameter(p, 'TriggerBurstMinCount',      2    )
+addParameter(p, 'TriggerPauseMinDuration',   0.05 )
+
+% Event source options
+addParameter(p, 'EventSyllIncluded',     ''     )
+addParameter(p, 'EventSyllExcluded',     ''     )
+addParameter(p, 'EventMotifSequence',    {}     )
+addParameter(p, 'EventMotifMaxGap',        0.2  )
+addParameter(p, 'EventBoutInterval',       2    )
+addParameter(p, 'EventBoutMinDuration',    0.2  )
+addParameter(p, 'EventBoutMinSyllCount',   2    )
+addParameter(p, 'EventBurstMinFreq',     100    )
+addParameter(p, 'EventBurstMinCount',      2    )
+addParameter(p, 'EventPauseMinDuration',   0.05 )
 
 % Alignment (onset, offset, or midpoint)
 addParameter('Alignment', 'Onset')
@@ -128,7 +150,7 @@ addParameter(p, 'VerticalHistogramSmoothing', 1)
 addParameter(p, 'VerticalHistogramYUnits', 'Rate (Hz)')
 addParameter(p, 'VerticalHistogramCount', 'Onsets')
 addParameter(p, 'VerticalHistogramROI', [-Inf, Inf])
-parse(p, varargin{:})
+parse(p, params{:})
 r = p.Results;
 
 %% Set things
@@ -139,7 +161,30 @@ setTriggerSource(h, r.TriggerSource)
 setEventSource(h, r.EventSource)
 setTriggerType(h, r.TriggerType)
 
-% Options - FIXME
+% Trigger source options 
+setSourceOption(h, 'trigger', 'includeSyllList', r.TriggerSyllIncluded)
+setSourceOption(h, 'trigger', 'ignoreSyllList',  r.TriggerSyllExcluded)
+setSourceOption(h, 'trigger', 'motifSequences',  r.TriggerMotifSequence)
+setSourceOption(h, 'trigger', 'motifInterval',   r.TriggerMotifMaxGap)
+setSourceOption(h, 'trigger', 'boutInterval',    r.TriggerBoutInterval)
+setSourceOption(h, 'trigger', 'boutMinDuration', r.TriggerBoutMinDuration)
+setSourceOption(h, 'trigger', 'boutMinSyllables',r.TriggerBoutMinSyllCount)
+setSourceOption(h, 'trigger', 'burstFrequency',  r.TriggerBurstMinFreq)
+setSourceOption(h, 'trigger', 'burstMinSpikes',  r.TriggerBurstMinCount)
+setSourceOption(h, 'trigger', 'pauseMinDuration',r.TriggerPauseMinDuration)
+
+% Event source options
+setSourceOption(h, 'event', 'includeSyllList', r.EventSyllIncluded)
+setSourceOption(h, 'event', 'ignoreSyllList',  r.EventSyllExcluded)
+setSourceOption(h, 'event', 'motifSequences',  r.EventMotifSequence)
+setSourceOption(h, 'event', 'motifInterval',   r.EventMotifMaxGap)
+setSourceOption(h, 'event', 'boutInterval',    r.EventBoutInterval)
+setSourceOption(h, 'event', 'boutMinDuration', r.EventBoutMinDuration)
+setSourceOption(h, 'event', 'boutMinSyllables',r.EventBoutMinSyllCount)
+setSourceOption(h, 'event', 'burstFrequency',  r.EventBurstMinFreq)
+setSourceOption(h, 'event', 'burstMinSpikes',  r.EventBurstMinCount)
+setSourceOption(h, 'event', 'pauseMinDuration',r.EventPauseMinDuration)
+
 
 setAlignment(h, r.Alignment)
 
