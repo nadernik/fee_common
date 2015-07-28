@@ -1,7 +1,7 @@
 function setHistShow(h, psthOrVert, val)
 
 % Push 'PSTH' or 'Vert.' button 
-setActiveHistogram(psthOrVert)
+setActiveHistogram(h, psthOrVert)
 
 % Check 'Show' box
 handles = guidata(h);

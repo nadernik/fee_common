@@ -19,8 +19,8 @@ p.FileRange = handles.FileRange;
 p.BackgroundColor = handles.BackgroundColor;
 
 % Sources
-p.TriggerSource = getSelectedString(handles.popup_TriggerSource);
-p.EventSource   = getSelectedString(handles.popup_EventSource);
+p.TriggerSource = getSource(handles.popup_TriggerSource);
+p.EventSource   = getSource(handles.popup_EventSource);
 p.TriggerType   = getSelectedString(handles.popup_TriggerType);
 p.EventType     = getSelectedString(handles.popup_EventType);
 p.Alignment     = getSelectedString(handles.popup_TriggerAlignment);
@@ -114,3 +114,9 @@ p.VerticalHistogramSmoothing = str2double(vals{2});
 p.VerticalHistogramYUnits = getSelectedString(handles.popup_HistUnits);
 p.VerticalHistogramCount = getSelectedString(handles.popup_HistCount);
 p.VerticalHistogramROI = [str2double(vals{3}), str2double(vals{4})];
+
+if get(handles.radio_PSTHManual, 'Value') == 1
+    p.HistogramYLimMode = 'Manual';
+else
+    p.HistogramYLimMode = 'Auto';
+end

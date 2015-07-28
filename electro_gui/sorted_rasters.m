@@ -1,4 +1,4 @@
-function varargout = sorted_rasters(dbase, varargin)
+function output = sorted_rasters(dbase, varargin)
 
 % NOT IMPLEMENTED:
 % Time warping - because no one knows how to use it
@@ -40,6 +40,12 @@ egm_Sorted_rasters('push_Open_Callback', ...
 %% Parse parameters
 
 p = inputParser;
+
+% Output of this function
+addParameter(p, 'Output', 'gui') 
+% if 'raster', only the raster is returned and the gui is closed
+% if anything else, the gui is left open and a handle to the gui figure is
+% returned
 
 % FileRange vector of file numbers to include. Default is to include all
 % files.
@@ -154,6 +160,9 @@ addParameter(p, 'VerticalHistogramSmoothing', 1)
 addParameter(p, 'VerticalHistogramYUnits', 'Rate (Hz)')
 addParameter(p, 'VerticalHistogramCount', 'Onsets')
 addParameter(p, 'VerticalHistogramROI', [-Inf, Inf])
+
+addParameter(p, 'HistogramYLimMode', 'Auto') % 'Auto' or 'Manual'
+
 parse(p, params{:})
 r = p.Results;
 
@@ -241,7 +250,7 @@ for ii = 1:length(r.RasterElements)
     setRasterElement(h, r.RasterElements(ii))
 end
 
-% Histogram
+% PSTH
 setHistShow(      h, 'psth', r.PsthShow)
 setHistBinSize(   h, 'psth', r.PsthBinSize)
 setHistYLim(      h, 'psth', r.PsthYLim)
@@ -249,6 +258,7 @@ setHistSmoothing( h, 'psth', r.PsthSmoothing)
 setHistYUnits(    h, 'psth', r.PsthYUnits)
 setHistCount(     h, 'psth', r.PsthCount)
 
+% Vertical histogram
 setHistShow(      h, 'vert', r.VerticalHistogramShow)
 setHistBinSize(   h, 'vert', r.VerticalHistogramBinSize)
 setHistYLim(      h, 'vert', r.VerticalHistogramYLim)
@@ -257,6 +267,19 @@ setHistYUnits(    h, 'vert', r.VerticalHistogramYUnits)
 setHistCount(     h, 'vert', r.VerticalHistogramCount)
 setHistROI(       h, 'vert', r.VerticalHistogramROI)
 
+setHistogramYLimMode(h, r.HistogramYLimMode)
+
 %% GENERATE RASTER!
 handles = guidata(h);
 callbackIfEnabled('push_GenerateRaster_Callback', handles.push_GenerateRaster, [], handles)
+
+%% Output
+switch lower(r.Output)
+    case 'raster'
+        handles = guidata(h);
+        fh = egm_Sorted_rasters('menu_ExportFigure_Callback', handles.menu_ExportFigure, [], handles);
+        close(h)
+        output = fh; % figure handle for just the raster
+    otherwise
+        output = h; % figure handle for the egm_Sorted_rasters GUI
+end

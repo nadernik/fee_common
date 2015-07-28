@@ -3595,6 +3595,8 @@ function push_Open_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_Open (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+% dbase      OPTIONAL electro_gui dbase. If omitted, will be asked for file
+% tolerance  OPTIONAL tolerance for overlaps. If omitted, will be prompted
 
 if nargin > 3
     dbase = varargin{1};
@@ -3631,8 +3633,16 @@ handles.egh.EventSelected = dbase.EventIsSelected;
 handles.egh.Properties = dbase.Properties;
 handles.egh.TotalFileNumber = length(handles.egh.sound_files);
 
-handles.egh.overlaptolerance = 0.0001;
-handles.egh = Fix_Overlap(handles.egh);
+if nargin >= 5
+    % Optional 5th argument is the overlap tolerance. If provided, skip the
+    % prompt for overlap tolerance and use the given value
+    handles.egh.overlaptolerance = varargin{5};
+    handles.egh = Fix_Overlap(handles.egh, true);
+else
+    handles.egh.overlaptolerance = 0.0001;
+    % Fix_Overlap will prompt for the overlap tolerance
+    handles.egh = Fix_Overlap(handles.egh);
+end
 
 handles.FileRange = 1:handles.egh.TotalFileNumber;
 handles.FileNames = {};
@@ -5680,16 +5690,18 @@ function check_SkipSorting_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of check_SkipSorting
 
 
-function handles = Fix_Overlap(handles)
+function handles = Fix_Overlap(handles, askForInput)
 
 handles.Overlaps = 1:length(handles.DatesAndTimes);
-
-answer = inputdlg({'File overlap tolerance (sec). Press cancel to omit fixing overlaps.'},'File overlaps',1,{num2str(handles.overlaptolerance)});
-if isempty(answer)
-    return
+if nargin > 1 && askForInput == 1
+    answer = inputdlg({'File overlap tolerance (sec). Press cancel to omit fixing overlaps.'},'File overlaps',1,{num2str(handles.overlaptolerance)});
+    if isempty(answer)
+        return
+    end
+    
+    handles.overlaptolerance = str2num(answer{1});
 end
 
-handles.overlaptolerance = str2num(answer{1});
 tol = handles.overlaptolerance*handles.fs;
 
 for c = length(handles.DatesAndTimes)-1:-1:1%iterate through the files in reverse order
@@ -5881,7 +5893,7 @@ save([path file],'trigInfo');
 
 %This is the function that "export matlab figure" calls
 % --------------------------------------------------------------------
-function menu_ExportFigure_Callback(hObject, eventdata, handles)
+function varargout = menu_ExportFigure_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_ExportFigure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -5918,6 +5930,10 @@ if handles.HistShow(2) == 1
     set(ax,'position',[.75 .1 .2 h]);
     set(ax,'buttondownfcn','');
     set(get(ax,'children'),'buttondownfcn','');
+end
+
+if nargout >= 1
+    varargout{1} = fig;
 end
 
 
