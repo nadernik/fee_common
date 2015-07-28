@@ -17,9 +17,13 @@ set(handles.list_Plot, 'Value', val)
 egm_Sorted_rasters('list_Plot_Callback', handles.list_Plot, [], handles)
 
 % Include this object in the raster if elem.Include is true
+handles = guidata(h);
 if elem.Include == true
-    handles = guidata(h);
     set(handles.check_PlotInclude, 'Value', 1)
+    egm_Sorted_rasters('check_PlotInclude_Callback', ...
+        handles.check_PlotInclude, [], handles)
+else
+    set(handles.check_PlotInclude, 'Value', 0)
     egm_Sorted_rasters('check_PlotInclude_Callback', ...
         handles.check_PlotInclude, [], handles)
 end

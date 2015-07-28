@@ -1,4 +1,4 @@
-function output = sorted_rasters(dbase, varargin)
+function output = sorted_rasters(dbaseOrHandle, varargin)
 
 % NOT IMPLEMENTED:
 % Time warping - because no one knows how to use it
@@ -25,17 +25,19 @@ function output = sorted_rasters(dbase, varargin)
 
 %% Create sorted rasters figure if not passed a handle to it
 % If we are passed a handle, assume it already has the dbase loaded
-if ishandle(varargin{1})
-    h = varargin{1};
-    params = varargin(2:end);
-else
+if ishandle(dbaseOrHandle)
+    h = dbaseOrHandle;
+else % assume it is a dbase
+    dbase = dbaseOrHandle;
     [~, h] = egm_Sorted_rasters;
-    params = varargin(1:end);
+    
+    % Load dbase
+    handles = guidata(h);
+    egm_Sorted_rasters('push_Open_Callback', ...
+        handles.push_Open, [], handles, dbase);
 end
 
-handles = guidata(h);
-egm_Sorted_rasters('push_Open_Callback', ...
-    handles.push_Open, [], handles, dbase);
+
 
 %% Parse parameters
 
@@ -49,9 +51,7 @@ addParameter(p, 'Output', 'gui')
 
 % FileRange vector of file numbers to include. Default is to include all
 % files.
-numFiles = length(dbase.SoundFiles);
-isFileNumber = @(x) 1 <= x & x <= numFiles & mod(x, 1) == 0;
-addParameter(p, 'FileRange', 1:numFiles, @(x) all(isFileNumber(x)))
+addParameter(p, 'FileRange', [])
 
 % Sources
 % Can be 'Sound' or an integer for a class of events. 
@@ -163,7 +163,7 @@ addParameter(p, 'VerticalHistogramROI', [-Inf, Inf])
 
 addParameter(p, 'HistogramYLimMode', 'Auto') % 'Auto' or 'Manual'
 
-parse(p, params{:})
+parse(p, varargin{:})
 r = p.Results;
 
 %% Set things

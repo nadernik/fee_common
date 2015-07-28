@@ -701,6 +701,15 @@ function push_GenerateRaster_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+% Save parameters in case we want to save the code later (see
+% menu_ExportCode_Callback function)
+if get(handles.check_HoldOn, 'Value') == 1
+    handles.parametersForSaving{end+1} = getSortedRasterParameters(handles);
+else
+    handles.parametersForSaving = {};
+    handles.parametersForSaving{1} = getSortedRasterParameters(handles);
+end
+
 set(handles.push_GenerateRaster,'foregroundcolor','r'); % change the color of the button
 drawnow;
 
@@ -3001,7 +3010,7 @@ for c = intersect([13 15 16 20 28 29],val)
     set(handles.PlotHandles{c},'linewidth',handles.PlotLineWidth(c));
 end
 for c = intersect([10 11],val)
-    if ~isempty(handles.PlotHandles{c})
+    if ~isempty(handles.PlotHandles{c}) && ~isempty(handles.PlotHandles{c}{event_indx}) %FIXME
         set(handles.PlotHandles{c}{event_indx}(indx),'linewidth',handles.PlotLineWidth(c));
     end
 end
@@ -5936,6 +5945,13 @@ if nargout >= 1
     varargout{1} = fig;
 end
 
+%This is the function that "export matlab code" calls
+% --------------------------------------------------------------------
+function menu_ExportCode_Callback(~, ~, handles)
+% hObject    handle to menu_ExportFigure (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+saveSortedRastersFunction(handles.parametersForSaving)
 
 % --- Executes during object creation, after setting all properties.
 function push_GenerateRaster_CreateFcn(hObject, eventdata, handles)
