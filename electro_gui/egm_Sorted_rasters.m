@@ -217,6 +217,11 @@ handles.WarpIntervalDuration = [.1 .1]; % Only meaningful for custom interval ty
 handles.WarpNumBefore = 1;
 handles.WarpNumAfter = 1;
 
+val = get(handles.check_CopyEvents, 'Value');
+set(handles.check_CopyEvents, 'UserData', val);
+
+val = get(handles.check_SkipSorting, 'Value');
+set(handles.check_SkipSorting, 'UserData', val);
 
 % Choose default command line output for egm_Sorted_rasters
 handles.output = hObject;
@@ -240,7 +245,7 @@ if nargout >= 1
     varargout{1} = handles.BackupHandles;
 end
 if nargout >= 2
-    varargout{2} = handles.output % handle to the figure
+    varargout{2} = handles.output; % handle to the figure
 end
 
 
@@ -3586,18 +3591,22 @@ end
 
 
 % --- Executes on button press in push_Open.
-function push_Open_Callback(hObject, eventdata, handles)
+function push_Open_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_Open (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-[file, path] = uigetfile('*.mat','Load analysis');
-if ~isstr(file)
-    return
+if nargin > 3
+    dbase = varargin{1};
+else
+    [file, path] = uigetfile('*.mat','Load analysis');
+    if ~isstr(file)
+        return
+    end
+    cd(path)
+    
+    load([path file],'dbase');
 end
-cd(path)
-
-load([path file],'dbase');
 
 set(handles.popup_Files,'value',1);
 set(handles.popup_Files,'string',{'All files in range'});

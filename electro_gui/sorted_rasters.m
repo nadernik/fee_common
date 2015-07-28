@@ -33,6 +33,10 @@ else
     params = varargin(1:end);
 end
 
+handles = guidata(h);
+egm_Sorted_rasters('push_Open_Callback', ...
+    handles.push_Open, [], handles, dbase);
+
 %% Parse parameters
 
 p = inputParser;
@@ -77,7 +81,7 @@ addParameter(p, 'EventBurstMinCount',      2    )
 addParameter(p, 'EventPauseMinDuration',   0.05 )
 
 % Alignment (onset, offset, or midpoint)
-addParameter('Alignment', 'Onset')
+addParameter(p, 'Alignment', 'Onset')
 
 % Filtering
 isFilterLimits = @(x) numel(x) == 2 && isnumeric(x);
@@ -160,6 +164,7 @@ setFileRange(h, r.FileRange)
 setTriggerSource(h, r.TriggerSource)
 setEventSource(h, r.EventSource)
 setTriggerType(h, r.TriggerType)
+setEventType(h, r.EventType)
 
 % Trigger source options 
 setSourceOption(h, 'trigger', 'includeSyllList', r.TriggerSyllIncluded)
