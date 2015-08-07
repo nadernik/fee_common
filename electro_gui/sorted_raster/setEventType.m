@@ -3,7 +3,7 @@ function setEventType(h, typ)
 handles = guidata(h);
 val = popupLookup(handles.popup_EventType, typ);
 if isempty(val)
-    src = getPopupSelectedString(handles.popup_EventSource);
+    src = getSelectedString(handles.popup_EventSource);
     error('Invalid Event Type ''%s'' for source ''%s''', typ, src)
 end
 set(handles.popup_EventType, 'Value', val)

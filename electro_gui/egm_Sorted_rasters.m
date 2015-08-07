@@ -3053,13 +3053,21 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in push_TimeLimits.
-function push_TimeLimits_Callback(hObject, eventdata, handles)
+function push_TimeLimits_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_TimeLimits (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+if nargin < 4
+    prompts{1} = 'Min (sec)';
+    defaults{1} = num2str(handles.PlotXLim(1));
+    prompts{2} = 'Max (sec)';
+    defaults{2} = num2str(handles.PlotXLim(2));
+    answer = inputdlg(prompts, 'Time limits', 1, defaults);
+else
+    answer = varargin;
+end
 
-answer = inputdlg({'Min (sec)','Max (sec)'},'Time limits',1,{num2str(handles.PlotXLim(1)),num2str(handles.PlotXLim(2))});
 if isempty(answer)
     return
 end
@@ -3077,10 +3085,12 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in push_TickHeight.
-function push_TickHeight_Callback(hObject, eventdata, handles)
+function push_TickHeight_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_TickHeight (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+% varargin   optional arguments used as answers to input dialogs. If
+%            provided, input dialogs will be skipped 
 
 f = findobj('parent',handles.panel_TickUnits,'style','radiobutton','value',1);
 ch = get(handles.panel_TickUnits,'children');
@@ -3090,24 +3100,46 @@ str = {'number of trials','seconds','inches','percent of the plot'};
 
 if f == 3
     if get(handles.radio_YTrial,'value')==1
-        answer = inputdlg({['Tick height (' str{f} ')'],'Overlap (percent)'},'Tick height',1,{num2str(handles.PlotTickSize(f)),num2str(handles.PlotOverlap)});
-        if isempty(answer)
-            return
+        if nargin < 4
+            prompts{1} = ['Tick height (' str{f} ')'];
+            defaults{1} = num2str(handles.PlotTickSize(f));
+            prompts{2} = 'Overlap (percent)';
+            defaults{2} = num2str(handles.PlotOverlap);
+            answer = inputdlg(prompts, 'Tick height', 1, defaults);
+            if isempty(answer)
+                return
+            end
+        else
+            answer = varargin;
         end
         handles.PlotTickSize(f) = str2num(answer{1});
         handles.PlotOverlap = str2num(answer{2});
     else
-        answer = inputdlg({['Tick height (' str{f} ')'],'Inches per second'},'Tick height',1,{num2str(handles.PlotTickSize(f)),num2str(handles.PlotInPerSec)});
-        if isempty(answer)
-            return
+        if nargin < 4
+            prompts{1} = ['Tick height (' str{f} ')'];
+            defaults{1} = num2str(handles.PlotTickSize(f));
+            prompts{2} = 'Inches per second';
+            defaults{2} = num2str(handles.PlotInPerSec);
+            answer = inputdlg(prompts, 'Tick height', 1, defaults);
+            if isempty(answer)
+                return
+            end
+        else
+            answer = varargin;
         end
         handles.PlotTickSize(f) = str2num(answer{1});
         handles.PlotInPerSec = str2num(answer{2});
     end
 else
-    answer = inputdlg(['Tick height (' str{f} ')'],'Tick height',1,{num2str(handles.PlotTickSize(f))});
-    if isempty(answer)
-        return
+    if nargin < 4
+        prompt = ['Tick height (' str{f} ')'];
+        default = num2str(handles.PlotTickSize(f));
+        answer = inputdlg(prompt, 'Tick height', 1, {default});
+        if isempty(answer)
+            return
+        end
+    else
+        answer = varargin;
     end
     handles.PlotTickSize(f) = str2num(answer{1});
 end

@@ -1,4 +1,29 @@
 function p = getSortedRasterParameters(handleOrGuidata)
+%GETSOREDRASTERPARAMETERS Parameter struct for egm_Sorted_rasters
+%
+%This function returns a struct containing all the parameters that describe
+%the current settings in the egm_Sorted_raster GUI. This parameter struct
+%can be passed to the sorted_rasters function to recreate the raster. 
+%
+%Recommended use: Use egm_Sorted_rasters to automatically generate code and
+%parameters to reproduce the currently displayed raster. Click the 'Matlab
+%export' button in the 'Exporting panel' at the bottom of the GUI, and then
+%choose 'Code'.
+%
+%Syntax:
+%    PARAMS = GETSORTEDRASTERPARAMETERS(H)
+%    PARAMS = GETSORTEDRASTERPARAMETERS(HANDLES)
+%
+%Output:
+%    PARAMS     is a struct containing parameters from egm_Sorted_rasters.
+%               For a full list of the parameters, see the list below
+%
+%Input:
+%    H          is a handle to the egm_Sorted_rasters figure
+%    HANDLES    is the guidata for egm_Sorted_rasters
+%
+%
+%See also: SORTED_RASTERS, SORTEDRASTERPARAMETERS
 
 if ishandle(handleOrGuidata)
     handles = guidata(handleOrGuidata);
@@ -93,8 +118,15 @@ p.SecondarySortDirection = getSecondarySortDirection(handles.fig_Main);
 
 % Raster
 for ii = 1:length(get(handles.list_Plot, 'String'))
-    p.rasterElements(ii) = getRasterElement(handles.fig_Main, ii);
+    p.RasterElements(ii) = getRasterElement(handles.fig_Main, ii);
 end
+p.RasterXLim = handles.PlotXLim;
+p.RasterXLimAuto = get(handles.check_CopyWindow, 'Value');
+p.RasterTrialHeight = getTrialHeight(handles);
+p.RasterTrialHeightUnits = getSelectedString(handles.panel_TickUnits);
+p.RasterTrialOverlap = handles.PlotOverlap;
+p.RasterInchesPerSec = handles.PlotInPerSec;
+p.RasterYAxis = getSelectedString(handles.panel_YAxis);
 
 % PSTH
 vals = getHistOptionDefaults(handles.fig_Main, 'psth');

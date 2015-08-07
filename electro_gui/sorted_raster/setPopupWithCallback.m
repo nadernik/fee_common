@@ -5,5 +5,5 @@ if isempty(val)
     error('Invalid choice for %s: %s\nValid choices are: %s', ...
         get(obj, 'Tag'), str, strjoin(options, ', '))
 end
-setIfEnabled(obj, 'Value', val)
-callbackIfEnabled(cbname, obj, [], guidata(obj))
+set(obj, 'Value', val)
+egm_Sorted_rasters(cbname, obj, [], guidata(obj))

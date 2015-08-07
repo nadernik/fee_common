@@ -9,13 +9,13 @@ setActiveHistogram(h, whichHist)
 handles = guidata(h);
 
 if ischar(lims) && strcmpi(lims, 'Auto')
-    setIfEnabled(handles.radio_PSTHManual, 'Value', 0)
-    setIfEnabled(handles.radio_PSTHAuto,   'Value', 1)
+    set(handles.radio_PSTHManual, 'Value', 0)
+    set(handles.radio_PSTHAuto,   'Value', 1)
     % As far as I can tell, there is no Callback for these radio buttons
 elseif isnumeric(lims) && isvector(lims) && length(lims) == 2
     % Manual axis limits
-    setIfEnabled(handles.radio_PSTHAuto,   'Value', 0)
-    setIfEnabled(handles.radio_PSTHManual, 'Value', 1)
+    set(handles.radio_PSTHAuto,   'Value', 0)
+    set(handles.radio_PSTHManual, 'Value', 1)
     % Set limits with the Options button callback, which also can change
     % the bin size, smoothing, and ROI. Use default (current) values for
     % everything except y limits.
