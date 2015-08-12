@@ -6,18 +6,18 @@
 
 clear all; 
 figure(1); clf
-set(gcf, 'color', ones(1,3));
+set(gcf, 'color', ones(1,3), 'units', 'inches', 'position', [.1 1 4 3]);
 
 highQual = 1; 
 
 PlottingParams.msize = 20;
 PlottingParams.linewidth = .5;
 PlottingParams.labelFontSize = 12; 
+PlottingParams.SeedColor = [.95 .5 1];
 PlottingParams.Syl1Color = [0 0 1]; 
-PlottingParams.Syl2Color = [1 0 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
-PlottingParams.ProtoSylColor = [1 0 1]; 
-PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
-PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
+PlottingParams.Syl2Color = [1 0 0]; 
+PlottingParams.Syl1BarColor = [0 0 1]; 
+PlottingParams.Syl2BarColor = [1 0 0];
 PlottingParams.numFontSize = 5; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
@@ -91,8 +91,11 @@ trainingNeurons{2}.thres = 6;
 folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
 timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
 filename = ['NetLearnsSeed' num2str(seed) timestamp];
-aviobj = avifile(fullfile(folder, filename), 'compression', 'none', 'fps', 20);
-
+%aviobj = avifile(fullfile(folder, filename), 'compression', 'none', 'fps',
+%20); -- old matlab version
+obj = vision.VideoFileWriter(fullfile(folder, [filename, '.mp4']));
+obj.FrameRate = 20; 
+obj.FileFormat='MPEG4';
 
 %% run simulation
 
@@ -158,15 +161,13 @@ for t = 1:(nIterProto+nIterPlotSplit2)
         trainingNeuronsEarly{2}.tind = [setdiff(indPsyl, indBstart+bOnOffset) tind2Old]; 
         trainingNeuronsEarly{1}.thres = .5*length(trainingNeuronsEarly{1}.tind);
         trainingNeuronsEarly{2}.thres = .5*length(trainingNeuronsEarly{2}.tind);
-        figure
-        set(gcf, 'color', ones(1,3));
+        figure(1); clf
+        set(gcf, 'color', ones(1,3), 'units', 'inches', 'position', [.1 1 4 3]);
         netForMovie_boutOnset(w, [xdyn xdynOld], trainingNeuronsEarly, PlottingParams)
         if protosyllableStage(t)
-            title(['Protosyllable stage: iteration ', num2str(t)], ...
-                'fontsize', PlottingParams.labelFontSize, 'color', [1 1 1], 'backgroundcolor', [1 0 1], 'fontweight', 'bold')
+            text(3.5,9,['Protosyllable stage: iteration ', num2str(t)], 'fontsize', PlottingParams.labelFontSize, 'color', [0 0 0], 'horizontalalignment', 'center', 'verticalalignment', 'bottom')%, 'fontweight', 'bold')
         else
-            title(['Splitting stage: iteration ', ...
-                num2str(t-nIterProto)], 'fontsize', PlottingParams.labelFontSize, 'color', [0 0 1], 'backgroundcolor', [1 0 0], 'fontweight', 'bold')
+            text(3.5,9,['Splitting stage: iteration ', num2str(t-nIterProto)], 'fontsize', PlottingParams.labelFontSize, 'color', [1 0 0], 'horizontalalignment', 'center', 'verticalalignment', 'bottom')%, 'fontweight', 'bold')
         end
         if highQual
             s = rng; 
@@ -175,7 +176,8 @@ for t = 1:(nIterProto+nIterPlotSplit2)
         end
         F = getframe(gcf) 
         for l = 1:slowrate
-            aviobj = addframe(aviobj,F);
+            step(obj, F.cdata);
+            %aviobj = addframe(aviobj,F); -- old matlab version
         end
         close all
     end
@@ -277,9 +279,10 @@ for t = 1:(nIterProto+nIterPlotSplit2)
 end
 slowrate = 20; 
 for l = 1:slowrate
-    aviobj = addframe(aviobj,F);
+    step(obj, F.cdata);
+    %aviobj = addframe(aviobj,F); -- old matlab version
 end
-aviobj = close(aviobj)
+release(obj)
 % %% plotting early network activity
 % 
 % trainingNeuronsEarly{1}.nIDs = 1:k/2;
