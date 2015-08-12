@@ -1,4 +1,4 @@
-for row = 65:70;
+for row = [166:171];
     display(row)
     clearvars -except row
     %% load and compile data 
@@ -13,6 +13,7 @@ for row = 65:70;
     if 0==length(char(XLS.textdata.Sheet1(row,strmatch('MatlabDatafilename', Columns))));
         % song from acq qui
         filename = char(XLS.textdata.Sheet1(row,strmatch('AcqGuiFilename', Columns))); 
+        birdname = num2str(XLS.data.Sheet1(row,strmatch('bird', Columns))); 
         [SOUNDdata SOUNDfs SOUNDabsstarttime label props] = egl_AA_daq(filename, 1); 
         SOUNDdur = numel(SOUNDdata)/SOUNDfs; 
 
@@ -32,7 +33,7 @@ for row = 65:70;
             VIDEOdata(i,:,:) = imread([filename '.tif'], i);
         end
         toc
-        filename = fullfile('Q:\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
+        filename = fullfile('O:\emackev\GCaMP',[birdname, 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
         save(filename, 'SOUNDdata', 'SOUNDfs', 'SOUNDabsstarttime', 'SOUNDdur',...
             'VIDEOabsstarttime', 'VIDEOfs', 'tiffInfo', 'nFrames', 'VIDEOdur', ...
             'Mov', 'VIDEOdata', '-v7.3')
@@ -40,7 +41,7 @@ for row = 65:70;
     else
         filename1 = char(XLS.textdata.Sheet1(row,strmatch('InscopixFilename', Columns))); 
         VIDEOabsstarttime = datenum(filename1((end-14):end), 'yyyymmdd_HHMMSS');
-        filename = fullfile('Q:\GCaMP',['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
+        filename = fullfile('O:\emackev\GCaMP',['GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
         if 1~=XLS.data.Sheet1(row,strmatch('MatlabDatafilename', Columns)) 
             filename = char(XLS.textdata.Sheet1(row,strmatch('MatlabDatafilename', Columns))); 
         end
@@ -94,7 +95,7 @@ for row = 65:70;
         ys = ROIy(roi) + [-20 -20 20 20 -20]; 
         patch(xs, ys, roicolors(roi,:), 'edgecolor', roicolors(roi,:), 'facecolor', 'none'); 
     end
-    savefig(fullfile('Q:\GCaMP', ['ROIs5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
+    savefig(fullfile('O:\emackev\GCaMP', ['ROIs' birdname, 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
 
     %% calculating delta F over F (following Jia et al Nature Protocols 2011)
 
@@ -190,7 +191,7 @@ for row = 65:70;
     set(gcf, 'papersize', [5 8], 'paperposition',[0 0 5 8])
     shg
 
-    savefig(fullfile('Q:\GCaMP', ['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
+    savefig(fullfile('O:\emackev\GCaMP', [birdname 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
     display('saved figure')
     %% Making movie
 
@@ -203,9 +204,9 @@ for row = 65:70;
     meanVIDEO = squeeze(median(VIDEOdata,1)); 
 
     %
-    folder = 'Q:\GCaMP';
+    folder = 'O:\emackev\GCaMP';
     timestamp = datestr(now, 'dd-mmm-yyyy-HH-MM-SS');
-    filename = ['5616GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS') 'Saved' timestamp];
+    filename = [birdname 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS') 'Saved' timestamp];
     obj = vision.VideoFileWriter(fullfile(folder, [filename, '.avi']), 'AudioInputPort', 1);%,  'fps', 20);
     obj.FrameRate = 20; 
 

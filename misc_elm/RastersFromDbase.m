@@ -60,10 +60,11 @@ DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Shee
 
 rows = find(SINGING&PUTPROJ);
 SortBy = 'elecpos'; % 'age' or 'elecpos' or 'latency'
-p.sylType = 'tutor'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
 p.sylName = {'C'}; % specify sylable to align to, Only used when p.sylType = 'specified'
-p.PSTHaxisMax = 50; % [] to leave automatic
+p.PSTHaxisMax = []; % [] to leave automatic
 p.alignTo = 'onset'; 
+p.sortBy = 'gapdur'; % syldur or gapdur
 p.XLS = XLS; 
 p.rasterRange = [-.5 .5];
 p.plotRange = [-.2 .3]; 
@@ -74,10 +75,33 @@ bins = p.rasterRange(1):p.psthdt:p.rasterRange(2);
 p.figNum = 1;
 p.makeFig = 0;
 p.papersize = 2*[3.5 2.5]; 
-p.fontsize = 2*6; 
+p.fontsize = 6; 
 
 % to plot just one row
-p.makeFig = 1; p.MaxToPlot = 100; analyzeRow(33, p, 'PSTH'); p.makeFig = 0;
+p.makeFig = 1; p.MaxToPlot = 100; analyzeRow(120, p, 'PSTH'); p.makeFig = 0;
+
+%%
+figure(1); 
+p.makeFig = 1; 
+p.sylType = 'song';
+p.rasterRange = [-.5 .5];
+p.plotRange = [-.2 .2]; 
+p.MaxToPlot = 200;
+p.papersize = [8 6]; 
+ROWs = find(SINGING&SINGLEUNIT); 
+set(p.figNum, 'color', [1 1 1])
+for rowi = 1:numel(ROWs)
+    row = ROWs(rowi); 
+    analyzeRow(row, p, 'fourRasters');
+    if PUTPROJ(row)
+        filestr = fullfile('C:\Users\emackev\Documents\MATLAB\code\RasterPlots', ['SortedRasters', num2str(row), 'PutProj_Age', num2str(Age(row)),'.jpg']); 
+    else
+        filestr = fullfile('C:\Users\emackev\Documents\MATLAB\code\RasterPlots', ['SortedRasters', num2str(row), '_Age', num2str(Age(row)),'.jpg']); 
+    end
+    saveas(p.figNum,filestr)
+end
+%p.makeFig = 0; 
+
 %% calculating reliability and latency for each row. Takes 20 seconds. 
 
 p.Nsigma = 5; % must exceed mean by Nsigma*sigma to be considered 'reliable'
