@@ -15,11 +15,13 @@ else
     PlottingParams.msize = 3;
     PlottingParams.linewidth = .25; 
 end
+PlottingParams.SeedColor = [1 .9 1];
+PlottingParams.Syl2Color = [1 0 0]; 
 PlottingParams.Syl1Color = [0 0 1]; 
-PlottingParams.Syl2Color = [1 0 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
-PlottingParams.ProtoSylColor = [1 0 1]; 
-PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
-PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
+PlottingParams.Syl2BarColor = [1 0 0]; 
+PlottingParams.Syl1BarColor = [0 0 1];
+PlottingParams.ProtoSylColor = [0 0 0]; 
+PlottingParams.ProtoSylBarColor = [.5 .5 .5];
 PlottingParams.numFontSize = 5; 
 PlottingParams.labelFontSize = 8; 
 PlottingParams.wplotmin = 0; 
@@ -167,7 +169,7 @@ p.eta = eta;
 
 PlottingParams.thisPanel = 1;
 PlottingParams.Hor = 0; 
-plotHVCnet_boutOnset_element(w, xdyn, trainingNeurons, PlottingParams)
+plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 PlottingParams.Hor = 1;
 
 %% finish forming protosyllable
@@ -209,8 +211,7 @@ p.eta = 0; p.input = probeInput;
 p.eta = eta; 
 
 PlottingParams.thisPanel = 2;
-plotHVCnet_boutOnset_element(w, xdyn, trainingNeurons, PlottingParams)
-
+plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 wpsyl = w; 
 
 %% splitting 
@@ -252,7 +253,7 @@ for j = 1:niter
     if  PlotIters & (mod(j,50)==0); % if you want to plot each step as it goes
         j
         subplot(1,4,3)
-        plotHVCnet_boutOnset_element(w, xdyn, trainingNeurons, PlottingParams)
+        plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
         pause(.5)
     end
 end
@@ -303,7 +304,7 @@ p.eta = 0; p.input = probeInput;
 p.eta = eta; 
 
 PlottingParams.thisPanel = 3;
-plotHVCnet_boutOnset_element(w, xdyn, trainingNeurons, PlottingParams)
+plotHVCnet_boutOnset(w, xdyn, trainingNeurons, PlottingParams)
 
 
 %%
