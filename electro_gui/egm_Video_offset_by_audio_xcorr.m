@@ -60,7 +60,7 @@ coefsSmoothing = fir1(n, Wn);
 y1 = filtfilt(coefsSmoothing, 1, logpow1);
 y2 = filtfilt(coefsSmoothing, 1, logpow2);
 
-offsetSeconds = getOffsetFromXcorrGUI(y1, y2, handles.fs);
+offsetSeconds = getOffsetFromXcorrGUI(y1, y2, fs);
 
 % Store the result as a property in electro_gui
 formatt = ['%.' int2str(-log10(1/fs)) 'f'];
