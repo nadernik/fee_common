@@ -8048,81 +8048,90 @@ handles = eg_AddProperty(handles,3);
 guidata(hObject, handles);
 
 
-function handles = eg_AddProperty(handles,type)
+function handles = eg_AddProperty(handles,type,varargin)
+% eg_AddProperty(handles, type, name, val, files)
+% eg_AddProperty(handles, type)
+%     user is prompted for name, val, and files
 
 filenum = str2num(get(handles.edit_FileNumber,'string'));
 
-typestr = {'string','boolean','list'};
-button = questdlg(['Add a new ' typestr{type} ' property to'],'Add property','Current file','Some files...','All files','All files');
-switch button
-    case ''
-        return
-    case 'Current file'
-        indx = filenum;
-        selstr = 'current file';
-    case 'Some files...'
-        str = get(handles.list_Files,'string');
-        for c = 1:length(str)
-            str{c} = [num2str(c) '. ' str{c}(26:end-14)];
-        end
-        [indx,ok] = listdlg('ListString',str,'InitialValue',filenum,'ListSize',[300 450],'Name','Select files','PromptString','Files to add new property to');
-        if ok == 0
+if nargin >= 5
+    name = varargin{1};
+    val  = varargin{2};
+    indx = varargin{3};
+else
+    typestr = {'string','boolean','list'};
+    button = questdlg(['Add a new ' typestr{type} ' property to'],'Add property','Current file','Some files...','All files','All files');
+    switch button
+        case ''
             return
-        end
-        selstr = 'selected files';
-    case 'All files'
-        indx = 1:handles.TotalFileNumber;
-        selstr = 'all files';
-end
-
-
-switch type
-    case 1
-        answer = inputdlg({'Property name',['Value for ' selstr]},'Add property',1,{'',''});
-        if isempty(answer)
-            return
-        end
-        name = answer{1};        
-        val = answer{2};
-    case 2
-        answer = inputdlg({'Property name'},'Add property',1,{''});
-        if isempty(answer)
-            return
-        end
-        name = answer{1};
-        button = questdlg(['Value for ' selstr],'Add property','On','Off','Off');
-        switch button
-            case ''
+        case 'Current file'
+            indx = filenum;
+            selstr = 'current file';
+        case 'Some files...'
+            str = get(handles.list_Files,'string');
+            for c = 1:length(str)
+                str{c} = [num2str(c) '. ' str{c}(26:end-14)];
+            end
+            [indx,ok] = listdlg('ListString',str,'InitialValue',filenum,'ListSize',[300 450],'Name','Select files','PromptString','Files to add new property to');
+            if ok == 0
                 return
-            case 'On'
-                val = 1;
-            case 'Off'
-                val = 0;
-        end
-    case 3
-        answer = inputdlg({'Property name','List of possible values'},'Add property',[1; 5],{'',''});
-        if isempty(answer)
-            return
-        end
-        name = answer{1};
-        lst = answer{2};
-        str = {};
-        for c = 1:size(lst,1)
-            str{c} = strtrim(lst(c,:));
-        end
-        
-        [val,ok] = listdlg('ListString',str,'Name','Add property','PromptString',['Value for ' selstr],'SelectionMode','single');
-        if ok == 0
-            return
-        end
-        val = str{val};
-        
-        str{end+1} = 'Dummy';
-        handles.PropertyNames{end+1} = name;
-        handles.PropertyObjectHandles(end+1) = uicontrol(handles.panel_Properties,'Style','popupmenu',...
-            'units','normalized','string',str,'position',[0 0 .1 .1],'visible','off',...
-            'FontSize',10,'horizontalalignment','center','backgroundcolor',[1 1 1]);
-        handles.DefaultPropertyValues{end+1} = str{1};
+            end
+            selstr = 'selected files';
+        case 'All files'
+            indx = 1:handles.TotalFileNumber;
+            selstr = 'all files';
+    end
+    
+    
+    switch type
+        case 1
+            answer = inputdlg({'Property name',['Value for ' selstr]},'Add property',1,{'',''});
+            if isempty(answer)
+                return
+            end
+            name = answer{1};
+            val = answer{2};
+        case 2
+            answer = inputdlg({'Property name'},'Add property',1,{''});
+            if isempty(answer)
+                return
+            end
+            name = answer{1};
+            button = questdlg(['Value for ' selstr],'Add property','On','Off','Off');
+            switch button
+                case ''
+                    return
+                case 'On'
+                    val = 1;
+                case 'Off'
+                    val = 0;
+            end
+        case 3
+            answer = inputdlg({'Property name','List of possible values'},'Add property',[1; 5],{'',''});
+            if isempty(answer)
+                return
+            end
+            name = answer{1};
+            lst = answer{2};
+            str = {};
+            for c = 1:size(lst,1)
+                str{c} = strtrim(lst(c,:));
+            end
+            
+            [val,ok] = listdlg('ListString',str,'Name','Add property','PromptString',['Value for ' selstr],'SelectionMode','single');
+            if ok == 0
+                return
+            end
+            val = str{val};
+            
+            str{end+1} = 'Dummy';
+            handles.PropertyNames{end+1} = name;
+            handles.PropertyObjectHandles(end+1) = uicontrol(handles.panel_Properties,'Style','popupmenu',...
+                'units','normalized','string',str,'position',[0 0 .1 .1],'visible','off',...
+                'FontSize',10,'horizontalalignment','center','backgroundcolor',[1 1 1]);
+            handles.DefaultPropertyValues{end+1} = str{1};
+    end
 end
 
 for c = 1:length(indx)
