@@ -61,6 +61,8 @@ handles.LONGEST_CLIP_TO_PLAY = 5; % seconds
 handles.egh = varargin{1};
 dbase = handles.egh.dbase;
 handles.filenum = dbase.AnalysisState.CurrentFile;
+ndx = strcmp(handles.OFFSET_PROPERTY_NAME, dbase.Properties.Names{handles.filenum});
+handles.offset = str2double(dbase.Properties.Values{handles.filenum}{ndx});
 
 set(handles.popupSource, 'String', dbase.AnalysisState.SourceList);
 set(handles.popupSource, 'Value', 2); % Sound
@@ -101,6 +103,12 @@ handles.fs = dbase.Fs;
 
 axis(handles.axesVideo, 'off')
 
+%FIXME
+[a, fsa] = audioread(dbase.Properties.Values{handles.filenum}{propnum});
+handles.debug.a = a(:,1);
+handles.debug.ta = (0:size(a,1) - 1) / fsa;
+handles.debug.framesamp = fsa / handles.vidreader.FrameRate;
+
 % Update handles structure
 guidata(hObject, handles);
 vexupdate(hObject)
@@ -118,7 +126,6 @@ function varargout = egm_Video_explorer_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.egh;
-%delete(handles.figure1) FIXME
 
 
 % --- Executes on selection change in popupSource.
@@ -215,7 +222,12 @@ if any(handles.old.tlim ~= handles.tlim) || isChangedAbove
     rectangle('Position', [handles.tlim(1), yy(1), w, h], 'LineWidth', 3, 'LineStyle', '--', 'EdgeColor', [1 0 0], 'Tag', 'vexZoomBox');
     
     % Load video
-    flim = floor(handles.tlim .* handles.vidreader.FrameRate) + 1;
+    tt = handles.tlim - handles.offset + (handles.framenum-1) / handles.vidreader.FrameRate;
+    ff = tt * handles.vidreader.FrameRate;
+    flim = floor((handles.tlim - handles.offset) * handles.vidreader.FrameRate + handles.framenum - 1)
+    ndx = handles.debug.ta >= tt(1) & handles.debug.ta <= tt(2);
+    handles.debug.aload = handles.debug.a(ndx);
+    %%%FIXME ^^
     if handles.tlim(2) - handles.tlim(1) <= handles.LONGEST_CLIP_TO_PLAY
         handles.frames = read(handles.vidreader, flim);
         set(handles.pushPlay, 'Enable', 'on')
@@ -232,7 +244,14 @@ end
 if handles.old.framenum ~= handles.framenum || isChangedAbove
     isChangedAbove = true;
     axes(handles.axesVideo);
-    image(handles.frames(:,:,:,handles.framenum));
+    % FIXME
+%     %image(handles.frames(:,:,:,handles.framenum));
+%     t1 = handles.tlim(1) - handles.offset + (handles.framenum-1) / handles.vidreader.FrameRate;
+%     t2 = t1 + 1/handles.vidreader.FrameRate;
+%     ndx = handles.debug.ta >= t1 & handles.debug.ta <= t2;
+    samp = (1:handles.debug.framesamp) + (handles.framenum - 1) * handles.debug.framesamp;
+    plot(handles.debug.aload(samp))
+    %/FIXME
     axes(handles.axesData);
     yy = ylim;
     w = 1 / handles.vidreader.FrameRate; % width of one frame
