@@ -306,8 +306,33 @@ set(handles.popup_Function2,'string',str,'userdata',cell(1,length(str)));
 
 % Find all macros
 mt = dir(egfile('egm_*.m'));
-for c = 1:length(mt)
-    handles.menu_Macros(c) = uimenu(handles.context_Macros,'label',mt(c).name(5:end-2),...
+macronames = cell(length(mt), 1);
+for ii = 1:length(mt)
+    % extract 'Macro_name' from 'egm_Macro_name.m'
+    tkn = regexp(mt(ii).name, '^egm_(.+)\.m$', 'tokens');
+    macronames{ii} = tkn{1}{1};
+end
+% Macro Manager goes at the top of the macro list, if it exists
+if any(strcmp(macronames, 'Macro_Manager'))
+    handles.menu_Macros(1) = uimenu(handles.context_Macros, ...
+        'Label', 'Macro_Manager',...
+        'callback','electro_gui(''MacrosMenuclick'',gcbo,[],guidata(gcbo))');
+    macronames = macronames(~strcmp(macronames, 'Macro_Manager'));
+    pos = 1;
+else 
+    pos = 0;
+end
+
+% Remove excluded macros, if there are any
+if isfield(handles, 'MacrosExcluded')
+    macronames = macronames(~ismember(macronames, handles.MacrosExcluded));
+end
+
+% Add remaining macros to list
+for c = 1:length(macronames)
+    pos = pos+1;
+    handles.menu_Macros(pos) = uimenu(handles.context_Macros, ...
+        'Label', macronames{c},...
         'callback','electro_gui(''MacrosMenuclick'',gcbo,[],guidata(gcbo))');
 end
 
