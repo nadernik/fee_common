@@ -45,7 +45,7 @@ end
 
 
 % --- Executes just before egm_Video_explorer is made visible.
-function egm_Video_explorer_OpeningFcn(hObject, eventdata, handles, varargin)
+function egm_Video_explorer_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -56,7 +56,7 @@ handles.VIDEO_PROPERTY_NAME = 'VideoFile';
 handles.OFFSET_PROPERTY_NAME = 'VideoOffsetSeconds';
 handles.LINESPEC_DATA = '-k';
 handles.LINESPEC_DATANAV = '-k';
-handles.LONGEST_CLIP_TO_PLAY = 5; % seconds
+handles.LONGEST_CLIP_TO_PLAY = 555; % seconds
 
 handles.egh = varargin{1};
 dbase = handles.egh.dbase;
@@ -118,7 +118,7 @@ vexupdate(hObject)
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = egm_Video_explorer_OutputFcn(hObject, eventdata, handles)
+function varargout = egm_Video_explorer_OutputFcn(~, ~, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -129,7 +129,7 @@ varargout{1} = handles.egh;
 
 
 % --- Executes on selection change in popupSource.
-function popupSource_Callback(hObject, eventdata, handles)
+function popupSource_Callback(hObject, ~, handles)
 % hObject    handle to popupSource (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -141,7 +141,7 @@ guidata(hObject, handles)
 vexupdate(hObject)
 
 % --- Executes during object creation, after setting all properties.
-function popupSource_CreateFcn(hObject, eventdata, handles)
+function popupSource_CreateFcn(hObject, ~, ~)
 % hObject    handle to popupSource (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -151,15 +151,6 @@ function popupSource_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
-% --- Executes on button press in checkboxPlayLoop.
-function checkboxPlayLoop_Callback(hObject, eventdata, handles)
-% hObject    handle to checkboxPlayLoop (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of checkboxPlayLoop
 
 function vexupdate(hObject)
 %vexupdate updates the video explorer gui
@@ -222,11 +213,20 @@ if any(handles.old.tlim ~= handles.tlim) || isChangedAbove
     rectangle('Position', [handles.tlim(1), yy(1), w, h], 'LineWidth', 3, 'LineStyle', '--', 'EdgeColor', [1 0 0], 'Tag', 'vexZoomBox');
     
     % Load video
-    tt = handles.tlim - handles.offset + (handles.framenum-1) / handles.vidreader.FrameRate;
-    ff = tt * handles.vidreader.FrameRate;
-    flim = floor((handles.tlim - handles.offset) * handles.vidreader.FrameRate + handles.framenum - 1)
-    ndx = handles.debug.ta >= tt(1) & handles.debug.ta <= tt(2);
+    %tt = handles.tlim - handles.offset + (handles.framenum-1) / handles.vidreader.FrameRate;
+    tlim_vid = handles.tlim - handles.offset; %start time of this frame relative to video onset
+    flim = floor(tlim_vid * handles.vidreader.FrameRate); 
+    debugdisp('Loading new video clip!')
+    debugdisp('In data file, time is % 4.03f to % 4.03f sec', handles.tlim(1), handles.tlim(2))
+    debugdisp('In video, time is % 4.03f to % 4.03f sec', tlim_vid(1), tlim_vid(2))
+    debugdisp('In video, frames %g to %g', flim(1), flim(2))
+    %flim = floor((handles.tlim - handles.offset) * handles.vidreader.FrameRate + handles.framenum - 1);
+    handles.debug.flim = flim;
+    ndx = handles.debug.ta >= tlim_vid(1) & handles.debug.ta <= tlim_vid(2);
     handles.debug.aload = handles.debug.a(ndx);
+    tplot = linspace(tlim_vid(1), tlim_vid(2), length(handles.debug.aload));
+    plot(handles.axesVideoNav, tplot, handles.debug.aload)
+    xlim(handles.axesVideoNav, [tplot(1) tplot(end)])
     %%%FIXME ^^
     if handles.tlim(2) - handles.tlim(1) <= handles.LONGEST_CLIP_TO_PLAY
         handles.frames = read(handles.vidreader, flim);
@@ -242,15 +242,15 @@ end
 
 % If frame changed, show new frame
 if handles.old.framenum ~= handles.framenum || isChangedAbove
-    isChangedAbove = true;
     axes(handles.axesVideo);
     % FIXME
-%     %image(handles.frames(:,:,:,handles.framenum));
+    image(handles.frames(:,:,:,handles.framenum));
 %     t1 = handles.tlim(1) - handles.offset + (handles.framenum-1) / handles.vidreader.FrameRate;
 %     t2 = t1 + 1/handles.vidreader.FrameRate;
 %     ndx = handles.debug.ta >= t1 & handles.debug.ta <= t2;
-    samp = (1:handles.debug.framesamp) + (handles.framenum - 1) * handles.debug.framesamp;
-    plot(handles.debug.aload(samp))
+
+%     samp = (1:handles.debug.framesamp) + (handles.framenum - 1) * handles.debug.framesamp;
+%     plot(handles.debug.aload(samp))
     %/FIXME
     axes(handles.axesData);
     yy = ylim;
@@ -268,19 +268,8 @@ handles.old.framenum = handles.framenum;
 
 guidata(hObject, handles)
 
-
-
-function edit1_Callback(hObject, eventdata, handles)
-% hObject    handle to edit1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit1 as text
-%        str2double(get(hObject,'String')) returns contents of edit1 as a double
-
-
 % --- Executes during object creation, after setting all properties.
-function edit1_CreateFcn(hObject, eventdata, handles)
+function edit1_CreateFcn(hObject, ~, ~)
 % hObject    handle to edit1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -291,19 +280,8 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
-
-function editPositionEnd_Callback(hObject, eventdata, handles)
-% hObject    handle to editPositionEnd (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of editPositionEnd as text
-%        str2double(get(hObject,'String')) returns contents of editPositionEnd as a double
-
-
 % --- Executes during object creation, after setting all properties.
-function editPositionEnd_CreateFcn(hObject, eventdata, handles)
+function editPositionEnd_CreateFcn(hObject, ~, ~)
 % hObject    handle to editPositionEnd (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -316,7 +294,7 @@ end
 
 
 % --- Executes on selection change in popupFunction.
-function popupFunction_Callback(hObject, eventdata, handles)
+function popupFunction_Callback(hObject, ~, handles)
 % hObject    handle to popupFunction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -328,7 +306,7 @@ guidata(hObject, handles)
 vexupdate(hObject)
 
 % --- Executes during object creation, after setting all properties.
-function popupFunction_CreateFcn(hObject, eventdata, handles)
+function popupFunction_CreateFcn(hObject, ~, ~)
 % hObject    handle to popupFunction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -349,8 +327,8 @@ guidata(hObject, handles)
 vexupdate(hObject)
 
 % --- Executes during mouse click on axesData
-function clickAxesDataNav(hObject, eventdata)
-[xmin, xmax, ymin, ymax] = getBoxCoordinates(hObject);
+function clickAxesDataNav(hObject, ~)
+[xmin, xmax, ~, ~] = getBoxCoordinates(hObject);
 handles = guidata(hObject);
 handles.tlim = [xmin, xmax];
 guidata(hObject, handles);
@@ -358,7 +336,7 @@ vexupdate(hObject);
 
 
 % --- Executes on button press in pushPlay.
-function pushPlay_Callback(hObject, eventdata, handles)
+function pushPlay_Callback(hObject, ~, handles)
 % hObject    handle to pushPlay (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -367,7 +345,8 @@ if handles.framenum > size(handles.frames,4)
     % if we went past the end, start over from the beginning
     handles.framenum = 1;
 end
-disp(['Frame number ' int2str(handles.framenum)])
+fabsolute = handles.framenum + handles.debug.flim(1);
+debugdisp('Frame %g at time % 4.03f sec', fabsolute, fabsolute ./ handles.vidreader.FrameRate)
 guidata(hObject, handles);
 vexupdate(hObject)
 
@@ -393,13 +372,13 @@ vexupdate(hObject)
 % end
 
 % --- Executes on a timer when video is playing.
-function nextFrame(timerobj, evnt)
-ud = get(timerobj, 'UserData');
-handles = guidata(ud.vexFigure);
-handles.framenum = handles.framenum + 1;
-if handles.framenum > size(handles.frames,4)
-    % if we went past the end, start over from the beginning
-    handles.framenum = 1;
-end
-guidata(ud.vexFigure, handles);
-vexupdate(ud.vexFigure)
+% function nextFrame(timerobj, ~)
+% ud = get(timerobj, 'UserData');
+% handles = guidata(ud.vexFigure);
+% handles.framenum = handles.framenum + 1;
+% if handles.framenum > size(handles.frames,4)
+%     % if we went past the end, start over from the beginning
+%     handles.framenum = 1;
+% end
+% guidata(ud.vexFigure, handles);
+% vexupdate(ud.vexFigure)
