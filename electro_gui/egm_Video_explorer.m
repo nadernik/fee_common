@@ -56,7 +56,12 @@ handles.VIDEO_PROPERTY_NAME = 'VideoFile';
 handles.OFFSET_PROPERTY_NAME = 'VideoOffsetSeconds';
 handles.LINESPEC_DATA = '-k';
 handles.LINESPEC_DATANAV = '-k';
-handles.LONGEST_CLIP_TO_PLAY = 555; % seconds
+handles.LONGEST_CLIP_TO_PLAY = Inf; % seconds
+
+if verLessThan('matlab', 'R2015b')
+    warndlg('Must have R2015b or newer!')
+    delete(handles.figure1)
+end
 
 handles.egh = varargin{1};
 dbase = handles.egh.dbase;
@@ -75,10 +80,11 @@ handles.functionName = getSelectedString(handles.popupFunction);
 handles.fparams = struct;
 
 handles.tlim = [nan nan];
+handles.vidtime = 0;
 handles.old.sourceName = '';
 handles.old.functionName = '';
 handles.old.tlim = [nan nan];
-handles.old.framenum = nan;
+handles.old.vidtime = nan;
 
 % If there is no video associated with the current data file, prompt the
 % user for video.
@@ -102,12 +108,6 @@ handles.isPlaying = false;
 handles.fs = dbase.Fs;
 
 axis(handles.axesVideo, 'off')
-
-%FIXME
-[a, fsa] = audioread(dbase.Properties.Values{handles.filenum}{propnum});
-handles.debug.a = a(:,1);
-handles.debug.ta = (0:size(a,1) - 1) / fsa;
-handles.debug.framesamp = fsa / handles.vidreader.FrameRate;
 
 % Update handles structure
 guidata(hObject, handles);
@@ -194,6 +194,9 @@ if any(handles.old.tlim ~= handles.tlim) || isChangedAbove
     if any(isnan(handles.tlim))
         handles.tlim = [0, (length(handles.fdata) - 1) / handles.fs];
     end
+    
+    handles.vidtime = handles.tlim(1) - handles.offset;
+    
     % decimate data so there is at most 1 point per pixel of x axis
     samplim = round(handles.tlim .* handles.fs) + 1;
     y = decimateToAxesWidth(handles.fdata(samplim(1):samplim(2)), handles.axesData);
@@ -211,60 +214,37 @@ if any(handles.old.tlim ~= handles.tlim) || isChangedAbove
     w = handles.tlim(2) - handles.tlim(1);
     h = yy(2) - yy(1);
     rectangle('Position', [handles.tlim(1), yy(1), w, h], 'LineWidth', 3, 'LineStyle', '--', 'EdgeColor', [1 0 0], 'Tag', 'vexZoomBox');
-    
-    % Load video
-    %tt = handles.tlim - handles.offset + (handles.framenum-1) / handles.vidreader.FrameRate;
-    tlim_vid = handles.tlim - handles.offset; %start time of this frame relative to video onset
-    flim = floor(tlim_vid * handles.vidreader.FrameRate); 
-    debugdisp('Loading new video clip!')
-    debugdisp('In data file, time is % 4.03f to % 4.03f sec', handles.tlim(1), handles.tlim(2))
-    debugdisp('In video, time is % 4.03f to % 4.03f sec', tlim_vid(1), tlim_vid(2))
-    debugdisp('In video, frames %g to %g', flim(1), flim(2))
-    %flim = floor((handles.tlim - handles.offset) * handles.vidreader.FrameRate + handles.framenum - 1);
-    handles.debug.flim = flim;
-    ndx = handles.debug.ta >= tlim_vid(1) & handles.debug.ta <= tlim_vid(2);
-    handles.debug.aload = handles.debug.a(ndx);
-    tplot = linspace(tlim_vid(1), tlim_vid(2), length(handles.debug.aload));
-    plot(handles.axesVideoNav, tplot, handles.debug.aload)
-    xlim(handles.axesVideoNav, [tplot(1) tplot(end)])
-    %%%FIXME ^^
-    if handles.tlim(2) - handles.tlim(1) <= handles.LONGEST_CLIP_TO_PLAY
-        handles.frames = read(handles.vidreader, flim);
-        set(handles.pushPlay, 'Enable', 'on')
-    else
-        % if length is too long, only load the first frame and disable the
-        % play button
-        handles.frames = read(handles.vidreader, flim(1));
-        set(handles.pushPlay, 'Enable', 'off')
-    end
-    handles.framenum = 1;
 end
 
 % If frame changed, show new frame
-if handles.old.framenum ~= handles.framenum || isChangedAbove
+if handles.old.vidtime ~= handles.vidtime || isChangedAbove
     axes(handles.axesVideo);
-    % FIXME
-    image(handles.frames(:,:,:,handles.framenum));
-%     t1 = handles.tlim(1) - handles.offset + (handles.framenum-1) / handles.vidreader.FrameRate;
-%     t2 = t1 + 1/handles.vidreader.FrameRate;
-%     ndx = handles.debug.ta >= t1 & handles.debug.ta <= t2;
-
-%     samp = (1:handles.debug.framesamp) + (handles.framenum - 1) * handles.debug.framesamp;
-%     plot(handles.debug.aload(samp))
-    %/FIXME
+    debugdisp('Video time is % 4.03f', handles.vidtime)
+    handles.vidreader.CurrentTime = handles.vidtime;
+    if handles.vidreader.hasFrame()
+        handles.vidreader.readFrame();
+        handles.vidtime2 = handles.vidreader.CurrentTime;
+        handles.vidreader.readFrame();
+        handles.vidframe = handles.vidreader.readFrame();
+    else
+        handles.vidframe = zeros(handles.vidreader.height, handles.vidreader.width, 3);
+    end
+    image(handles.vidframe);
+    
+    % Transparent yellow box on data to highlight the current frame. Remove
+    % the old box and create a new one.
     axes(handles.axesData);
     yy = ylim;
-    w = 1 / handles.vidreader.FrameRate; % width of one frame
-    xx = handles.tlim(1) + w * ([-1 0] + handles.framenum);
+    tt = [handles.vidtime, handles.vidtime2] + handles.offset;
     delete(findobj('Tag', 'vexFramePatch'))
-    patch([xx(1) xx(1) xx(2) xx(2)], [yy(1) yy(2) yy(2) yy(1)], 'k', ...
+    patch([tt(1) tt(1) tt(2) tt(2)], [yy(1) yy(2) yy(2) yy(1)], 'k', ...
         'FaceAlpha', 0.5, 'FaceColor', [1 1 0], 'Tag', 'vexFramePatch')
 end
 
-handles.old.sourceName = handles.sourceName;
+handles.old.sourceName   = handles.sourceName;
 handles.old.functionName = handles.functionName;
-handles.old.tlim = handles.tlim;
-handles.old.framenum = handles.framenum;
+handles.old.tlim         = handles.tlim;
+handles.old.vidtime      = handles.vidtime;
 
 guidata(hObject, handles)
 
@@ -340,13 +320,7 @@ function pushPlay_Callback(hObject, ~, handles)
 % hObject    handle to pushPlay (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.framenum = handles.framenum + 1;
-if handles.framenum > size(handles.frames,4)
-    % if we went past the end, start over from the beginning
-    handles.framenum = 1;
-end
-fabsolute = handles.framenum + handles.debug.flim(1);
-debugdisp('Frame %g at time % 4.03f sec', fabsolute, fabsolute ./ handles.vidreader.FrameRate)
+handles.vidtime = handles.vidtime2;
 guidata(hObject, handles);
 vexupdate(hObject)
 
