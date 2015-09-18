@@ -80,7 +80,6 @@ handles.functionName = getSelectedString(handles.popupFunction);
 handles.fparams = struct;
 
 handles.tlim = [nan nan];
-handles.vidtime = 0;
 handles.old.sourceName = '';
 handles.old.functionName = '';
 handles.old.tlim = [nan nan];
@@ -101,8 +100,12 @@ if isempty(propnum)
     dbase.Properties.Types{handles.filenum}{propnum} = 1; % 1=string, 2=boolean, 3=combobox
 end
 handles.vidreader = VideoReader(dbase.Properties.Values{handles.filenum}{propnum});
-handles.framenum = 1;
-handles.isPlaying = false;
+
+handles.fudgefactor = 0.067; % IMPORTANT- this is added to all times before getting frames
+handles.vidbufferlength = 100;
+handles.vidbuffer = zeros(handles.vidreader.Height, ...
+            handles.vidreader.Width, 3, handles.vidbufferlength, 'uint8');
+handles.vidbuffertime = inf(1, handles.vidbufferlength);
 
 % Choose default command line output for egm_Video_explorer
 handles.fs = dbase.Fs;
@@ -218,24 +221,35 @@ end
 
 % If frame changed, show new frame
 if handles.old.vidtime ~= handles.vidtime || isChangedAbove
-    axes(handles.axesVideo);
-    debugdisp('Video time is % 4.03f', handles.vidtime)
-    handles.vidreader.CurrentTime = handles.vidtime;
-    if handles.vidreader.hasFrame()
-        handles.vidreader.readFrame();
-        handles.vidtime2 = handles.vidreader.CurrentTime;
-        handles.vidreader.readFrame();
-        handles.vidframe = handles.vidreader.readFrame();
-    else
-        handles.vidframe = zeros(handles.vidreader.height, handles.vidreader.width, 3);
+    
+    % If the requested frame is outside the buffer, make a new buffer
+    % starting at the requested time
+    if      handles.vidtime < handles.vidbuffertime(1) || ...
+            handles.vidtime > handles.vidbuffertime(end)
+        handles.vidbuffer = zeros(handles.vidreader.Height, ...
+            handles.vidreader.Width, 3, handles.vidbufferlength, 'uint8');
+        handles.vidreader.CurrentTime = handles.vidtime + handles.fudgefactor;
+        numframes = 0;
+        wbh = waitbar(0, 'Buffering...');
+        while numframes < handles.vidbufferlength && handles.vidreader.hasFrame()
+            numframes = numframes + 1;
+            waitbar(numframes/handles.vidbufferlength, wbh);
+            handles.vidbuffertime(numframes) = handles.vidreader.CurrentTime - handles.fudgefactor;
+            handles.vidbuffer(:,:,:,numframes) = handles.vidreader.readFrame();
+        end
+        delete(wbh)
     end
-    image(handles.vidframe);
+    
+    % Get frame from buffer
+    handles.vidbufferpos = find(handles.vidbuffertime <= handles.vidtime, 1, 'last');
+    axes(handles.axesVideo);
+    image(handles.vidbuffer(:,:,:,handles.vidbufferpos))
     
     % Transparent yellow box on data to highlight the current frame. Remove
     % the old box and create a new one.
     axes(handles.axesData);
     yy = ylim;
-    tt = [handles.vidtime, handles.vidtime2] + handles.offset;
+    tt = handles.vidbuffertime(handles.vidbufferpos + [0 1]) + handles.offset;
     delete(findobj('Tag', 'vexFramePatch'))
     patch([tt(1) tt(1) tt(2) tt(2)], [yy(1) yy(2) yy(2) yy(1)], 'k', ...
         'FaceAlpha', 0.5, 'FaceColor', [1 1 0], 'Tag', 'vexFramePatch')
@@ -244,7 +258,6 @@ end
 handles.old.sourceName   = handles.sourceName;
 handles.old.functionName = handles.functionName;
 handles.old.tlim         = handles.tlim;
-handles.old.vidtime      = handles.vidtime;
 
 guidata(hObject, handles)
 
@@ -320,7 +333,12 @@ function pushPlay_Callback(hObject, ~, handles)
 % hObject    handle to pushPlay (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.vidtime = handles.vidtime2;
+ndx = find(handles.vidbuffertime > handles.vidtime, 1, 'first');
+if ~isempty(ndx)
+    handles.vidtime = handles.vidbuffertime(ndx);
+else
+    handles.vidtime = handles.vidtime + 0.00001;
+end
 guidata(hObject, handles);
 vexupdate(hObject)
 
