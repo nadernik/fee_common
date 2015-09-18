@@ -22,7 +22,7 @@ function varargout = egm_Video_explorer(varargin)
 
 % Edit the above text to modify the response to help egm_Video_explorer
 
-% Last Modified by GUIDE v2.5 09-Sep-2015 18:32:57
+% Last Modified by GUIDE v2.5 18-Sep-2015 17:48:41
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -157,8 +157,12 @@ end
 
 function vexupdate(hObject)
 %vexupdate updates the video explorer gui
+
 handles = guidata(hObject);
 isChangedAbove = false;
+
+set(handles.pushNext, 'Enable', 'off')
+set(handles.pushPrev, 'Enable', 'off')
 
 % If data source changed, load data
 if ~strcmp(handles.sourceName, handles.old.sourceName)
@@ -259,6 +263,9 @@ handles.old.sourceName   = handles.sourceName;
 handles.old.functionName = handles.functionName;
 handles.old.tlim         = handles.tlim;
 
+set(handles.pushNext, 'Enable', 'on')
+set(handles.pushPrev, 'Enable', 'on')
+
 guidata(hObject, handles)
 
 % --- Executes during object creation, after setting all properties.
@@ -328,11 +335,11 @@ guidata(hObject, handles);
 vexupdate(hObject);
 
 
-% --- Executes on button press in pushPlay.
-function pushPlay_Callback(hObject, ~, handles)
-% hObject    handle to pushPlay (see GCBO)
+% --- Executes on button press in pushNext.
+function pushNext_Callback(hObject, ~, handles)
+% hObject    handle to pushNext (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+% handles    structure with handles and user data (see GUIDATA)s
 ndx = find(handles.vidbuffertime > handles.vidtime, 1, 'first');
 if ~isempty(ndx)
     handles.vidtime = handles.vidbuffertime(ndx);
@@ -343,34 +350,16 @@ guidata(hObject, handles);
 vexupdate(hObject)
 
 
-% if handles.isPlaying == false
-%     timerfcn = @(obj, evnt) egm_Video_explorer('nextFrame', obj, evnt);
-%     tmr = timer(...
-%         'BusyMode', 'drop', ...
-%         'ExecutionMode', 'fixedRate', ...
-%         'Period', 1 / handles.vidreader.FrameRate, ...
-%         'Tag', 'vexPlayerTimer', ...
-%         'TimerFcn', timerfcn, ...
-%         'UserData', struct('vexFigure', handles.figure1));
-%     set(handles.pushPlay, 'String', 'Pause', 'ForegroundColor', [1 0 0]);
-%     handles.isPlaying = true;
-%     guidata(hObject, handles);
-%     start(tmr);
-% else
-%     stop(timerfind('Tag', 'vexPlayerTimer'));
-%     handles.isPlaying = false;
-%     set(handles.pushPlay, 'String', 'Play', 'ForegroundColor', [0 0 0]);
-%     guidata(hObject, handles);
-% end
-
-% --- Executes on a timer when video is playing.
-% function nextFrame(timerobj, ~)
-% ud = get(timerobj, 'UserData');
-% handles = guidata(ud.vexFigure);
-% handles.framenum = handles.framenum + 1;
-% if handles.framenum > size(handles.frames,4)
-%     % if we went past the end, start over from the beginning
-%     handles.framenum = 1;
-% end
-% guidata(ud.vexFigure, handles);
-% vexupdate(ud.vexFigure)
+% --- Executes on button press in pushPrev.
+function pushPrev_Callback(hObject, eventdata, handles)
+% hObject    handle to pushPrev (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+ndx = find(handles.vidbuffertime < handles.vidtime, 1, 'last');
+if ~isempty(ndx)
+    handles.vidtime = handles.vidbuffertime(ndx);
+else
+    handles.vidtime = handles.vidtime - 0.00001;
+end
+guidata(hObject, handles);
+vexupdate(hObject)
