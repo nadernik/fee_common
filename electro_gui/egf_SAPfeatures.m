@@ -1,4 +1,4 @@
-function [features labels] = egf_SAPfeatures(TS,fs,par);
+function [features labels] = egf_SAPfeatures(TS,fs,par)
 
 labels = {'AM', 'FM' ,'Entropy' , 'Amplitude' , 'Pitch goodness' , 'Pitch' ,'Pitch chose', 'Pitch weight','Gravity center', 'Spectral width'};
 if isstr(TS) & strcmp(TS,'params')
@@ -23,11 +23,11 @@ elseif fs==22050
 elseif fs==44100
 
 else
-  TS=interp1(1:length(TS),TS,1:fs/44100:length(TS));
+    TS=interp1(1:length(TS),TS,1:fs/44100:length(TS));
     TS=TS';
 end
 fs=44100;
- 
+
 [param]=sf_Parameters;
 
 E=mtap;
@@ -59,7 +59,6 @@ m_time_deriv_max=max(m_time_deriv.^2,[],2);
 m_freq_deriv_max=max(m_freq_deriv.^2,[],2);
 
 %===
-
 freq_winer_ampl_index=[param.min_freq_winer_ampl:param.max_freq_winer_ampl];
 if 1 %nargout==16
     freq_winer_ampl_index_band_1=[20:45]; %500-2Khz

@@ -60,7 +60,7 @@ function electro_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % egdir is the directory containing electro_gui.m All support m-files (for macros etc.)
 % must be in this same directory.
 egdir = fileparts(mfilename('fullpath'));
-egfile = @(filename) [egdir filesep filename];
+egfile = @(filename) [egdir filesep() filename];
 handles.egdir = egdir;
 handles.egfile = egfile;
 % egfile is a function that prepends egdir to a filename
