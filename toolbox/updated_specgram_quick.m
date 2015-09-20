@@ -47,7 +47,7 @@ if isempty(p)
 end
 parse(p, varargin{:});
 Options = p.Results;
-
+assert(numel(signal) > 0, 'Received empty signal');
 freqRange = Options.freqRange;
 startTime = Options.startTime;
 nCourse = Options.nCourse;
@@ -127,12 +127,12 @@ else
     %sss = decimate or downsample(ud.signal(ud.startndx:ud.endndx), ratio);
     %Fs = ud.Fs / ratio;
 end
-
 %Compute the spectrogram
 if(size(e,1) ~= windowSize)
     if(windowSize>2)
         [e] = dpss(windowSize,1);
     else
+        warning('updated_specgram_quick is bailing: windowSize is too small to make new window taper');
         return;
     end
 end
@@ -152,7 +152,6 @@ end
 ndx = find((F>=ud.freqRange(1)) & (F<=ud.freqRange(2)));
 delete(ud.hIm);%Get rid of the outdated spectrogram
 %Draw the spectrogram
-
 holdState = ishold(ud.ax);%Cache existing hold status
 hold(ud.ax, 'on');
 times = T + ud.startTime + (ud.startndx-1)/ud.Fs;
