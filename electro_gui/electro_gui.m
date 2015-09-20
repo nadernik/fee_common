@@ -91,7 +91,7 @@ if isempty(mt)
     fgetl(fid1);
     str = ['function handles = ' handles.userfile(1:end-2) '(handles)'];
     while isstr(str)
-        f = findstr(str,'\');
+        f = findstr(str,filesep);
         for d = length(f):-1:1
             str = [str(1:f(d)-1) '\\' str(f(d)+1:end)];
         end
@@ -131,8 +131,8 @@ else
     handles = eval(['defaults_' lst{val} '(handles)']);
 end
 
-dr = dir([mfilename('fullpath') '*m']);
-set(handles.figure_Main,'name',['ElectroGui v. ' datestr(datenum(dr.date),'yy.mm.dd.HH.MM')]);
+dr = dir([mfilename('fullpath'), '.m']);
+set(handles.figure_Main,'name',['ElectroGui v. ' datestr(datenum(char(dr.date), 'dd-mmm-yyyy HH:MM:SS'),'yy.mm.dd.HH.MM')]);
 
 
 handles.ChanLimits1 = handles.ChanLimits(1,:);
@@ -828,7 +828,7 @@ handles.BackupTitle = {'',''};
 
 % Plot sound
 subplot(handles.axes_Sound)
-[handles.sound handles.fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(filenum).name '''],1)']);
+[handles.sound handles.fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(filenum).name '''],1)']);
 handles.DatesAndTimes(filenum) = dt;
 handles.FileLength(filenum) = length(handles.sound);
 set(handles.text_DateAndTime,'string',datestr(dt,0));
@@ -985,9 +985,9 @@ end
 if val <= length(str)-sum(nums)
     chan = str2num(str{val}(9:end));
     if length(str{val})>4 & strcmp(str{val}(1:5),'Sound')
-        [handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(filenum).name '''],1)']);
+        [handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(filenum).name '''],1)']);
     else
-        [handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name '\' handles.chan_files{chan}(filenum).name '''],1)']);
+        [handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name filesep handles.chan_files{chan}(filenum).name '''],1)']);
     end
 else
     ev = zeros(1,length(handles.sound));
@@ -1639,7 +1639,7 @@ handles.DefaultDirectory = handles.path_name;
 handles.DefaultFile = 'analysis.mat';
 
 if strcmp(handles.WorksheetTitle,'Untitled')
-    f = findstr(handles.path_name,'\');
+    f = findstr(handles.path_name, filesep);
     handles.WorksheetTitle = handles.path_name(f(end)+1:end);
 end
 
@@ -1652,7 +1652,7 @@ handles.Properties.Names = cell(1,handles.TotalFileNumber);
 handles.Properties.Values = cell(1,handles.TotalFileNumber);
 handles.Properties.Types = cell(1,handles.TotalFileNumber);
 for c = 1:handles.TotalFileNumber
-    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(c).name '''],0)']);
+    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(c).name '''],0)']);
     handles.Properties.Names{c} = props.Names;
     handles.Properties.Values{c} = props.Values;
     handles.Properties.Types{c} = props.Types;
@@ -1872,7 +1872,7 @@ set(handles.popup_EventList,'value',1);
 set(handles.axes_Events,'visible','off');
 
 if strcmp(handles.WorksheetTitle,'Untitled')
-    f = findstr(handles.path_name,'\');
+    f = findstr(handles.path_name,filesep);
     handles.WorksheetTitle = handles.path_name(f(end)+1:end);
 end
 
@@ -4347,7 +4347,7 @@ else
     isDisplayed = sel;
 end
 
-handles.eventsInViewer = eventNumber(isDisplayed);
+handles.eventsInViewer = eventNumber(logical(isDisplayed));
 
 if strcmp(get(handles.menu_DisplayValues,'checked'),'on')
     handles.EventWaveHandles = [];
@@ -5179,7 +5179,7 @@ switch str
 
                 wav = handles.sound(handles.SegmentTimes{filenum}(c,1):handles.SegmentTimes{filenum}(c,2));
                 warning off
-                wavwrite(wav,handles.fs,16,[path '\' str '.wav']);
+                wavwrite(wav,handles.fs,16,[path filesep str '.wav']);
                 warning on
             end
         end
@@ -5188,7 +5188,7 @@ switch str
     case 'Sonogram'
         if get(handles.radio_Files,'value')==1
             [pathstr,name,ext] = fileparts(get(handles.text_FileName,'string'));
-            [file, path] = uiputfile([handles.DefaultDirectory '\' name '.jpg'],'Save image');
+            [file, path] = uiputfile([handles.DefaultDirectory filesep name '.jpg'],'Save image');
             if ~isstr(file)
                 delete(txtexp)
                 return
@@ -5352,7 +5352,7 @@ if get(handles.radio_Matlab,'value')==1
                 if handles.WorksheetIncludeTitle == 1
                     txt = text(handles.WorksheetMargin/handles.WorksheetWidth,(handles.WorksheetHeight-handles.WorksheetMargin)/handles.WorksheetHeight,handles.WorksheetTitle);
                     set(txt,'HorizontalAlignment','left','VerticalAlignment','top','fontsize',14);
-                    txt = text((handles.WorksheetWidth-handles.WorksheetMargin)/handles.WorksheetWidth,(handles.WorksheetHeight-handles.WorksheetMargin)/handles.WorksheetHeight,['Page ' num2str(j) '/' num2str(max(pagenum))]);
+                    txt = text((handles.WorksheetWidth-handles.WorksheetMargin)/handles.WorksheetWidth,(handles.WorksheetHeight-handles.WorksheetMargin)/handles.WorksheetHeight,['Page ' num2str(j) filesep num2str(max(pagenum))]);
                     set(txt,'HorizontalAlignment','right','VerticalAlignment','top','fontsize',14);
                 end
                 f = find(pagenum==j);
@@ -5439,7 +5439,7 @@ elseif get(handles.radio_Files,'value')==1
 
         case {'Current sound', 'Sound mix'}
             [pathstr,name,ext] = fileparts(get(handles.text_FileName,'string'));
-            [file, path] = uiputfile([handles.DefaultDirectory '\' name '.wav'],'Save sound');
+            [file, path] = uiputfile([handles.DefaultDirectory filesep name '.wav'],'Save sound');
             if ~isstr(file)
                 delete(txtexp)
                 return
@@ -5613,7 +5613,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                     set(txt,'Top',72*handles.WorksheetMargin+offy);
 
                     txt = invoke(newslide.Shapes,'AddTextBox',1,0,0,0,0);
-                    set(txt.TextFrame.TextRange,'Text',['Page ' num2str(j) '/' num2str(max(pagenum))]);
+                    set(txt.TextFrame.TextRange,'Text',['Page ' num2str(j) filesep num2str(max(pagenum))]);
                     set(txt.TextFrame,'VerticalAnchor','msoAnchorTop','WordWrap','msoFalse',...
                         'MarginLeft',0,'MarginRight',0,'MarginTop',0,'MarginBottom',0);
                     set(txt.TextFrame.TextRange.Font,'Size',14);
@@ -6455,7 +6455,7 @@ handles.WorksheetTimes(end+1) = datenum(dt);
 handles = UpdateWorksheet(handles);
 
 str = get(handles.panel_Worksheet,'title');
-f = findstr(str,'/');
+f = findstr(str,filesep);
 tot = str2num(str(f+1:end));
 handles.WorksheetCurrentPage = tot;
 handles = UpdateWorksheet(handles);
@@ -6548,7 +6548,7 @@ axis equal;
 axis tight;
 axis off;
 
-set(handles.panel_Worksheet,'title',['Worksheet: Page ' num2str(handles.WorksheetCurrentPage) '/' num2str(max([1 max(pagenum)]))]);
+set(handles.panel_Worksheet,'title',['Worksheet: Page ' num2str(handles.WorksheetCurrentPage) filesep num2str(max([1 max(pagenum)]))]);
 
 
 function click_Worksheet(hObject, eventdata, handles)
@@ -6596,7 +6596,7 @@ function push_PageLeft_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 str = get(handles.panel_Worksheet,'title');
-f = findstr(str,'/');
+f = findstr(str,filesep);
 tot = str2num(str(f+1:end));
 
 handles.WorksheetCurrentPage = mod(handles.WorksheetCurrentPage-1,tot);
@@ -6616,7 +6616,7 @@ function push_PageRight_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 str = get(handles.panel_Worksheet,'title');
-f = findstr(str,'/');
+f = findstr(str, filesep);
 tot = str2num(str(f+1:end));
 
 handles.WorksheetCurrentPage = mod(handles.WorksheetCurrentPage+1,tot);
@@ -8888,7 +8888,7 @@ handles.Properties.Names = cell(1,handles.TotalFileNumber);
 handles.Properties.Values = cell(1,handles.TotalFileNumber);
 handles.Properties.Types = cell(1,handles.TotalFileNumber);
 for c = 1:handles.TotalFileNumber
-    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(c).name '''],0)']);
+    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(c).name '''],0)']);
     handles.Properties.Names{c} = props.Names;
     handles.Properties.Values{c} = props.Values;
     handles.Properties.Types{c} = props.Types;

@@ -1,0 +1,12 @@
+function [xmin, xmax, ymin, ymax] = getBoxCoordinates(ax)
+clickLocation = get(ax, 'CurrentPoint');
+rect = rbbox;
+endPoint = get(ax,'CurrentPoint');
+x1 = clickLocation(1,1);
+y1 = clickLocation(1,2);
+x2 = endPoint(1,1);
+y2 = endPoint(1,2);
+xmin = min(x1, x2);
+xmax = max(x1, x2);
+ymin = min(y1, y2);
+ymax = max(y1, y2);

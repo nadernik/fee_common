@@ -1,5 +1,5 @@
 function perm = sortbyCorr(W)
-    DisMatrix = W'*W+W';%+W';% added scaling factor & +W+W'
+    DisMatrix = W*W' + W'; %W*W'+W'*W+10*W'; %W*W' + W' sometimes works pretty well
     me = 1; 
     togo = 2:size(DisMatrix,1); 
     for i = 1:length(W)-1

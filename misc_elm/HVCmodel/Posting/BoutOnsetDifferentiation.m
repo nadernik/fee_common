@@ -139,11 +139,14 @@ else
     PlottingParams.labelFontSize = 7; 
 end
 
-PlottingParams.Syl1Color = [0 0 1]; 
-PlottingParams.Syl2Color = [1 0 0]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
-PlottingParams.ProtoSylColor = [1 0 1]; 
-PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
-PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
+
+PlottingParams.SeedColor = [1 .9 1];
+PlottingParams.Syl1Color = [1 0 0]; 
+PlottingParams.Syl2Color = [0 0 1]; 
+PlottingParams.Syl1BarColor = [0 0 1]; 
+PlottingParams.Syl2BarColor = [1 0 0];
+PlottingParams.ProtoSylColor = [0 0 0]; 
+PlottingParams.ProtoSylBarColor = [.5 .5 .5];
 PlottingParams.numFontSize = 5; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit

@@ -47,7 +47,7 @@ function varargout = vc_imp_ElectroGuiDbase(varargin)
 
 % Edit the above text to modify the response to help vc_imp_ElectroGuiDbase
 
-% Last Modified by GUIDE v2.5 06-Jun-2008 20:17:13
+% Last Modified by GUIDE v2.5 02-Jun-2015 15:55:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -205,7 +205,6 @@ if(~isempty(fn))
     if(~exist('dbase'))
         warning('The file selected was not an electro_gui file.');
     end    
-    
     %Use the dbase to populate the event pop-ups:
     eventStrs{1} = 'Audio Segments';
     for ne = 1:length(dbase.EventSources)
@@ -242,7 +241,6 @@ function popupEvent_Callback(hObject, eventdata, handles)
 %Update the marker start and stop popups.
 eventVal = get(handles.popupEvent,'Value');
 dbase = handles.dbase;
-
 if(eventVal==1) %dbbase Audio segments    
     markerStr = {'Segment Start','Segment End'};
 else %dbase event
@@ -525,6 +523,7 @@ try
     en = round(P.endDelta/1000*fs); %round(P.endDelta*1000*fs); %%% fixed Tatsuo
     
     nVect = 0;
+
     h_waitbar = waitbar(0,'Please wait...','Name','Analyzing file...','CreateCancelBtn','setappdata(gcbf,''canceling'',1)'); %%% Tatsuo
     setappdata(h_waitbar,'canceling',0); %%% Tatsuo
     for n = 1:length(P.FileRange)
@@ -537,10 +536,10 @@ try
         end %%% Tatsuo
                 
         if(P.EventNdx == 0)
-            [sig nfs] = eval(['egl_' dbase.SoundLoader '([''' dbase.PathName '\' dbase.SoundFiles(nFile).name '''],1)']);
+            [sig nfs] = eval(['egl_' dbase.SoundLoader '([''' dbase.PathName filesep() dbase.SoundFiles(nFile).name '''],1)']);
         else
             chan = str2num(dbase.EventSources{P.EventNdx}(9:end));
-            [sig nfs] = eval(['egl_' dbase.ChannelLoader{chan} '([''' dbase.PathName '\' dbase.ChannelFiles{chan}(nFile).name '''],1)']);
+            [sig nfs] = eval(['egl_' dbase.ChannelLoader{chan} '([''' dbase.PathName filesep() dbase.ChannelFiles{chan}(nFile).name '''],1)']);
         end
         if(round(nfs) ~= round(fs))
             error('Unexpected sampling rate.');
@@ -678,3 +677,11 @@ catch
     bSuccess = false;
     warndlg(['Import failed: ', lasterr]);
 end
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over buttonOpen.
+function buttonOpen_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to buttonOpen (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

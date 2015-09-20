@@ -59,7 +59,7 @@ set(handles.popup_HistCount,'position',get(handles.popup_PSTHCount,'position'));
     
 handles.BackupHandles = [];
 
-if length(varargin)==1
+if length(varargin) >= 1
     % Copy ElectroGui handles
     handles.egh = varargin{1};
     handles.BackupHandles = handles.egh;
@@ -217,6 +217,11 @@ handles.WarpIntervalDuration = [.1 .1]; % Only meaningful for custom interval ty
 handles.WarpNumBefore = 1;
 handles.WarpNumAfter = 1;
 
+val = get(handles.check_CopyEvents, 'Value');
+set(handles.check_CopyEvents, 'UserData', val);
+
+val = get(handles.check_SkipSorting, 'Value');
+set(handles.check_SkipSorting, 'UserData', val);
 
 % Choose default command line output for egm_Sorted_rasters
 handles.output = hObject;
@@ -236,7 +241,12 @@ function varargout = egm_Sorted_rasters_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = handles.BackupHandles;
+if nargout >= 1
+    varargout{1} = handles.BackupHandles;
+end
+if nargout >= 2
+    varargout{2} = handles.output; % handle to the figure
+end
 
 
 % --- Executes on selection change in popup_TriggerSource.
@@ -690,6 +700,15 @@ function push_GenerateRaster_Callback(hObject, eventdata, handles)
 % hObject    handle to push_GenerateRaster (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% Save parameters in case we want to save the code later (see
+% menu_ExportCode_Callback function)
+if get(handles.check_HoldOn, 'Value') == 1
+    handles.parametersForSaving{end+1} = getSortedRasterParameters(handles);
+else
+    handles.parametersForSaving = {};
+    handles.parametersForSaving{1} = getSortedRasterParameters(handles);
+end
 
 set(handles.push_GenerateRaster,'foregroundcolor','r'); % change the color of the button
 drawnow;
@@ -2832,15 +2851,21 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in push_PlotColor.
-function push_PlotColor_Callback(hObject, eventdata, handles)
+function push_PlotColor_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_PlotColor (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 str = get(handles.list_Plot,'string');
 val = get(handles.list_Plot,'value');
-query = [str{val}(26:end-14) ' color'];
-c = uisetcolor(handles.PlotColor(val,:),query);
+
+if nargin < 4
+    query = [str{val}(26:end-14) ' color'];
+    c = uisetcolor(handles.PlotColor(val,:),query);
+else
+    c = varargin{1};
+end
+
 if length(c)<3
     return
 end
@@ -2913,7 +2938,7 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in push_PlotWidth.
-function push_PlotWidth_Callback(hObject, eventdata, handles)
+function push_PlotWidth_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_PlotWidth (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -2922,21 +2947,31 @@ str = get(handles.list_Plot,'string');
 val = get(handles.list_Plot,'value');
 
 if strcmp(get(handles.push_PlotWidth,'string'),'Width')
-    query = [str{val}(26:end-14) ' line width'];
-    answer = inputdlg(query,'Line width',1,{num2str(handles.PlotLineWidth(val))});
-    if isempty(answer)
-        return
+    if nargin < 4
+        query = [str{val}(26:end-14) ' line width'];
+        answer = inputdlg(query,'Line width',1,{num2str(handles.PlotLineWidth(val))});
+        if isempty(answer)
+            return
+        end
+        wdth = str2num(answer{1});
+    else
+        wdth = varargin{1};
     end
 
-    handles.PlotLineWidth(val) = str2num(answer{1});
+    handles.PlotLineWidth(val) = wdth;
 else
-    query = [str{val}(26:end-14) ' transparency'];
-    answer = inputdlg(query,'Transparency',1,{num2str(handles.PlotAlpha(val))});
-    if isempty(answer)
-        return
+    if nargin < 4
+        query = [str{val}(26:end-14) ' transparency'];
+        answer = inputdlg(query,'Transparency',1,{num2str(handles.PlotAlpha(val))});
+        if isempty(answer)
+            return
+        end
+        alpha = str2num(answer{1});
+    else
+        alpha = varargin{1};
     end
 
-    handles.PlotAlpha(val) = str2num(answer{1});
+    handles.PlotAlpha(val) = alpha;
 end
 
 if isempty(handles.PlotHandles{val})
@@ -2975,7 +3010,7 @@ for c = intersect([13 15 16 20 28 29],val)
     set(handles.PlotHandles{c},'linewidth',handles.PlotLineWidth(c));
 end
 for c = intersect([10 11],val)
-    if ~isempty(handles.PlotHandles{c})
+    if ~isempty(handles.PlotHandles{c}) && ~isempty(handles.PlotHandles{c}{event_indx}) %FIXME
         set(handles.PlotHandles{c}{event_indx}(indx),'linewidth',handles.PlotLineWidth(c));
     end
 end
@@ -3018,13 +3053,21 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in push_TimeLimits.
-function push_TimeLimits_Callback(hObject, eventdata, handles)
+function push_TimeLimits_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_TimeLimits (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+if nargin < 4
+    prompts{1} = 'Min (sec)';
+    defaults{1} = num2str(handles.PlotXLim(1));
+    prompts{2} = 'Max (sec)';
+    defaults{2} = num2str(handles.PlotXLim(2));
+    answer = inputdlg(prompts, 'Time limits', 1, defaults);
+else
+    answer = varargin;
+end
 
-answer = inputdlg({'Min (sec)','Max (sec)'},'Time limits',1,{num2str(handles.PlotXLim(1)),num2str(handles.PlotXLim(2))});
 if isempty(answer)
     return
 end
@@ -3042,10 +3085,12 @@ guidata(hObject, handles);
 
 
 % --- Executes on button press in push_TickHeight.
-function push_TickHeight_Callback(hObject, eventdata, handles)
+function push_TickHeight_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_TickHeight (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+% varargin   optional arguments used as answers to input dialogs. If
+%            provided, input dialogs will be skipped 
 
 f = findobj('parent',handles.panel_TickUnits,'style','radiobutton','value',1);
 ch = get(handles.panel_TickUnits,'children');
@@ -3055,24 +3100,46 @@ str = {'number of trials','seconds','inches','percent of the plot'};
 
 if f == 3
     if get(handles.radio_YTrial,'value')==1
-        answer = inputdlg({['Tick height (' str{f} ')'],'Overlap (percent)'},'Tick height',1,{num2str(handles.PlotTickSize(f)),num2str(handles.PlotOverlap)});
-        if isempty(answer)
-            return
+        if nargin < 4
+            prompts{1} = ['Tick height (' str{f} ')'];
+            defaults{1} = num2str(handles.PlotTickSize(f));
+            prompts{2} = 'Overlap (percent)';
+            defaults{2} = num2str(handles.PlotOverlap);
+            answer = inputdlg(prompts, 'Tick height', 1, defaults);
+            if isempty(answer)
+                return
+            end
+        else
+            answer = varargin;
         end
         handles.PlotTickSize(f) = str2num(answer{1});
         handles.PlotOverlap = str2num(answer{2});
     else
-        answer = inputdlg({['Tick height (' str{f} ')'],'Inches per second'},'Tick height',1,{num2str(handles.PlotTickSize(f)),num2str(handles.PlotInPerSec)});
-        if isempty(answer)
-            return
+        if nargin < 4
+            prompts{1} = ['Tick height (' str{f} ')'];
+            defaults{1} = num2str(handles.PlotTickSize(f));
+            prompts{2} = 'Inches per second';
+            defaults{2} = num2str(handles.PlotInPerSec);
+            answer = inputdlg(prompts, 'Tick height', 1, defaults);
+            if isempty(answer)
+                return
+            end
+        else
+            answer = varargin;
         end
         handles.PlotTickSize(f) = str2num(answer{1});
         handles.PlotInPerSec = str2num(answer{2});
     end
 else
-    answer = inputdlg(['Tick height (' str{f} ')'],'Tick height',1,{num2str(handles.PlotTickSize(f))});
-    if isempty(answer)
-        return
+    if nargin < 4
+        prompt = ['Tick height (' str{f} ')'];
+        default = num2str(handles.PlotTickSize(f));
+        answer = inputdlg(prompt, 'Tick height', 1, {default});
+        if isempty(answer)
+            return
+        end
+    else
+        answer = varargin;
     end
     handles.PlotTickSize(f) = str2num(answer{1});
 end
@@ -3565,18 +3632,24 @@ end
 
 
 % --- Executes on button press in push_Open.
-function push_Open_Callback(hObject, eventdata, handles)
+function push_Open_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_Open (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+% dbase      OPTIONAL electro_gui dbase. If omitted, will be asked for file
+% tolerance  OPTIONAL tolerance for overlaps. If omitted, will be prompted
 
-[file, path] = uigetfile('*.mat','Load analysis');
-if ~isstr(file)
-    return
+if nargin > 3
+    dbase = varargin{1};
+else
+    [file, path] = uigetfile('*.mat','Load analysis');
+    if ~isstr(file)
+        return
+    end
+    cd(path)
+    
+    load([path file],'dbase');
 end
-cd(path)
-
-load([path file],'dbase');
 
 set(handles.popup_Files,'value',1);
 set(handles.popup_Files,'string',{'All files in range'});
@@ -3601,8 +3674,16 @@ handles.egh.EventSelected = dbase.EventIsSelected;
 handles.egh.Properties = dbase.Properties;
 handles.egh.TotalFileNumber = length(handles.egh.sound_files);
 
-handles.egh.overlaptolerance = 0.0001;
-handles.egh = Fix_Overlap(handles.egh);
+if nargin >= 5
+    % Optional 5th argument is the overlap tolerance. If provided, skip the
+    % prompt for overlap tolerance and use the given value
+    handles.egh.overlaptolerance = varargin{5};
+    handles.egh = Fix_Overlap(handles.egh, true);
+else
+    handles.egh.overlaptolerance = 0.0001;
+    % Fix_Overlap will prompt for the overlap tolerance
+    handles.egh = Fix_Overlap(handles.egh);
+end
 
 handles.FileRange = 1:handles.egh.TotalFileNumber;
 handles.FileNames = {};
@@ -3705,12 +3786,14 @@ end
 
 
 % --- Executes on button press in push_PSTHBinSize.
-function push_PSTHBinSize_Callback(hObject, eventdata, handles)
+function push_PSTHBinSize_Callback(hObject, eventdata, handles, varargin)
 % hObject    handle to push_PSTHBinSize (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 if strcmp(get(handles.push_HistHoriz,'fontweight'),'bold')
+    % If PSTH selected
+    
     str = get(handles.popup_PSTHUnits,'string');
     val = get(handles.popup_PSTHUnits,'value');
     str = str{val};
@@ -3720,7 +3803,20 @@ if strcmp(get(handles.push_HistHoriz,'fontweight'),'bold')
         val = val + 3;
     end
     
-    answer = inputdlg({'PSTH bin size (sec)','Smoothing window (# of bins)',['Min ' str],['Max ' str]},'Options',1,{num2str(handles.PSTHBinSize),num2str(handles.PSTHSmoothingWindow),num2str(handles.PSTHYLim(val,1)),num2str(handles.PSTHYLim(val,2))});
+    if nargin < 4
+        prompt{ 1} = 'PSTH bin size (sec)';
+        default{1} = num2str(handles.PSTHBinSize);
+        prompt{ 2} = 'Smoothing window (# of bins)';
+        default{2} = num2str(handles.PSTHSmoothingWindow);
+        prompt{ 3} = ['Min ' str];
+        default{3} = num2str(handles.PSTHYLim(val,1));
+        prompt{ 4} = ['Max ' str];
+        default{4} = num2str(handles.PSTHYLim(val,2));
+        answer = inputdlg(prompt, 'Options', 1, default);
+    else
+        answer = varargin{1};
+    end
+    
     if isempty(answer)
         return
     end
@@ -3733,7 +3829,7 @@ if strcmp(get(handles.push_HistHoriz,'fontweight'),'bold')
     if get(handles.radio_PSTHManual,'value')==1
         set(handles.axes_PSTH,'ylim',handles.PSTHYLim(val,:));
     end
-else
+else % Vert. selected
     str = get(handles.popup_HistUnits,'string');
     valm = get(handles.popup_HistUnits,'value');
     strm = str{valm};
@@ -3749,7 +3845,25 @@ else
         val = 2;
     end
     str = {'trials','sec'};
-    answer = inputdlg({['Histogram bin size (' str{val} ')'],'Smoothing window (# of bins)','ROI start (sec)','ROI stop (sec)',['Min ' strm],['Max ' strm]},'Options',1,{num2str(handles.HistBinSize(val)),num2str(handles.HistSmoothingWindow),num2str(handles.ROILim(1)),num2str(handles.ROILim(2)),num2str(handles.HistYLim(val,1)),num2str(handles.HistYLim(val,2))});
+    
+    if nargin < 4
+        prompt{ 1} = ['Histogram bin size (' str{val} ')'];
+        default{1} = num2str(handles.HistBinSize(val));
+        prompt{ 2} = 'Smoothing window (# of bins)';
+        default{2} = num2str(handles.HistSmoothingWindow);
+        prompt{ 3} = 'ROI start (sec)';
+        default{3} = num2str(handles.ROILim(1));
+        prompt{ 4} = 'ROI stop (sec)';
+        default{4} = num2str(handles.ROILim(2));
+        prompt{ 5} = ['Min ' strm];
+        default{5} = num2str(handles.HistYLim(val,1));
+        prompt{ 6} = ['Max ' strm];
+        default{6} = num2str(handles.HistYLim(val,2));
+        answer = inputdlg(prompt,'Options',1,default);
+    else
+        answer = varargin{1};
+    end
+    
     if isempty(answer)
         return
     end
@@ -5617,16 +5731,18 @@ function check_SkipSorting_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of check_SkipSorting
 
 
-function handles = Fix_Overlap(handles)
+function handles = Fix_Overlap(handles, askForInput)
 
 handles.Overlaps = 1:length(handles.DatesAndTimes);
-
-answer = inputdlg({'File overlap tolerance (sec). Press cancel to omit fixing overlaps.'},'File overlaps',1,{num2str(handles.overlaptolerance)});
-if isempty(answer)
-    return
+if nargin > 1 && askForInput == 1
+    answer = inputdlg({'File overlap tolerance (sec). Press cancel to omit fixing overlaps.'},'File overlaps',1,{num2str(handles.overlaptolerance)});
+    if isempty(answer)
+        return
+    end
+    
+    handles.overlaptolerance = str2num(answer{1});
 end
 
-handles.overlaptolerance = str2num(answer{1});
 tol = handles.overlaptolerance*handles.fs;
 
 for c = length(handles.DatesAndTimes)-1:-1:1%iterate through the files in reverse order
@@ -5818,7 +5934,7 @@ save([path file],'trigInfo');
 
 %This is the function that "export matlab figure" calls
 % --------------------------------------------------------------------
-function menu_ExportFigure_Callback(hObject, eventdata, handles)
+function varargout = menu_ExportFigure_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_ExportFigure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -5857,6 +5973,17 @@ if handles.HistShow(2) == 1
     set(get(ax,'children'),'buttondownfcn','');
 end
 
+if nargout >= 1
+    varargout{1} = fig;
+end
+
+%This is the function that "export matlab code" calls
+% --------------------------------------------------------------------
+function menu_ExportCode_Callback(~, ~, handles)
+% hObject    handle to menu_ExportFigure (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+saveSortedRastersFunction(handles.parametersForSaving)
 
 % --- Executes during object creation, after setting all properties.
 function push_GenerateRaster_CreateFcn(hObject, eventdata, handles)

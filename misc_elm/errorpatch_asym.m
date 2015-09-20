@@ -1,6 +1,13 @@
 function errorpatch_asym(X, Y, Elower,Eup, LC, PC)
 % This function replicates the functionality of errorbar, but uses
 % errorpatches instead
+% X         x values
+% Y         y values
+% Elower    y values for bottom of shading (eg, prctile(Ydata,25))
+% Eup       y values for top of shading (eg, prctile(Ydata,75))
+% LC        color of the line
+% PC        color of patch
+
 X = X(:);
 Y = Y(:);
 Elower = Elower(:);
