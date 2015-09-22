@@ -229,7 +229,7 @@ if handles.old.vidtime ~= handles.vidtime || isChangedAbove
     % If the requested frame is outside the buffer, make a new buffer
     % starting at the requested time
     if      handles.vidtime < handles.vidbuffertime(1) || ...
-            handles.vidtime > handles.vidbuffertime(end)
+            handles.vidtime > handles.vidbuffertime(end-1)
         handles.vidbuffer = zeros(handles.vidreader.Height, ...
             handles.vidreader.Width, 3, handles.vidbufferlength, 'uint8');
         handles.vidreader.CurrentTime = handles.vidtime + handles.fudgefactor;
