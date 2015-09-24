@@ -163,7 +163,7 @@ end
 %% Attach output channels
 if hasOut
     GOUTCHANS = outChannels;
-    aoCh = addAnalogOutputChannel(s, dID, outChannels,'Voltage');
+    aoCh = addAnalogOutputChannel(s, dID, outChannels, 'Voltage');
 else
     GOUTCHANS = [];
     ao = [];
@@ -181,8 +181,8 @@ if hasIn
     %Set up buffer
     bufferLength = ceil(actUpdateFreq * bufferSecs);    %Length of buffer in terms of number update units
     NUMBUFFERUNITS = 0; %Running total number of buffer units recorded.
-    GDAQDATA = zeros(bufferUnitSize*bufferLength,numel(inChannels));
-    GDAQTIME = zeros(bufferUnitSize*bufferLength,1); 
+    GDAQDATA = zeros(bufferUnitSize * bufferLength, numel(inChannels));
+    GDAQTIME = zeros(bufferUnitSize * bufferLength, 1); 
     BTRIGGER = zeros(numel(inChannels), 1);
     NPEEK = 0;
     

@@ -1,10 +1,10 @@
-function [features labels ] = SAPfeatures_YM(TS,fs);
+function [features, labels ] = SAPfeatures_YM(TS,fs)
 %TS is the TheSound; fs is sampling rate 
 %        Writen by Sigal Saar August 08 2005
 %        Revised by Yael MAndelblat-Cerf 2012
 
 labels = {'AM', 'FM' ,'Entropy' , 'Amplitude' , 'Pitch goodness' , 'Pitch' ,'Pitch chose', 'Pitch weight','Gravity center'};
-if isstr(TS) & strcmp(TS,'params')
+if ischar(TS) && strcmp(TS,'params')
     features.Names = {};
     features.Values = {};
     return
@@ -33,7 +33,7 @@ N=length(TS);
 TSM=sf_runing_windows(TS',param.window, param.winstep);
 S=0;SF=0;
 
-if param.k==0 | param.NW==0
+if param.k==0 || param.NW==0
     J1=(fft(TSM(:,:).*(ones(size(TSM,1),1)*(E(:,1))'),param.pad,2));
     J1=J1(:,1:param.spectrum_range)* ( 27539);
     J2=(fft(TSM(:,:).*(ones(size(TSM,1),1)*(E(:,2))'),param.pad,2));
@@ -53,7 +53,7 @@ m_time_deriv_max=max(m_time_deriv.^2,[],2);
 m_freq_deriv_max=max(m_freq_deriv.^2,[],2);
 
 %===================================================
-freq_winer_ampl_index=[param.min_freq_winer_ampl:param.max_freq_winer_ampl];
+freq_winer_ampl_index= param.min_freq_winer_ampl:param.max_freq_winer_ampl;
 m_amplitude=sum(m_powSpec(:,freq_winer_ampl_index),2);
 
 log_power=m_time_deriv(:,freq_winer_ampl_index).^2+m_freq_deriv(:,freq_winer_ampl_index).^2; 
@@ -70,10 +70,10 @@ m_AM=m_AM./(m_amplitude+eps);
 m_amplitude=log10(m_amplitude+1)*10-70; %units in Db
 
 %===========Wiener entropy==================
-m_LogSum(find(m_LogSum==0))=length(freq_winer_ampl_index); 
+m_LogSum(m_LogSum==0)=length(freq_winer_ampl_index); 
 m_LogSum=log(m_LogSum/length(freq_winer_ampl_index)); %divide by the number of frequencies
 m_Entropy=(m_SumLog/length(freq_winer_ampl_index))-m_LogSum;
-m_Entropy(find(m_LogSum==0))=0; 
+m_Entropy(m_LogSum==0)=0; 
 
 %============FM===================
 
@@ -91,7 +91,7 @@ x=(real(Cepstrum(:,param.up_pitch:param.low_pitch))).^2+(imag(Cepstrum(:,param.u
 [m_PitchGoodness,m_Pitch]=sort(x,2);
 m_PitchGoodness=m_PitchGoodness(:,end);
 m_Pitch=m_Pitch(:,end);
-m_Pitch(find(m_PitchGoodness<1))=1;
+m_Pitch(m_PitchGoodness<1)=1;
 m_PitchGoodness=max(m_PitchGoodness,1);
 
 m_Pitch=m_Pitch+3;
@@ -539,7 +539,7 @@ ending_string=[char(' '*ones(length(end_window)-1,1)) ; ']' ];
 
 eval_matrix=[starting_string num2str(start_window) char_string_dot num2str(end_window) char_string_coma ending_string]';
 matrix_is=eval( eval_matrix(1:size(eval_matrix,1)*size(eval_matrix,2)));
-windowed_data=data([ matrix_is]);
+windowed_data=data( matrix_is);
 
 clear matrix_is* data
 
