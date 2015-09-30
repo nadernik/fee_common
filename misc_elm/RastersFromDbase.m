@@ -56,9 +56,9 @@ PROTOSYLLABLE = zeros(size(XLS.data.Sheet1,1),1); PROTOSYLLABLE(strmatch('protos
 DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 %%
 figure(1)
-rows = find(TUTORING&PUTPROJ);%find(SINGING&PUTPROJ&DIFF);
+rows = find(SINGING&PUTPROJ&DIFF);%find(TUTORING&PUTPROJ);%find(SINGING&PUTPROJ&DIFF);
 SortBy = 'latency'; % 'age' or 'elecpos' or 'latency'
-p.sylType = 'tutor'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
 p.sylName = {'C'}; % specify sylable to align to, Only used when p.sylType = 'specified'
 p.PSTHaxisMax = []; % [] to leave automatic
 p.alignTo = 'onset'; 
