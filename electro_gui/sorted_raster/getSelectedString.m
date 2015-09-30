@@ -2,7 +2,7 @@ function str = getSelectedString(obj)
 % Returns the string of the selected item in a popup menu or radio panel
 
 typ = get(obj, 'Type');
-if strcmp(typ, 'uipanel')
+if strcmp(typ, 'uipanel') || strcmp(typ, 'uibuttongroup')
     % this is a radio panel
     radios = findobj('Parent', obj, 'Style', 'radiobutton'); % handles to radio buttons in this panel
     if isempty(radios)
