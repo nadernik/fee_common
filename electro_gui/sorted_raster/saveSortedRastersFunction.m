@@ -23,8 +23,8 @@ pFilename = cell(size(rasterParameters));
 for ii = 1:length(rasterParameters)
     p = rasterParameters{ii}; %#ok
     pFilename{ii} = [funcname int2str(ii) '.mat'];
-    if exist(pFilename{ii}, 'file') == 2
-        warning('File already exists: %s', pFilename{ii})
+    if exist(pFilename{ii}, 'file') == 2 && nargin < 2 % don't automatically overwrite files (uiputfile already asks user)
+        error('File already exists: %s', pFilename{ii})
     end
     save(fullfile(pathname, pFilename{ii}), 'p')
 end
