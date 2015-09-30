@@ -114,7 +114,7 @@ set(gca,'fontsize',FS_axes)
 % plot((1:size(handles.sound))/handles.fs, handles.amplitude)
 g = subplot(2,1,2)
 set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren')
-plot(time,units, 'linewidth', 1.5); %mini_max_plot(time, units, 'ax', g)
+plot(time,units, 'linewidth', 1); %mini_max_plot(time, units, 'ax', g)
 xlabel('Time(s)','fontsize',FS); 
 ylabel(get(get(handles.axes_Channel1, 'ylabel'), 'string'),'fontsize',FS); 
 axis tight
