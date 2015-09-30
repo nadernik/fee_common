@@ -4,9 +4,7 @@ clear all
 
 clc
 
-XLS = importdata('C:/Users/emackev/Dropbox (MIT)/MackeviciusLabPresentations/NIfUnits.xlsx');
-XLS.data.Sheet1 = [NaN*ones(1, size(XLS.data.Sheet1,2)); XLS.data.Sheet1]; % add row corresponding to title row, so indices line up.
-Columns = XLS.textdata.Sheet1(1,:);
+[XLS, Columns] = loadNIfSpreadsheet_elm(); 
 
 SINGING = XLS.data.Sheet1(:,strmatch('singing?', Columns))==1; 
 TUTORING = XLS.data.Sheet1(:,strmatch('tutoring?', Columns))==1;
@@ -57,18 +55,19 @@ SUBSONG = zeros(size(XLS.data.Sheet1,1),1); SUBSONG(strmatch('subsong', XLS.text
 PROTOSYLLABLE = zeros(size(XLS.data.Sheet1,1),1); PROTOSYLLABLE(strmatch('protosyllable', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 %%
-
-rows = find(SINGING&PUTPROJ);
-SortBy = 'elecpos'; % 'age' or 'elecpos' or 'latency'
-p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+figure(1)
+rows = find(TUTORING&PUTPROJ);%find(SINGING&PUTPROJ&DIFF);
+SortBy = 'latency'; % 'age' or 'elecpos' or 'latency'
+p.sylType = 'tutor'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
 p.sylName = {'C'}; % specify sylable to align to, Only used when p.sylType = 'specified'
 p.PSTHaxisMax = []; % [] to leave automatic
 p.alignTo = 'onset'; 
-p.sortBy = 'gapdur'; % syldur or gapdur
+p.sortBy = 'syldur'; % syldur or gapdur
 p.XLS = XLS; 
+p.Columns = Columns; 
 p.rasterRange = [-.5 .5];
 p.plotRange = [-.2 .3]; 
-p.psthdt = .001; %.001; 
+p.psthdt = .001; 
 smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
 p.smoothwin = smoothwin; 
 bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
@@ -78,33 +77,11 @@ p.papersize = 2*[3.5 2.5];
 p.fontsize = 6; 
 
 % to plot just one row
-p.makeFig = 1; p.MaxToPlot = 100; analyzeRow(120, p, 'PSTH'); p.makeFig = 0;
+% p.makeFig = 1; p.MaxToPlot = 100; analyzeRow(241, p, 'fourRasters'); p.makeFig = 0;
 
-%%
-figure(1); 
-p.makeFig = 1; 
-p.sylType = 'song';
-p.rasterRange = [-.5 .5];
-p.plotRange = [-.2 .2]; 
-p.MaxToPlot = 200;
-p.papersize = [8 6]; 
-ROWs = find(SINGING&SINGLEUNIT); 
-set(p.figNum, 'color', [1 1 1])
-for rowi = 1:numel(ROWs)
-    row = ROWs(rowi); 
-    analyzeRow(row, p, 'fourRasters');
-    if PUTPROJ(row)
-        filestr = fullfile('C:\Users\emackev\Documents\MATLAB\code\RasterPlots', ['SortedRasters', num2str(row), 'PutProj_Age', num2str(Age(row)),'.jpg']); 
-    else
-        filestr = fullfile('C:\Users\emackev\Documents\MATLAB\code\RasterPlots', ['SortedRasters', num2str(row), '_Age', num2str(Age(row)),'.jpg']); 
-    end
-    saveas(p.figNum,filestr)
-end
-%p.makeFig = 0; 
+%% calculating reliability and latency for each row. Takes ~10 seconds. 
 
-%% calculating reliability and latency for each row. Takes 20 seconds. 
-
-p.Nsigma = 5; % must exceed mean by Nsigma*sigma to be considered 'reliable'
+p.Nsigma = 3; % must exceed mean by Nsigma*sigma to be considered 'reliable'
 p.latMethod = 'peakTime'; % 'peakTime' or 'thresCrossing'. Thres is Nsigma above mean.
 
 reliable = zeros(1,length(rows)); 
@@ -123,6 +100,83 @@ relInd = find(reliable); %find(relDKL<p.relThres);
 display([num2str(numel(relInd)) ' reliable of ' num2str(length(rows)) ' total units'])
 rows = rows(relInd); 
 latency = latency(relInd); 
+%% make figs for each neuron, each syllable
+genfigs = 1; % generate figures for each neuron?
+p.makeFig = 1; 
+p.MaxToPlot = 200;
+set(p.figNum, 'color', [1 1 1])
+%rows = 24; 
+Fstat = []; 
+pval = []; 
+for rowi = 1:numel(rows)
+    row = rows(rowi); 
+    if PUTPROJ(row)
+        filestr = fullfile('C:\Users\emackev\Documents\MATLAB\code\RasterPlots', ['SortedRasters', num2str(row), 'PutProj_Age', num2str(Age(row))]); 
+    else
+        filestr = fullfile('C:\Users\emackev\Documents\MATLAB\code\RasterPlots', ['SortedRasters', num2str(row), '_Age', num2str(Age(row))]); 
+    end
+    if genfigs
+        analyzeRow(row, p, 'fourRasters');
+        saveas(p.figNum,[filestr '.jpg'])
+    end
+    sylType = p.sylType; 
+    p.sylType = 'specified'; 
+    switch sylType
+        case 'song'
+            stypes = eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)})
+        case 'tutor'
+            stypes = eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)})
+        otherwise
+            stypes = [eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)})...
+                eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)})]; 
+            warning('using all syllable types')
+    end
+    forANOVACounts = []; 
+    forANOVAIDs = {}; 
+    for stypei = 1:length(stypes)
+        clf
+        p.sylName = (stypes(stypei)); 
+        try; sname = char(p.sylName); catch; sname = '[]'; end
+        if genfigs
+            analyzeRow(row, p, 'PSTH'); drawnow; pause(.1);
+            saveas(p.figNum,[filestr '_' sname '.jpg'])
+        end
+        % for anova analysis
+        if ~issame(sname, '[]') % don't include unlabeled syllables in anova analysis
+            p1 = p; 
+            p1.rasterRange = [-.05 .02]; 
+            p1.makeFig = 0; 
+            cnts = analyzeRow(row, p1, 'forANOVA'); 
+            forANOVACounts = [forANOVACounts cnts]; 
+            forANOVAIDs((end+1):(end+length(cnts))) = repmat({sname}, 1, length(cnts)); % = [forANOVAIDs stypei*ones(1,length(cnts))]; 
+        end
+    end
+    % for anova analysis
+    [~,tbl] = anova1(forANOVACounts, forANOVAIDs, 'off');
+    Fstat(rowi) = tbl{2,5};
+    pval(rowi) = tbl{2,6};
+    if genfigs
+        figure; 
+        boxplot(forANOVACounts, forANOVAIDs);
+        ylabel('spike count'); xlabel('syllable')
+        title({['row ' num2str(row)]; ['ANOVA: F = ' num2str(Fstat(rowi)), ', p = ', num2str(pval(rowi))]}); 
+        box off;
+        set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
+        set(gcf, 'papersize', p.papersize, 'paperposition', [0 0 p.papersize(1) p.papersize(2)])
+        saveas(gcf,[filestr '_ANOVA.jpg'])
+    end
+    % put back to original setting
+    p.sylType = sylType;
+end
+p.makeFig = 0; 
+figure; hold on; set(gca, 'xscale', 'log', 'yscale', 'log')
+pval = pval+eps; 
+for rowi = 1:length(rows); plot(Fstat(rowi),pval(rowi), 'k.'); text(Fstat(rowi),pval(rowi)+eps*rand, num2str(rows(rowi))); end
+plot([min(Fstat) max(Fstat)], [.05 .05], 'r'); plot([1 1], [min(pval) max(pval)], 'r')
+axis tight; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
+xlabel('F statistic'); ylabel('p value + \epsilon')
+saveas(gcf, ['C:\Users\emackev\Documents\MATLAB\code\RasterPlots\ANOVAResults_' sylType '.jpg']); 
+sound(sin(1:900)); 
 
 %%
 
