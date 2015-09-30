@@ -1822,11 +1822,21 @@ function push_Open_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 [file, path] = uigetfile('*.mat','Load analysis'); % open file dialog box
-if ~isstr(file)
-    return % file name is not a string
-end
+if length(file)<=1 % if you clicked cancel
+    answer = questdlg('Do you want to load a NIf row?');
+    if issame(answer, 'Yes')
+        % ask which row you want to
+        answer = inputdlg('Which row?');
+        [XLS, Columns] = loadNIfSpreadsheet_elm(); 
+        [dbase rowstr path file] = getDbase_elm(str2num(answer{1}), XLS, Columns);
+    end
+else
+    if ~isstr(file)
+        return % file name is not a string
+    end
 
-load([path file],'dbase'); % load variable 'dbase'
+    load(fullfile(path, file),'dbase'); % load variable 'dbase'
+end
 
 handles.BackupChan = cell(1,2);
 handles.BackupLabel = cell(1,2);
@@ -1841,7 +1851,7 @@ if ~isdir(handles.path_name)
     handles.path_name = path2;
 end
 
-handles.DefaultFile = [path file];
+handles.DefaultFile = fullfile(path, file);
 
 handles.DefaultDirectory = handles.path_name;
 handles.DatesAndTimes = dbase.Times;
@@ -2018,8 +2028,8 @@ end
 
 dbase = GetDBase(handles);
 
-save([path file],'dbase');
-handles.DefaultFile = [path file];
+save(fullfile(path, file),'dbase');
+handles.DefaultFile = fullfile(path, file);
 
 guidata(hObject, handles);
 
