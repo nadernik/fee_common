@@ -8,7 +8,7 @@ clear all;
 figure(1); clf
 set(gcf, 'color', ones(1,3), 'units', 'inches', 'position', [.1 1 4 3]);
 
-highQual = 1; 
+highQual = 0; 
 
 PlottingParams.msize = 20;
 PlottingParams.linewidth = .5;
@@ -88,7 +88,7 @@ trainingNeurons{2}.thres = 6;
 
 
 % set up to record movie
-folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
+folder = fileparts(mfilename('fullpath'));% 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
 timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
 filename = ['NetLearnsSeed' num2str(seed) timestamp];
 %aviobj = avifile(fullfile(folder, filename), 'compression', 'none', 'fps',
@@ -171,7 +171,7 @@ for t = 1:(nIterProto+nIterPlotSplit2)
         end
         if highQual
             s = rng; 
-            myaa % anti-aliasing
+            myaa % anti-aliasing, from matlab file exchange
             rng(s);
         end
         F = getframe(gcf) 

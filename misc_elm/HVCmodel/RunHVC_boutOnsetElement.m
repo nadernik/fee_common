@@ -67,8 +67,8 @@ p.Niter = Niter;
 if ~isEPS
     folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
     timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
-    SavedHere = fullfile(folder, ['Params', timestamp])
-    save(SavedHere,'p');
+%     SavedHere = fullfile(folder, ['Params', timestamp])
+%     save(SavedHere,'p');
 end
 
 PlotIters = 0; % set to 1, and increase Niter(3), if you want to plot each step as it goes
@@ -159,12 +159,12 @@ for j = 1:niter
     p.w = w; 
     p.input = bdyn;
     % One 'bout' of learning
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
 end
 %
 
 p.eta = 0; p.input = probeInput; 
-[w xdyn] = HVCBout(p); % probe run
+[w xdyn] = HVCIter(p); % probe run
 p.eta = eta; 
 
 PlottingParams.thisPanel = 1;
@@ -203,11 +203,11 @@ for j = 1:niter
     p.w = w; 
     p.input = bdyn;
     % One 'bout' of learning
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
 end
 
 p.eta = 0; p.input = probeInput; 
-[w xdyn] = HVCBout(p); % probe run
+[w xdyn] = HVCIter(p); % probe run
 p.eta = eta; 
 
 PlottingParams.thisPanel = 2;
@@ -249,7 +249,7 @@ for j = 1:niter
     p.w = w; 
     p.input = bdyn;
     p.gamma = gammas(j); 
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
     if  PlotIters & (mod(j,50)==0); % if you want to plot each step as it goes
         j
         subplot(1,4,3)
@@ -259,7 +259,7 @@ for j = 1:niter
 end
 
 p.eta = 0; p.input = probeInput; 
-[w xdyn] = HVCBout(p); % probe run
+[w xdyn] = HVCIter(p); % probe run
 p.eta = eta; 
 
 % PlottingParams.thisPanel = 3;
@@ -296,11 +296,11 @@ for j = (Niter(3)+1):Niter(4)
     p.w = w; 
     p.input = bdyn;
     p.gamma = gammas(j); 
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
 end
 
 p.eta = 0; p.input = probeInput; 
-[w xdyn] = HVCBout(p); % probe run
+[w xdyn] = HVCIter(p); % probe run
 p.eta = eta; 
 
 PlottingParams.thisPanel = 3;

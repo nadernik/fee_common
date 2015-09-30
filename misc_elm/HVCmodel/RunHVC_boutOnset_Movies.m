@@ -56,16 +56,13 @@ p.wmaxSplit = wmaxSplit;
 p.gammaSplit = gammaSplit; 
 p.Niter = Niter; 
 
-folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SavedParams';
-timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
-SavedHere = fullfile(folder, ['Params', timestamp])
-save(SavedHere,'p');
+
 
 PlotIters = 1; % set to 1, and increase Niter(3), if you want to plot each step as it goes
 
 figure(1); cla
 % set up to record movie
-folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
+folder = fileparts(mfilename('fullpath'));% 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
 timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
 filename = ['NetLearnsSeed' num2str(seed) timestamp];
 writerobj = VideoWriter(fullfile(folder, filename));
@@ -130,7 +127,7 @@ for i = 1:niter
     p.w = w; 
     p.input = bdyn;
     % One 'bout' of learning
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
     if (mod(i,50) == 1)|i<20
         HVCtestRaster_forMovies(xdyn,Input,w,PlottingParams)
         pause(.5)
@@ -198,7 +195,7 @@ for i = 1:niter
     p.w = w; 
     p.input = bdyn;
     p.gamma = gammas(i); 
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
 %     Latency = findHVClatency(xdyn,trainint,trainingNeurons); 
 %     Nsplit = sum(xor(Latency{1}.FireDur,Latency{2}.FireDur));
     if  PlotIters & (mod(i,10)==0); % if you want to plot each step as it goes
@@ -225,7 +222,7 @@ HVCtestRaster_forMovies(xdyn,Input,w,PlottingParams)
 %     p.w = w; 
 %     p.input = bdyn;
 %     p.gamma = gammas(i); 
-%     [w xdyn] = HVCBout(p);
+%     [w xdyn] = HVCIter(p);
 % end
 % 
 % 
