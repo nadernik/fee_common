@@ -2,25 +2,40 @@ function filename = getExperDatafile(exper, num, chan)
 %This function assumes the dir command returns the filenames in alphebetical order.
 persistent d;
 persistent d_exper;
+persistent d_searchstring
+
+if isnumeric(chan)
+    chanstr = ['chan' int2str(chan)];
+elseif ischar(chan)
+    chanstr = chan;
+else
+    error('Chan must be an integer or a string')
+end
+searchstring = [exper.birdname '_d*' chanstr '.*'];
 
 filename = '';
-if(~isempty(d_exper) && strcmp(exper.dir, d_exper.dir) && strcmp(exper.birdname, d_exper.birdname) &&  strcmp(exper.expername, d_exper.expername))
-    filename = helper_getExperDatafile(d, exper, num, chan, true);
+if strcmp(searchstring, d_searchstring) && ...
+        ~isempty(d_exper) && ...
+        strcmp(exper.dir,       d_exper.dir) && ...
+        strcmp(exper.birdname,  d_exper.birdname) &&  ...
+        strcmp(exper.expername, d_exper.expername)
+    filename = helper_getExperDatafile(d, exper, num, chanstr, true);
 end
 if(strcmp(filename, ''))
-    searchstring = [exper.birdname '_d*chan' num2str(chan) '.dat'];
     d = dir(fullfile(exper.dir, searchstring));
-    filename = helper_getExperDatafile(d, exper, num, chan, false);
+    d_exper = exper;
+    d_searchstring = searchstring;
+    filename = helper_getExperDatafile(d, exper, num, chanstr, false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function filename = helper_getExperDatafile(d,exper, num, chan, bSilent)
+function filename = helper_getExperDatafile(d,exper, num, chanstr, bSilent)
 filename = ''; %#ok<NASGU>
 
 if(isempty(d))
     if(~bSilent)
-        warning(['getExperDatafile failed:  No .dat filenum ', num2str(num),' chan ', num2str(chan), ' in ', exper.dir,'.']);           
+        warning(['getExperDatafile failed:  No filenum ', num2str(num),' for channel ''', chanstr, ''' in ', exper.dir,'.']);           
     end
     filename = '';
     return;  
@@ -53,7 +68,7 @@ if(num ~= currNum)
         
         if(lf>rt)
             if(~bSilent)
-                warning(['getExperDatafile failed:  No filenum ', num2str(num) , 'found on chan ', num2str(chan), ' in ', exper.dir,'.']);           
+                warning(['getExperDatafile failed:  No filenum ', num2str(num) , 'found on channel ''', chanstr, ''' in ', exper.dir,'.']);           
             end
             filename = '';
             return;  

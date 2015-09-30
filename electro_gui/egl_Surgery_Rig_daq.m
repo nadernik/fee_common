@@ -1,4 +1,4 @@
-function [data fs dateandtime label props] = egl_Surgery_Rig_daq(filename, loaddata)
+function [data, fs, dateandtime, label, props] = egl_Surgery_Rig_daq(filename, loaddata)
 
 label = 'Voltage (mV)';
 
