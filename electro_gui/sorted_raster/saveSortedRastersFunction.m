@@ -24,7 +24,7 @@ for ii = 1:length(rasterParameters)
     p = rasterParameters{ii}; %#ok
     pFilename{ii} = [funcname int2str(ii) '.mat'];
     if exist(pFilename{ii}, 'file') == 2
-        error('File already exists: %s', pFilename{ii})
+        warning('File already exists: %s', pFilename{ii})
     end
     save(fullfile(pathname, pFilename{ii}), 'p')
 end
