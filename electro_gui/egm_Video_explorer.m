@@ -22,7 +22,7 @@ function varargout = egm_Video_explorer(varargin)
 
 % Edit the above text to modify the response to help egm_Video_explorer
 
-% Last Modified by GUIDE v2.5 18-Sep-2015 17:48:41
+% Last Modified by GUIDE v2.5 01-Oct-2015 15:14:51
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -132,7 +132,7 @@ varargout{1} = handles.egh;
 
 
 % --- Executes on selection change in popupSource.
-function popupSource_Callback(hObject, ~, handles)
+function popupSource_Callback(hObject, ~, handles) %#ok<DEFNU>
 % hObject    handle to popupSource (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -144,7 +144,7 @@ guidata(hObject, handles)
 vexupdate(hObject)
 
 % --- Executes during object creation, after setting all properties.
-function popupSource_CreateFcn(hObject, ~, ~)
+function popupSource_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
 % hObject    handle to popupSource (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -161,8 +161,7 @@ function vexupdate(hObject)
 handles = guidata(hObject);
 isChangedAbove = false;
 
-set(handles.pushNext, 'Enable', 'off')
-set(handles.pushPrev, 'Enable', 'off')
+set(handles.sliderTime, 'Enable', 'off')
 
 % If data source changed, load data
 if ~strcmp(handles.sourceName, handles.old.sourceName)
@@ -221,6 +220,8 @@ if any(handles.old.tlim ~= handles.tlim) || isChangedAbove
     w = handles.tlim(2) - handles.tlim(1);
     h = yy(2) - yy(1);
     rectangle('Position', [handles.tlim(1), yy(1), w, h], 'LineWidth', 3, 'LineStyle', '--', 'EdgeColor', [1 0 0], 'Tag', 'vexZoomBox');
+    
+    xlabel(handles.axesData, 'Time (s)')
 end
 
 % If frame changed, show new frame
@@ -229,9 +230,10 @@ if handles.old.vidtime ~= handles.vidtime || isChangedAbove
     % If the requested frame is outside the buffer, make a new buffer
     % starting at the requested time
     if      handles.vidtime < handles.vidbuffertime(1) || ...
-            handles.vidtime > handles.vidbuffertime(end-1)
+            handles.vidtime > handles.vidbuffertime(end)
         handles.vidbuffer = zeros(handles.vidreader.Height, ...
             handles.vidreader.Width, 3, handles.vidbufferlength, 'uint8');
+        handles.vidbuffertime = nan(1, handles.vidbufferlength);
         handles.vidreader.CurrentTime = handles.vidtime + handles.fudgefactor;
         numframes = 0;
         wbh = waitbar(0, 'Buffering...');
@@ -242,7 +244,15 @@ if handles.old.vidtime ~= handles.vidtime || isChangedAbove
             handles.vidbuffer(:,:,:,numframes) = handles.vidreader.readFrame();
         end
         delete(wbh)
+            isInWindow = handles.tlim(1) <= handles.vidbuffertime + handles.offset & ...
+        handles.vidbuffertime + handles.offset <= handles.tlim(2);
+    maxx = find(isInWindow, 1, 'last');
+    minn = find(isInWindow, 1, 'first');
+    set(handles.sliderTime, 'Min', minn)
+    set(handles.sliderTime, 'Max', maxx)
+    set(handles.sliderTime, 'SliderStep', [1 10] ./ (maxx - minn))
     end
+    
     
     % Get frame from buffer
     handles.vidbufferpos = find(handles.vidbuffertime <= handles.vidtime, 1, 'last');
@@ -253,48 +263,32 @@ if handles.old.vidtime ~= handles.vidtime || isChangedAbove
     % the old box and create a new one.
     axes(handles.axesData);
     yy = ylim;
-    tt = handles.vidbuffertime(handles.vidbufferpos + [0 1]) + handles.offset;
+    tt1 = handles.vidbuffertime(handles.vidbufferpos) + handles.offset;
+    if handles.vidbufferpos < handles.vidbufferlength
+        tt2 = handles.vidbuffertime(handles.vidbufferpos + 1) + handles.offset;
+    else
+        tt2 = handles.vidreader.CurrentTime + handles.offset;
+    end
     delete(findobj('Tag', 'vexFramePatch'))
-    patch([tt(1) tt(1) tt(2) tt(2)], [yy(1) yy(2) yy(2) yy(1)], 'k', ...
+    patch([tt1 tt1 tt2 tt2], [yy(1) yy(2) yy(2) yy(1)], 'k', ...
         'FaceAlpha', 0.5, 'FaceColor', [1 1 0], 'Tag', 'vexFramePatch')
+    
+    % Slider
+    set(handles.sliderTime, 'Value', handles.vidbufferpos)
 end
 
 handles.old.sourceName   = handles.sourceName;
 handles.old.functionName = handles.functionName;
 handles.old.tlim         = handles.tlim;
 
-set(handles.pushNext, 'Enable', 'on')
-set(handles.pushPrev, 'Enable', 'on')
+set(handles.sliderTime, 'Enable', 'on')
 
 guidata(hObject, handles)
-
-% --- Executes during object creation, after setting all properties.
-function edit1_CreateFcn(hObject, ~, ~)
-% hObject    handle to edit1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Executes during object creation, after setting all properties.
-function editPositionEnd_CreateFcn(hObject, ~, ~)
-% hObject    handle to editPositionEnd (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+drawnow;
 
 
 % --- Executes on selection change in popupFunction.
-function popupFunction_Callback(hObject, ~, handles)
+function popupFunction_Callback(hObject, ~, handles) %#ok<DEFNU>
 % hObject    handle to popupFunction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -306,7 +300,7 @@ guidata(hObject, handles)
 vexupdate(hObject)
 
 % --- Executes during object creation, after setting all properties.
-function popupFunction_CreateFcn(hObject, ~, ~)
+function popupFunction_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
 % hObject    handle to popupFunction (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -319,15 +313,16 @@ end
 
 
 % --- Executes during mouse click on axesData.
-function clickAxesData(hObject, eventdata)
+function clickAxesData(hObject, eventdata) %#ok<DEFNU>
 zoomboxCallback(hObject, eventdata);
 handles = guidata(hObject);
 handles.tlim = xlim(hObject);
 guidata(hObject, handles)
 vexupdate(hObject)
 
+
 % --- Executes during mouse click on axesData
-function clickAxesDataNav(hObject, ~)
+function clickAxesDataNav(hObject, ~) %#ok<DEFNU>
 [xmin, xmax, ~, ~] = getBoxCoordinates(hObject);
 handles = guidata(hObject);
 handles.tlim = [xmin, xmax];
@@ -335,31 +330,67 @@ guidata(hObject, handles);
 vexupdate(hObject);
 
 
-% --- Executes on button press in pushNext.
-function pushNext_Callback(hObject, ~, handles)
-% hObject    handle to pushNext (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)s
-ndx = find(handles.vidbuffertime > handles.vidtime, 1, 'first');
-if ~isempty(ndx)
-    handles.vidtime = handles.vidbuffertime(ndx);
-else
-    handles.vidtime = handles.vidtime + 0.00001;
+function vexTimerFcn(timerObj, ~)
+fig = timerObj.UserData;
+handles = guidata(fig);
+newpos = handles.vidbufferpos + 1;
+if      newpos > handles.vidbufferlength || ...
+        handles.vidbuffertime(newpos) + handles.offset >= handles.tlim(2)
+    newpos = find(handles.vidbuffertime >= handles.tlim(1), 1, 'first');
 end
-guidata(hObject, handles);
-vexupdate(hObject)
+debugdisp('Playing at pos %g', newpos);
+handles.vidtime = handles.vidbuffertime(newpos);
+guidata(fig, handles);
+vexupdate(fig);
 
 
-% --- Executes on button press in pushPrev.
-function pushPrev_Callback(hObject, eventdata, handles)
-% hObject    handle to pushPrev (see GCBO)
+% --- Executes on slider movement.
+function sliderTime_Callback(hObject, ~, handles) %#ok<DEFNU>
+% hObject    handle to sliderTime (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-ndx = find(handles.vidbuffertime < handles.vidtime, 1, 'last');
-if ~isempty(ndx)
-    handles.vidtime = handles.vidbuffertime(ndx);
-else
-    handles.vidtime = handles.vidtime - 0.00001;
-end
+
+% Hints: get(hObject,'Value') returns position of slider
+%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
+
+newpos = round(get(hObject, 'Value'));
+debugdisp('Slider position: %g', newpos)
+handles.vidtime = handles.vidbuffertime(newpos);
 guidata(hObject, handles);
-vexupdate(hObject)
+vexupdate(hObject);
+
+% --- Executes during object creation, after setting all properties.
+function sliderTime_CreateFcn(hObject, ~, ~) %#ok<DEFNU>
+% hObject    handle to sliderTime (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on button press in pushPlay.
+function pushPlay_Callback(~, ~, handles) %#ok<DEFNU>
+% hObject    handle to pushPlay (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+vexTimer = timerfind('Name', 'vexFrameAdvance');
+if isempty(vexTimer)
+    debugdisp('No timer running. Starting video playback.')
+
+    vexTimer = timer;
+    vexTimer.BusyMode = 'drop';
+    vexTimer.ExecutionMode = 'fixedRate';
+    vexTimer.Period = 1 / handles.vidreader.FrameRate;
+    vexTimer.Name = 'vexFrameAdvance';
+    vexTimer.Tag  = 'vexFrameAdvance';
+    vexTimer.TimerFcn = @vexTimerFcn;
+    vexTimer.UserData = handles.figure1;
+    start(vexTimer);
+else
+    debugdisp('Stopping playback')
+    stop(vexTimer);
+    delete(vexTimer);
+end
