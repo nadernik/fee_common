@@ -1,7 +1,5 @@
-function [events, labels] = ege_Video_roll_right(data, fs, ~, params)
+function [events, labels] = ege_Video_roll_right(varargin)
 
-event_name = 'Roll - Right';
+varargin{3} = 'Roll - Right';
 
-[events, labels] = anvil_event_times_for_electro_gui( ...
-    data, fs, event_name, params);
-
+[events, labels] = anvil_event_times_for_electro_gui(varargin{:});

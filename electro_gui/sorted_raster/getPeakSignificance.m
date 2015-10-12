@@ -11,9 +11,14 @@ allTicks = findobj('Parent', handles.axes_Raster, ...
 numTrials = max([allTicks.YData]) - 1;
 tSpikeOriginal = cell(numTrials, 1);
 for nTrial = 1:numTrials
+    nTrial
     trialTicks = findobj(allTicks, 'YData', (0:1) + nTrial);
-    xx = [trialTicks.XData]; % like [x1 x1 x2 x2 x3 x3 ... ]
-    tSpikeOriginal{nTrial} = xx(1:2:end); % like [x1 x2 x3 ...]
+    if isempty(trialTicks)
+        tSpikeOriginal{nTrial} = [];
+    else
+        xx = [trialTicks.XData]; % like [x1 x1 x2 x2 x3 x3 ... ]
+        tSpikeOriginal{nTrial} = xx(1:2:end); % like [x1 x2 x3 ...]
+    end
 end
 
 TLim = xlim(handles.axes_PSTH);
