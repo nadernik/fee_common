@@ -15,7 +15,8 @@ function setRadioGroup(hPanel, str)
 %
 %See also: GETSELECTEDSTRING
 
-assert(strcmpi('uipanel', get(hPanel, 'Type')), ...
+assert(strcmpi('uipanel',       get(hPanel, 'Type')) || ...
+       strcmpi('uibuttongroup', get(hPanel, 'Type')), ...
     'Object must be a uipanel.')
 
 radiobuttons = findobj('Parent', hPanel, 'Style', 'radiobutton');
