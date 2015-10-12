@@ -1,4 +1,26 @@
-function bootstrap_peak(tSpikeOriginal)
+function [sigValueLo, sigValueHi] = getPeakSignificance(guiHandle)
+
+P.NumSurrogates = 10000;
+P.WaitBar = false;
+P.SignificanceLevel = 0.01;
+
+handles = guidata(guiHandle);
+allTicks = findobj('Parent', handles.axes_Raster, ...
+              'Type', 'line', ...
+              'Color', [0 0 0]); % ticks in raster
+numTrials = max([allTicks.YData]) - 1;
+tSpikeOriginal = cell(numTrials, 1);
+for nTrial = 1:numTrials
+    trialTicks = findobj(allTicks, 'YData', (0:1) + nTrial);
+    xx = [trialTicks.XData]; % like [x1 x1 x2 x2 x3 x3 ... ]
+    tSpikeOriginal{nTrial} = xx(1:2:end); % like [x1 x2 x3 ...]
+end
+
+TLim = xlim(handles.axes_PSTH);
+randomShift = (TLim(2) - TLim(1)) * rand(numTrials, P.NumSurrogates) + TLim(1);
+
+hpatch = findobj(handles.axes_PSTH.Children, 'Type', 'patch');
+bins = unique(hpatch.Vertices(:,1));
 
 for iter = 1:P.NumSurrogates
     if P.WaitBar
@@ -14,12 +36,12 @@ for iter = 1:P.NumSurrogates
         t = tSpikeOriginal{nTrial} + randomShift(nTrial, iter);
         
         % wrap times that went off the right edge of the window (too high)
-        isTooHi = t > postMs;
-        t(isTooHi) = t(isTooHi) - windowLengthMs;
+        isTooHi = t > TLim(2);
+        t(isTooHi) = t(isTooHi) - (TLim(2) - TLim(1));
         
         % wrap times that went off the left edge (too low)
-        isTooLo = t < preMs;
-        t(isTooLo) = t(isTooLo) + windowLengthMs;
+        isTooLo = t < TLim(1);
+        t(isTooLo) = t(isTooLo) + (TLim(2) - TLim(1));
         
         % These are the circularly-shifted spike times!
         tSpike{nTrial} = t;
@@ -55,7 +77,7 @@ function firingRate = helperPsth(t, bins)
 %
 % bins are the bin edges in milliseconds. They must be uniformly spaced
 
-binSizeMs = bins(2) - bins(1);
+binSizeSec = bins(2) - bins(1);
 
 counts = zeros(1, length(bins));
 
@@ -68,4 +90,4 @@ for nTrial = 1:length(t)
     counts = counts + histc(t{nTrial}, bins);
 end
 counts(end) = nan; % remove edge effect - there are never any spikes in the last bin
-firingRate = counts / (length(t) - skippedTrials) / binSizeMs * 1000;
+firingRate = counts / (length(t) - skippedTrials) / binSizeSec;
