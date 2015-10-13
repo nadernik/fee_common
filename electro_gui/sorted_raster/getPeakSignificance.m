@@ -2,16 +2,16 @@ function [sigValueLo, sigValueHi] = getPeakSignificance(guiHandle)
 
 P.NumSurrogates = 10000;
 P.WaitBar = false;
-P.SignificanceLevel = 0.01;
-
+P.SignificanceLevel = 0.05;
+%%
 handles = guidata(guiHandle);
+params = getSortedRasterParameters(handles);
 allTicks = findobj('Parent', handles.axes_Raster, ...
               'Type', 'line', ...
               'Color', [0 0 0]); % ticks in raster
 numTrials = max([allTicks.YData]) - 1;
 tSpikeOriginal = cell(numTrials, 1);
 for nTrial = 1:numTrials
-    nTrial
     trialTicks = findobj(allTicks, 'YData', (0:1) + nTrial);
     if isempty(trialTicks)
         tSpikeOriginal{nTrial} = [];
@@ -31,6 +31,10 @@ for iter = 1:P.NumSurrogates
     if P.WaitBar
         str = sprintf('Creating surrogate dataset for significance testing %g/%g', iter, P.NumSurrogates);
         waitbar(iter / P.NumSurrogates, h, str);
+    end
+    
+    if mod(P.NumSurrogates, 100) == 0
+        fprintf('Creating surrogate dataset for significance testing %g/%g\n', iter, P.NumSurrogates);
     end
     
     % Shift spike times
@@ -53,7 +57,7 @@ for iter = 1:P.NumSurrogates
     end
     
     % Make PSTH with shifted spike times
-    firingRateSurrogate = helperPsth(tSpike, bins);
+    firingRateSurrogate = helperPsth(tSpike, bins, params);
     
     % Find and store peak of the PSTH
     surrogatePeaks(iter) = max(firingRateSurrogate);
@@ -73,7 +77,7 @@ sortedValleys = sort(surrogateValleys);
 ndx = round(P.SignificanceLevel * P.NumSurrogates);
 sigValueLo = sortedValleys(ndx);
 
-function firingRate = helperPsth(t, bins)
+function firingRate = helperPsth(t, bins, params)
 %HELPERPSTH Peristimulus time histogram
 %
 % t is a cell array of spike times. Each cell containts a vector of spike
@@ -95,4 +99,30 @@ for nTrial = 1:length(t)
     counts = counts + histc(t{nTrial}, bins);
 end
 counts(end) = nan; % remove edge effect - there are never any spikes in the last bin
+counts = mysmooth(counts, params.PsthSmoothing);
 firingRate = counts / (length(t) - skippedTrials) / binSizeSec;
+
+function y = mysmooth(x, span)
+assert(mod(span, 2) == 1, 'span must be odd')
+halfspan = (span - 1) / 2;
+w = 1 / span;
+y = zeros(size(x));
+if isempty(x)
+    return
+end
+y(1) = (halfspan + 1) * w * x(1);
+for n = 1:halfspan
+    y(1) = y(1) + w * x(n + 1);
+end
+for n = 2:length(x)
+    irem = n - halfspan - 1;
+    iadd = n + halfspan;
+    if irem < 1
+        irem = 1;
+    end
+    if iadd > length(x)
+        iadd = length(x);
+    end
+    y(n) = y(n - 1) - w * x(irem) + w * x(iadd);
+end
+    
