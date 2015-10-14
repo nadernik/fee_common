@@ -1,8 +1,45 @@
-close all
-%%
-clear all
+function RastersFromDbase()
+close all; clear all; clc
 
-clc
+%RunAnalyses('PUTPROJ&SINGING&DIFF', 'latency', 'song')
+
+% RunAnalyses('HASH&SINGLEUNIT&SINGING', 'latency', 'song')
+% RunAnalyses('HASH&SINGLEUNIT&TUTORING', 'latency', 'tutor')
+% RunAnalyses('HASH&SINGLEUNIT&SINGING', 'age', 'song')
+% RunAnalyses('HASH&SINGLEUNIT&SINGING', 'elecpos', 'song')
+% RunAnalyses('HASH&SINGLEUNIT&TUTORING', 'elecpos', 'tutor')
+RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor')
+
+% RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'elecpos', 'song')
+% RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'age', 'song')
+% RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'latency', 'song')
+% 
+% RunAnalyses('PUTPROJ&SINGING&DIFF', 'elecpos', 'song')
+% RunAnalyses('PUTPROJ&SINGING&DIFF', 'age', 'song')
+% RunAnalyses('PUTPROJ&SINGING&DIFF', 'latency', 'song')
+% 
+% RunAnalyses('PUTPROJ&SINGLEUNIT&TUTORING', 'elecpos', 'tutor')
+% RunAnalyses('PUTPROJ&SINGLEUNIT&TUTORING', 'age', 'tutor')
+% RunAnalyses('PUTPROJ&SINGLEUNIT&TUTORING', 'latency', 'tutor')
+% 
+% RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor')
+% RunAnalyses('PUTPROJ&TUTORING', 'age', 'tutor')
+% RunAnalyses('PUTPROJ&TUTORING', 'latency', 'tutor')
+
+% RunAnalyses('HASH&TUTORING', 'elecpos', 'tutor')
+% RunAnalyses('HASH&TUTORING', 'age', 'tutor')
+% RunAnalyses('HASH&TUTORING', 'latency', 'tutor')
+
+% RunAnalyses('HASH&SINGING', 'elecpos', 'song')
+% RunAnalyses('HASH&SINGING', 'age', 'song')
+% RunAnalyses('HASH&SINGING', 'latency', 'song')
+
+function RunAnalyses(ThisDataset, SortBy, sylType); 
+% ThisDataset should be a string, eg: 'PUTPROJ&SINGLEUNIT&SINGING'; 
+% SortBy options: 'age' or 'elecpos' or 'latency'
+% p.sylType options: 'tutor' 'song' 'artificialsubsong' or 'specified'
+%%
+
 
 [XLS, Columns] = loadNIfSpreadsheet_elm(); 
 
@@ -16,8 +53,8 @@ HASH = XLS.data.Sheet1(:,strmatch('hash? (2  = unit)', Columns))>0;
 UNITINHASH = XLS.data.Sheet1(:,strmatch('hash? (2  = unit)', Columns))==2;
 hashLat = XLS.data.Sheet1(:,strmatch('latency (ms)', Columns));
 hashLatJitt = XLS.data.Sheet1(:,strmatch('LatJitt (us)', Columns));
-
 SYLSEL = XLS.data.Sheet1(:,strmatch('maybe Syl selective?', Columns))==1;
+ISOLATE = XLS.data.Sheet1(:,strmatch('isolate', Columns))==1;
 
 % plotting hash latency and latency jitter
 % figure(5); hold on; 
@@ -50,16 +87,22 @@ end
 % for coloring by bird id
 birdID = XLS.data.Sheet1(:,strmatch('bird', Columns)); 
 [~,~,birdnum] = unique(birdID); 
+birdColors = lines(length(unique(birdnum))); 
 
 SUBSONG = zeros(size(XLS.data.Sheet1,1),1); SUBSONG(strmatch('subsong', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 PROTOSYLLABLE = zeros(size(XLS.data.Sheet1,1),1); PROTOSYLLABLE(strmatch('protosyllable', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
-%%
+
+%% Setting parameters
 figure(1)
-rows = find(SINGING&PUTPROJ&DIFF);%find(TUTORING&PUTPROJ);%find(SINGING&PUTPROJ&DIFF);
-SortBy = 'latency'; % 'age' or 'elecpos' or 'latency'
-p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
-p.sylName = {'C'}; % specify sylable to align to, Only used when p.sylType = 'specified'
+SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\code\RasterPlots\'; 
+mkdir(SaveFigPath, ThisDataset); 
+SaveFigPath = fullfile(SaveFigPath, ThisDataset); 
+rows = find(eval(ThisDataset));
+% SortBy = 'latency'; % 'age' or 'elecpos' or 'latency'
+p.sylType = sylType; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+% p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
+p.makeFig = 0;
 p.PSTHaxisMax = []; % [] to leave automatic
 p.alignTo = 'onset'; 
 p.sortBy = 'syldur'; % syldur or gapdur
@@ -72,12 +115,112 @@ smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothi
 p.smoothwin = smoothwin; 
 bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
 p.figNum = 1;
-p.makeFig = 0;
 p.papersize = 2*[3.5 2.5]; 
-p.fontsize = 6; 
+p.fontsize = 10; 
 
-% to plot just one row
-% p.makeFig = 1; p.MaxToPlot = 100; analyzeRow(241, p, 'fourRasters'); p.makeFig = 0;
+%% Test reliability of each unit during singing and during tutoring
+% Units will be excluded from summary stats if not enough data was 
+% recorded to reliably estimate the onset-aligned PSTH (determined by a 
+% KS test on PSTHs estimated from random halves of the data). 
+% In addition, units will be excluded from summary plots if the
+% syllable-onset-aligned PSTHs lacks a clear peak (if it never exceeds the 
+% mean by Nsigma = 3)
+
+calcAllReliabilities = 1; 
+
+if calcAllReliabilities
+    rows1 = 1:length(SINGING); 
+    p.Nsigma = 3; % must exceed mean by Nsigma*sigma to be considered 'reliable'
+    p.latMethod = 'peakTime'; % 'peakTime' or 'thresCrossing'. Thres is Nsigma above mean.
+    TUTOR_INCLUDE_KS = zeros(length(rows1),1);
+    TUTOR_LOCKED = zeros(length(rows1),1);
+    TUTOR_latency = zeros(length(rows1),1);
+    SONG_INCLUDE_KS = zeros(length(rows1),1);
+    SONG_LOCKED = zeros(length(rows1),1);
+    SONG_latency = zeros(length(rows1),1);
+
+    tic
+    for rowi = 1:length(rows1) % remember to take rows 2:end if copying into xls
+        if SINGING(rowi)
+            p.sylType = 'song';
+            Result = analyzeRow(rows1(rowi),p,'relLat'); 
+            SONG_INCLUDE_KS(rowi) = Result.KS<.1; % if KS stat is reliable
+            SONG_LOCKED(rowi) = Result.reliable; 
+            SONG_latency(rowi) = Result.latency; 
+        end
+        if TUTORING(rowi)
+            p.sylType = 'tutor';
+            Result = analyzeRow(rows1(rowi),p,'relLat'); 
+            TUTOR_INCLUDE_KS(rowi) = Result.KS<.1; % if KS stat is reliable
+            TUTOR_LOCKED(rowi) = Result.reliable; 
+            TUTOR_latency(rowi) = Result.latency; 
+        end
+        display(['row ' num2str(rows1(rowi))])
+    end
+    toc
+    p.sylType = sylType;
+else
+    SONG_INCLUDE_KS = XLS.data.Sheet1(:,strmatch('SONG_INCLUDE_KS', Columns))==1;
+    SONG_LOCKED = XLS.data.Sheet1(:,strmatch('SONG_LOCKED', Columns))==1;
+    TUTOR_INCLUDE_KS = XLS.data.Sheet1(:,strmatch('TUTOR_INCLUDE_KS', Columns))==1;
+    TUTOR_LOCKED = XLS.data.Sheet1(:,strmatch('TUTOR_LOCKED', Columns))==1;
+end
+
+%% How many units in each category?
+
+Cats = {HASH SINGLEUNIT&HASH PUTPROJ&SINGLEUNIT ISOLATE&SINGLEUNIT&HASH (~ISOLATE)&SINGLEUNIT&HASH};
+CatNames = {'units with hash' 'single units with hash' 'single unit putative projectors' 'single units with hash from isolate birds' 'single units with hash from nonisolate birds'}; 
+for cati = 1:length(Cats)
+    ThisCategory = Cats{cati}; 
+    ThisCategoryName = CatNames{cati}; 
+    tmp = ThisCategory;
+    display([num2str(sum(tmp)) ' ' ThisCategoryName ', from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = ThisCategory&((SINGING&SONG_INCLUDE_KS)|(TUTORING&TUTOR_INCLUDE_KS)); 
+    display([num2str(sum(tmp)) ' of those pass a ks test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = SINGING&ThisCategory;
+    display(['    ' num2str(sum(tmp)) ' during singing, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = SONG_INCLUDE_KS&SINGING&ThisCategory; 
+    display(['        ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = SONG_LOCKED&SINGING&ThisCategory;
+    display(['        ' num2str(sum(tmp)) ' song locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    display(['           lat: [' num2str(min(SONG_latency(tmp))) ', ' num2str(max(SONG_latency(tmp))) '] mean=' num2str(mean(SONG_latency(tmp))) ', std=' num2str(std(SONG_latency(tmp))) 's'])
+    tmp = SINGING&DIFF&ThisCategory;
+    display(['        ' num2str(sum(tmp)) ' during multiple syllable types, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = SONG_INCLUDE_KS&SINGING&DIFF&ThisCategory;
+    display(['            ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = SONG_LOCKED&SINGING&DIFF&ThisCategory; 
+    display(['            ' num2str(sum(tmp)) ' song locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = TUTORING&ThisCategory; 
+    display(['    ' num2str(sum(tmp)) ' during tutoring, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
+    display(['        ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = TUTOR_LOCKED&TUTORING&ThisCategory;
+    display(['        ' num2str(sum(tmp)) ' tutor locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    display(['           lat: [' num2str(min(TUTOR_latency(tmp))) ', ' num2str(max(TUTOR_latency(tmp))) '] mean=' num2str(mean(TUTOR_latency(tmp))) ', std=' num2str(std(TUTOR_latency(tmp))) 's'])
+    display(['           ' num2str(sum(TUTOR_latency(tmp)<0)) ' pre-onset'])
+    tmp = (Age<=45)&TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
+    display(['        ' num2str(sum(TUTOR_LOCKED&tmp)) ' out of ' num2str(sum(tmp)) ' tutor locked in birds <=45dph '])
+    tmp = (Age>45)&TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
+    display(['        ' num2str(sum(TUTOR_LOCKED&tmp)) ' out of ' num2str(sum(tmp)) ' tutor locked in birds >45dph '])
+    tmp = SINGING&TUTORING&ThisCategory;
+    display(['    ' num2str(sum(tmp)) ' during both, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = TUTOR_INCLUDE_KS&SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory;
+    display(['        ' num2str(sum(tmp)) ' pass both KS tests, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = TUTOR_INCLUDE_KS&SONG_INCLUDE_KS&TUTOR_LOCKED&SONG_LOCKED&SINGING&TUTORING&ThisCategory;
+    display(['        ' num2str(sum(tmp)) ' pass both & locked to both, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = (SONG_INCLUDE_KS&(~SONG_LOCKED))&TUTOR_INCLUDE_KS&TUTOR_LOCKED&SINGING&TUTORING&ThisCategory; 
+    display(['        ' num2str(sum(tmp)) ' pass both & only locked to tutoring, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    tmp = SONG_INCLUDE_KS&SONG_LOCKED&(TUTOR_INCLUDE_KS&(~TUTOR_LOCKED))&SINGING&TUTORING&ThisCategory;
+    display(['        ' num2str(sum(tmp)) ' pass both & only locked to singing, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+
+%     display(['        ' num2str(sum(TUTOR_INCLUDE_KS&SINGING&TUTORING&ThisCategory)) ' pass tutoring KS test, from ' num2str(length(unique(birdID(TUTOR_INCLUDE_KS&SINGING&TUTORING&ThisCategory)))) ' birds'])
+%     display(['        ' num2str(sum(TUTOR_LOCKED&SINGING&TUTORING&ThisCategory)) ' tutor locked, from ' num2str(length(unique(birdID(TUTOR_LOCKED&SINGING&TUTORING&ThisCategory)))) ' birds'])
+%     display(['        ' num2str(sum(SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory)) ' pass song KS test, from ' num2str(length(unique(birdID(SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory)))) ' birds'])
+%     display(['        ' num2str(sum(SONG_LOCKED&SINGING&TUTORING&ThisCategory)) ' song locked, from ' num2str(length(unique(birdID(SONG_LOCKED&SINGING&TUTORING&ThisCategory)))) ' birds'])
+    tmp = ASUBSONG&ThisCategory;
+    display(['    ' num2str(sum(tmp)) ' artificial subsong, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+end
+
 
 %% calculating reliability and latency for each row. Takes ~10 seconds. 
 
@@ -101,31 +244,27 @@ display([num2str(numel(relInd)) ' reliable of ' num2str(length(rows)) ' total un
 rows = rows(relInd); 
 latency = latency(relInd); 
 %% make figs for each neuron, each syllable
-genfigs = 1; % generate figures for each neuron?
+genfigs = 0; % generate figures for each neuron?
 p.makeFig = 1; 
 p.MaxToPlot = 200;
-set(p.figNum, 'color', [1 1 1])
-%rows = 24; 
+%set(p.figNum, 'color', [1 1 1]) 
 Fstat = []; 
 pval = []; 
-for rowi = 1:numel(rows)
+for rowi = [1:numel(rows)]
     row = rows(rowi); 
-    if PUTPROJ(row)
-        filestr = fullfile('C:\Users\emackev\Documents\MATLAB\code\RasterPlots', ['SortedRasters', num2str(row), 'PutProj_Age', num2str(Age(row))]); 
-    else
-        filestr = fullfile('C:\Users\emackev\Documents\MATLAB\code\RasterPlots', ['SortedRasters', num2str(row), '_Age', num2str(Age(row))]); 
-    end
+    filestr = fullfile(SaveFigPath, [ThisDataset, '_row', num2str(row), '_Age', num2str(Age(row))]); 
     if genfigs
         analyzeRow(row, p, 'fourRasters');
-        saveas(p.figNum,[filestr '.jpg'])
+        saveas(p.figNum,[filestr '_FourRasters.fig'])
+        saveas(p.figNum,[filestr '_FourRasters.jpg'])
     end
     sylType = p.sylType; 
     p.sylType = 'specified'; 
     switch sylType
         case 'song'
-            stypes = eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)})
+            stypes = eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)});
         case 'tutor'
-            stypes = eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)})
+            stypes = eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)});
         otherwise
             stypes = [eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)})...
                 eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)})]; 
@@ -140,6 +279,7 @@ for rowi = 1:numel(rows)
         if genfigs
             analyzeRow(row, p, 'PSTH'); drawnow; pause(.1);
             saveas(p.figNum,[filestr '_' sname '.jpg'])
+            saveas(p.figNum,[filestr '_' sname '.fig'])
         end
         % for anova analysis
         if ~issame(sname, '[]') % don't include unlabeled syllables in anova analysis
@@ -162,8 +302,9 @@ for rowi = 1:numel(rows)
         title({['row ' num2str(row)]; ['ANOVA: F = ' num2str(Fstat(rowi)), ', p = ', num2str(pval(rowi))]}); 
         box off;
         set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
-        set(gcf, 'papersize', p.papersize, 'paperposition', [0 0 p.papersize(1) p.papersize(2)])
+        set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
         saveas(gcf,[filestr '_ANOVA.jpg'])
+        saveas(gcf,[filestr '_ANOVA.fig'])
     end
     % put back to original setting
     p.sylType = sylType;
@@ -172,10 +313,13 @@ p.makeFig = 0;
 figure; hold on; set(gca, 'xscale', 'log', 'yscale', 'log')
 pval = pval+eps; 
 for rowi = 1:length(rows); plot(Fstat(rowi),pval(rowi), 'k.'); text(Fstat(rowi),pval(rowi)+eps*rand, num2str(rows(rowi))); end
-plot([min(Fstat) max(Fstat)], [.05 .05], 'r'); plot([1 1], [min(pval) max(pval)], 'r')
+plot([min(Fstat) max(Fstat)], [.05 .05]/length(rows), 'r'); % bonferroni corrected 
+plot([1 1], [min(pval) max(pval)], 'r')
 axis tight; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
 xlabel('F statistic'); ylabel('p value + \epsilon')
-saveas(gcf, ['C:\Users\emackev\Documents\MATLAB\code\RasterPlots\ANOVAResults_' sylType '.jpg']); 
+set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
+saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ANOVAResults_' sylType '.fig'])); 
+saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ANOVAResults_' sylType '.jpg']));
 sound(sin(1:900)); 
 
 %%
@@ -214,12 +358,14 @@ switch SortBy
         latRsqAge = 1 - sum(latResidualsAge.^2)/((length(latency)-1)*var(latency));
         jitt = 2*randn(1,length(rows)); 
         figure(9); clf; hold on; 
-        plot(latency, Age(rows)+jitt'/5, 'k.'); 
+        scatter(latency, Age(rows)+jitt'/5, 'Cdata', birdColors(birdnum(rows),:), 'markerfacecolor', 'flat'); 
         plot(latFitAge, Age(rows), 'r'); 
         title(['Latency vs Age: R^2 = ' num2str(latRsqAge)])
-        box off; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',10)
+        box off; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',p.fontsize)
         xlabel('Latency (s)'); ylabel('Age (dph)'); %b = colorbar; ylabel(b, 'Age (dph)')
         set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
+        saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'SortByAge_' p.sylType '.fig'])); 
+        saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'SortByAge_' p.sylType '.jpg']));
     case 'elecpos'
         [rows,indkeep,~] = intersect(rows, find(goodHist==1)); % Only keep rows with good hist. Change to goodHist>0 for lower thres on hist quality
         latency = latency(indkeep);
@@ -234,13 +380,14 @@ switch SortBy
         jitt = 2*randn(1,length(rows)); 
         % plotting position vs latency. 
         figure(9); clf; hold on; 
-        plot(latency, elecPosition(rows)+jitt, 'k.'); 
+        scatter(latency, elecPosition(rows)+jitt, 'Cdata', birdColors(birdnum(rows),:), 'markerfacecolor', 'flat'); 
         plot(latFitPosition, elecPosition(rows), 'r'); 
         title(['Latency vs Position: R^2 = ' num2str(latRsqPosition)])
-        box off; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',10)
+        box off; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',p.fontsize)
         xlabel('Latency (s)'); ylabel('Position along NIf axis (um)');
         set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
-        
+        saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'SortByElecPos_' p.sylType '.fig'])); 
+        saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'SortByElecPos_' p.sylType '.jpg'])); 
         % splitting NIf into 2 sections, making bar/scatter plots of
         % latencies
         figure(10); clf; hold on
@@ -254,10 +401,12 @@ switch SortBy
         jitt = .02*randn(1,length(rows));
         plot(indAnt(rows)+1+jitt, latency, 'k.', 'markersize', .5); 
         ylabel('Latency (ms)'); xlabel('Part of NIf')
-        box off; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',10)
+        box off; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',p.fontsize)
         set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
         ylim([-.1 .1])
         title(['Rank sum test p = ' num2str(pRankSum)])
+        saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ElecPos_' p.sylType '.fig'])); 
+        saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ElecPos_' p.sylType '.jpg'])); 
     case 'latency'
         [~,latPerm] = sort(latency, 'ascend'); 
         rows = rows(latPerm); 
@@ -295,14 +444,15 @@ g = subplot(4,1,1);
 plot(bins,sum(zscorePSTHs)/size(zscorePSTHs,1), 'k', 'linewidth', 2); 
 ylabel('Rate (\sigma above \mu)', 'interpreter', 'tex')
 axis tight; box off
-set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',8)
+set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',p.fontsize)
 set(gca, 'xtick', [])
 hold on
 plot([0 0], [-1 1], 'r')
 
 % heatmap of population responses
 h = subplot(4,1,2:4); hold on
-imagesc(zscorePSTHs, 'xdata', bins)
+%imagesc(zscorePSTHs, 'xdata', bins)
+surf(bins, 1:size(zscorePSTHs,1), zscorePSTHs, 'edgecolor', 'none'); view(0,90); axis tight
 
 % set colormap and clims (mean = black)
 clims = max(abs(zscorePSTHs(:)))*[-1 1]; set(gca, 'clim', clims); 
@@ -321,13 +471,13 @@ switch SortBy
             tmp = Age(rows); 
             tmp1 = find(tmp>=AgeBrackets(abi)); 
             bracRow(abi) = tmp1(1)-.5; 
-            plot([bins(1) bins(end)], [bracRow(abi) bracRow(abi)], 'Color', [1 1 1]);
+            plot3([bins(1) bins(end)], [bracRow(abi) bracRow(abi)], [1000 1000],'Color', [1 1 1]);
         end
         bInd = [1 diff(bracRow)>0]==1;
         bracRow = bracRow(bInd); 
         AgeBrackets = AgeBrackets(bInd);
         set(gca, 'ytick', bracRow, 'yticklabel', AgeBrackets, 'ydir', 'normal')
-        plot([0 0], [0 length(rows)]+.5,'r')
+        plot3([0 0], [0 length(rows)]+.5, [1000 1000],'r')
         ylabel('Age (dph)');
     case 'elecpos'
         posBrackets = -200:100:1000;
@@ -337,13 +487,13 @@ switch SortBy
             tmp = elecPosition(rows); 
             tmp1 = find(tmp>=posBrackets(abi)); 
             bracRow(abi) = tmp1(1)-.5; 
-            plot([bins(1) bins(end)], [bracRow(abi) bracRow(abi)], 'Color', [1 1 1]);
+            plot3([bins(1) bins(end)], [bracRow(abi) bracRow(abi)],  [1000 1000],'Color', [1 1 1]);
         end
         bInd = [1 diff(bracRow)>0]==1;
         bracRow = bracRow(bInd); 
         posBrackets = posBrackets(bInd);
         set(gca, 'ytick', bracRow, 'yticklabel', posBrackets, 'ydir', 'normal')
-        plot([0 0], [0 length(rows)]+.5,'r')
+        plot3([0 0], [0 length(rows)]+.5, [1000 1000],'r')
         ylabel('Position along NIf axis (um)');
     case 'latency'
         latBrackets = -.1:.025:.1;
@@ -353,7 +503,7 @@ switch SortBy
             tmp = latency; 
             tmp1 = find(tmp>=latBrackets(abi)); 
             bracRow(abi) = tmp1(1)-.5; 
-            plot([bins(1) bins(end)], [bracRow(abi) bracRow(abi)], 'Color', [1 1 1]);
+            plot3([bins(1) bins(end)], [bracRow(abi) bracRow(abi)],  [1000 1000],'Color', [1 1 1]);
         end
         bInd = [1 diff(bracRow)>0]==1;
         if length(bracRow)>0
@@ -361,20 +511,22 @@ switch SortBy
             latBrackets = latBrackets(bInd);
         end
         set(gca, 'ytick', bracRow, 'yticklabel', latBrackets, 'ydir', 'normal')
-        plot([0 0], [0 length(rows)]+.5,'r')
+        plot3([0 0], [0 length(rows)]+.5, [1000 1000], 'r')
         ylabel('Latency (s)');
 end
-birdColors = lines(length(unique(birdnum))); 
 for rowi = 1:length(rows)
-    plot((bins(end) - 3*p.psthdt), rowi, 's','MarkerFaceColor', birdColors(birdnum(rows(rowi)),:), 'MarkerEdgeColor', 'none');
-    if latency(rowi)~=100
-        plot(latency(rowi),rowi, 'w.', 'markersize', .25)
-    end
+    if PUTPROJ(rows(rowi)); tmp = 'flat'; else; tmp = 'none'; end
+    scatter3((bins(end) - 3*p.psthdt), rowi, 1000,'s','Cdata', birdColors(birdnum(rows(rowi)),:), 'MarkerFaceColor', tmp);
+%     if latency(rowi)~=100 % plot latency on figure, for debugging
+%         plot3(latency(rowi),rowi, 1000,'w.', 'markersize', .25)
+%     end
 end
 %colorbar('ytick', [-2 0 2], 'yticklabel', {'-2 std', 'mean', '+2 std'})
-set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',6)
+set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',p.fontsize)
 axis tight; box off; 
-set(gcf, 'papersize', [5 4], 'paperposition', [0 0 5 4]);
-
-
+set(gcf, 'papersize', [5 5], 'paperposition', [0 0 5 5]);
 linkaxes([h g], 'x')
+saveas(gcf, fullfile(SaveFigPath, [ThisDataset, '_PopulationPlot_SortedBy' SortBy, '_', p.sylType '.fig'])); 
+saveas(gcf, fullfile(SaveFigPath, [ThisDataset, '_PopulationPlot_SortedBy' SortBy, '_', p.sylType '.jpg'])); 
+end
+end

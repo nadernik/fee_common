@@ -24,7 +24,7 @@ TUTORING = XLS.data.Sheet1(:,strmatch('tutoring?', Columns))==1;
 PUTPROJ = XLS.data.Sheet1(:,strmatch('Put Proj?', Columns))==1;
 rowstr = ['row' num2str(row) '_' num2str(bird) '_' day '_' depth ]; 
 if SINGING(row)
-    rowstr = [rowstr '_singing']
+    rowstr = [rowstr '_singing'];
 end
 if TUTORING(row)
     rowstr = [rowstr '_tutoring']; 

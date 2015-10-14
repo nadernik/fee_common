@@ -98,7 +98,7 @@ switch task
             end
             Result.reliable = 1; 
         else % unreliable
-            Result.latency = 100; % so it's obvious if I accidentally use unreliable latencies
+            Result.latency = 0; 
             Result.reliable = 0; 
         end
     case 'fourRasters'

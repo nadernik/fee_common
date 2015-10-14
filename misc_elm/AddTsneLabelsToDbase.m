@@ -50,7 +50,7 @@ DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Shee
 %% choose which row/rows
 rs = find((SINGING|TUTORING)&PUTPROJ)';
 
-row = 17; 
+row = 239; 
 
 % load analysis file
 [dbase rowstr pathname filename] = getDbase_elm(row, XLS, Columns)
