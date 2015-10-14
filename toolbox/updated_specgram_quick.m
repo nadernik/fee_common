@@ -31,6 +31,7 @@ function updated_specgram_quick(signal, Fs, varargin)
 %   http://www.mathworks.com/matlabcentral/fileexchange/7943-freezecolors---unfreezecolors
 %   getParentFigure
 %   Galen Lynch, 8/22/2014
+%   Modified from code by Aaron Andalman
 persistent p;
 if isempty(p)
     p = inputParser();
@@ -109,7 +110,7 @@ if(numWindows < numPixels)
     %If we have more pixels, then ffts, then increase the overlap
     %of fft windows accordingly.
     ratio = ceil(numPixels/numWindows);
-    windowOverlap = min(.999, 1 - (1/ratio));
+    windowOverlap = min(0.999, 1 - (1 / ratio));
     windowOverlap = floor(windowOverlap*windowSize);
     sss = ud.signal(ud.startndx:ud.endndx);
     Fs = ud.Fs;
@@ -118,9 +119,9 @@ else
     %downsample the signal, or we can skip signal between ffts.
     %Skipping signal mean we may miss bits of song altogether.
     %Decimating throws away high frequency information.
-    ratio = floor(numWindows/numPixels);
-    windowOverlap = -1*ratio;
-    windowOverlap = floor(windowOverlap*windowSize);
+    ratio = floor(numWindows / numPixels);
+    windowOverlap = -1 * ratio;
+    windowOverlap = floor(windowOverlap * windowSize);
     sss = ud.signal(ud.startndx:ud.endndx);
     Fs = ud.Fs;
     %windowOverlap = 0;
@@ -154,20 +155,20 @@ delete(ud.hIm);%Get rid of the outdated spectrogram
 %Draw the spectrogram
 holdState = ishold(ud.ax);%Cache existing hold status
 hold(ud.ax, 'on');
-times = T + ud.startTime + (ud.startndx-1)/ud.Fs;
+times = T + ud.startTime + (ud.startndx - 1) / ud.Fs;
 freqs = F(ndx);
 if strcmpi(ud.freqUnits, 'Hz')
     %do nothing
 elseif strcmpi(ud.freqUnits, 'KHz')
-    freqs = freqs./1000;
+    freqs = freqs ./ 1000;
 else
     error('Unrecognized frequency units');
 end
-powers = 10*log10(abs(S(ndx,:)) + .02);
+powers = 10 * log10(abs(S(ndx, :)) + 0.02);
 if(isempty(ud.cLimits))
-    img = imagesc(times,freqs,powers); axis xy;
+    img = imagesc(times, freqs, powers); axis xy;
 else
-    img = imagesc(times,freqs,powers, ud.cLimits); axis xy;
+    img = imagesc(times, freqs, powers, ud.cLimits); axis xy;
 end
 if ~holdState %Restore hold state at call
     hold(ud.ax, 'off');
@@ -175,7 +176,7 @@ end
 if numel(times) > 1
     xlim(ud.ax, [times(1), times(end)]);
 else
-    xlim(ud.ax, [times(1)-eps, times(end)+eps]);
+    xlim(ud.ax, [times(1) - eps, times(end) + eps]);
 end
 ylim(ud.ax, [freqs(1), freqs(end)]);
 axis xy;
@@ -189,9 +190,9 @@ else
 end
 
 set(img,'HitTest', 'off');
-set(ud.ax,'children',flipud(get(ud.ax,'children')));%Reorder plots on this axis to place the spectrogram on the bottom (won't cover up other plots)
+set(ud.ax, 'children', flipud(get(ud.ax, 'children')));%Reorder plots on this axis to place the spectrogram on the bottom (won't cover up other plots)
 ud.hIm = img;
-set(ud.ax,'Units','normalized')
+set(ud.ax, 'Units', 'normalized')
 ud.xlh = addlistener(ud.ax, 'XLim', 'PostSet', @(src, evnt) xlim_updatedspecgram(ud.ax));
 set(ud.ax, 'UserData', ud);
 set(ud.ax, 'ButtonDownFcn', @buttondown_updatedspecgram);
@@ -206,10 +207,10 @@ axes(ud.ax);
 xbnds = xlim(ud.ax);
 p1 = xbnds(1);              % extract x and y
 p2 = xbnds(2);
-p1 = min(p1,p2);             % calculate locations
-ud.startndx = max(round((p1 - ud.startTime)*ud.Fs + 1),1);
-ud.endndx = min(round((p2 - ud.startTime)*ud.Fs + 1),length(ud.signal));
-set(ud.ax,'UserData',ud);
+p1 = min(p1, p2);             % calculate locations
+ud.startndx = max(round((p1 - ud.startTime) * ud.Fs + 1), 1);
+ud.endndx = min(round((p2 - ud.startTime) * ud.Fs + 1), length(ud.signal));
+set(ud.ax, 'UserData', ud);
 helper_updatedspecgram(ud);
 end
 
@@ -221,12 +222,12 @@ clickLocation = get(ud.ax, 'CurrentPoint');
 if(strcmp(mouseMode, 'alt'))
     rbbox();
     endPoint = get(gca,'CurrentPoint');
-    point1 = clickLocation(1,1:2);              % extract x and y
-    point2 = endPoint(1,1:2);
+    point1 = clickLocation(1, 1:2);              % extract x and y
+    point2 = endPoint(1, 1:2);
     shiftTime = point1(1) - point2(1);
     shiftNdx = round((shiftTime * ud.Fs) + 1);
     shiftNdx = shiftNdx - max(0, ud.endndx + shiftNdx - length(ud.signal));
-    shiftNdx = shiftNdx - min(0, ud.startndx + shiftNdx -1);
+    shiftNdx = shiftNdx - min(0, ud.startndx + shiftNdx - 1);
     ud.startndx = ud.startndx + shiftNdx;
     ud.endndx = ud.endndx + shiftNdx;
 elseif(strcmp(mouseMode, 'open') || strcmp(mouseMode, 'extend'))
@@ -237,23 +238,23 @@ elseif(strcmp(mouseMode, 'normal'))
     %left click to zoom in.
     rbbox();
     endPoint = get(gca,'CurrentPoint');
-    point1 = clickLocation(1,1:2);              % extract x and y
-    point2 = endPoint(1,1:2);
-    p1 = min(point1,point2);             % calculate locations
-    offset = abs(point1-point2);         % and dimensions
-    if(offset(1)/diff(xlim) < .001) %Very small selection
+    point1 = clickLocation(1, 1:2);              % extract x and y
+    point2 = endPoint(1, 1:2);
+    p1 = min(point1, point2);             % calculate locations
+    offset = abs(point1 - point2);         % and dimensions
+    if(offset(1) / diff(xlim) < .001) %Very small selection
         quarter = round((ud.endndx - ud.startndx) / 4);
-        midndx = round((p1(1) - ud.startTime)*ud.Fs + 1);
-        ud.startndx = max(1,midndx - quarter);
+        midndx = round((p1(1) - ud.startTime) * ud.Fs + 1);
+        ud.startndx = max(1, midndx - quarter);
         ud.endndx = min(length(ud.signal), midndx + quarter);
     else
         fprintf('mouse click1 : %.4f, click2: %.4f \n', point1, point2);
         fprintf('x offset %.4f \n', offset(1));
-        ud.startndx = max(round((p1(1) - ud.startTime)*ud.Fs + 1),1);
-        ud.endndx = min(round((p1(1) + offset(1) - ud.startTime)*ud.Fs + 1),length(ud.signal));
+        ud.startndx = max(round((p1(1) - ud.startTime) * ud.Fs + 1), 1);
+        ud.endndx = min(round((p1(1) + offset(1) - ud.startTime) * ud.Fs + 1),length(ud.signal));
     end
 end
-set(ud.ax,'UserData',ud);
+set(ud.ax, 'UserData', ud);
 helper_updatedspecgram(ud);
 end
 

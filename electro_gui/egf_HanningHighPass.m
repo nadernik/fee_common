@@ -1,20 +1,23 @@
-function [snd lab] = egf_HanningHighPass(a,fs,params)
+function [filteredSignal, label] = egf_HanningHighPass(signal, fs, Params)
 % ElectroGui filter
 % Code from Aaron Andalman
-
-lab = 'High-pass filtered';
-if isstr(a) & strcmp(a,'params')
-    snd.Names = {'Cutoff frequency (Hz)','Order'};
-    snd.Values = {'750','80'};
+%
+% fs used to be hardcoded at 44100Hz. If used with 40000Hz data this
+% reduced the cutoff frequency by 1.1025x. For the default frequency of
+% 750Hz and 40000Hz data, the actual cutoff would be at 680 Hz.
+label = 'High-pass filtered';
+%% Return default parameters if signal is 'params' string
+if ischar(signal) && strcmp(signal, 'params')
+    filteredSignal.Names = {'Cutoff frequency (Hz)', 'Order'};
+    filteredSignal.Values = {'750', '80'};
     return
 end
-
-cutoff = str2num(params.Values{1});
-ord = str2num(params.Values{2});
-
-prstFilt3.order = ord; %80 sufficient for 44100Hz of lower
-prstFilt3.win = hann(prstFilt3.order+1);
-prstFilt3.cutoff = cutoff; %Hz
-prstFilt3.fs = 44100;
-prstFilt3.hpf = fir1(prstFilt3.order, prstFilt3.cutoff/(prstFilt3.fs/2), 'high', prstFilt3.win);
-snd = filtfilt(prstFilt3.hpf, 1, a);
+%% Extract parameters
+cutoffFreq = str2double(Params.Values{1}); %Hz
+filterOrder = str2double(Params.Values{2}); %80 sufficient for 44100Hz of lower
+%% Configure and create filter
+nyquistFreq = fs / 2;
+filtWindow = hann(filterOrder + 1);
+highPassFilt = fir1(filterOrder, cutoffFreq / nyquistFreq, 'high', filtWindow);
+%% Filter data
+filteredSignal = filtfilt(highPassFilt, 1, signal);
