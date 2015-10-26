@@ -27,7 +27,7 @@ audio1 = stereoaudio(:,1);
 
 % Load audio from current file in electro_gui
 audio2 = handles.sound;
-fs2 = handles.fs;
+fs2 = round(handles.fs);
 
 % Resample so both are at the same (higher) sampling frequency.
 if fs1 > fs2
