@@ -77,12 +77,11 @@ ud.cMap = cMap;
 ud.hIm = [];
 ud.hFig = hFig;
 ud.freqUnits = Options.frequencyUnits;
-
+ud.xlh = [];
+ud.limFun = @xlim_updatedspecgram;
 set(ud.ax, 'UserData', ud);
 set(ud.ax, 'ButtonDownFcn', @buttondown_updatedspecgram);
-
 set(hFig, 'ResizeFcn', @(hObject, event) helper_updatedspecgram(get(ud.ax, 'UserData')));
-ud.xlh = addlistener(ud.ax, 'XLim', 'PostSet', @(src, evnt) xlim_updatedspecgram(ud.ax));
 helper_updatedspecgram(ud);
 xlabel(ud.ax, 'Time (s)');
 ylabel(ud.ax, sprintf('Frequency [%s]', ud.freqUnits));
@@ -193,7 +192,7 @@ set(img,'HitTest', 'off');
 set(ud.ax, 'children', flipud(get(ud.ax, 'children')));%Reorder plots on this axis to place the spectrogram on the bottom (won't cover up other plots)
 ud.hIm = img;
 set(ud.ax, 'Units', 'normalized')
-ud.xlh = addlistener(ud.ax, 'XLim', 'PostSet', @(src, evnt) xlim_updatedspecgram(ud.ax));
+ud.xlh = addlistener(ud.ax, 'XLim', 'PostSet', @(src, evnt) ud.limFun(ud.ax));
 set(ud.ax, 'UserData', ud);
 set(ud.ax, 'ButtonDownFcn', @buttondown_updatedspecgram);
 axes(axCache);%Restore axis focus at call time
