@@ -4,8 +4,11 @@ P.NumSurrogates = 10000;
 P.WaitBar = false;
 P.SignificanceLevel = 0.05;
 %%
-handles = guidata(guiHandle);
-params = getSortedRasterParameters(handles);
+% handles = guidata(guiHandle);
+% params = getSortedRasterParameters(handles);
+handles.axes_PSTH = findobj('Parent', guiHandle, 'Tag', 'axes_PSTH');
+handles.axes_Raster = findobj('Parent', guiHandle, 'Tag', 'axes_Raster');
+params.PsthSmoothing = 5;
 allTicks = findobj('Parent', handles.axes_Raster, ...
               'Type', 'line', ...
               'Color', [0 0 0]); % ticks in raster
@@ -24,8 +27,12 @@ end
 TLim = xlim(handles.axes_PSTH);
 randomShift = (TLim(2) - TLim(1)) * rand(numTrials, P.NumSurrogates) + TLim(1);
 
-hpatch = findobj(handles.axes_PSTH.Children, 'Type', 'patch');
-bins = unique(hpatch.Vertices(:,1));
+% hpatch = findobj(handles.axes_PSTH.Children, 'Type', 'patch');
+% bins = unique(hpatch.Vertices(:,1));
+hline = findobj('Parent', handles.axes_PSTH, 'Type', 'line', 'LineWidth', 3);
+bins = hline.XData;
+
+roi = bins > -0.25 & bins < 0.25;
 
 for iter = 1:P.NumSurrogates
     if P.WaitBar
@@ -33,9 +40,9 @@ for iter = 1:P.NumSurrogates
         waitbar(iter / P.NumSurrogates, h, str);
     end
     
-    if mod(P.NumSurrogates, 100) == 0
-        fprintf('Creating surrogate dataset for significance testing %g/%g\n', iter, P.NumSurrogates);
-    end
+%     if mod(P.NumSurrogates, 100) == 0
+%         fprintf('Creating surrogate dataset for significance testing %g/%g\n', iter, P.NumSurrogates);
+%     end
     
     % Shift spike times
     tSpike = cell(size(tSpikeOriginal));
@@ -60,22 +67,30 @@ for iter = 1:P.NumSurrogates
     firingRateSurrogate = helperPsth(tSpike, bins, params);
     
     % Find and store peak of the PSTH
-    surrogatePeaks(iter) = max(firingRateSurrogate);
-    surrogateValleys(iter) = min(firingRateSurrogate);
+    surrogatePeaks(iter) = max(firingRateSurrogate(roi));
+    surrogateValleys(iter) = min(firingRateSurrogate(roi));
 end
 if P.WaitBar
     delete(h)
 end
 
+firingRateOriginal = helperPsth(tSpikeOriginal, bins, params);
+originalPeak = max(firingRateOriginal(roi));
+originalValley = min(firingRateOriginal(roi));
+
+
 % When peaks are above sigValueHi, they are significant
-sortedPeaks = sort(surrogatePeaks);
-ndx = round((1 - P.SignificanceLevel) * P.NumSurrogates);
-sigValueHi = sortedPeaks(ndx);
+% sortedPeaks = sort(surrogatePeaks);
+% ndx = round((1 - P.SignificanceLevel) * P.NumSurrogates);
+% sigValueHi = sortedPeaks(ndx);
+
+sigValueHi = (sum(surrogatePeaks > originalPeak) + 1) / (P.NumSurrogates + 1);
 
 % When valleys are below sigValueLo, they are significant
-sortedValleys = sort(surrogateValleys);
-ndx = round(P.SignificanceLevel * P.NumSurrogates);
-sigValueLo = sortedValleys(ndx);
+% sortedValleys = sort(surrogateValleys);
+% ndx = round(P.SignificanceLevel * P.NumSurrogates);
+% sigValueLo = sortedValleys(ndx);
+sigValueLo = (sum(surrogateValleys < originalValley) + 1) / (P.NumSurrogates + 1);
 
 function firingRate = helperPsth(t, bins, params)
 %HELPERPSTH Peristimulus time histogram
@@ -125,4 +140,6 @@ for n = 2:length(x)
     end
     y(n) = y(n - 1) - w * x(irem) + w * x(iadd);
 end
+y(1:halfspan) = nan;
+y(end-halfspan:end) = nan;
     

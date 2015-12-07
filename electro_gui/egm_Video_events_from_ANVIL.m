@@ -1,7 +1,7 @@
 function handles = egm_Video_events_from_ANVIL(handles)
 
 ANVIL_FILE_PROP_NAME = 'AnvilFile';
-OFFSET_PROP_NAME = 'OffsetSeconds';
+OFFSET_PROP_NAME = 'VideoOffsetSeconds';
 
 detector_names = {...
     'Video_roll_left'
@@ -9,7 +9,10 @@ detector_names = {...
     'Video_pitch_up'
     'Video_pitch_down'
     'Video_yaw_left'
-    'Video_yaw_right'};
+    'Video_yaw_right'
+    'Video_chewing'
+    'Video_pecking'
+    'Video_grooming'};
 % detector_names = {'Video_roll_left'}; %FIXME     
 
 filenum = str2double(get(handles.edit_FileNumber, 'String'));
@@ -32,3 +35,4 @@ for ii = 1:length(detector_names)
     handles = electro_gui('DetectEvents', handles, 1);
 
 end
+msgbox('Done!')

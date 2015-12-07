@@ -7556,7 +7556,7 @@ else
     if strcmp(get(handles.menu_SourceSoundAmplitude,'checked'),'on')
         amp = smooth(10*log10(handles.filtered_sound.^2+eps),wind);
         amp = amp-min(amp(wind:length(amp)-wind));
-        amp(find(amp<0))=0;
+        amp(amp<0) = 0;
         labs = 'Loudness (dB)';
     elseif strcmp(get(handles.menu_SourceTopPlot,'checked'),'on')
         if strcmp(get(handles.axes_Channel1,'visible'),'on');
