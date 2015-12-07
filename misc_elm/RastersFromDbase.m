@@ -8,8 +8,32 @@ close all; clear all; clc
 % RunAnalyses('HASH&SINGLEUNIT&SINGING', 'age', 'song')
 % RunAnalyses('HASH&SINGLEUNIT&SINGING', 'elecpos', 'song')
 % RunAnalyses('HASH&SINGLEUNIT&TUTORING', 'elecpos', 'tutor')
-RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor')
+% RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor');
+RunAnalyses('SINGING&HASH&SINGLEUNIT', 'latency', 'song')
 
+% something weird with 231. 
+%% To get 4 rasters for just one row
+% [XLS, Columns] = loadNIfSpreadsheet_elm(); 
+% p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+% % p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
+% p.makeFig = 1;
+% p.PSTHaxisMax = []; % [] to leave automatic
+% p.alignTo = 'onset'; 
+% p.sortBy = 'syldur'; % syldur or gapdur
+% p.XLS = XLS; 
+% p.Columns = Columns; 
+% p.rasterRange = [-.5 .5];
+% p.plotRange = [-.2 .3]; 
+% p.psthdt = .001; 
+% smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
+% p.smoothwin = smoothwin; 
+% bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
+% p.figNum = 2;
+% p.papersize = [8.5 11]; 
+% p.fontsize = 10; 
+% p.MaxToPlot = 200;
+% analyzeRow(24, p, 'fourRasters')
+%%
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'elecpos', 'song')
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'age', 'song')
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'latency', 'song')
@@ -117,7 +141,6 @@ bins = p.rasterRange(1):p.psthdt:p.rasterRange(2);
 p.figNum = 1;
 p.papersize = 2*[3.5 2.5]; 
 p.fontsize = 10; 
-
 %% Test reliability of each unit during singing and during tutoring
 % Units will be excluded from summary stats if not enough data was 
 % recorded to reliably estimate the onset-aligned PSTH (determined by a 
@@ -244,70 +267,77 @@ display([num2str(numel(relInd)) ' reliable of ' num2str(length(rows)) ' total un
 rows = rows(relInd); 
 latency = latency(relInd); 
 %% make figs for each neuron, each syllable
-genfigs = 0; % generate figures for each neuron?
+genfigs = 0; % generate 4raster figures for each neuron?
+genSylSelFigs = 0; % generate syl sel figures for each neuron?
+
+if genfigs||genSylSelFigs
 p.makeFig = 1; 
 p.MaxToPlot = 200;
 %set(p.figNum, 'color', [1 1 1]) 
 Fstat = []; 
 pval = []; 
-for rowi = [1:numel(rows)]
+for rowi = [4:numel(rows)] %CHANGE BACK TO 1:NUMEL(ROWS)
     row = rows(rowi); 
     filestr = fullfile(SaveFigPath, [ThisDataset, '_row', num2str(row), '_Age', num2str(Age(row))]); 
     if genfigs
         analyzeRow(row, p, 'fourRasters');
+        drawnow; shg
         saveas(p.figNum,[filestr '_FourRasters.fig'])
         saveas(p.figNum,[filestr '_FourRasters.jpg'])
     end
-    sylType = p.sylType; 
-    p.sylType = 'specified'; 
-    switch sylType
-        case 'song'
-            stypes = eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)});
-        case 'tutor'
-            stypes = eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)});
-        otherwise
-            stypes = [eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)})...
-                eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)})]; 
-            warning('using all syllable types')
-    end
-    forANOVACounts = []; 
-    forANOVAIDs = {}; 
-    for stypei = 1:length(stypes)
-        clf
-        p.sylName = (stypes(stypei)); 
-        try; sname = char(p.sylName); catch; sname = '[]'; end
-        if genfigs
-            analyzeRow(row, p, 'PSTH'); drawnow; pause(.1);
-            saveas(p.figNum,[filestr '_' sname '.jpg'])
-            saveas(p.figNum,[filestr '_' sname '.fig'])
+    if genSylSelFigs
+        sylType = p.sylType; 
+        p.sylType = 'specified'; 
+        switch sylType
+            case 'song'
+                stypes = eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)});
+            case 'tutor'
+                stypes = eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)});
+            otherwise
+                stypes = [eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)})...
+                    eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)})]; 
+                warning('using all syllable types')
+        end
+
+        forANOVACounts = []; 
+        forANOVAIDs = {}; 
+        for stypei = 1:length(stypes)
+            clf
+            p.sylName = (stypes(stypei)); 
+            try; sname = char(p.sylName); catch; sname = '[]'; end
+            if genSylSelFigs
+                analyzeRow(row, p, 'PSTH'); drawnow; pause(.1);
+                saveas(p.figNum,[filestr '_' sname '.jpg'])
+                saveas(p.figNum,[filestr '_' sname '.fig'])
+            end
+            % for anova analysis
+            if ~issame(sname, '[]') % don't include unlabeled syllables in anova analysis
+                p1 = p; 
+                p1.rasterRange = [-.05 .02]; 
+                p1.makeFig = 0; 
+                cnts = analyzeRow(row, p1, 'forANOVA'); 
+                forANOVACounts = [forANOVACounts cnts]; 
+                forANOVAIDs((end+1):(end+length(cnts))) = repmat({sname}, 1, length(cnts)); % = [forANOVAIDs stypei*ones(1,length(cnts))]; 
+            end
         end
         % for anova analysis
-        if ~issame(sname, '[]') % don't include unlabeled syllables in anova analysis
-            p1 = p; 
-            p1.rasterRange = [-.05 .02]; 
-            p1.makeFig = 0; 
-            cnts = analyzeRow(row, p1, 'forANOVA'); 
-            forANOVACounts = [forANOVACounts cnts]; 
-            forANOVAIDs((end+1):(end+length(cnts))) = repmat({sname}, 1, length(cnts)); % = [forANOVAIDs stypei*ones(1,length(cnts))]; 
+        [~,tbl] = anova1(forANOVACounts, forANOVAIDs, 'off');
+        Fstat(rowi) = tbl{2,5};
+        pval(rowi) = tbl{2,6};
+        if genSylSelFigs
+            figure; 
+            boxplot(forANOVACounts, forANOVAIDs);
+            ylabel('spike count'); xlabel('syllable')
+            title({['row ' num2str(row)]; ['ANOVA: F = ' num2str(Fstat(rowi)), ', p = ', num2str(pval(rowi))]}); 
+            box off;
+            set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
+            set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
+            saveas(gcf,[filestr '_ANOVA.jpg'])
+            saveas(gcf,[filestr '_ANOVA.fig'])
         end
+        % put back to original setting
+        p.sylType = sylType;
     end
-    % for anova analysis
-    [~,tbl] = anova1(forANOVACounts, forANOVAIDs, 'off');
-    Fstat(rowi) = tbl{2,5};
-    pval(rowi) = tbl{2,6};
-    if genfigs
-        figure; 
-        boxplot(forANOVACounts, forANOVAIDs);
-        ylabel('spike count'); xlabel('syllable')
-        title({['row ' num2str(row)]; ['ANOVA: F = ' num2str(Fstat(rowi)), ', p = ', num2str(pval(rowi))]}); 
-        box off;
-        set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
-        set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
-        saveas(gcf,[filestr '_ANOVA.jpg'])
-        saveas(gcf,[filestr '_ANOVA.fig'])
-    end
-    % put back to original setting
-    p.sylType = sylType;
 end
 p.makeFig = 0; 
 figure; hold on; set(gca, 'xscale', 'log', 'yscale', 'log')
@@ -321,7 +351,7 @@ set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
 saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ANOVAResults_' sylType '.fig'])); 
 saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ANOVAResults_' sylType '.jpg']));
 sound(sin(1:900)); 
-
+end
 %%
 
 % plotting KS statistiv vs DKL
@@ -441,26 +471,27 @@ figure(4); clf;
 
 % population average zscore rate
 g = subplot(4,1,1);
-plot(bins,sum(zscorePSTHs)/size(zscorePSTHs,1), 'k', 'linewidth', 2); 
+plot(bins*1000,sum(zscorePSTHs)/size(zscorePSTHs,1), 'k', 'linewidth', 2); 
 ylabel('Rate (\sigma above \mu)', 'interpreter', 'tex')
 axis tight; box off
-set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',p.fontsize)
+set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01], 'fontsize',p.fontsize)
 set(gca, 'xtick', [])
 hold on
 plot([0 0], [-1 1], 'r')
-
+%%
 % heatmap of population responses
 h = subplot(4,1,2:4); hold on
-%imagesc(zscorePSTHs, 'xdata', bins)
-surf(bins, 1:size(zscorePSTHs,1), zscorePSTHs, 'edgecolor', 'none'); view(0,90); axis tight
+imagesc(zscorePSTHs, 'xdata', bins*1000)
+% surf(bins, 1:size(zscorePSTHs,1), zscorePSTHs, 'edgecolor', 'none'); view(0,90); axis tight
 
 % set colormap and clims (mean = black)
 clims = max(abs(zscorePSTHs(:)))*[-1 1]; set(gca, 'clim', clims); 
 cvec = [zeros(128,1);(1:128)'/128];
-CMAP = [cvec cvec flipud(cvec)];
+CMAP = [(1:64)'/64  (1:64)'/64 ones(64,1); ...
+    ones(64,1) (64:-1:1)'/64 (64:-1:1)'/64 ];
 colormap(CMAP)
 
-xlabel(['Time relative to syllable ' p.alignTo, ' (s)'])
+xlabel(['Time relative to syllable ' p.alignTo, ' (ms)'])
 
 switch SortBy
     case 'age'
@@ -471,13 +502,13 @@ switch SortBy
             tmp = Age(rows); 
             tmp1 = find(tmp>=AgeBrackets(abi)); 
             bracRow(abi) = tmp1(1)-.5; 
-            plot3([bins(1) bins(end)], [bracRow(abi) bracRow(abi)], [1000 1000],'Color', [1 1 1]);
+            plot([bins(1) bins(end)], [bracRow(abi) bracRow(abi)], 'Color', [1 1 1]);
         end
         bInd = [1 diff(bracRow)>0]==1;
         bracRow = bracRow(bInd); 
         AgeBrackets = AgeBrackets(bInd);
         set(gca, 'ytick', bracRow, 'yticklabel', AgeBrackets, 'ydir', 'normal')
-        plot3([0 0], [0 length(rows)]+.5, [1000 1000],'r')
+        plot([0 0], [0 length(rows)]+.5,'r')
         ylabel('Age (dph)');
     case 'elecpos'
         posBrackets = -200:100:1000;
@@ -487,13 +518,13 @@ switch SortBy
             tmp = elecPosition(rows); 
             tmp1 = find(tmp>=posBrackets(abi)); 
             bracRow(abi) = tmp1(1)-.5; 
-            plot3([bins(1) bins(end)], [bracRow(abi) bracRow(abi)],  [1000 1000],'Color', [1 1 1]);
+            plot([bins(1) bins(end)], [bracRow(abi) bracRow(abi)],'Color', [1 1 1]);
         end
         bInd = [1 diff(bracRow)>0]==1;
         bracRow = bracRow(bInd); 
         posBrackets = posBrackets(bInd);
         set(gca, 'ytick', bracRow, 'yticklabel', posBrackets, 'ydir', 'normal')
-        plot3([0 0], [0 length(rows)]+.5, [1000 1000],'r')
+        plot([0 0], [0 length(rows)]+.5,'r')
         ylabel('Position along NIf axis (um)');
     case 'latency'
         latBrackets = -.1:.025:.1;
@@ -503,26 +534,31 @@ switch SortBy
             tmp = latency; 
             tmp1 = find(tmp>=latBrackets(abi)); 
             bracRow(abi) = tmp1(1)-.5; 
-            plot3([bins(1) bins(end)], [bracRow(abi) bracRow(abi)],  [1000 1000],'Color', [1 1 1]);
+%             plot([bins(1) bins(end)], [bracRow(abi) bracRow(abi)], 'Color', [1 1 1]);
         end
         bInd = [1 diff(bracRow)>0]==1;
         if length(bracRow)>0
             bracRow = bracRow(bInd); 
             latBrackets = latBrackets(bInd);
         end
-        set(gca, 'ytick', bracRow, 'yticklabel', latBrackets, 'ydir', 'normal')
-        plot3([0 0], [0 length(rows)]+.5, [1000 1000], 'r')
-        ylabel('Latency (s)');
+        set(gca, 'ytick', [])
+%         set(gca, 'ytick', bracRow, 'yticklabel', latBrackets*1000, 'ydir', 'normal')
+        plot([0 0], [0 length(rows)]+.5,'r')
+%         ylabel('Latency (ms)');
 end
 for rowi = 1:length(rows)
-    if PUTPROJ(rows(rowi)); tmp = 'flat'; else; tmp = 'none'; end
-    scatter3((bins(end) - 3*p.psthdt), rowi, 1000,'s','Cdata', birdColors(birdnum(rows(rowi)),:), 'MarkerFaceColor', tmp);
+    if PUTPROJ(rows(rowi)); tmp = birdColors(birdnum(rows(rowi)),:); else; tmp = 'none'; end
+    xx = 1000*[(bins(end) - 10*p.psthdt) bins(end) bins(end) (bins(end) - 10*p.psthdt) (bins(end) - 10*p.psthdt)]; 
+    yy = [rowi rowi rowi+1 rowi+1 rowi]-.5; 
+    patch(xx, yy, birdColors(birdnum(rows(rowi)),:), 'EdgeColor',  birdColors(birdnum(rows(rowi)),:), ...
+        'FaceColor', tmp)
+%     scatter3((bins(end) - 3*p.psthdt), rowi, 1000,'s','Cdata', birdColors(birdnum(rows(rowi)),:), 'MarkerFaceColor', tmp);
 %     if latency(rowi)~=100 % plot latency on figure, for debugging
 %         plot3(latency(rowi),rowi, 1000,'w.', 'markersize', .25)
 %     end
 end
 %colorbar('ytick', [-2 0 2], 'yticklabel', {'-2 std', 'mean', '+2 std'})
-set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize',p.fontsize)
+set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01], 'fontsize',p.fontsize)
 axis tight; box off; 
 set(gcf, 'papersize', [5 5], 'paperposition', [0 0 5 5]);
 linkaxes([h g], 'x')

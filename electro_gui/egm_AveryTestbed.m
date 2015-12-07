@@ -1,4 +1,5 @@
 function handles = egm_AveryTestbed(handles)
+
 filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
 fs = handles.fs;
 lims = get(handles.axes_Sonogram, 'xlim');
