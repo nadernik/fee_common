@@ -130,6 +130,7 @@ for filei = 1:nFiles
         end
         % find spike events in time window
         allSpt = dbase.EventTimes{1,p.eventNum}{1,filei}/fs; % for testing: (1:syli)*.01+OnsetTime; %
+        allSpt = allSpt(dbase.EventIsSelected{1,p.eventNum}{1,filei}==1); % only keep selected spikes
         spInd = ((allSpt - OnsetTime)>(p.rasterRange(1)-p.psthdt/2))&((allSpt - OnsetTime)<(p.rasterRange(2)+p.psthdt/2));
         Spt = allSpt(spInd)-OnsetTime; 
         nSpt = length(Spt);
@@ -226,6 +227,7 @@ if p.makeFig
         h = subplot(4,1,1); cla
     else 
         [A1, A2] = Subplot_convert(p.panel);
+        A1 = A1.*[1 .7 1 .7]; A2 = A2.*[1 .7 1 .7]; % to make room for example plot
         h = subplot('position', A1); cla
     end
     hold on
@@ -255,11 +257,12 @@ if p.makeFig
         g = subplot(4,1,2:4); cla
     else 
         [A1, A2] = Subplot_convert(p.panel);
+        A1 = A1.*[1 .7 1 .7]; A2 = A2.*[1 .7 1 .7]; % to make room for example plot
         g = subplot('position', A2); cla
-        if p.panel == 4
-            tmp = suptitle(strrep(titlestr,'_','\_'));
-            set(tmp, 'FontSize', p.fontsize)
-        end
+%         if p.panel == 4
+%             tmp = suptitle(strrep(titlestr,'_','\_'));
+%             set(tmp, 'FontSize', p.fontsize)
+%         end
     end
     hold on; 
     ylabel('Syllable #', 'fontsize', p.fontsize); xlabel('Time (ms)', 'fontsize', p.fontsize)
