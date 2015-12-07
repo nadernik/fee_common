@@ -23,6 +23,7 @@ fs = dbase.Fs;
 
 % getting the relevant info from NIfUnits spreadsheet
 eventNum = XLS.data.Sheet1(row,strmatch('spikeEventNum', Columns)); 
+chanNum = XLS.data.Sheet1(row,strmatch('electrode #', Columns))+1;
 TutorSylNames = eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)});
 SongSylNames = eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)});
 ASubSylNames = eval(XLS.textdata.Sheet1{row,strmatch('AS syl names', Columns)}); 
@@ -122,6 +123,30 @@ switch task
         p.sortBy = 'gapdur'; 
         p.panel = 4; 
         analyzeRow(row, p, 'PSTH');
+        
+        % if there's an example file
+        try
+            tmp = XLS.textdata.Sheet1(row,strmatch('ExampleSinging [fileNum tstart tstop]', Columns));
+            ExampleFile = eval(tmp{1}); 
+
+            % extract the sound trace
+            [song fs dateandtime label props]  = egl_AA_daq(fullfile(pathname,dbase.SoundFiles(ExampleFile(1)).name),1);
+            song = song(round(fs*ExampleFile(2)):round(fs*ExampleFile(3)));
+            % extract the neural trace
+            [units fs dateandtime label props]  = egl_AA_daq(fullfile(pathname, dbase.ChannelFiles{chanNum}(ExampleFile(1)).name),1);
+            units = units(round(fs*ExampleFile(2)):round(fs*ExampleFile(3)));
+            % plot them
+            hh = subplot('position', [.1 .85 .8 .1]);
+            [S,Time,F] = spectrogramELM(song,fs,.005,1); 
+            gg = subplot('position', [.1 .7 .8 .1]); plot((1:length(units))/fs, egf_HanningHighPass(units, fs, egf_HanningHighPass('params')), 'k'); 
+            axis tight; box off; set(gca, 'ytick', 0, 'color','none','tickdir','out','ticklength',[0.025 0.025]); 
+            linkaxes([hh,gg],'x')
+            subplot(hh);  axis off; title(p.rowstr, 'FontSize', p.fontsize, 'interpreter', 'none')
+        catch exception
+            exception
+        end
+
+        
     case 'forANOVA'
         [PSTH plotX plotY allDur]  = PSTH_elm(dbase, p);
         bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
