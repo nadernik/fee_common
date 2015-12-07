@@ -422,6 +422,7 @@ patch([0 handles.WorksheetWidth handles.WorksheetWidth 0],[0 0 handles.Worksheet
 axis equal;
 axis tight;
 axis off;
+drawnow expose
 
 handles.WorksheetTitle = 'Untitled';
 
@@ -726,6 +727,7 @@ else
         else
             h(c) = plot([xd(2) xd(2)]/handles.fs,ylim,'color',handles.ProgressBarColor,'linewidth',2);
         end
+        drawnow expose
     end
     y = audioplayer(wav,fs);
     play(y);
@@ -738,7 +740,7 @@ else
                 set(h(c),'xdata',(xd(2)-[pos pos]+1)/handles.fs);
             end
         end
-        drawnow;
+        drawnow expose;
     end
     stop(y);
     clear y;
@@ -876,6 +878,7 @@ set(gca,'color',[0 0 0]);
 axis tight;
 yl = max(abs(ylim));
 ylim([-yl*1.2 yl*1.2]);
+drawnow expose
 
 % Set limits
 yl = ylim;
@@ -885,6 +888,7 @@ handles.xlimbox = plot([0 xmax xmax 0 0],[yl(1) yl(1) yl(2) yl(2) yl(1)]*.93,':y
 xlim([0 xmax]);
 hold off
 box on;
+drawnow expose
 
 % Clear selected channel (I think this should be happening? GL 6/23/2014)
 handles.SelectedEvent = [];
@@ -908,6 +912,7 @@ set(handles.axes_Sonogram,'xlim',[0 xmax]);
 set(handles.axes_Amplitude,'xlim',[0 xmax]);
 set(handles.axes_Channel1,'xlim',[0 xmax]);
 set(handles.axes_Channel2,'xlim',[0 xmax]);
+drawnow expose
 
 % Load properties
 handles = eg_LoadProperties(handles);
@@ -949,6 +954,7 @@ else
     handles = eg_LoadChannel(handles,1);
     handles = EventSetThreshold(handles,1);
 end
+drawnow expose
 
 
 % Plot amplitude
@@ -965,7 +971,8 @@ if ~isempty(handles.amplitude)
     set(gca,'buttondownfcn','electro_gui(''click_Amplitude'',gcbo,[],guidata(gcbo))');
     set(get(gca,'children'),'uicontextmenu',get(gca,'uicontextmenu'));
     set(get(gca,'children'),'buttondownfcn',get(gca,'buttondownfcn'));
-
+    drawnow expose
+    
     if handles.SoundThresholds(filenum)==inf
         if strcmp(get(handles.menu_AutoThreshold,'checked'),'on')
             handles.CurrentThreshold = eg_AutoThreshold(handles.amplitude);
@@ -1111,7 +1118,7 @@ if strcmp(get(handles.(['menu_AutoLimits' num2str(axnum)]),'checked'),'on')
 else
     ylim(handles.(['ChanLimits' num2str(axnum)]));
 end
-
+drawnow expose
 handles = eg_Overlay(handles);
 
 %%
@@ -1158,6 +1165,7 @@ set(gca,'uicontextmenu',handles.(['context_Channel',num2str(axnum)]));
 set(gca,'buttondownfcn','electro_gui(''click_Channel'',gcbo,[],guidata(gcbo))');
 set(get(gca,'children'),'uicontextmenu',get(gca,'uicontextmenu'));
 set(get(gca,'children'),'buttondownfcn',get(gca,'buttondownfcn'));
+drawnow expose
 
 
 function handles = SetThreshold(handles)
@@ -1189,7 +1197,7 @@ else
 end
 
 set(handles.axes_Segments,'uicontextmenu',handles.context_Segments,'buttondownfcn','electro_gui(''click_segmentaxes'',gcbo,[],guidata(gcbo))');
-
+drawnow expose
 
 %--------
 function handles = SegmentSounds(handles)
@@ -1250,7 +1258,7 @@ set(gca,'xcolor',bg,'ycolor',bg,'color',bg);
 set(gca,'uicontextmenu',handles.context_Segments,'buttondownfcn','electro_gui(''click_segmentaxes'',gcbo,[],guidata(gcbo))');
 set(get(gca,'children'),'uicontextmenu',get(gca,'uicontextmenu'));
 set(gcf,'keypressfcn','electro_gui(''labelsegment'',gcbo,[],guidata(gcbo))');
-
+drawnow expose
 %-------
 function h = eg_peak_detect(ax,x,y)
 
@@ -1279,7 +1287,7 @@ else
     hold off
 end
 xlim(xl);
-
+drawnow expose
 %%
 % --------------------------------------------------------------------
 function context_Sonogram_Callback(hObject, eventdata, handles)
@@ -1373,6 +1381,7 @@ handles.xlimbox = plot([xd(1) xd(2) xd(2) xd(1) xd(1)],[yl(1) yl(1) yl(2) yl(2) 
 xlim([0 length(handles.sound)/handles.fs]);
 hold off
 box on;
+drawnow expose
 
 set(gca,'buttondownfcn','electro_gui(''click_sound'',gcbo,[],guidata(gcbo))');
 ch = get(gca,'children');
@@ -1507,7 +1516,7 @@ ch = get(gca,'children');
 for c = 1:length(ch)
     set(ch(c),'buttondownfcn',get(gca,'buttondownfcn'));
 end
-
+drawnow expose
 handles = eg_Overlay(handles); % Update overlay trace as well if any. TO
 
 %%
@@ -1626,6 +1635,7 @@ else
     cl(indx,:) = repmat(handles.BackgroundColors(2,:),length(indx),1);
     colormap(cl);
     set(gca,'clim',[-pi/2 pi/2]);
+    drawnow expose
 end
 
 %%
@@ -1845,8 +1855,11 @@ function push_Open_Callback(hObject, eventdata, handles)
 % hObject    handle to push_Open (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-[file, path] = uigetfile('*.mat','Load analysis'); % open file dialog box
+if isfield(handles, 'path_name')
+    [file, path] = uigetfile('*.mat','Load analysis', handles.path_name); % open file dialog box
+else
+    [file, path] = uigetfile('*.mat','Load analysis'); 
+end
 if length(file)<=1 % if you clicked cancel
     answer = questdlg('Do you want to load a NIf row?');
     if issame(answer, 'Yes')
@@ -2044,8 +2057,8 @@ function push_Save_Callback(hObject, eventdata, handles)
 % hObject    handle to push_Save (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-
+pause(.5); 
+drawnow expose
 [file, path] = uiputfile(handles.DefaultFile,'Save analysis');
 if ~isstr(file)
     return
@@ -2053,7 +2066,7 @@ end
 
 dbase = GetDBase(handles);
 
-save(fullfile(path, file),'dbase');
+save(fullfile(path, file),'dbase', '-v7.3'); % added v7.3 in hopes of avoiding crashing -ELM
 handles.DefaultFile = fullfile(path, file);
 
 guidata(hObject, handles);
@@ -2297,7 +2310,7 @@ function click_loadfile(hObject, eventdata, handles)
 temp = handles.TooLong;
 handles.TooLong = inf;
 cla(handles.axes_Sonogram);
-drawnow;
+drawnow expose;
 handles = eg_LoadFile(handles);
 handles.TooLong = temp;
 
@@ -3133,7 +3146,7 @@ else
 end
 xlim(xl);
 ylim(yl);
-
+drawnow expose
 %%
 % --------------------------------------------------------------------
 function menu_AllowYZoom1_Callback(hObject, eventdata, handles)
@@ -3157,7 +3170,7 @@ if strcmp(get(handles.menu_AllowYZoom1,'checked'),'on')
 else
     set(handles.menu_AllowYZoom1,'checked','on');
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 %%
@@ -3183,7 +3196,7 @@ if strcmp(get(handles.menu_AllowYZoom2,'checked'),'on')
 else
     set(handles.menu_AllowYZoom2,'checked','on');
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 %%
@@ -3207,7 +3220,7 @@ else
     ylim([mean(yl)+(yl(1)-mean(yl))*1.1 mean(yl)+(yl(2)-mean(yl))*1.1]);
     handles = eg_Overlay(handles);
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 %%
@@ -3231,7 +3244,7 @@ else
     ylim([mean(yl)+(yl(1)-mean(yl))*1.1 mean(yl)+(yl(2)-mean(yl))*1.1]);
     handles = eg_Overlay(handles);
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 %%
@@ -3270,7 +3283,7 @@ end
 
 subplot(handles.(['axes_Channel' num2str(axnum)]));
 ylim([str2num(answer{1}) str2num(answer{2})]);
-
+drawnow expose
 handles = eg_Overlay(handles);
 
 %%
@@ -3710,7 +3723,7 @@ for c = 1:length(ev)
         handles.EventHandles{axnum}{c} = [];
     end
 end
-
+drawnow expose
 subplot(handles.(['axes_Channel' num2str(axnum)]));
 
 
@@ -4418,6 +4431,7 @@ else
         for c = 1:length(feature1)
             if isDisplayed(c)==1 %FIXME
                 h = plot(feature1(c),feature2(c),'o','markerfacecolor','k','markeredgecolor','k','markersize',2);
+                drawnow expose
                 handles.EventWaveHandles = [handles.EventWaveHandles h];
             end
         end
@@ -4454,7 +4468,7 @@ if strcmp(get(handles.menu_AutoApplyYLim,'checked'),'on')
         end
     end
 end
-
+drawnow expose
 
 function click_eventwave(hObject, eventdata, handles)
 filenum = str2num(get(handles.edit_FileNumber,'string'));
@@ -4490,6 +4504,7 @@ elseif strcmp(get(gcf,'selectiontype'),'extend')%Shift click
     hold on
     handles.EventWaveHandles(ii) = plot(mean(xlim),mean(ylim),'w.');%Make a dot in the center of the plot??
     hold off
+    drawnow expose
     handles = DeleteEvents(handles,ii);
     guidata(hObject, handles);
     delete(hObject);
@@ -4527,7 +4542,7 @@ if ismember( i, handles.eventsInViewer)
     ylim(yl);
     hold off
 end
-
+drawnow expose
 
 set(handles.EventWaveHandles,'buttondownfcn','electro_gui(''click_eventwave'',gcbo,[],guidata(gcbo))');
 
@@ -4575,6 +4590,7 @@ if strcmp(get(handles.axes_Channel2,'visible'),'on')
     h(end+1) = plot(xs(tm(i)),ys(tm(i)),'-.o','linewidth',2,'markersize',5,'markerfacecolor','r','markeredgecolor','r');
     hold off;
 end
+drawnow expose
 set(h,'buttondownfcn','electro_gui(''unselect_event'',gcbo,[],guidata(gcbo))');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -5122,7 +5138,7 @@ function push_Export_Callback(hObject, eventdata, handles)
 subplot(handles.axes_Sonogram)
 txtexp = text(mean(xlim),mean(ylim),'Exporting...',...
     'horizontalalignment','center','color','r','backgroundcolor',[1 1 1],'fontsize',14);
-drawnow
+drawnow expose
 
 %%%
 str = get(handles.popup_Export,'String');
@@ -5485,7 +5501,7 @@ elseif get(handles.radio_Files,'value')==1
             warning on
 
     end
-
+drawnow expose
 %%%%%%%%%%%%%%%%%%%%%%%
 % The Microsoft APIs for Office 2007 are different from those used for Office 2003. You can create a new presentation in Powerpoint 2007 and add slides to it using MATLAB with the following code (note the commented sections for modifying an existing presentation):
 % 
@@ -5682,7 +5698,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         end
                         xlim(handles.WorksheetXLims{lst{indx}(d)});
                         ylim(handles.WorksheetYLims{lst{indx}(d)});
-
+                        drawnow expose
                         print('-dmeta',['-f' num2str(fig)]);
                         pic = invoke(newslide.Shapes,'PasteSpecial',2);
                         ug = invoke(pic,'Ungroup');
@@ -5779,6 +5795,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                                     imagesc(x(f),y(g),m(g,f));
                                 end
                             end
+                            drawnow expose
                         else
                             xlim(xl);
                             ylim(yl);
@@ -5802,7 +5819,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         set(gcf,'colormap',col);
                         axis tight;
                         axis off;
-                        
+                        drawnow expose
                         
 
                     case 'Segments'
@@ -5878,6 +5895,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         ylim(get(handles.axes_Amplitude,'ylim'));
                         set(gca,'ydir','normal');
                         axis off
+                        drawnow expose
 
                     case {'Top plot','Bottom plot'}
                         if ~isempty(find(progbar==1)) & strcmp(handles.template.Plot{c},'Bottom plot')
@@ -5910,6 +5928,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         ylim(get(handles.(['axes_Channel' num2str(axnum)]),'ylim'));
                         set(gca,'ydir','normal');
                         axis off
+                        drawnow expose
 
                     case 'Sound wave'
                         if ~isempty(find(progbar==6))
@@ -5929,6 +5948,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         ylim(get(handles.axes_Sound,'ylim'));
                         set(gca,'ydir','normal');
                         axis off
+                        drawnow expose
 
                 end
 
@@ -6500,7 +6520,7 @@ if length(handles.WorksheetHandles)>=length(handles.WorksheetMs)
         set(handles.WorksheetHandles(length(handles.WorksheetMs)),'facecolor','r');
     end
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 
@@ -6584,7 +6604,7 @@ axis tight;
 axis off;
 
 set(handles.panel_Worksheet,'title',['Worksheet: Page ' num2str(handles.WorksheetCurrentPage) filesep num2str(max([1 max(pagenum)]))]);
-
+drawnow expose
 
 function click_Worksheet(hObject, eventdata, handles)
 
@@ -6599,7 +6619,7 @@ set(hObject,'facecolor','r');
 if strcmp(get(gcf,'selectiontype'),'open')
     ViewWorksheet(handles);
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 
@@ -6919,7 +6939,7 @@ set(gcf,'colormap',handles.WorksheetColormap{f});
 axis tight;
 axis off;
 set(fig,'visible','on');
-
+drawnow expose
 
 % --- Executes on button press in push_Macros.
 function push_Macros_Callback(hObject, eventdata, handles)
@@ -7257,7 +7277,7 @@ set(get(gca,'children'),'buttondownfcn',get(gca,'buttondownfcn'));
 hold off;
 xlim(xl);
 ylim(yl);
-
+drawnow expose
 
 % --------------------------------------------------------------------
 function menu_SonogramParameters_Callback(hObject, eventdata, handles)
@@ -7775,7 +7795,7 @@ handles.xlimbox = plot([xd(1) xd(2) xd(2) xd(1) xd(1)],[yl(1) yl(1) yl(2) yl(2) 
 xlim([0 length(handles.sound)/handles.fs]);
 hold off
 box on;
-
+drawnow expose
 set(gca,'buttondownfcn','electro_gui(''click_sound'',gcbo,[],guidata(gcbo))');
 ch = get(gca,'children');
 set(ch,'buttondownfcn',get(gca,'buttondownfcn'));
