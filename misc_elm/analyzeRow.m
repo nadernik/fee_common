@@ -103,6 +103,8 @@ switch task
             Result.reliable = 0; 
         end
     case 'fourRasters'
+        p.rasterRange = p.plotRange;
+        
         figure(p.figNum); 
         p.alignTo = 'onset'; 
 
@@ -135,14 +137,40 @@ switch task
             % extract the neural trace
             [units fs dateandtime label props]  = egl_AA_daq(fullfile(pathname, dbase.ChannelFiles{chanNum}(ExampleFile(1)).name),1);
             units = units(round(fs*ExampleFile(2)):round(fs*ExampleFile(3)));
+            
+            % extract the segments
+            SegmentTimes = dbase.SegmentTimes{ExampleFile(1)}/fs-ExampleFile(2); 
+            SelectedSyls = dbase.SegmentIsSelected{ExampleFile(1)}; 
+            SegmentNames = dbase.SegmentTitles{ExampleFile(1)}; 
+            for si = 1:size(SegmentTimes,1)
+                if length(SegmentNames{si})==0
+                    SegmentNames{si} = ''; 
+                end
+                if SegmentTimes(si,1) < 0 | SegmentTimes(si,2)>diff(ExampleFile(2:3))
+                    SelectedSyls(si) = 0; 
+                end
+            end
+            
             % plot them
             hh = subplot('position', [.1 .85 .8 .1]);
             [S,Time,F] = spectrogramELM(song,fs,.005,1); 
+            Syls = unique(SegmentNames); 
+            sColors = [.5 .5 .5; hsv(length(Syls)-1)]; 
+            hold on
+            for si = 1:size(SegmentTimes,1)
+                sylID = find(strncmp(SegmentNames{si}, Syls,2));
+                if SelectedSyls(si)
+                    patch(SegmentTimes(si,[1 2 2 1 1]), 6+.5*[0 0 1 1 0], sColors(sylID,:), 'Edgecolor','none')
+                    text(mean(SegmentTimes(si,:)), 6.5, SegmentNames{si}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom','fontsize',p.fontsize)
+                end
+            end
+            
             gg = subplot('position', [.1 .7 .8 .1]); plot((1:length(units))/fs, egf_HanningHighPass(units, fs, egf_HanningHighPass('params')), 'k'); 
             axis tight; box off; set(gca, 'ytick', 0, 'color','none','tickdir','out','ticklength',[0.025 0.025]); 
             linkaxes([hh,gg],'x')
-            subplot(hh);  axis off; title(p.rowstr, 'FontSize', p.fontsize, 'interpreter', 'none')
+            subplot(hh);  axis off; title({p.rowstr, ''}, 'FontSize', p.fontsize, 'interpreter', 'none')
         catch exception
+            row
             exception
         end
 

@@ -1,5 +1,5 @@
 function RastersFromDbase()
-close all; clear all; clc
+% close all; clear all; clc
 
 %RunAnalyses('PUTPROJ&SINGING&DIFF', 'latency', 'song')
 
@@ -9,9 +9,9 @@ close all; clear all; clc
 % RunAnalyses('HASH&SINGLEUNIT&SINGING', 'elecpos', 'song')
 % RunAnalyses('HASH&SINGLEUNIT&TUTORING', 'elecpos', 'tutor')
 % RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor');
-RunAnalyses('SINGING&HASH&SINGLEUNIT', 'latency', 'song')
+% RunAnalyses('TUTORING&PUTPROJ', 'latency', 'tutor')
+RunAnalyses('SINGING&SINGLEUNIT&HASH', 'latency', 'song')
 
-% something weird with 231. 
 %% To get 4 rasters for just one row
 % [XLS, Columns] = loadNIfSpreadsheet_elm(); 
 % p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
@@ -31,8 +31,8 @@ RunAnalyses('SINGING&HASH&SINGLEUNIT', 'latency', 'song')
 % p.figNum = 2;
 % p.papersize = [8.5 11]; 
 % p.fontsize = 10; 
-% p.MaxToPlot = 200;
-% analyzeRow(24, p, 'fourRasters')
+% p.MaxToPlot = 1;
+% analyzeRow(231, p, 'fourRasters')
 %%
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'elecpos', 'song')
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'age', 'song')
@@ -149,7 +149,7 @@ p.fontsize = 10;
 % syllable-onset-aligned PSTHs lacks a clear peak (if it never exceeds the 
 % mean by Nsigma = 3)
 
-calcAllReliabilities = 1; 
+calcAllReliabilities = 0; 
 
 if calcAllReliabilities
     rows1 = 1:length(SINGING); 
@@ -191,59 +191,60 @@ end
 
 %% How many units in each category?
 
-Cats = {HASH SINGLEUNIT&HASH PUTPROJ&SINGLEUNIT ISOLATE&SINGLEUNIT&HASH (~ISOLATE)&SINGLEUNIT&HASH};
-CatNames = {'units with hash' 'single units with hash' 'single unit putative projectors' 'single units with hash from isolate birds' 'single units with hash from nonisolate birds'}; 
-for cati = 1:length(Cats)
-    ThisCategory = Cats{cati}; 
-    ThisCategoryName = CatNames{cati}; 
-    tmp = ThisCategory;
-    display([num2str(sum(tmp)) ' ' ThisCategoryName ', from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = ThisCategory&((SINGING&SONG_INCLUDE_KS)|(TUTORING&TUTOR_INCLUDE_KS)); 
-    display([num2str(sum(tmp)) ' of those pass a ks test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = SINGING&ThisCategory;
-    display(['    ' num2str(sum(tmp)) ' during singing, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = SONG_INCLUDE_KS&SINGING&ThisCategory; 
-    display(['        ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = SONG_LOCKED&SINGING&ThisCategory;
-    display(['        ' num2str(sum(tmp)) ' song locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    display(['           lat: [' num2str(min(SONG_latency(tmp))) ', ' num2str(max(SONG_latency(tmp))) '] mean=' num2str(mean(SONG_latency(tmp))) ', std=' num2str(std(SONG_latency(tmp))) 's'])
-    tmp = SINGING&DIFF&ThisCategory;
-    display(['        ' num2str(sum(tmp)) ' during multiple syllable types, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = SONG_INCLUDE_KS&SINGING&DIFF&ThisCategory;
-    display(['            ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = SONG_LOCKED&SINGING&DIFF&ThisCategory; 
-    display(['            ' num2str(sum(tmp)) ' song locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = TUTORING&ThisCategory; 
-    display(['    ' num2str(sum(tmp)) ' during tutoring, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
-    display(['        ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = TUTOR_LOCKED&TUTORING&ThisCategory;
-    display(['        ' num2str(sum(tmp)) ' tutor locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    display(['           lat: [' num2str(min(TUTOR_latency(tmp))) ', ' num2str(max(TUTOR_latency(tmp))) '] mean=' num2str(mean(TUTOR_latency(tmp))) ', std=' num2str(std(TUTOR_latency(tmp))) 's'])
-    display(['           ' num2str(sum(TUTOR_latency(tmp)<0)) ' pre-onset'])
-    tmp = (Age<=45)&TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
-    display(['        ' num2str(sum(TUTOR_LOCKED&tmp)) ' out of ' num2str(sum(tmp)) ' tutor locked in birds <=45dph '])
-    tmp = (Age>45)&TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
-    display(['        ' num2str(sum(TUTOR_LOCKED&tmp)) ' out of ' num2str(sum(tmp)) ' tutor locked in birds >45dph '])
-    tmp = SINGING&TUTORING&ThisCategory;
-    display(['    ' num2str(sum(tmp)) ' during both, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = TUTOR_INCLUDE_KS&SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory;
-    display(['        ' num2str(sum(tmp)) ' pass both KS tests, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = TUTOR_INCLUDE_KS&SONG_INCLUDE_KS&TUTOR_LOCKED&SONG_LOCKED&SINGING&TUTORING&ThisCategory;
-    display(['        ' num2str(sum(tmp)) ' pass both & locked to both, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = (SONG_INCLUDE_KS&(~SONG_LOCKED))&TUTOR_INCLUDE_KS&TUTOR_LOCKED&SINGING&TUTORING&ThisCategory; 
-    display(['        ' num2str(sum(tmp)) ' pass both & only locked to tutoring, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
-    tmp = SONG_INCLUDE_KS&SONG_LOCKED&(TUTOR_INCLUDE_KS&(~TUTOR_LOCKED))&SINGING&TUTORING&ThisCategory;
-    display(['        ' num2str(sum(tmp)) ' pass both & only locked to singing, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+if calcAllReliabilities 
+    Cats = {HASH SINGLEUNIT&HASH PUTPROJ&SINGLEUNIT ISOLATE&SINGLEUNIT&HASH (~ISOLATE)&SINGLEUNIT&HASH};
+    CatNames = {'units with hash' 'single units with hash' 'single unit putative projectors' 'single units with hash from isolate birds' 'single units with hash from nonisolate birds'}; 
+    for cati = 1:length(Cats)
+        ThisCategory = Cats{cati}; 
+        ThisCategoryName = CatNames{cati}; 
+        tmp = ThisCategory;
+        display([num2str(sum(tmp)) ' ' ThisCategoryName ', from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = ThisCategory&((SINGING&SONG_INCLUDE_KS)|(TUTORING&TUTOR_INCLUDE_KS)); 
+        display([num2str(sum(tmp)) ' of those pass a ks test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = SINGING&ThisCategory;
+        display(['    ' num2str(sum(tmp)) ' during singing, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = SONG_INCLUDE_KS&SINGING&ThisCategory; 
+        display(['        ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = SONG_LOCKED&SINGING&ThisCategory;
+        display(['        ' num2str(sum(tmp)) ' song locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        display(['           lat: [' num2str(min(SONG_latency(tmp))) ', ' num2str(max(SONG_latency(tmp))) '] mean=' num2str(mean(SONG_latency(tmp))) ', std=' num2str(std(SONG_latency(tmp))) 's'])
+        tmp = SINGING&DIFF&ThisCategory;
+        display(['        ' num2str(sum(tmp)) ' during multiple syllable types, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = SONG_INCLUDE_KS&SINGING&DIFF&ThisCategory;
+        display(['            ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = SONG_LOCKED&SINGING&DIFF&ThisCategory; 
+        display(['            ' num2str(sum(tmp)) ' song locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = TUTORING&ThisCategory; 
+        display(['    ' num2str(sum(tmp)) ' during tutoring, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
+        display(['        ' num2str(sum(tmp)) ' pass KS test, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = TUTOR_LOCKED&TUTORING&ThisCategory;
+        display(['        ' num2str(sum(tmp)) ' tutor locked, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        display(['           lat: [' num2str(min(TUTOR_latency(tmp))) ', ' num2str(max(TUTOR_latency(tmp))) '] mean=' num2str(mean(TUTOR_latency(tmp))) ', std=' num2str(std(TUTOR_latency(tmp))) 's'])
+        display(['           ' num2str(sum(TUTOR_latency(tmp)<0)) ' pre-onset'])
+        tmp = (Age<=45)&TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
+        display(['        ' num2str(sum(TUTOR_LOCKED&tmp)) ' out of ' num2str(sum(tmp)) ' tutor locked in birds <=45dph '])
+        tmp = (Age>45)&TUTOR_INCLUDE_KS&TUTORING&ThisCategory;
+        display(['        ' num2str(sum(TUTOR_LOCKED&tmp)) ' out of ' num2str(sum(tmp)) ' tutor locked in birds >45dph '])
+        tmp = SINGING&TUTORING&ThisCategory;
+        display(['    ' num2str(sum(tmp)) ' during both, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = TUTOR_INCLUDE_KS&SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory;
+        display(['        ' num2str(sum(tmp)) ' pass both KS tests, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = TUTOR_INCLUDE_KS&SONG_INCLUDE_KS&TUTOR_LOCKED&SONG_LOCKED&SINGING&TUTORING&ThisCategory;
+        display(['        ' num2str(sum(tmp)) ' pass both & locked to both, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = (SONG_INCLUDE_KS&(~SONG_LOCKED))&TUTOR_INCLUDE_KS&TUTOR_LOCKED&SINGING&TUTORING&ThisCategory; 
+        display(['        ' num2str(sum(tmp)) ' pass both & only locked to tutoring, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+        tmp = SONG_INCLUDE_KS&SONG_LOCKED&(TUTOR_INCLUDE_KS&(~TUTOR_LOCKED))&SINGING&TUTORING&ThisCategory;
+        display(['        ' num2str(sum(tmp)) ' pass both & only locked to singing, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
 
-%     display(['        ' num2str(sum(TUTOR_INCLUDE_KS&SINGING&TUTORING&ThisCategory)) ' pass tutoring KS test, from ' num2str(length(unique(birdID(TUTOR_INCLUDE_KS&SINGING&TUTORING&ThisCategory)))) ' birds'])
-%     display(['        ' num2str(sum(TUTOR_LOCKED&SINGING&TUTORING&ThisCategory)) ' tutor locked, from ' num2str(length(unique(birdID(TUTOR_LOCKED&SINGING&TUTORING&ThisCategory)))) ' birds'])
-%     display(['        ' num2str(sum(SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory)) ' pass song KS test, from ' num2str(length(unique(birdID(SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory)))) ' birds'])
-%     display(['        ' num2str(sum(SONG_LOCKED&SINGING&TUTORING&ThisCategory)) ' song locked, from ' num2str(length(unique(birdID(SONG_LOCKED&SINGING&TUTORING&ThisCategory)))) ' birds'])
-    tmp = ASUBSONG&ThisCategory;
-    display(['    ' num2str(sum(tmp)) ' artificial subsong, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    %     display(['        ' num2str(sum(TUTOR_INCLUDE_KS&SINGING&TUTORING&ThisCategory)) ' pass tutoring KS test, from ' num2str(length(unique(birdID(TUTOR_INCLUDE_KS&SINGING&TUTORING&ThisCategory)))) ' birds'])
+    %     display(['        ' num2str(sum(TUTOR_LOCKED&SINGING&TUTORING&ThisCategory)) ' tutor locked, from ' num2str(length(unique(birdID(TUTOR_LOCKED&SINGING&TUTORING&ThisCategory)))) ' birds'])
+    %     display(['        ' num2str(sum(SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory)) ' pass song KS test, from ' num2str(length(unique(birdID(SONG_INCLUDE_KS&SINGING&TUTORING&ThisCategory)))) ' birds'])
+    %     display(['        ' num2str(sum(SONG_LOCKED&SINGING&TUTORING&ThisCategory)) ' song locked, from ' num2str(length(unique(birdID(SONG_LOCKED&SINGING&TUTORING&ThisCategory)))) ' birds'])
+        tmp = ASUBSONG&ThisCategory;
+        display(['    ' num2str(sum(tmp)) ' artificial subsong, from ' num2str(length(unique(birdID(tmp)))) ' birds'])
+    end
 end
-
 
 %% calculating reliability and latency for each row. Takes ~10 seconds. 
 
@@ -261,27 +262,31 @@ for rowi = 1:length(rows)
 end
 toc
 
-% discard unreliable rows
+% discard unreliable rows... or not if I want figs for all of them
 relInd = find(reliable); %find(relDKL<p.relThres); 
 display([num2str(numel(relInd)) ' reliable of ' num2str(length(rows)) ' total units'])
 rows = rows(relInd); 
 latency = latency(relInd); 
 %% make figs for each neuron, each syllable
-genfigs = 0; % generate 4raster figures for each neuron?
+genfigs = 1; % generate 4raster figures for each neuron?
 genSylSelFigs = 0; % generate syl sel figures for each neuron?
 
 if genfigs||genSylSelFigs
 p.makeFig = 1; 
-p.MaxToPlot = 200;
+p.MaxToPlot = 80;
+
+
 %set(p.figNum, 'color', [1 1 1]) 
 Fstat = []; 
 pval = []; 
-for rowi = [4:numel(rows)] %CHANGE BACK TO 1:NUMEL(ROWS)
+for rowi = [(numel(rows)-7):-1:1] %CHANGE BACK TO 1:NUMEL(ROWS)
     row = rows(rowi); 
     filestr = fullfile(SaveFigPath, [ThisDataset, '_row', num2str(row), '_Age', num2str(Age(row))]); 
     if genfigs
+        figure(p.figNum); clf; 
         analyzeRow(row, p, 'fourRasters');
         drawnow; shg
+        set(p.figNum, 'papersize', [8.5 11], 'paperposition', [0 0 8.5 11])
         saveas(p.figNum,[filestr '_FourRasters.fig'])
         saveas(p.figNum,[filestr '_FourRasters.jpg'])
     end
@@ -339,18 +344,20 @@ for rowi = [4:numel(rows)] %CHANGE BACK TO 1:NUMEL(ROWS)
         p.sylType = sylType;
     end
 end
-p.makeFig = 0; 
-figure; hold on; set(gca, 'xscale', 'log', 'yscale', 'log')
-pval = pval+eps; 
-for rowi = 1:length(rows); plot(Fstat(rowi),pval(rowi), 'k.'); text(Fstat(rowi),pval(rowi)+eps*rand, num2str(rows(rowi))); end
-plot([min(Fstat) max(Fstat)], [.05 .05]/length(rows), 'r'); % bonferroni corrected 
-plot([1 1], [min(pval) max(pval)], 'r')
-axis tight; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
-xlabel('F statistic'); ylabel('p value + \epsilon')
-set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
-saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ANOVAResults_' sylType '.fig'])); 
-saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ANOVAResults_' sylType '.jpg']));
-sound(sin(1:900)); 
+if genSylSelFigs
+    p.makeFig = 0; 
+    figure; hold on; set(gca, 'xscale', 'log', 'yscale', 'log')
+    pval = pval+eps; 
+    for rowi = 1:length(rows); plot(Fstat(rowi),pval(rowi), 'k.'); text(Fstat(rowi),pval(rowi)+eps*rand, num2str(rows(rowi))); end
+    plot([min(Fstat) max(Fstat)], [.05 .05]/length(rows), 'r'); % bonferroni corrected 
+    plot([1 1], [min(pval) max(pval)], 'r')
+    axis tight; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
+    xlabel('F statistic'); ylabel('p value + \epsilon')
+    set(gcf, 'papersize', [4 3], 'paperposition', [0 0 4 3]);
+    saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ANOVAResults_' sylType '.fig'])); 
+    saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ANOVAResults_' sylType '.jpg']));
+    sound(sin(1:900)); 
+end
 end
 %%
 
@@ -557,6 +564,8 @@ for rowi = 1:length(rows)
 %         plot3(latency(rowi),rowi, 1000,'w.', 'markersize', .25)
 %     end
 end
+for ti =1:length(rows); sortLabels{ti} = num2str(rows(ti)); end 
+set(gca, 'ytick', 1:length(rows), 'yticklabels', sortLabels)
 %colorbar('ytick', [-2 0 2], 'yticklabel', {'-2 std', 'mean', '+2 std'})
 set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01], 'fontsize',p.fontsize)
 axis tight; box off; 

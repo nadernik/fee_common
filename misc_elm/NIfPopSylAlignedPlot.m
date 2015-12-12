@@ -34,15 +34,15 @@ SUBSONG = zeros(size(XLS.data.Sheet1,1),1); SUBSONG(strmatch('subsong', XLS.text
 PROTOSYLLABLE = zeros(size(XLS.data.Sheet1,1),1); PROTOSYLLABLE(strmatch('protosyllable', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 %% choose what rows to use
-Title = 'SINGING&HASH&SINGLEUNIT'; 
+Title = 'TUTORING&HASH&SINGLEUNIT'; 
 rows = find(eval(Title));
 [~,sortInd] = sort(Age(rows), 'ascend'); 
 rows = rows(sortInd); 
-desDurRange = [.05 .1]; % only plot syllables of this duration range
+desDurRange = [.04 .12]; % only plot syllables of this duration range
 desMinPrevAndNextGap = [0 0]; % 0 for no restriction
 desMaxPrevAndNextGap = [Inf Inf]; % inf for no restriction
-AlignSylType = 'song'; 
-twindow = [-.2 .3]; % for raster
+AlignSylType = 'tutor'; 
+twindow = [-.3 .3]; % for raster
 MeanSegTimes = zeros(3,2); 
 oldMeanSegTimes = [twindow(1)*[1 1]; % run it once to determine these, or insert desired time warp times for each syl
     0 .07;
@@ -50,7 +50,7 @@ oldMeanSegTimes = [twindow(1)*[1 1]; % run it once to determine these, or insert
 
 TimeWarp = 0; % choose whether to time-warp
 MaxToPlot = 200; % how many syllables to calculate (maxbouts, below, is how many will be plotted...)
-maxbouts = 8; % how many syllables to actually plot (choosen randomly)
+maxbouts = 12; % how many syllables to actually plot (choosen randomly)
 %% compile spike and syl times
 
 
@@ -78,6 +78,10 @@ for rowi = 1:length(rows)
     row = rows(rowi)
     % load analysis file
     [dbase rowstr{rowi} pathname filename] = getDbase_elm(row, XLS, Columns);
+%     if CTEST(row)
+%         rowstr{rowi} = [rowstr{rowi} '_CTEST']; 
+%     end
+%     rowstr{rowi} = [rowstr{rowi} '_Age', num2str(Age(row))]; 
     fs = dbase.Fs;
     % getting the relevant info from NIfUnits spreadsheet
     eventNum = XLS.data.Sheet1(row,strmatch('spikeEventNum', Columns)); 
@@ -190,8 +194,19 @@ for rowi = 1:length(rows);
     row = rows(rowi)
     subplot(mainplot)
     rowInd = find(spkRow == row); 
-    rowBouts = unique(spkBout(rowInd)); 
-    PlotBouts = rowBouts(randperm(length(rowBouts))); 
+    [rowBouts,ia,ic] = unique(spkBout(rowInd)); 
+    
+    % to plot rates with highest firing
+    srate = [];
+    for bi = 1:length(rowBouts)
+        candspks = spkT(spkBout==bi&spkT>-.1&spkT<.05); 
+        ISIs = [diff(candspks); 100]; % adding 100 in case there are fewer than 2 spikes
+        srate(bi) = 1./min(ISIs); 
+    end
+    [~,PlotBoutInd] = sort(srate, 'descend'); 
+    PlotBouts =rowBouts(PlotBoutInd); 
+    
+%     PlotBouts = rowBouts(randperm(length(rowBouts))); % to plot random bouts
     PlotBouts = PlotBouts(1:min(maxbouts,length(PlotBouts))); 
     [~,~,boutTranslation(PlotBouts)] = unique(PlotBouts); 
     boutTranslation(PlotBouts) = boutTranslation(PlotBouts) + cumbout; 
@@ -201,15 +216,14 @@ for rowi = 1:length(rows);
         newY = boutTranslation(sylpatchesY(tmpInd(syli),2)); 
         patch(sylpatchesX(tmpInd(syli),:),...
             newY*[0 1 1 0 0]+ (newY+1)*[1 0 0 1 1],  ...
-            .95*[1 1 1], 'edgecolor', 'none'); 
+            .9*[1 1 1], 'edgecolor', 'none'); 
     end
     [plotX plotY] = forRasterPlot(spkT(indKeep), boutTranslation(spkBout(indKeep))); % adds nans for easy raster plot
     plot(plotX, plotY, 'Color', Colors(rowi,:), 'linewidth', 1)
     cumbout = cumbout + length(PlotBouts);
     lastBoutByRowr(rowi) = cumbout; 
-%     if CTEST(row)
-%         rowstr{row} = [rowstr{row} '_CTEST']; 
-%     end
+%     plot(twindow, (lastBoutByRowr(rowi)+1)*[1 1], 'k')
+
     text(twindow(1), lastBoutByRowr(rowi)+1, rowstr{rowi}, 'interpreter', 'none', 'fontsize', 5, 'verticalalignment', 'top')
 end
 % for syli = 1:size(sylpatchesXr,1)
@@ -220,6 +234,6 @@ set(gca, 'ytick', []);
 xlabel('Time (s)', 'fontsize', 8)
 box off; axis tight
 set(gca,'color','w','tickdir','out','ticklength',[0.015 0.015], 'fontsize', 7)
-title([Title, ' NIf, ', AlignSylType, ', timewarp=' num2str(TimeWarp)])
+title([Title, ' NIf, ', AlignSylType, ', timewarp=' num2str(TimeWarp), ', SylDurRange=[' num2str(desDurRange) ']'])
 papersize = [8.5 11];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
