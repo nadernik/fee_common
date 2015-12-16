@@ -29,7 +29,7 @@ function updated_specgram_quick(signal, Fs, varargin)
 %   
 %   REQUIRES (If Matlab 2014a or lower): FreezeColors:
 %   http://www.mathworks.com/matlabcentral/fileexchange/7943-freezecolors---unfreezecolors
-%   getParentFigure
+%   get_parent_figure
 %   Galen Lynch, 8/22/2014
 %   Modified from code by Aaron Andalman
 persistent p;
@@ -60,7 +60,7 @@ if isempty(Options.ax)
 end
 cMap = Options.colorMap;
 cMap(1,:) = Options.backgroundColor;%set background to black
-hFig = getParentFigure(Options.ax);
+hFig = get_parent_figure(Options.ax);
 %Determine the size of the axis... to determine the
 ud.ax = Options.ax;
 ud.nCourse = nCourse; %sets the resolution I believe

@@ -33,7 +33,7 @@ ud.startndx = 1;
 ud.endndx = length(data);
 ud.startTime = times(1);
 ud.Fs = 1/(times(2)-times(1));
-hFig = getParentFigure(ud.ax);
+hFig = get_parent_figure(ud.ax);
 rszFcn = get(hFig, 'ResizeFcn');
 function helper_resize(hObject, event) 
         helper_mini_max_plot(get(ud.ax, 'UserData'));
