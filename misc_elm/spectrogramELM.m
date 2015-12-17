@@ -39,7 +39,7 @@ if makePlot
     % to make black background, set everything below threshold to threshold, then cmap(1,:) = zeros(1,3); % background = black
     cmap(1,:) = zeros(1,3);
     colormap(cmap);
-    Plot = 10*log10(S);
+    Plot = 10*log10(S+eps);
     Plot(Plot(:)<prctile(Plot(:),50)) = prctile(Plot(:),50);
     surf(Time, F/1000, Plot,'edgecolor','none'); axis tight; 
     view(0,90);

@@ -13,26 +13,26 @@ function RastersFromDbase()
 RunAnalyses('SINGING&SINGLEUNIT&HASH', 'latency', 'song')
 
 %% To get 4 rasters for just one row
-% [XLS, Columns] = loadNIfSpreadsheet_elm(); 
-% p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
-% % p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
-% p.makeFig = 1;
-% p.PSTHaxisMax = []; % [] to leave automatic
-% p.alignTo = 'onset'; 
-% p.sortBy = 'syldur'; % syldur or gapdur
-% p.XLS = XLS; 
-% p.Columns = Columns; 
-% p.rasterRange = [-.5 .5];
-% p.plotRange = [-.2 .3]; 
-% p.psthdt = .001; 
-% smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
-% p.smoothwin = smoothwin; 
-% bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
-% p.figNum = 2;
-% p.papersize = [8.5 11]; 
-% p.fontsize = 10; 
-% p.MaxToPlot = 1;
-% analyzeRow(231, p, 'fourRasters')
+[XLS, Columns] = loadNIfSpreadsheet_elm(); 
+p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+% p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
+p.makeFig = 1;
+p.PSTHaxisMax = []; % [] to leave automatic
+p.alignTo = 'onset'; 
+p.sortBy = 'syldur'; % syldur or gapdur
+p.XLS = XLS; 
+p.Columns = Columns; 
+p.rasterRange = [-.5 .5];
+p.plotRange = [-.2 .3]; 
+p.psthdt = .001; 
+smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
+p.smoothwin = smoothwin; 
+bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
+p.figNum = 2;
+p.papersize = [8.5 11]; 
+p.fontsize = 10; 
+p.MaxToPlot = 80;
+analyzeRow(47, p, 'fourRasters')
 %%
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'elecpos', 'song')
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'age', 'song')
@@ -268,7 +268,7 @@ display([num2str(numel(relInd)) ' reliable of ' num2str(length(rows)) ' total un
 rows = rows(relInd); 
 latency = latency(relInd); 
 %% make figs for each neuron, each syllable
-genfigs = 1; % generate 4raster figures for each neuron?
+genfigs = 0; % generate 4raster figures for each neuron?
 genSylSelFigs = 0; % generate syl sel figures for each neuron?
 
 if genfigs||genSylSelFigs
@@ -279,7 +279,7 @@ p.MaxToPlot = 80;
 %set(p.figNum, 'color', [1 1 1]) 
 Fstat = []; 
 pval = []; 
-for rowi = [(numel(rows)-7):-1:1] %CHANGE BACK TO 1:NUMEL(ROWS)
+for rowi = 1:NUMEL(ROWS) %CHANGE BACK TO 1:NUMEL(ROWS)
     row = rows(rowi); 
     filestr = fullfile(SaveFigPath, [ThisDataset, '_row', num2str(row), '_Age', num2str(Age(row))]); 
     if genfigs
