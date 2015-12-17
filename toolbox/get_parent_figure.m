@@ -1,4 +1,4 @@
-function fig = getParentFigure(fig)
+function fig = get_parent_figure(fig)
 % if the object is a figure or figure descendent, return the
 % figure. Otherwise return [].
 while ~isempty(fig) && ~strcmp('figure', get(fig,'type'))
