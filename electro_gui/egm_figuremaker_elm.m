@@ -1,30 +1,30 @@
 function handles = egm_figuremaker_elm(handles)
-shg;
-filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
+shg();
+filenum = str2double(get(handles.edit_FileNumber, 'string')); % get current file number
 FS = 8; % labels 
 FS_axes = 8; % axis labels
 %h = subplot(2,1,1)
 fs = handles.fs;
 lims = get(handles.axes_Sonogram, 'xlim');
-if lims(1) < 1/fs;
-    lims(1) = 1/fs;
+if lims(1) < 1 / fs;
+    lims(1) = 1 / fs;
 end
-if lims(2)*fs > numel(handles.sound)
-    lims(2) = numel(handles.sound)/fs
+if lims(2) * fs > numel(handles.sound)
+    lims(2) = numel(handles.sound) / fs;
 end
-ind_time = lims(1):1/fs:lims(2);
-song = handles.sound(round(ind_time*fs));
-units = handles.chan1(round(ind_time*fs));
-time = 0:1/fs:(lims(2)-lims(1));
-SegmentTimes = handles.dbase.SegmentTimes{filenum}/handles.fs-lims(1); 
+ind_time = lims(1):(1 / fs):lims(2);
+% song = handles.sound(round(ind_time * fs));
+units = handles.chan1(round(ind_time * fs));
+time = 0:(1 / fs):(lims(2) - lims(1));
+SegmentTimes = (handles.dbase.SegmentTimes{filenum} / handles.fs) - lims(1); 
 SelectedSyls = handles.dbase.SegmentIsSelected{filenum}; 
 SegmentNames = handles.dbase.SegmentTitles{filenum}; 
 
-for si = 1:size(SegmentTimes,1)
-    if length(SegmentNames{si})==0
+for si = 1:size(SegmentTimes, 1)
+    if numel(SegmentNames{si}) == 0
         SegmentNames{si} = ''; 
     end
-    if SegmentTimes(si,1) < 0 | SegmentTimes(si,2)>diff(lims)
+    if SegmentTimes(si, 1) < 0 || SegmentTimes(si,2) > diff(lims);
         SelectedSyls(si) = 0; 
     end
 end
@@ -53,43 +53,45 @@ end
 % %imagesc(t, f, 10*log10(S)');shg
 % %set(gca, 'Ydir', 'normal')
 %% using displayspecgramquick
-set(gca, 'xtick', [])
+set(gca, 'xtick', []);
 %displaySpecgramQuick(song,fs); 
 temp = get(handles.axes_Sonogram, 'Children'); 
 cdata = get(temp, 'Cdata');
 fdata = get(temp, 'ydata'); 
-tdata = get(temp, 'xdata'); tdata = time; 
+% tdata = get(temp, 'xdata'); 
+tdata = time; 
 fig = figure; 
-h = subplot(2,1,1); 
-tmp = suptitle([handles.path_name ' #' num2str(filenum)])
+h = subplot(2, 1, 1); 
+tmp = suptitle([handles.path_name ' #' num2str(filenum)]);
 set(tmp, 'fontsize', FS);
 %Thres = -16.2;
 cdata(cdata<handles.SonogramClim(1)) = handles.SonogramClim(1); 
 cdata(cdata>handles.SonogramClim(2)) = handles.SonogramClim(2); 
-imagesc(cdata, 'xdata', tdata, 'ydata', fdata/1000); set(gca, 'ydir', 'normal', 'ytick', 2:2:6)
+imagesc(cdata, 'xdata', tdata, 'ydata', fdata / 1000); 
+set(gca, 'ydir', 'normal', 'ytick', 2:2:6);
 %surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
 ylabel('Frequency (kHz)','fontsize',FS)
 set(gca, 'xtick', [], 'xticklabel', '');
 cmap = jet; 
-cmap(1,:) = zeros(1,3); % background = black
+cmap(1, :) = zeros(1,3); % background = black
 colormap(cmap);
 
 
 %% adding patches for syllables
-Syls = unique(SegmentNames); 
-sColors = [.5 .5 .5; hsv(length(Syls)-1)]; 
+Sylls = unique(SegmentNames); 
+sColors = [0.5, 0.5, 0.5; hsv(length(Sylls) - 1)]; 
 hold on
 for si = 1:size(SegmentTimes,1)
-    sylID = find(strncmp(SegmentNames{si}, Syls,2));
+    syllMask = strncmp(SegmentNames{si}, Sylls, 2);
     if SelectedSyls(si)
-        patch(SegmentTimes(si,[1 2 2 1 1]), 8+.5*[0 0 1 1 0], sColors(sylID,:), 'Edgecolor','none')
-        text(mean(SegmentTimes(si,:)), 8.5, SegmentNames{si}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom','fontsize',FS_axes)
+        patch(SegmentTimes(si, [1, 2, 2, 1, 1]), 8 + 0.5 * [0, 0, 1, 1, 0], sColors(syllMask, :), 'Edgecolor','none')
+        text(mean(SegmentTimes(si, :)), 8.5, SegmentNames{si}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', 'fontsize', FS_axes)
     end
 end
 set(gca, 'color', 'none')
-ylim([min(fdata/1000) 8.5])
+ylim([min(fdata / 1000), 8.5])
 box off
-set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
+set(gca,'color','none','tickdir','out','ticklength', [0.025, 0.025])
 set(gca,'fontsize',FS_axes)
 
 
@@ -112,18 +114,18 @@ set(gca,'fontsize',FS_axes)
 %%
 % subplot(3,1,2)
 % plot((1:size(handles.sound))/handles.fs, handles.amplitude)
-g = subplot(2,1,2)
-set(gca, 'box', 'off', 'ColorOrder', [0 0 0], 'NextPlot', 'replacechildren')
+g = subplot(2, 1, 2);
+set(gca, 'box', 'off', 'ColorOrder', [0, 0, 0], 'NextPlot', 'replacechildren')
 plot(time,units, 'linewidth', 1); %mini_max_plot(time, units, 'ax', g)
 xlabel('Time(s)','fontsize',FS); 
 ylabel(get(get(handles.axes_Channel1, 'ylabel'), 'string'),'fontsize',FS); 
 axis tight
-set(gca, 'ytick', [0 .2], 'yticklabel', {'0', '0.2'})
+set(gca, 'ytick', [0, 0.2], 'yticklabel', {'0', '0.2'})
 
 box off
 
-set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
-set(gca,'fontsize',FS_axes)
+set(gca, 'color', 'none', 'tickdir', 'out', 'ticklength', [0.025, 0.025])
+set(gca, 'fontsize' ,FS_axes)
 
 linkaxes([h g],'x')
 %xlim([lims(1) lims(2)])
@@ -131,13 +133,13 @@ linkaxes([h g],'x')
 ShrinkBy = 4; 
 p = get(h, 'pos');
 q = get(g, 'pos');
-m = mean([p(2) q(2)+q(4)])
-gap = p(2) - (q(2)+q(4));
-p(2) = m + gap/(2*ShrinkBy);
-q(4) = m-q(2)-  gap/(2*ShrinkBy);
+m = mean([p(2), q(2) + q(4)]);
+gap = p(2) - (q(2) + q(4));
+p(2) = m + gap / (2 * ShrinkBy);
+q(4) = m - q(2)-  gap / (2 * ShrinkBy);
 set(h, 'pos', p)
 set(g, 'pos', q)
 %%
 
-set(gcf, 'Color', [1 1 1], 'papersize', 2*[4 2], 'paperposition', 2*[0 0 4 2]); 
+set(gcf, 'Color', [1, 1, 1], 'papersize', 2 * [4, 2], 'paperposition', 2 * [0, 0, 4, 2]); 
 %print fig -dmeta -r300
