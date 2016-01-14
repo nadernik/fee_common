@@ -23,7 +23,7 @@ fs = dbase.Fs;
 
 % getting the relevant info from NIfUnits spreadsheet
 eventNum = XLS.data.Sheet1(row,strmatch('spikeEventNum', Columns)); 
-chanNum = XLS.data.Sheet1(row,strmatch('electrode #', Columns))+1;
+chanNum = XLS.data.Sheet1(row,strmatch('electrode #', Columns))+1*(row<245); % channel indices are different on my rig and on tots'
 TutorSylNames = eval(XLS.textdata.Sheet1{row,strmatch('T syl names', Columns)});
 SongSylNames = eval(XLS.textdata.Sheet1{row,strmatch('song syl names', Columns)});
 ASubSylNames = eval(XLS.textdata.Sheet1{row,strmatch('AS syl names', Columns)}); 

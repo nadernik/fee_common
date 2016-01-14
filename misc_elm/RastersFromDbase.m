@@ -31,8 +31,22 @@ bins = p.rasterRange(1):p.psthdt:p.rasterRange(2);
 p.figNum = 2;
 p.papersize = [8.5 11]; 
 p.fontsize = 10; 
-p.MaxToPlot = 80;
-analyzeRow(47, p, 'fourRasters')
+p.MaxToPlot = 200;
+
+row = 252
+figure(p.figNum); clf; 
+analyzeRow(row, p, 'fourRasters')
+
+%% save fig
+
+ThisDataset = 'SINGING&SINGLEUNIT&HASH';
+SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\code\RasterPlots\'; 
+mkdir(SaveFigPath, ThisDataset); 
+SaveFigPath = fullfile(SaveFigPath, ThisDataset); 
+filestr = fullfile(SaveFigPath, [ThisDataset, '_row', num2str(row)]); 
+set(p.figNum, 'papersize', [8.5 11], 'paperposition', [0 0 8.5 11])
+saveas(p.figNum,[filestr '_FourRasters.fig'])
+saveas(p.figNum,[filestr '_FourRasters.jpg'])
 %%
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'elecpos', 'song')
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'age', 'song')
@@ -268,7 +282,7 @@ display([num2str(numel(relInd)) ' reliable of ' num2str(length(rows)) ' total un
 rows = rows(relInd); 
 latency = latency(relInd); 
 %% make figs for each neuron, each syllable
-genfigs = 0; % generate 4raster figures for each neuron?
+genfigs = 1; % generate 4raster figures for each neuron?
 genSylSelFigs = 0; % generate syl sel figures for each neuron?
 
 if genfigs||genSylSelFigs
@@ -279,7 +293,7 @@ p.MaxToPlot = 80;
 %set(p.figNum, 'color', [1 1 1]) 
 Fstat = []; 
 pval = []; 
-for rowi = 1:NUMEL(ROWS) %CHANGE BACK TO 1:NUMEL(ROWS)
+for rowi = 1:numel(rows) %CHANGE BACK TO 1:NUMEL(ROWS)
     row = rows(rowi); 
     filestr = fullfile(SaveFigPath, [ThisDataset, '_row', num2str(row), '_Age', num2str(Age(row))]); 
     if genfigs

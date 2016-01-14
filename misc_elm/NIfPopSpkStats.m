@@ -36,23 +36,23 @@ SUBSONG = zeros(size(XLS.data.Sheet1,1),1); SUBSONG(strmatch('subsong', XLS.text
 PROTOSYLLABLE = zeros(size(XLS.data.Sheet1,1),1); PROTOSYLLABLE(strmatch('protosyllable', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 %% choose what rows to use
-Title = 'SINGING&HASH&SINGLEUNIT'; 
+Title = 'TUTORING&HASH&SINGLEUNIT'; 
 rows = find(eval(Title));
 % [~,sortInd] = sort(Age(rows), 'ascend'); 
 % rows = rows(sortInd); 
-desDurRange = [.04 .12]; % only plot syllables of this duration range
-desMinPrevAndNextGap = [0 0]; % 0 for no restriction
-desMaxPrevAndNextGap = [Inf Inf]; % inf for no restriction
-AlignSylType = 'song'; 
-twindow = [-.3 .3]; % for raster
-MeanSegTimes = zeros(3,2); 
-oldMeanSegTimes = [twindow(1)*[1 1]; % run it once to determine these, or insert desired time warp times for each syl
-    0 .07;
-    twindow(2)*[1 1]];
-
-TimeWarp = 0; % choose whether to time-warp
-MaxToPlot = 200; % how many syllables to calculate (maxbouts, below, is how many will be plotted...)
-maxbouts = 12; % how many syllables to actually plot (choosen randomly)
+% desDurRange = [.04 .12]; % only plot syllables of this duration range
+% desMinPrevAndNextGap = [0 0]; % 0 for no restriction
+% desMaxPrevAndNextGap = [Inf Inf]; % inf for no restriction
+% AlignSylType = 'song'; 
+% twindow = [-.3 .3]; % for raster
+% MeanSegTimes = zeros(3,2); 
+% oldMeanSegTimes = [twindow(1)*[1 1]; % run it once to determine these, or insert desired time warp times for each syl
+%     0 .07;
+%     twindow(2)*[1 1]];
+% 
+% TimeWarp = 0; % choose whether to time-warp
+% MaxToPlot = 200; % how many syllables to calculate (maxbouts, below, is how many will be plotted...)
+% maxbouts = 12; % how many syllables to actually plot (choosen randomly)
 
 %%
 fs = 40000;
@@ -65,12 +65,8 @@ smwinAC =  9; % # of bins, each bin is 1/fs
 % initialize
 ISI_Sing = zeros(length(rows),length(ISItbins)); 
 ISI_NonSing = zeros(length(rows),length(ISItbins)); 
-% HighFRSing = zeros(length(rows),1); 
-% MidFRSing = zeros(length(rows),1); 
 Autocorr_Sing = zeros(length(rows),length(Autocorrtbins)); 
 Autocorr_NonSing = zeros(length(rows),length(Autocorrtbins)); 
-nSpksSong = []; 
-nSpksSong = []; 
 for rowi = 1:length(rows)
     row = rows(rowi)
     [dbase rowstr{rowi} pathname filename] = getDbase_elm(row, XLS, Columns);
@@ -88,106 +84,95 @@ for rowi = 1:length(rows)
     listISInonsong{rowi} = []; 
     flsISIsong{rowi} = [];
     flsISInonsong{rowi} = [];
-    sDiffs = [];
-    nsDiffs = [];
+    sDiffsForAC{rowi} = []; 
+    nsDiffsForAC{rowi} = [];
+    TotalSongTime(rowi) = 0; 
+    TotalSilentTime(rowi) = 0; 
+    nSongSpks(rowi) = 0;
+    nSilentSpks(rowi) = 0; 
     for file = 1:length(dbase.SegmentIsSelected); 
          % compile syl times and titles, exclude unselected syls
         segTimes = dbase.SegmentTimes{file}/fs; % whole file, just selected segs, in sec
         segTitles = dbase.SegmentTitles{file}; % whole file, just selected segs
+        filelength = dbase.FileLength(file)/fs; 
         isSongSyl = [];
+        % divide the file into song bouts and nonsong bouts
+        moatSong = .15; % time around song syllables that is still counted as song
+        moatNonsong = .15; % time around all syllables that still doesn't count as silence
+        CurrentlySong = 0; 
         for segi = 1:size(segTimes,1)
             isSongSyl(segi) = sum(cellfun(@(x) (issame(x,segTitles{segi})|((length(x)==0)&(length(segTitles{segi})==0))), SongSylNames, 'UniformOutput', 1))>0 ...
                 & dbase.SegmentIsSelected{file}(segi);
         end
+        
+        % find song bouts
+        SongBouts = segTimes(isSongSyl==1,:); 
+        if size(SongBouts,1)>0
+            Gaps = [[0; SongBouts(:,2)+moatSong] [SongBouts(:,1)-moatSong; filelength]]; 
+            Gaps((Gaps(:,2)-Gaps(:,1))<0,:) = [];
+            SongBouts = [[0; Gaps(:,2)] [Gaps(:,1); filelength]]; 
+            SongBouts(SongBouts(:,2)==0|SongBouts(:,1) == filelength,:) = [];
+        end
+        
+        % find silent bouts
+        if size(segTimes,1)>0
+            SilentBouts = [[0; segTimes(:,2)+moatNonsong] [segTimes(:,1)-moatNonsong; filelength]]; 
+            SilentBouts((SilentBouts(:,2)-SilentBouts(:,1))<0,:) = [];  
+        else
+            SilentBouts = [0 filelength]; 
+        end
+        
+        % find spike times in the whole file
         spiketimes = dbase.EventTimes{eventNum}{1,file}/fs; % whole file, in sec
         spiketimes = spiketimes(dbase.EventIsSelected{1,eventNum}{1,file}==1); % only keep selected spikes
         
-        % figure out which spikes are during singing and nonsinging
-        if length(spiketimes)>0 % if there are any spikes in the file
-            if sum(isSongSyl)>0 % if there are any song syllables
-                SongSegTimes = segTimes(isSongSyl==1,:); SongSegTimes = sort(SongSegTimes(:))'; 
-                edges = [-Inf, mean([SongSegTimes(2:end); SongSegTimes(1:end-1)]), +Inf];
-                songSegInd = discretize(spiketimes,edges);
-                ClosestSongOnsetOrOffset = SongSegTimes(songSegInd); 
-            else
-                ClosestSongOnsetOrOffset = Inf*spiketimes'; 
-            end
-            if size(segTimes,1)>0 % if there are any syllables
-                AllSegTimes = sort(segTimes(:))'; 
-                edges = [-Inf, mean([AllSegTimes(2:end); AllSegTimes(1:end-1)]), +Inf];
-                SegInd = discretize(spiketimes,edges);
-                ClosestOnsetOrOffset = AllSegTimes(SegInd); 
-            else
-                SegInd = 0*spiketimes'; 
-                ClosestOnsetOrOffset = Inf*spiketimes'; 
-            end
-            
-            % Find song ISIs, excluding song ISIs between bouts
-            SongInd = abs(spiketimes'-(ClosestSongOnsetOrOffset))<.2; % within 200ms of song syllables
-            SongSpiketimes = spiketimes(SongInd);
-            songSegInd = songSegInd(SongInd); 
+        % compile isis for song bouts
+        for songbi = 1:size(SongBouts,1)
+            SongSpiketimes = spiketimes(spiketimes>SongBouts(songbi,1) & spiketimes<SongBouts(songbi,2)); 
+            TotalSongTime(rowi) = TotalSongTime(rowi) + diff(SongBouts(songbi,:)); 
+            nSongSpks(rowi) = nSongSpks(rowi) + length(SongSpiketimes); 
             sISI = diff(SongSpiketimes); 
-            sISI = sISI(diff(SongSegTimes(songSegInd))<.3); % no gaps of more than 300ms (only include within-bout isis)
-            
-            % Find nonsong ISIs, excluding nonsong ISIs that skip around bouts
-            NonSongInd = (abs(spiketimes'-ClosestOnsetOrOffset)>.1) & ... 100ms away from any segment
-                (abs(spiketimes'-ClosestSongOnsetOrOffset)>.2); % 200ms away from any song segments
-            NonSongSpiketimes = spiketimes(NonSongInd); 
-            SegInd = SegInd(NonSongInd); 
-            nsISI = diff(NonSongSpiketimes); 
-            nsISI = nsISI(diff(SegInd)<2); % if skipped over a syllable, don't count that isi 
-            
-            % compile ISIs
-            sISI = sISI(sISI<=Maxlag); 
-            nsISI = nsISI(nsISI<=Maxlag); 
+            sISI = sISI(sISI<Maxlag); 
             listISIsong{rowi} = [listISIsong{rowi}; sISI];
             flsISIsong{rowi} = [flsISIsong{rowi}; file*ones(length(sISI),1)];
-            listISInonsong{rowi} = [listISInonsong{rowi}; nsISI]; 
-            flsISInonsong{rowi} = [flsISInonsong{rowi}; file*ones(length(nsISI),1)];
-            
-            % compile all pairwise diffs... consider also excluding between-bout song ISIs and skip-bout nonsong ISIs
             tmp = bsxfun(@minus,SongSpiketimes, SongSpiketimes'); % all positive pairwise spike diffs
             tmp = tmp((tmp>0) & (tmp<Maxlag)); 
-            sDiffs = [sDiffs; tmp]; 
-            
-            tmp = triu(bsxfun(@minus,NonSongSpiketimes, NonSongSpiketimes')'); % all positive pairwise spike diffs
-            tmp = tmp((tmp>0) & (tmp<Maxlag)); 
-            nsDiffs = [nsDiffs; tmp]; 
+            sDiffsForAC{rowi} = [sDiffsForAC{rowi}; tmp]; % for autocorrelation
         end
+        
+        % compile isis for silent bouts
+        for silentbi = 1:size(SilentBouts,1)
+            NonSongSpiketimes = spiketimes(spiketimes>SilentBouts(silentbi,1) & spiketimes<SilentBouts(silentbi,2)); 
+            TotalSilentTime(rowi) = TotalSilentTime(rowi) + diff(SilentBouts(silentbi,:)); 
+            nSilentSpks(rowi) = nSilentSpks(rowi) + length(NonSongSpiketimes); 
+            nsISI = diff(NonSongSpiketimes); 
+            nsISI = nsISI(nsISI<Maxlag); 
+            listISInonsong{rowi} = [listISInonsong{rowi}; nsISI];
+            flsISInonsong{rowi} = [flsISInonsong{rowi}; file*ones(length(nsISI),1)];
+            tmp = bsxfun(@minus,NonSongSpiketimes, NonSongSpiketimes'); % all positive pairwise spike diffs
+            tmp = tmp((tmp>0) & (tmp<Maxlag)); 
+            nsDiffsForAC{rowi} = [nsDiffsForAC{rowi}; tmp]; % for autocorrelation
+        end
+        
     end
-    
-    % store autocorrelation functions
-    sDiffsForAC{rowi} = sDiffs; 
-    nsDiffsForAC{rowi} = nsDiffs; 
-    if length(sDiffs)>5e3 % to avoid out of memory errors
-        indsd = randperm(length(sDiffs)); 
-        indsd = indsd(1:1e3); 
-        sDiffs = sDiffs(indsd); 
-    end
-    if length(nsDiffs)>5e3 % to avoid out of memory errors
-        indsd = randperm(length(nsDiffs)); 
-        indsd = indsd(1:1e3); 
-        nsDiffs = nsDiffs(indsd); 
-    end
-    
-    Autocorr_Sing(rowi,:) = histc(sDiffs, Autocorrtbins); 
-    Autocorr_Sing(rowi,:) = smooth(Autocorr_Sing(rowi,:)/max(length(listISIsong{rowi}),1)./diff([1/fs Autocorrtbins]), smwinAC); 
-    Autocorr_NonSing(rowi,:) = histc(nsDiffs, Autocorrtbins); 
-    Autocorr_NonSing(rowi,:) = smooth(Autocorr_NonSing(rowi,:)/max(length(listISInonsong{rowi}),1)./diff([1/fs Autocorrtbins]), smwinAC); 
-    
-    % store ISI dists
+
+    % store ISI dists and autocorrelation functions
     minspikes = 20; 
-    ISI_Sing(rowi,:) = smooth(histc(listISIsong{rowi}, ISItbins),smwinISI); 
-    if sum(ISI_Sing(rowi,:))>minspikes % if there are at least minspikes spikes
+    if length(listISIsong{rowi})>minspikes % if there are at least minspikes spikes
+        ISI_Sing(rowi,:) = smooth(histc(listISIsong{rowi}, ISItbins),smwinISI);
         ISI_Sing(rowi,:) = ISI_Sing(rowi,:)/sum(ISI_Sing(rowi,:));
+        Autocorr_Sing(rowi,:) = histc(sDiffsForAC{rowi}, Autocorrtbins); 
+        Autocorr_Sing(rowi,:) = smooth(Autocorr_Sing(rowi,:)/max(length(listISIsong{rowi}),1)./diff([1/fs Autocorrtbins]), smwinAC); 
     else
-        ISI_Sing(rowi,:) = nan * ISI_Sing(rowi,:); 
-        Autocorr_Sing(rowi,:) = nan * Autocorr_Sing(rowi,:); 
+        ISI_Sing(rowi,:) = nan(1,size(ISI_Sing,2)); 
+        Autocorr_Sing(rowi,:) = nan(1,size(Autocorr_Sing,2)); 
     end
     
-    ISI_NonSing(rowi,:) = smooth(histc(listISInonsong{rowi}, ISItbins),smwinISI); 
-    if sum(ISI_NonSing(rowi,:))>minspikes % if there are at least minspikes spikes
+    if length(listISInonsong{rowi})>minspikes % if there are at least minspikes spikes
+        ISI_NonSing(rowi,:) = smooth(histc(listISInonsong{rowi}, ISItbins),smwinISI); 
         ISI_NonSing(rowi,:) = ISI_NonSing(rowi,:)/sum(ISI_NonSing(rowi,:)); 
+        Autocorr_NonSing(rowi,:) = histc(nsDiffsForAC{rowi}, Autocorrtbins); 
+        Autocorr_NonSing(rowi,:) = smooth(Autocorr_NonSing(rowi,:)/max(length(listISInonsong{rowi}),1)./diff([1/fs Autocorrtbins]), smwinAC); 
     else
         ISI_NonSing(rowi,:) = nan * ISI_NonSing(rowi,:);
         Autocorr_NonSing(rowi,:) = nan * Autocorr_NonSing(rowi,:); 
@@ -198,6 +183,7 @@ for rowi = 1:length(rows)
     nSpksNonSong(rowi) = length(listISInonsong{rowi});
     display(['row' num2str(row) 'ss' num2str(nSpksNonSong(rowi)) 'nss' num2str(nSpksSong(rowi))])
 end
+
 %% Looking at data across files, to look for for outlier files.
 subplot(2,1,1); 
 
@@ -239,19 +225,20 @@ plTitls = {'Put Proj' 'Others'};
 figure(3); clf; hold all
 figure(4); clf; hold all
 divFactor = .2; % for setting bin width
+MaxToPlot = 3e3; % otherwise distributionPlot won't plot anything when there's too much data. row156 is first to fail I think.
 for pli = 1:2
     figure(3); % ISIs
     subplot(1,2,pli); 
     hold all
     title(plTitls{pli})
     ind = plInds{pli}
-    distributionPlot(cellfun(@(x) (x),listISInonsong(ind), 'uniformoutput', 0),  ...
+    distributionPlot(cellfun(@(x) log(x(randsample(end,min(end,MaxToPlot)))),listISInonsong(ind), 'uniformoutput', 0),  ...
         'showMM', 0, 'color', .7*[1 1 1], 'histori', 'right', 'addSpread', 0, ...
         'widthDiv', [2 2], 'xNames', rowstrShort(ind), 'histOpt', 2, ...
         'xyOri', 'flipped', 'divFactor', divFactor)
     hold on
     drawnow
-    distributionPlot(cellfun(@(x) (x),listISIsong(ind), 'uniformoutput', 0),  ...
+    distributionPlot(cellfun(@(x) log(x(randsample(end,min(end,MaxToPlot)))),listISIsong(ind), 'uniformoutput', 0),  ...
         'showMM', 0, 'color', [1 .6 .6], 'histori', 'left', 'addSpread', 0, ...
         'widthDiv', [2 1], 'xNames', rowstrShort(ind), 'histOpt', 2, ...
         'xyOri', 'flipped', 'divFactor', divFactor)
@@ -267,22 +254,23 @@ for pli = 1:2
     hold all
     title(plTitls{pli});
     ind = plInds{pli};
-    distributionPlot(cellfun(@(x) log(x),nsDiffsForAC(ind), 'uniformoutput', 0),  ...
+    distributionPlot(cellfun(@(x) x(randsample(end,min(end,MaxToPlot))),nsDiffsForAC(ind), 'uniformoutput', 0),  ...
         'showMM', 0, 'color', .7*[1 1 1], 'histori', 'right', 'addSpread', 0, ...
         'widthDiv', [2 2], 'xNames', rowstrShort(ind), 'histOpt', 2, ...
         'xyOri', 'flipped', 'divFactor', divFactor)
     hold on
-    distributionPlot(cellfun(@(x) log(x),sDiffsForAC(ind), 'uniformoutput', 0),  ...
+    distributionPlot(cellfun(@(x) x(randsample(end,min(end,MaxToPlot))),sDiffsForAC(ind), 'uniformoutput', 0),  ...
         'showMM', 0, 'color', [1 .6 .6], 'histori', 'left', 'addSpread', 0, ...
         'widthDiv', [2 1], 'xNames', rowstrShort(ind), 'histOpt', 2, ...
         'xyOri', 'flipped', 'divFactor', divFactor)
-%     xlim(([minlag Maxlag]))
-%     xlabel('lag (s)'); grid on
-    set(gca, 'xtick', log(yticks), 'xticklabel', yticklabels)%, 'xticklabelrotation', 90)
-    set(gca,'color','w','tickdir','out','ticklength',[0.015 0.015], 'fontsize', 8)
+    xlim(([minlag Maxlag]))
     xlabel('lag (s)'); grid on
-    xlim(log([minlag Maxlag]))
+    set(gca,'color','w','tickdir','out','ticklength',[0.015 0.015], 'fontsize', 8)
+%     set(gca, 'xtick', log(yticks), 'xticklabel', yticklabels)%, 'xticklabelrotation', 90)
+%     xlabel('lag (s)'); grid on
+%     xlim(log([minlag Maxlag]))
 end
+
 figure(3); shg; 
 tmp = suptitle('ISI, single units, \color[rgb]{.7 .7 .7}Nonsinging, \color[rgb]{1 .6 .6}Singing')
 set(tmp, 'fontsize', 8)
@@ -361,39 +349,195 @@ set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]);
 figure(6); suptitle('Autocorrelation, single units')
 papersize = [8.5 11];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
-%% scatter plot
-clf; hold on
-Colors = [.8*[1 1 1]; [1 .7 .7]; [1 .5 .5]]; 
-SingMFR = cellfun(@(x) length(x)/sum(x),...
-    listISIsong);
-NonMFR = cellfun(@(x) length(x)/sum(x),...
-    listISInonsong);
-scatter(SingMFR,NonMFR, 'o', 'cdata', Colors(1+CTEST(rows)+PUTPROJ(rows),:), 'markerfacecolor', 'flat'); 
+%% scatter plot of mean firing rate singing and nonsinging
+alp = .05; % alpha for confidence intervals
+Colors = [.6*[1 1 1]; [1 .6 .6]; [1 0 0]];
+SpkMin = 20; % don't plot conf intervals if fewer than SpkMin spks
+% Colors = [[1 1 1]; [1 .8 .8]; [1 0 0]];
+
+% confidence interval on mean rate, assuming poisson
+% https://en.wikipedia.org/wiki/Poisson_distribution#Parameter_estimation
+SingMFR = nSongSpks./TotalSongTime;
+SingLFR = .5*chi2inv(alp/2, 2*nSongSpks)./TotalSongTime; %SingMFR+1.96*sqrt(SingMFR/TotalSongTime);
+SingUFR = .5*chi2inv(1-alp/2, 2*nSongSpks+2)./TotalSongTime;%SingMFR-1.96*sqrt(SingMFR/TotalSongTime);
+NonMFR = nSilentSpks./TotalSilentTime;
+NonLFR = .5*chi2inv(alp/2, 2*nSilentSpks)./TotalSilentTime; %NonMFR+1.96*sqrt(NonMFR/TotalSilentTime);
+NonUFR = .5*chi2inv(1-alp/2, 2*nSilentSpks+2)./TotalSilentTime; %NonMFR-1.96*sqrt(NonMFR/TotalSilentTime);
+PXFR = [SingLFR(:) SingUFR(:) SingUFR(:) SingLFR(:) SingLFR(:)]; 
+PYFR = [NonLFR(:) NonLFR(:) NonUFR(:) NonUFR(:) NonLFR(:)]; 
+
+% confidence interval on CV
+% http://www.hindawi.com/journals/jps/2013/324940/
+SingCV = cellfun(@(x) std(x)/mean(x), listISIsong); % CV of song ISI distribution
+Ns = cellfun(@(x) length(x), listISIsong); % number of song ISIs
+SingLCV = SingCV.*sqrt(Ns)./sqrt(chi2inv(1-alp/2, Ns)); 
+SingUCV = SingCV.*sqrt(Ns)./sqrt(chi2inv(alp/2, Ns)); 
+NonCV = cellfun(@(x) std(x)/mean(x), listISInonsong); % CV of nonsong ISI distribution
+Nns = cellfun(@(x) length(x), listISInonsong); % number of nonsong ISIs
+NonLCV = NonCV.*sqrt(Nns)./sqrt(chi2inv(1-alp/2, Nns)); 
+NonUCV = NonCV.*sqrt(Nns)./sqrt(chi2inv(alp/2, Nns)); 
+PXCV = [SingLCV(:) SingUCV(:) SingUCV(:) SingLCV(:) SingLCV(:)]; 
+PYCV = [NonLCV(:) NonLCV(:) NonUCV(:) NonUCV(:) NonLCV(:)]; 
+
+
+figure(8); clf; hold on % mean FR
 for rowi = 1:length(rows)
+    if min(length(listISInonsong{rowi}),length(listISIsong{rowi}))<SpkMin
+%         plot(PX(rowi,:), PY(rowi,:), ':', 'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:))
+    else
+        plot(PXFR(rowi,:), PYFR(rowi,:), 'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:))
+    end
     text(SingMFR(rowi), NonMFR(rowi), num2str(rows(rowi)), ...
-        'color', .5*Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:), ...
-        'fontsize', 5, 'horizontalalignment', 'center', 'verticalalignment', 'middle')
+        'color', .7*Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:), ...
+        'fontsize', 5, 'horizontalalignment', 'center', 'verticalalignment', 'middle',...
+        'fontweight', 'bold')
 end
+tmp = [min(NonLFR) max(SingUFR)]; 
+plot(tmp,tmp, 'k'); axis square; axis tight
 set(gca, 'xscale', 'log', 'yscale', 'log')
-tmp = [min(NonMFR) max(SingMFR)]; 
-plot(tmp,tmp, 'k'); axis tight
+tmptl = suptitle({'Single units, 95% confidence interval on mean firing rates, singing and nonsinging'})
+set(tmptl, 'verticalalignment', 'top', 'fontsize', 12)
 xlabel('Singing Firing Rate (Hz)'); ylabel('Nonsinging Firing Rate (Hz)')
-set(gca,'color','w','tickdir','out','ticklength',[0.015 0.015], 'fontsize', 8)
-papersize = [5 5];
+papersize = [6 6];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
 
-%%
-% figure(8); 
-% imagesc(ISI_NonSing); 
-% for ti =1:length(rows); sortLabels{ti} = [num2str(rows(ti)) 'p' num2str(PUTPROJ(rows(ti)))]; end 
-% set(gca, 'ytick', 1:length(rows), 'yticklabels', sortLabels)
-% %%
-% Colors = jet(2); 
-% M = [ISI_Sing ISI_NonSing]; 
-% indUsing = ~isnan(sum(M,2)); 
-% rowsForSvd = rows(indUsing); 
-% M = M(indUsing,:); 
-% M = bsxfun(@minus, M, mean(M,2));
-% [u,s,v] = svd(M); 
-% scatter(M*v(:,1),M*v(:,2), 'cdata',Colors(1+PUTPROJ(rowsForSvd),:), 'markerfacecolor', 'flat');
-% legend('a', 'b')
+figure(9); clf; hold on % CV
+for rowi = 1:length(rows)
+    if min(length(listISInonsong{rowi}),length(listISIsong{rowi}))<SpkMin
+%         plot(PX(rowi,:), PY(rowi,:), ':', 'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:))
+    else
+        plot(PXCV(rowi,:), PYCV(rowi,:), 'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:))
+    end
+    text(SingCV(rowi), NonCV(rowi), num2str(rows(rowi)), ...
+        'color', .7*Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:), ...
+        'fontsize', 5, 'horizontalalignment', 'center', 'verticalalignment', 'middle',...
+        'fontweight', 'bold')
+end
+tmp = [min(NonLCV) max(SingUCV)]; 
+plot(tmp,tmp, 'k'); axis square; axis tight
+tmptl = suptitle({'Single units, 95% confidence interval on ISI CV, singing and nonsinging'})
+set(tmptl, 'verticalalignment', 'top', 'fontsize', 12)
+xlabel('Singing CV'); ylabel('Nonsinging CV')
+papersize = [6 6];
+set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
+
+
+% params for psth
+p.sylType = 'song';
+p.makeFig = 0;
+p.PSTHaxisMax = []; % [] to leave automatic
+p.alignTo = 'onset'; 
+p.sortBy = 'syldur'; % syldur or gapdur
+p.XLS = XLS; 
+p.Columns = Columns; 
+p.rasterRange = [-.15 .15];
+% p.plotRange = [-.2 .3]; 
+p.psthdt = .001; 
+smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
+p.smoothwin = smoothwin; 
+psthbins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
+
+figure(10); clf; hold on % CV
+xlims = ([min(SingMFR) max(SingMFR)]); 
+ylims = ([min(SingCV) max(SingCV)])
+set(gca, 'xscale', 'log')
+% xlim(xlims); ylim(ylims)
+MarkerSize = .03; 
+for rowi = 1:length(rows)
+    row = rows(rowi)
+    if (Age(row)>=60)||length(listISIsong{rowi})<SpkMin
+%         plot(PX(rowi,:), PY(rowi,:), ':', 'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:))
+    else
+        % get psthTheta (time, scaled bt -pi and pi, then add pi/2 so 0 is up) and psthR (rates, scaled bt 0 and 1)
+        psthTheta = fliplr(psthbins*pi/p.rasterRange(2)) + pi/2; 
+        psthR = smooth(analyzeRow(row, p, 'PSTH'), smoothwin)';
+        psthR = MarkerSize*psthR/SingMFR(rowi); 
+        baselineR = 0*psthR + MarkerSize*NonMFR(rowi)/SingMFR(rowi); 
+        % make it circular, 
+        psthX = psthR.*cos(psthTheta); 
+        psthY = psthR.*sin(psthTheta); 
+        baselineX = baselineR.*cos(psthTheta); 
+        baselineY = baselineR.*sin(psthTheta); 
+        % plot baseline, PSTH, and line at 0
+        patch(exp(baselineX + log(SingMFR(rowi))),baselineY+SingCV(rowi), ...
+            (Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:)+1)/2, ...
+            'edgecolor', 'none')
+        plot(exp(psthX + log(SingMFR(rowi))),psthY+SingCV(rowi), ... 
+            'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:))
+        plot(SingMFR(rowi)*[1 1], SingCV(rowi)+[0 3*MarkerSize], ...
+            'color', birdColors(birdnum(rows(rowi)),:), ...
+            'linewidth', 1)
+        RelAge = (Age(rows(rowi))-40)/50; % relative age bt 40 and 90
+        plot(SingMFR(rowi)*[1 1], SingCV(rowi)+[0 3*MarkerSize*RelAge], ... 
+            'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:), ...
+            'linewidth', 1)
+        text(SingMFR(rowi), SingCV(rowi)+3*MarkerSize, num2str(rows(rowi)), ...
+            'color', 'k', ...%.7*Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:), ...
+            'fontsize', 5, 'horizontalalignment', 'center', 'verticalalignment', 'bottom',...
+            'fontweight', 'bold')
+    end
+    drawnow
+end
+xlim([.5 400]); ylim([.5 2.8])
+% axis tight
+% axis square
+% xlim([min(SingMFR) max(SingMFR)]); ylim([min(SingCV) max(SingCV)])
+tmptl = suptitle({['Single units, circular PSTH, aligned to onsets, \pm' num2str(p.rasterRange(2)) ...
+    's, filled circle is nonsinging baseline, '...
+    'colored line is age bt 40 and 90']})
+set(tmptl, 'verticalalignment', 'bottom', 'fontsize', 8)
+xlabel('Singing Firing Rate (Hz)'); ylabel('Singing ISI CV')
+papersize = [10 4];
+set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
+
+% set stuff that's common to multiple figures
+for figi = 8:10
+    figure(figi)
+%     grid on
+    set(gca,'color','w','tickdir','out','ticklength',[0.015 0.015], 'fontsize', 6)
+    tmpx = xlim; tmpy = get(gca, 'ytick') 
+    text(tmpx(1), tmpy(end), ['\color[rgb]{' num2str(Colors(1,:)) '} Unidentified \newline' ...
+        '\color[rgb]{' num2str(Colors(2,:)) '} Putative Projector \newline' ...
+        '\color[rgb]{' num2str(Colors(3,:)) '} Collision Tested \newline'], ...
+        'verticalalignment', 'top');
+    shg
+end
+%% scatter plot of ISI CV singing & nonsinging
+% clf; hold on
+% Colors = [.6*[1 1 1]; [1 .6 .6]; [1 0 0]];
+% % Colors = [[1 1 1]; [1 .8 .8]; [1 0 0]];
+% spkslop = 20; 
+% alp = .05; 
+% 
+% 
+% 
+% % scatter(SingMFR,NonMFR,  TotalSilentTime, 'o','cdata', Colors(1+CTEST(rows)+PUTPROJ(rows),:), 'markerfacecolor', 'flat'); 
+% for rowi = 1:length(rows)
+% %     patch(PX(rowi,:), PY(rowi,:), 1,...
+% %         'edgecolor', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:), ...
+% %         'facecolor', 'none')
+%     toounconfident = .8; 
+%     if diff(PX(rowi,1:2))>toounconfident || diff(PY(rowi,2:3))>toounconfident
+% %         plot(PX(rowi,:), PY(rowi,:), ':', 'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:))
+%     else
+%         plot(PX(rowi,:), PY(rowi,:), 'color', Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:))
+%     end
+%     text(SingMFR(rowi), NonMFR(rowi), num2str(rows(rowi)), ...
+%         'color', .7*Colors(1+CTEST(rows(rowi))+PUTPROJ(rows(rowi)),:), ...
+%         'fontsize', 5, 'horizontalalignment', 'center', 'verticalalignment', 'middle',...
+%         'fontweight', 'bold')
+% end
+% % set(gca, 'xscale', 'log', 'yscale', 'log')
+% tmp = [min(NonLFR) max(SingUFR)]; 
+% plot(tmp,tmp, 'k'); axis square; axis tight
+% tmptl = suptitle({'Single units, 95% confidence interval on ISI CVs singing and nonsinging'})
+% tmpx = xlim; tmpy = ylim; 
+%  %, 'color', Colors(1,:), 'fontweight', 'bold')
+% % text(tmpx(1), .9*tmpy(2), '    Putative Projector', 'color', Colors(2,:), 'fontweight', 'bold')
+% % text(tmpx(1), .85*tmpy(2), '    Collision Tested', 'color', Colors(3,:), 'fontweight', 'bold')
+% set(tmptl, 'verticalalignment', 'top', 'fontsize', 12)
+% xlabel('Singing CV'); ylabel('Nonsinging CV')
+% set(gca,'color','w','tickdir','out','ticklength',[0.015 0.015], 'fontsize', 8)
+% papersize = [6 6];
+% set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
+% shg
