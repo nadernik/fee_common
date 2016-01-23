@@ -14,6 +14,22 @@ set(gca, 'Xtick', [0 1 2 3 4], 'Xticklabel', ...
     {'isolated', 'sings', 'rhythmic', 'very rhythmic', 'adult'}, 'Ygrid', 'on')
 ylabel('age (days)')
 legend(L, 'location', 'northwest')
+%% 
+ColumnHeadings = {'Name' 'birthdate' 'cage' 'isolationdate' 'firstsongsrecorded' 'firstrhythmic' 'veryrhythmic' 'adultsong' 'directed' 'to_hotel' 'notes'}; 
+XLS = ColumnHeadings
+for i = 1:length(I.Name)
+    for j = 1:length(ColumnHeadings)
+        if isfield(I,ColumnHeadings{j})
+            if length(I.(ColumnHeadings{j}))>=i
+                XLS{i+1,j} = [I.(ColumnHeadings{j}){i}]; 
+                if isstr(XLS{i+1,j})
+                    XLS{i+1,j} = ['''' XLS{i+1,j}];
+                end
+            end
+        end
+    end
+end
+xlswrite('C:\Users\emackev\Dropbox (MIT)\MackeviciusLabPresentations\ISOLATEStmp', XLS)
 %%
 
 ind = 1;
