@@ -26,7 +26,7 @@ plot(X, Y, 'Color', LC)%, 'LineWidth', 2);
 
 xa = [X; X(end:-1:1)];
 %ya = [(Y + Eup); (Y(end:-1:1) - Elower(end:-1:1))];
-ya = [(Eup); (Elower(end:-1:1))];
+ya = [(Eup)+eps; (Elower(end:-1:1))]; % add eps for the case when Eup == Elower
 
 h = patch(xa, ya, PC);
 set(h, ...

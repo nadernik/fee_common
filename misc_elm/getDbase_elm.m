@@ -7,7 +7,7 @@ depth = XLS.textdata.Sheet1{row,strmatch('folder', Columns)};
 feeboxFolder = XLS.textdata.Sheet1{row,strmatch('which feebox', Columns)};
 % Age
 birthday = [0; cellfun(@(X) datenum(X), XLS.textdata.Sheet1(2:end,strmatch('birthday', Columns)))];
-Recdays = [0; cellfun(@(X) datenum(X(1:end-4)), XLS.textdata.Sheet1(2:end,strmatch('day', Columns)))];
+Recdays = [0; cellfun(@(X) datenum(X(1:10)), XLS.textdata.Sheet1(2:end,strmatch('day', Columns)))];
 Age = Recdays - birthday; 
 
 if sum(strmatch('feebox4',feeboxFolder))||sum(strmatch('feebox6',feeboxFolder)) % feebox 4 is actually on feebox 6 now

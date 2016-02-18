@@ -129,7 +129,11 @@ switch plotInd
         imagesc(cdata, 'xdata', tdata, 'ydata', fdata/1000); set(gca, 'ydir', 'normal', 'ytick', 2:2:6)
         ylabel('Freq (kHz)','fontsize',FS)
         set(gca, 'xtick', [], 'xticklabel', '');
-        cmap = parula; 
+        try 
+            cmap = parula
+        catch
+            cmap = jet; 
+        end
         cmap(1,:) = zeros(1,3); % background = black
         colormap(cmap);
         title([handles.path_name '_file#' num2str(filenum) '_T=' num2str(T) '_K=' num2str(K), '_W=' num2str(W)], 'fontsize', FS);

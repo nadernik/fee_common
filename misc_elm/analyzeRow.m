@@ -128,7 +128,13 @@ switch task
         
         % if there's an example file
         try
-            tmp = XLS.textdata.Sheet1(row,strmatch('ExampleSinging [fileNum tstart tstop]', Columns));
+            switch p.sylType
+                case 'song'
+                    tmp = XLS.textdata.Sheet1(row,strmatch('ExampleSinging [fileNum tstart tstop]', Columns));
+                case 'tutor'
+                    tmp = XLS.textdata.Sheet1(row,strmatch('ExampleTutoring [fileNum tstart tstop]', Columns));
+
+            end
             ExampleFile = eval(tmp{1}); 
 
             % extract the sound trace

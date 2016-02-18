@@ -23,7 +23,7 @@ for dayi = 1:length(AllDays)
         allfiles = dir(fullfile(feeboxfolder, num2str(birdnum(row)), AllDays(dayi).name, '*.dat'));
         if length(allfiles) > 10 % if at least 10 files
             ChosenFive = (1) + ceil(length(allfiles)/2); % pick 1 examples from the middle
-            for i = 1:5
+            for i = 1:length(ChosenFive)
                 copyfile(fullfile(feeboxfolder, num2str(birdnum(row)), ...
                     AllDays(dayi).name, allfiles(ChosenFive(i)).name), ...
                     fullfile(savehere, [num2str(age) 'dph_', ...
@@ -44,7 +44,7 @@ end
 %% segment song (do this with electro_gui)
 
 %% make pages for binder
-for row = 23:24;%[10 11 16 18 23:24]; % eventually go to 24
+for row = 19:21;%[10 11 16 18 23:24]; % eventually go to 24
     try
 % load analysis file
 load(fullfile('\\feebox6\shared\emackev\AcqGui\ISOLATES', ...
@@ -121,18 +121,15 @@ end
     end
 end
 
-%% autocorrelation over development
+%% autocorrelation and spectra over development
 maxlag = .4; 
 specDT = .002; 
-
-% to fit autocorr of sinewave: 
-sineAC = @(omega) ...
-    cos(lags*specDT*2*pi*omega).* ...
-    (length(Amplitude)*specDT - abs(lags*specDT))/(length(Amplitude)*specDT);
-tryOmegas = 1:.2:12; 
-
-    
-for row = 2:24;%[10 11 16 18 23:24]; % eventually go to 24
+desFreqs = .1:.1:15; 
+rows = 2:23; 
+CorrMat = {}; 
+SpecMat = {}; 
+for rowi = 1:length(rows)
+    row = rows(rowi);
     try
         % load analysis file
         load(fullfile('\\feebox6\shared\emackev\AcqGui\ISOLATES', ...
@@ -147,7 +144,8 @@ for row = 2:24;%[10 11 16 18 23:24]; % eventually go to 24
         dbase.SoundFiles = dbase.SoundFiles(sortbyage);
         dbase.SegmentIsSelected = dbase.SegmentIsSelected(sortbyage);
         dbase.SegmentTimes = dbase.SegmentTimes(sortbyage);
-        CorrMat = zeros(length(dbase.SoundFiles), 2*maxlag/specDT+1);
+        CorrMat{rowi} = zeros(length(dbase.SoundFiles), 2*maxlag/specDT+1);
+        SpecMat{rowi} = zeros(length(dbase.SoundFiles), length(desFreqs));
         for fi = 1:length(dbase.SoundFiles)
             if sum(dbase.SegmentIsSelected{fi})>0
             % load one file
@@ -178,72 +176,112 @@ for row = 2:24;%[10 11 16 18 23:24]; % eventually go to 24
 
             [S,Time,F] = spectrogramELM(sndOrig,fsOrig,specDT, 0); 
             Amplitude = amplitudeELM(S,F); 
-            [CorrMat(fi,:),lags] = xcorr(Amplitude - mean(Amplitude), maxlag/specDT, 'coeff'); 
-
-
-        %     ToFit = CorrMat(fi,:) - mean(CorrMat(fi,:)); 
-        % %     ToFit(abs(lags)<tryOmegas(end)) = 0;
-        %     
-        %     for i = 1:length(tryOmegas)
-        % %         plot(sineAC(tryOmegas(i)).*(ToFit)*tryOmegas(i)); ylim([-.25 1]); pause(.1)
-        %         FitMat(fi,i) = sum(sineAC(tryOmegas(i)).*(ToFit)*tryOmegas(i)); 
-        %     end
-        %     
-            %     plot(lags*specDT,CorrMat(fi,:))
-        %     sndOrig = [sndOrig; zeros(round(fsOrig*SecondsPerFile),1)]; 
-        %     sndOrig = sndOrig(1:round(fsOrig*SecondsPerFile)); 
-
-
+            [CorrMat{rowi}(fi,:),lags] = xcorr(Amplitude - mean(Amplitude), maxlag/specDT, 'coeff'); 
+            [P,f] = PowerSpectrumELM(CorrMat{rowi}(fi,:), 1/specDT, 4);
+            SpecMat{rowi}(fi,:) = interp1(f,P,desFreqs);
             end
         end
-        CorrMat(sum(CorrMat,2)==0,:) = []; 
-        age(sum(CorrMat,2)==0) = []; 
-        figure(1); clf
-        h(2) = subplot('position', [.1 .1 .8 .6]);
-        imagesc(bsxfun(@minus, CorrMat, mean(CorrMat,2)), 'xdata', lags*specDT); colormap parula; shg
-        ticks = get(gca, 'ytick'); 
-        set(gca, 'yticklabels', age(ticks))
-        xlabel('Lag (s)'); ylabel('Age (dph)'); 
-
-        h(1) = subplot('position', [.1 .7 .8 .2]);
-        plot(lags*specDT, median(bsxfun(@minus, CorrMat, mean(CorrMat,2)),1), 'k'); axis tight; axis off
-
-        linkaxes(h,'x'); xlim([0 maxlag])
-        title(num2str(birdnum(row))); 
-        papersize = [4 4]; 
-        set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
-        saveas(gcf, fullfile(DumpFigsHere, ...
-                    ['Isolate' num2str(birdnum(row)) '_Autocorr.jpg'])); 
-
-        %         figure(2); clf
-        % h(2) = subplot('position', [.1 .1 .8 .6]);
-        % imagesc(FitMat, 'xdata', tryOmegas); colormap parula; shg
-        % ticks = get(gca, 'ytick'); 
-        % set(gca, 'yticklabels', age(ticks))
-        % xlabel('Freq(Hz)'); ylabel('Age (dph)'); 
-        % 
-        % h(1) = subplot('position', [.1 .7 .8 .2]);
-        % plot(tryOmegas, median(FitMat,1), 'k'); axis tight; axis off
-        % 
-        % linkaxes(h,'x'); 
-        % title(num2str(birdnum(row))); 
-        % drawnow;
-        % papersize = [4 4]; 
-        % set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
-        % saveas(gcf, fullfile(DumpFigsHere, ...
-        %             ['Isolate' num2str(birdnum(row)) '_Autocorr.jpg'])); 
+        CorrMat{rowi}(sum(CorrMat{rowi},2)==0,:) = []; 
+        SpecMat{rowi}(sum(CorrMat{rowi},2)==0,:) = [];
+        age(sum(CorrMat{rowi},2)==0) = []; 
         
+%         figure(1); clf
+%         h(2) = subplot('position', [.1 .1 .8 .6]);
+%         imagesc(CorrMat{rowi}, 'xdata', lags*specDT, .5*[-1 1]); 
+%         CMAP = [(1:64)'/64  (1:64)'/64 ones(64,1); ...
+%         ones(64,1) (64:-1:1)'/64 (64:-1:1)'/64 ];
+%         colormap(CMAP)
+%         ticks = get(gca, 'ytick'); 
+%         set(gca, 'yticklabels', age(ticks))
+%         set(gca, 'tickdir','out','ticklength',[0.01 0.01], 'fontsize', 7);%box off
+%         xlabel('Lag (s)'); ylabel('Age (dph)'); 
+%         h(1) = subplot('position', [.1 .7 .8 .2]);
+%         plot(lags*specDT, median(CorrMat{rowi},1), 'k'); 
+%         hold on; plot([0 maxlag], [0 0], 'k');axis tight; axis off
+%         linkaxes(h,'x'); xlim([0 maxlag]);
+%         text(.3,.5,num2str(birdnum(row))); 
+%         papersize = [4 4]; 
+%         set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
+%         saveas(gcf, fullfile(DumpFigsHere, ...
+%                     ['Isolate' num2str(birdnum(row)) '_Autocorr.jpg'])); 
+%                 
+%         figure(2); clf
+%         h(2) = subplot('position', [.1 .1 .8 .6]);
+%         imagesc((SpecMat{rowi}), 'xdata', desFreqs); 
+%         colormap(parula)
+%         ticks = get(gca, 'ytick'); 
+%         set(gca, 'yticklabels', age(ticks))
+%         set(gca, 'tickdir','out','ticklength',[0.01 0.01], 'fontsize', 7);%box off
+%         xlabel('Lag (s)'); ylabel('Age (dph)'); 
+%         h(1) = subplot('position', [.1 .7 .8 .2]);
+%         plot(desFreqs, median(SpecMat{rowi},1), 'k'); 
+%         hold on; axis tight; axis off
+%         linkaxes(h,'x');
+%         xlims = xlim; ylims = ylim; 
+%         text(.9*xlims(end),.9*ylims(end),num2str(birdnum(row))); 
+%         papersize = [4 4]; 
+%         set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
+%         saveas(gcf, fullfile(DumpFigsHere, ...
+%         ['Isolate' num2str(birdnum(row)) '_Spectrum.jpg'])); 
+%         drawnow
+row
     catch exception
         exception
     end
 end
 
 
+%% scatter plots
+figure(3); clf
+ToScatter = [];
 
+mycats = [0; XLS.data.Sheet1(2:end,strmatch('1=fast,2=slow,3=other', Columns))];
 
+for rowi = 1:length(rows)
+    ToScatter(rowi,:) = [median(SpecMat{rowi},1)];
+end
+ToScatter = bsxfun(@minus, ToScatter, min(ToScatter,[],1))+eps; 
 
+ToScatter = bsxfun(@rdivide, ToScatter, std(ToScatter,1)+eps); 
+parameters.perplexity = 2;
+[yData,betas,P,errors] = run_tSne(ToScatter, parameters);
+plot(yData(:,1), yData(:,2), '.')
+for rowi = 1:length(rows)
+    text(yData(rowi,1), yData(rowi,2), num2str(birdnum(rows(rowi))))
+end
+%%
+% [U,S,V] = svd(ToScatter); 
+% slow vs fast rhythms
+% slowInd = (desFreqs>3&desFreqs<5);
+% fastInd = (desFreqs>8&desFreqs<10);
 
-
+figure(3); clf; hold on
+% X = sum(ToScatter(:,slowInd),2);%./sum(ToScatter,2);
+% Y = sum(ToScatter(:,fastInd),2);%./sum(ToScatter,2);
+X = yData(:,1); 
+Y = yData(:,2);
+% plot(X,Y, '.')
+MarkerSize = 1e6; 
+Colors = [1 0 0; 0 .5 1; 0 1 0]; 
+for rowi = 1:length(rows)
+    row = rows(rowi);
+%     psthTheta = lags*pi/lags(end) + pi/2; 
+%     psthR = (ToScatter(rowi,:)-min(ToScatter(rowi,:))); %/sum(ToScatter(rowi,:));
+    
+    psthTheta = fliplr(desFreqs*2*pi/desFreqs(end))+pi/2; 
+    psthR = median(SpecMat{rowi},1); 
+    
+    psthR = MarkerSize*psthR; 
+    % make it circular, 
+    psthX = psthR.*cos(psthTheta); 
+    psthY = psthR.*sin(psthTheta); 
+    plot(psthX+X(rowi),psthY+Y(rowi), 'color', Colors(mycats(row),:)); 
+    text(X(rowi), Y(rowi), num2str(birdnum(rows(rowi))), 'fontsize', 6)
+end
+xlabel('tSNE1'); ylabel('tSNE2')
+papersize = [4 4]; 
+set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
+% set(gca, 'xscale', 'log', 'yscale', 'log'); %axis tight
 
 
 
