@@ -10,11 +10,14 @@ function RastersFromDbase()
 % RunAnalyses('HASH&SINGLEUNIT&TUTORING', 'elecpos', 'tutor')
 % RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor');
 % RunAnalyses('TUTORING&PUTPROJ', 'latency', 'tutor')
-RunAnalyses('SINGING&PUTPROJ', 'age', 'song')
+RunAnalyses('SINGING&HASH&SINGLEUNIT&~PUTPROJ', 'latency', 'song')
+
+% SEE LATER, AGE RESTRICTED TOO: 
+% rows = find(eval([ThisDataset '&(Age<=55)']));
 
 %% To get 4 rasters for just one row
 % [XLS, Columns] = loadNIfSpreadsheet_elm(); 
-% p.sylType = 'tutor'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+% p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
 % % p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
 % p.makeFig = 1;
 % p.PSTHaxisMax = []; % [] to leave automatic
@@ -23,7 +26,7 @@ RunAnalyses('SINGING&PUTPROJ', 'age', 'song')
 % p.XLS = XLS; 
 % p.Columns = Columns; 
 % p.rasterRange = [-.5 .5];
-% p.plotRange = [-.2 .3]; 
+% p.plotRange = [-.3 .3]; 
 % p.psthdt = .001; 
 % smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
 % p.smoothwin = smoothwin; 
@@ -33,7 +36,7 @@ RunAnalyses('SINGING&PUTPROJ', 'age', 'song')
 % p.fontsize = 10; 
 % p.MaxToPlot = 200;
 % 
-% row = 282
+% row = 311
 % figure(p.figNum); clf; 
 % analyzeRow(row, p, 'fourRasters')
 
@@ -141,7 +144,7 @@ figure(1)
 SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\code\RasterPlots\'; 
 mkdir(SaveFigPath, ThisDataset); 
 SaveFigPath = fullfile(SaveFigPath, ThisDataset); 
-rows = find(eval([ThisDataset '&(Age>=55)']));
+rows = find(eval([ThisDataset '&(Age<=70)']));
 % SortBy = 'latency'; % 'age' or 'elecpos' or 'latency'
 p.sylType = sylType; % 'tutor' 'song' 'artificialsubsong' or 'specified'
 % p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
@@ -153,8 +156,8 @@ p.XLS = XLS;
 p.Columns = Columns; 
 p.rasterRange = [-.5 .5];
 p.plotRange = [-.2 .3]; 
-p.psthdt = .001; 
-smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
+p.psthdt = .002; % previously doing 1ms bins, 19bin smoothing
+smoothwin = 9; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
 p.smoothwin = smoothwin; 
 bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
 p.figNum = 1;
@@ -207,7 +210,6 @@ else
     TUTOR_INCLUDE_KS = XLS.data.Sheet1(:,strmatch('TUTOR_INCLUDE_KS', Columns))==1;
     TUTOR_LOCKED = XLS.data.Sheet1(:,strmatch('TUTOR_LOCKED', Columns))==1;
 end
-
 %% How many units in each category?
 
 if calcAllReliabilities 
@@ -499,7 +501,7 @@ figure(4); clf;
 g = subplot(4,1,1);
 plot(bins*1000,sum(zscorePSTHs)/size(zscorePSTHs,1), 'k', 'linewidth', 2); 
 % ylabel('Rate (\sigma above \mu)', 'interpreter', 'tex')
-ylabel('Rate')
+ylabel('Rate (Hz)')
 axis tight; box off
 set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01], 'fontsize',p.fontsize)
 set(gca, 'xtick', [])
@@ -512,11 +514,14 @@ h = subplot(4,1,2:4); hold on
 imagesc(zscorePSTHs, 'xdata', bins*1000)
 % surf(bins, 1:size(zscorePSTHs,1), zscorePSTHs, 'edgecolor', 'none'); view(0,90); axis tight
 
+% for double-ended colormap
 % set colormap and clims (mean = black)
-clims = max(abs(zscorePSTHs(:)))*[-1 1]; set(gca, 'clim', clims); 
-cvec = [zeros(128,1);(1:128)'/128];
-CMAP = [(1:64)'/64  (1:64)'/64 ones(64,1); ...
-    ones(64,1) (64:-1:1)'/64 (64:-1:1)'/64 ];
+% clims = max(abs(zscorePSTHs(:)))*[-1 1]; set(gca, 'clim', clims); 
+% cvec = [zeros(128,1);(1:128)'/128];
+% CMAP = [(1:64)'/64  (1:64)'/64 ones(64,1); ...
+%     ones(64,1) (64:-1:1)'/64 (64:-1:1)'/64 ];
+
+
 colormap(parula)
 
 xlabel(['Time relative to syllable ' p.alignTo, ' (ms)'])

@@ -36,7 +36,7 @@ SUBSONG = zeros(size(XLS.data.Sheet1,1),1); SUBSONG(strmatch('subsong', XLS.text
 PROTOSYLLABLE = zeros(size(XLS.data.Sheet1,1),1); PROTOSYLLABLE(strmatch('protosyllable', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Sheet1(:,strmatch('song stage', Columns))))=1;
 %% choose what rows to use
-Title = 'SINGING&HASH&SINGLEUNIT'; 
+Title = 'TUTORING&HASH&SINGLEUNIT'; 
 rows = find(eval(Title));
 % [~,sortInd] = sort(Age(rows), 'ascend'); 
 % rows = rows(sortInd); 
@@ -101,7 +101,10 @@ for rowi = 1:length(rows)
         moatNonsong = .15; % time around all syllables that still doesn't count as silence
         CurrentlySong = 0; 
         for segi = 1:size(segTimes,1)
-            isSongSyl(segi) = sum(cellfun(@(x) (issame(x,segTitles{segi})|((length(x)==0)&(length(segTitles{segi})==0))), SongSylNames, 'UniformOutput', 1))>0 ...
+            % SHOULD BE CALLED IS TUTOR SYL, BUT KEPT NAMES THE SAME...
+            isSongSyl(segi) = sum(cellfun(@(x) (issame(x,segTitles{segi})|...
+                ((length(x)==0)&(length(segTitles{segi})==0))), ...
+                TutorSylNames, 'UniformOutput', 1))>0 ...
                 & dbase.SegmentIsSelected{file}(segi);
         end
         
@@ -199,7 +202,7 @@ for rowi = 1:length(rows)
 %     set(gca, 'ytick', log(yticks), 'yticklabel', yticklabels); 
     
     xlabel('file#'); ylabel('ISI (ms)')
-    title('non singing')
+    title('non tutoring')
     
     subplot(2,1,2); hold all
     plot(flsISIsong{rowi}+.1*randn(size(flsISIsong{rowi},1),1), listISIsong{rowi}, 'r.'); 
@@ -208,7 +211,7 @@ for rowi = 1:length(rows)
 %     plot(flsISIsong{rowi}+.1*randn(size(flsISIsong{rowi},1),1), log(listISIsong{rowi}), 'r.'); 
 %     set(gca, 'ytick', log(yticks), 'yticklabel', yticklabels); 
     xlabel('file#'); ylabel('ISI (ms)')
-    title('singing')
+    title('tutoring')
     suptitle(num2str(row))
     shg
     waitforbuttonpress 
@@ -395,9 +398,9 @@ end
 tmp = [min(NonLFR) max(SingUFR)]; 
 plot(tmp,tmp, 'k'); axis square; axis tight
 set(gca, 'xscale', 'log', 'yscale', 'log')
-tmptl = suptitle({'Single units, 95% confidence interval on mean firing rates, singing and nonsinging'})
+tmptl = suptitle({'Single units, 95% confidence interval on mean firing rates, tutoring and nontutoring'})
 set(tmptl, 'verticalalignment', 'top', 'fontsize', 12)
-xlabel('Singing Firing Rate (Hz)'); ylabel('Nonsinging Firing Rate (Hz)')
+xlabel('Tutoring Firing Rate (Hz)'); ylabel('Nontutoring Firing Rate (Hz)')
 papersize = [6 6];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
 
@@ -415,15 +418,15 @@ for rowi = 1:length(rows)
 end
 tmp = [min(NonLCV) max(SingUCV)]; 
 plot(tmp,tmp, 'k'); axis square; axis tight
-tmptl = suptitle({'Single units, 95% confidence interval on ISI CV, singing and nonsinging'})
+tmptl = suptitle({'Single units, 95% confidence interval on ISI CV, tutoring and nontutoring'})
 set(tmptl, 'verticalalignment', 'top', 'fontsize', 12)
-xlabel('Singing CV'); ylabel('Nonsinging CV')
+xlabel('Tutoring CV'); ylabel('Nontutoring CV')
 papersize = [6 6];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
 
 
 % params for psth
-p.sylType = 'song';
+p.sylType = 'tutor';
 p.makeFig = 0;
 p.PSTHaxisMax = []; % [] to leave automatic
 p.alignTo = 'onset'; 
@@ -483,10 +486,10 @@ xlim([.5 400]); ylim([.5 2.8])
 % axis square
 % xlim([min(SingMFR) max(SingMFR)]); ylim([min(SingCV) max(SingCV)])
 tmptl = suptitle({['Single units, circular PSTH, aligned to onsets, \pm' num2str(p.rasterRange(2)) ...
-    's, filled circle is nonsinging baseline, '...
+    's, filled circle is nontutoring baseline, '...
     'colored line is age bt 40 and 90']})
 set(tmptl, 'verticalalignment', 'bottom', 'fontsize', 8)
-xlabel('Singing Firing Rate (Hz)'); ylabel('Singing ISI CV')
+xlabel('Tutoring Firing Rate (Hz)'); ylabel('Tutoring ISI CV')
 papersize = [10 4];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
 

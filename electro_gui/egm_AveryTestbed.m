@@ -1,5 +1,13 @@
 function handles = egm_AveryTestbed(handles)
 
+SEGTIMES = handles.dbase.SegmentTimes{filenum}...
+    (handles.dbase.SegmentIsSelected{filenum}==1,:)/fs;
+SEGTIMES = SEGTIMES;
+
+FileName = fullfile(handles.dbase.PathName, handles.dbase.SoundFiles(filenum).name); 
+FileName = [FileName(1:(end-4)) '_SegTimes']; 
+save(FileName,'SEGTIMES'); 
+
 filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
 fs = handles.fs;
 lims = get(handles.axes_Sonogram, 'xlim');
