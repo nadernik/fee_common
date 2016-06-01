@@ -8,7 +8,7 @@ birdnum = [0; XLS.data.Sheet1(2:end,strmatch('Name', Columns))];
 
 %% transfer files over
 
-for row = 2:24; 
+for row = 2; 
 feeboxfolder = XLS.textdata.Sheet1{row,strmatch('which feebox', Columns)};
 AllDays = dir(fullfile(feeboxfolder, num2str(birdnum(row)), '*20*')); % hack to get just date folders
 % make a new folder with 5 example files per day
@@ -20,15 +20,18 @@ tic
 for dayi = 1:length(AllDays)
     try
         age = datenum(AllDays(dayi).name) - birthday(row); % compute age
+        if age<=60
+            nTransfer = 10; %10+10*(age<=50); 
         allfiles = dir(fullfile(feeboxfolder, num2str(birdnum(row)), AllDays(dayi).name, '*.dat'));
-        if length(allfiles) > 10 % if at least 10 files
-            ChosenFive = (1) + ceil(length(allfiles)/2); % pick 1 examples from the middle
+        if length(allfiles) > nTransfer % if at least 20 files
+            ChosenFive = (1:nTransfer) + ceil(length(allfiles)/2); % pick 1 examples from the middle
             for i = 1:length(ChosenFive)
                 copyfile(fullfile(feeboxfolder, num2str(birdnum(row)), ...
                     AllDays(dayi).name, allfiles(ChosenFive(i)).name), ...
                     fullfile(savehere, [num2str(age) 'dph_', ...
                     allfiles(ChosenFive(i)).name]))
             end
+        end
         end
 % copy them, appending age to the file name
     catch 
@@ -39,7 +42,7 @@ for dayi = 1:length(AllDays)
 end
 end
 
-
+sound(sin(.1:.3:4000)); 
 
 %% segment song (do this with electro_gui)
 
