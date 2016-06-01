@@ -79,7 +79,7 @@ colormap(cmap);
 
 %% adding patches for syllables
 Sylls = unique(SegmentNames); 
-sColors = [0.5, 0.5, 0.5; hsv(length(Sylls) - 1)]; 
+sColors = [hsv(length(Sylls)); 0.5, 0.5, 0.5; hsv(length(Sylls) - 1)]; 
 hold on
 for si = 1:size(SegmentTimes,1)
     syllMask = strncmp(SegmentNames{si}, Sylls, 2);

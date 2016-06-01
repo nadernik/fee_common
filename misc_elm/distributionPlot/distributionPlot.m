@@ -573,8 +573,8 @@ for iData = 1:nData
                         yHist = x;
                         xHist = sum(isfinite(currentData));
                     else
-                        dx = min(max(diff(x), (max(x)-min(x))*1e-3)); % switched from below to avoid out of memory errors -ELM
-%                         dx = x(2) - x(1);
+%                         dx = min(max(diff(x), (max(x)-min(x))*1e-3)); % switched from below to avoid out of memory errors -ELM
+                        dx = x(2) - x(1);
                     
                     % make sure we sample frequently enough
                     x = min(x)-dx:dx/3:max(x)+dx;

@@ -10,29 +10,46 @@ function RastersFromDbase()
 % RunAnalyses('HASH&SINGLEUNIT&TUTORING', 'elecpos', 'tutor')
 % RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor');
 % RunAnalyses('TUTORING&PUTPROJ', 'latency', 'tutor')
-RunAnalyses('SINGING&SINGLEUNIT&HASH', 'latency', 'song')
+RunAnalyses('SINGING&HASH&SINGLEUNIT&~PUTPROJ', 'latency', 'song')
+
+% SEE LATER, AGE RESTRICTED TOO: 
+% rows = find(eval([ThisDataset '&(Age<=55)']));
 
 %% To get 4 rasters for just one row
-[XLS, Columns] = loadNIfSpreadsheet_elm(); 
-p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
-% p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
-p.makeFig = 1;
-p.PSTHaxisMax = []; % [] to leave automatic
-p.alignTo = 'onset'; 
-p.sortBy = 'syldur'; % syldur or gapdur
-p.XLS = XLS; 
-p.Columns = Columns; 
-p.rasterRange = [-.5 .5];
-p.plotRange = [-.2 .3]; 
-p.psthdt = .001; 
-smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
-p.smoothwin = smoothwin; 
-bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
-p.figNum = 2;
-p.papersize = [8.5 11]; 
-p.fontsize = 10; 
-p.MaxToPlot = 80;
-analyzeRow(47, p, 'fourRasters')
+% [XLS, Columns] = loadNIfSpreadsheet_elm(); 
+% p.sylType = 'song'; % 'tutor' 'song' 'artificialsubsong' or 'specified'
+% % p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
+% p.makeFig = 1;
+% p.PSTHaxisMax = []; % [] to leave automatic
+% p.alignTo = 'onset'; 
+% p.sortBy = 'syldur'; % syldur or gapdur
+% p.XLS = XLS; 
+% p.Columns = Columns; 
+% p.rasterRange = [-.5 .5];
+% p.plotRange = [-.3 .3]; 
+% p.psthdt = .001; 
+% smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
+% p.smoothwin = smoothwin; 
+% bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
+% p.figNum = 2;
+% p.papersize = [8.5 11]; 
+% p.fontsize = 10; 
+% p.MaxToPlot = 200;
+% 
+% row = 311
+% figure(p.figNum); clf; 
+% analyzeRow(row, p, 'fourRasters')
+
+%% save fig
+
+% ThisDataset = 'SINGING&SINGLEUNIT&HASH';
+% SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\code\RasterPlots\'; 
+% mkdir(SaveFigPath, ThisDataset); 
+% SaveFigPath = fullfile(SaveFigPath, ThisDataset); 
+% filestr = fullfile(SaveFigPath, [ThisDataset, '_row', num2str(row)]); 
+% set(p.figNum, 'papersize', [8.5 11], 'paperposition', [0 0 8.5 11])
+% saveas(p.figNum,[filestr '_FourRasters.fig'])
+% saveas(p.figNum,[filestr '_FourRasters.jpg'])
 %%
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'elecpos', 'song')
 % RunAnalyses('PUTPROJ&SINGLEUNIT&SINGING', 'age', 'song')
@@ -103,9 +120,14 @@ GoodHistvec(2:end+1) = GoodHistvec(1:end); % to make rows line up (first row is 
 Dvec = cellfun(@(X) eval(X), XLS.textdata.Sheet1(2:end,strmatch('[D_E1, D_E2, D_E3]', Columns)), 'uniformoutput', 0); 
 Dvec(2:end+1) = Dvec(1:end); % to make rows line up (first row is section headings)
 
-for rowi = 2:size(XLS.textdata.Sheet1,1)
+
+for rowi = 2:245; % channel indices are different on my rig and on tots'
     goodHist(rowi) = GoodHistvec{rowi}(Electrode(rowi)); 
     elecPosition(rowi) = Dvec{rowi}(Electrode(rowi)); 
+end
+for rowi = 246:size(XLS.textdata.Sheet1,1) % todo: update hist info for data from tots' rig
+    goodHist(rowi) = 0;
+    elecPosition(rowi) = 100; 
 end
 
 % for coloring by bird id
@@ -122,7 +144,7 @@ figure(1)
 SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\code\RasterPlots\'; 
 mkdir(SaveFigPath, ThisDataset); 
 SaveFigPath = fullfile(SaveFigPath, ThisDataset); 
-rows = find(eval(ThisDataset));
+rows = find(eval([ThisDataset '&(Age<=70)']));
 % SortBy = 'latency'; % 'age' or 'elecpos' or 'latency'
 p.sylType = sylType; % 'tutor' 'song' 'artificialsubsong' or 'specified'
 % p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
@@ -134,8 +156,8 @@ p.XLS = XLS;
 p.Columns = Columns; 
 p.rasterRange = [-.5 .5];
 p.plotRange = [-.2 .3]; 
-p.psthdt = .001; 
-smoothwin = 19; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
+p.psthdt = .002; % previously doing 1ms bins, 19bin smoothing
+smoothwin = 9; %boxcar smoothing window. smoothwin must be odd. 1 is no smoothing.
 p.smoothwin = smoothwin; 
 bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 
 p.figNum = 1;
@@ -188,7 +210,6 @@ else
     TUTOR_INCLUDE_KS = XLS.data.Sheet1(:,strmatch('TUTOR_INCLUDE_KS', Columns))==1;
     TUTOR_LOCKED = XLS.data.Sheet1(:,strmatch('TUTOR_LOCKED', Columns))==1;
 end
-
 %% How many units in each category?
 
 if calcAllReliabilities 
@@ -279,7 +300,7 @@ p.MaxToPlot = 80;
 %set(p.figNum, 'color', [1 1 1]) 
 Fstat = []; 
 pval = []; 
-for rowi = 1:NUMEL(ROWS) %CHANGE BACK TO 1:NUMEL(ROWS)
+for rowi = 1:numel(rows) %CHANGE BACK TO 1:NUMEL(ROWS)
     row = rows(rowi); 
     filestr = fullfile(SaveFigPath, [ThisDataset, '_row', num2str(row), '_Age', num2str(Age(row))]); 
     if genfigs
@@ -466,7 +487,7 @@ end
 %         - mean(comboPSTH(rowi,indBaseline))) ...
 %         ./std(comboPSTH(rowi,indBaseline)); 
 % end
-zscorePSTHs = zscore(comboPSTH')'; 
+zscorePSTHs = comboPSTH; %zscore(comboPSTH')'; % consider changing back to zscore... also change ylabel
 
 % just plot the middle window, specified by p.plotRange
 indplot = bins>p.plotRange(1) & bins<p.plotRange(end); 
@@ -479,24 +500,29 @@ figure(4); clf;
 % population average zscore rate
 g = subplot(4,1,1);
 plot(bins*1000,sum(zscorePSTHs)/size(zscorePSTHs,1), 'k', 'linewidth', 2); 
-ylabel('Rate (\sigma above \mu)', 'interpreter', 'tex')
+% ylabel('Rate (\sigma above \mu)', 'interpreter', 'tex')
+ylabel('Rate (Hz)')
 axis tight; box off
 set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01], 'fontsize',p.fontsize)
 set(gca, 'xtick', [])
 hold on
-plot([0 0], [-1 1], 'r')
+ylims = ylim; 
+plot([0 0], ylims, 'r')
 %%
 % heatmap of population responses
 h = subplot(4,1,2:4); hold on
 imagesc(zscorePSTHs, 'xdata', bins*1000)
 % surf(bins, 1:size(zscorePSTHs,1), zscorePSTHs, 'edgecolor', 'none'); view(0,90); axis tight
 
+% for double-ended colormap
 % set colormap and clims (mean = black)
-clims = max(abs(zscorePSTHs(:)))*[-1 1]; set(gca, 'clim', clims); 
-cvec = [zeros(128,1);(1:128)'/128];
-CMAP = [(1:64)'/64  (1:64)'/64 ones(64,1); ...
-    ones(64,1) (64:-1:1)'/64 (64:-1:1)'/64 ];
-colormap(CMAP)
+% clims = max(abs(zscorePSTHs(:)))*[-1 1]; set(gca, 'clim', clims); 
+% cvec = [zeros(128,1);(1:128)'/128];
+% CMAP = [(1:64)'/64  (1:64)'/64 ones(64,1); ...
+%     ones(64,1) (64:-1:1)'/64 (64:-1:1)'/64 ];
+
+
+colormap(parula)
 
 xlabel(['Time relative to syllable ' p.alignTo, ' (ms)'])
 
@@ -516,7 +542,7 @@ switch SortBy
         AgeBrackets = AgeBrackets(bInd);
         set(gca, 'ytick', bracRow, 'yticklabel', AgeBrackets, 'ydir', 'normal')
         plot([0 0], [0 length(rows)]+.5,'r')
-        ylabel('Age (dph)');
+        ylabel('Sorted by age');
     case 'elecpos'
         posBrackets = -200:100:1000;
         posBrackets = posBrackets(posBrackets>=elecPosition(rows(1)) & posBrackets<= elecPosition(rows(end))); 
@@ -564,7 +590,7 @@ for rowi = 1:length(rows)
 %         plot3(latency(rowi),rowi, 1000,'w.', 'markersize', .25)
 %     end
 end
-for ti =1:length(rows); sortLabels{ti} = num2str(rows(ti)); end 
+for ti =1:length(rows); sortLabels{ti} = [num2str(rows(ti)) '-' num2str(Age(rows(ti))) 'dph']; end 
 set(gca, 'ytick', 1:length(rows), 'yticklabels', sortLabels)
 %colorbar('ytick', [-2 0 2], 'yticklabel', {'-2 std', 'mean', '+2 std'})
 set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01], 'fontsize',p.fontsize)

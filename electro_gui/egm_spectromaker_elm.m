@@ -1,8 +1,8 @@
 function handles = egm_spectromaker_elm(handles)
 shg;
 filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
-FS = 8; % labels
-FS_axes = 8; % axis labels
+FS = 6; % labels
+FS_axes = 6; % axis labels
 %h = subplot(2,1,1)
 fs = handles.fs;
 lims = get(handles.axes_Sonogram, 'xlim');
@@ -55,43 +55,45 @@ end
 %% using displayspecgramquick
 %set(gca, 'xtick', [])
 %displaySpecgramQuick(song,fs);
-temp = get(handles.axes_Sonogram, 'Children');
-cdata = get(temp, 'Cdata');
-fdata = get(temp, 'ydata');
-tdata = get(temp, 'xdata'); tdata = time;
+% temp = get(handles.axes_Sonogram, 'Children');
+% cdata = get(temp, 'Cdata');
+% fdata = get(temp, 'ydata');
+% tdata = get(temp, 'xdata'); tdata = time;
 fig = figure;
-%h = subplot(2,1,1);
-%tmp = suptitle([handles.path_name ' #' num2str(filenum)])
-%set(tmp, 'fontsize', FS);
-%Thres = -16.2;
-cdata(cdata<handles.SonogramClim(1)) = handles.SonogramClim(1);
-cdata(cdata>handles.SonogramClim(2)) = handles.SonogramClim(2);
-imagesc(cdata, 'xdata', tdata, 'ydata', fdata/1000); set(gca, 'ydir', 'normal', 'ytick', 2:2:6)
-colormap jet
+% %h = subplot(2,1,1);
+
+% %Thres = -16.2;
+% cdata(cdata<handles.SonogramClim(1)) = handles.SonogramClim(1);
+% cdata(cdata>handles.SonogramClim(2)) = handles.SonogramClim(2);
+
+% imagesc(cdata, 'xdata', tdata, 'ydata', fdata/1000); set(gca, 'ydir', 'normal', 'ytick', 2:2:6)
+% colormap jet
 %surf(tdata, fdata, cdata, 'edgecolor', 'none'); axis tight; view(0,90)
 %ylabel('Frequency (kHz)','fontsize',FS)
 %xlabel('Time (s)','fontsize',FS)
 %set(gca, 'xtick', [], 'xticklabel', '');
 %set(gca, 'ytick', [], 'ticklabel', '');
 
-cmap = jet;
-cmap(1,:) = zeros(1,3); % background = black
-colormap(cmap);
+% cmap = jet;
+% cmap(1,:) = zeros(1,3); % background = black
+% colormap(cmap);
 
 
 %% adding patches for syllables
-Syls = unique(SegmentNames);
-sColors = [.5 .5 .5; hsv(length(Syls)-1)];
-hold on
-for si = 1:size(SegmentTimes,1)
-    sylID = find(strncmp(SegmentNames{si}, Syls,2));
-    if SelectedSyls(si)
-        patch(SegmentTimes(si,[1 2 2 1 1]), 8+.5*[0 0 1 1 0], sColors(sylID,:), 'Edgecolor','none')
-        text(mean(SegmentTimes(si,:)), 8.5, SegmentNames{si}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom','fontsize',FS_axes)
-    end
-end
-set(gca, 'color', 'none')
-ylim([min(fdata/1000) 8.5])
+% Syls = unique(SegmentNames);
+% sColors = [.5 .5 .5; hsv(length(Syls)-1)];
+% hold on
+% for si = 1:size(SegmentTimes,1)
+%     sylID = find(strncmp(SegmentNames{si}, Syls,2));
+%     if SelectedSyls(si)
+%         patch(SegmentTimes(si,[1 2 2 1 1]), 6+.5*[0 0 1 1 0], sColors(sylID,:), 'Edgecolor','none')
+%         text(mean(SegmentTimes(si,:)), 8.5, SegmentNames{si}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom','fontsize',FS_axes)
+%     end
+% end
+[cdata,tdata,fdata] = spectrogramELM(song,fs,.005, 1);
+title([handles.path_name '\' handles.dbase.SoundFiles(filenum).name], 'fontsize', FS);
+% title([handles.path_name ' #' num2str(filenum)], 'fontsize', FS);
+% ylim([min(fdata/1000) 6.6])
 box off
 set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
 set(gca,'fontsize',FS_axes)
@@ -142,6 +144,9 @@ set(gca,'fontsize',FS_axes)
 % set(h, 'pos', p)
 % set(g, 'pos', q)
 %%
-
-set(gcf, 'Color', [1 1 1], 'PaperSize', [4 1.5], 'PaperPosition', [0 0 4 1.5])%, 'PaperPositionMode', 'manual', 'InvertHardCopy', 'off');
+hold on
+% plot([.1 1.1], [1 1], 'w', 'linewidth', 1)
+axis off
+papersize = [8 1];
+set(gcf, 'Color', [1 1 1], 'papersize', papersize, 'paperposition', [0 0 papersize]); 
 %print fig -dmeta -r300

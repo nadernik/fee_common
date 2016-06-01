@@ -41,8 +41,9 @@ if makePlot
     colormap(cmap);
     Plot = 10*log10(S+eps);
     Plot(Plot(:)<prctile(Plot(:),50)) = prctile(Plot(:),50);
-    surf(Time, F/1000, Plot,'edgecolor','none'); axis tight; 
-    view(0,90);
+    imagesc(Time,F/1000,Plot); axis tight; 
+    set(gca, 'ydir', 'normal')
+%     surf(Time, F/1000, Plot,'edgecolor','none'); axis tight; view(0,90);
     ylabel('Frequency (kHz)'); xlabel('Time (s)')
     shg
 end
