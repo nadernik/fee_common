@@ -5960,7 +5960,12 @@ elseif get(handles.radio_PowerPoint,'value')==1
                 
                 
                 if ~strcmp(handles.template.Plot{c},'Segment labels')
-                    print('-dmeta',['-f' num2str(fig)]);
+                    if verLessThan('matlab','8.4.0')
+                        figNo = fig;
+                    else
+                        figNo = fig.Number;
+                    end
+                    print('-dmeta',['-f' num2str(figNo)]);
                     pic = invoke(newslide.Shapes,'PasteSpecial',2);
                     ug = invoke(pic,'Ungroup');
                     set(ug,'Height',72*handles.template.Height(c));
@@ -6178,9 +6183,16 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         fs = handles.fs * handles.SoundSpeed;
 
                         warning off
-                        wavwrite(wav,fs,16,'eg_temp.wav');
+                        if verLessThan('matlab','8.4.0')
+                            wavwrite(wav, fs, 16, 'eg_temp.wav');
+                            snd = invoke(newslide.Shapes,'AddMediaObject',[pwd '\eg_temp.wav']);
+                        else
+                            audiowrite('eg_temp.wav', wav, round(fs), 'BitsPerSample', 16);
+                            snd = invoke(newslide.Shapes,'AddMediaObject2',[pwd '\eg_temp.wav']);
+                        end
+                        
                         warning on
-                        snd = invoke(newslide.Shapes,'AddMediaObject',[pwd '\eg_temp.wav']);
+                        
                         set(snd,'Left',get(ug,'Left'));
                         set(snd,'Top',get(ug,'Top'));
                         mt = dir('eg_temp.wav');
