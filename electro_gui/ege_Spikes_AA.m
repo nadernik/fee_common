@@ -19,7 +19,7 @@ if(size(data, 2) > size(data, 1))
 end
 
 %get peak search window in samples.
-win = round((str2num(params.Values{1}) / 1000) * fs);
+win = round((str2num(params.Values{1}) / 1000) * fs); %#ok<ST2NM>
 win = win(1):win(2);
 if(isempty(win))
     win = 0;
