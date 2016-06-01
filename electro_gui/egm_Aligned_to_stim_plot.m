@@ -114,7 +114,7 @@ for rownum = 1:size(alldata, 1);
 end
 axis tight;
 ps = get(gcf,'position');
-ps(2) = -400;
+ps(2) = 400;
 ps(4) = range(ylim)*40;
 set(gcf,'position',ps);
 set(gca,'ytick',[]);
