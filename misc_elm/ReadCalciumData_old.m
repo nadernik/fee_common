@@ -1,4 +1,4 @@
-for row = 207:229;
+for row = [180];
     display(row)
     clearvars -except row
     %% load and compile data 
@@ -14,21 +14,12 @@ for row = 207:229;
     if 0==length(char(XLS.textdata.Sheet1(row,strmatch('MatlabDatafilename', Columns))));
         % song from acq qui
         filename = char(XLS.textdata.Sheet1(row,strmatch('AcqGuiFilename', Columns))); 
-        filename(strfind(filename, '''')) = []; % to avoid excel adding extra ''''s
         birdname = num2str(XLS.data.Sheet1(row,strmatch('bird', Columns))); 
         [SOUNDdata SOUNDfs SOUNDabsstarttime label props] = egl_AA_daq(filename, 1); 
         SOUNDdur = numel(SOUNDdata)/SOUNDfs; 
-        
-        % sync channel from acqqui 
-        filenamesync = filename; filenamesync(end-4) = '5'; % chan 5 contains sync input
-        [SYNCdata SOUNDfs SOUNDabsstarttime label props] = egl_AA_daq(filenamesync, 1); 
 
         % from inscopix file
         filename = char(XLS.textdata.Sheet1(row,strmatch('InscopixFilename', Columns))); 
-        filename(strfind(filename, '''')) = []; % to avoid excel adding extra ''''s
-        if length(strfind(filename, '.tif'))>0
-            filename = filename(1:end-4); 
-        end 
         VIDEOabsstarttime = datenum(filename((end-14):end), 'yyyymmdd_HHMMSS');
         VIDEOfs = 20 % see .xml file, check it's 20
         tiffInfo = imfinfo([filename '.tif']); 
@@ -44,11 +35,11 @@ for row = 207:229;
             if mod(i,50)==0; display(['loaded ' num2str(i) ' frames']); end
         end
         toc
-%         filename = fullfile('\\feebox6\shared\emackev\GCaMP',[birdname, 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
-%         save(filename, 'SOUNDdata', 'SOUNDfs', 'SOUNDabsstarttime', 'SOUNDdur',...
-%             'VIDEOabsstarttime', 'VIDEOfs', 'tiffInfo', 'nFrames', 'VIDEOdur', ...
-%             'Mov', 'VIDEOdata', 'SYNCdata', '-v7.3')
-%         display('saved data')
+        filename = fullfile('\\feebox6\shared\emackev\GCaMP',[birdname, 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
+        save(filename, 'SOUNDdata', 'SOUNDfs', 'SOUNDabsstarttime', 'SOUNDdur',...
+            'VIDEOabsstarttime', 'VIDEOfs', 'tiffInfo', 'nFrames', 'VIDEOdur', ...
+            'Mov', 'VIDEOdata', '-v7.3')
+        display('saved data')
     else
         filename1 = char(XLS.textdata.Sheet1(row,strmatch('InscopixFilename', Columns))); 
         VIDEOabsstarttime = datenum(filename1((end-14):end), 'yyyymmdd_HHMMSS');
@@ -60,49 +51,25 @@ for row = 207:229;
     end
     display('compiled data')
     %%
-    display('compiling smoothed data'); 
-        % aligning aud and vis frames
-    nMovFrames = size(VIDEOdata,1); %(end_time - start_time)*secInDay*VIDEOfs; 
-    SpecWinInd = round((-.5:1/SOUNDfs:.5)*SOUNDfs); 
-%     meanVIDEO = squeeze(median(VIDEOdata,1)); 
-    AudBinWhenFrameStarts = find(SYNCdata(2:end)>1 & SYNCdata(1:end-1)<1);
-    df = max(diff(AudBinWhenFrameStarts));
-    AudBinWhenFrameEnds = (AudBinWhenFrameStarts + df); %find(SYNCdata(2:end)<1 & SYNCdata(1:end-1)>1);
-    if length(AudBinWhenFrameStarts)~=nMovFrames
-        warning(['frame alignment mismatch, nMovFrames = ' num2str(nMovFrames) ...
-            ', nAudFrames = ' num2str(length(AudBinWhenFrameStarts))]); 
-    end
-    tMovie = (1:nMovFrames)/VIDEOfs;
-    tSound = (1:length(SOUNDdata))/SOUNDfs -AudBinWhenFrameStarts(1)/SOUNDfs;% find better way
-    SmoothVIDEOdata = VIDEOdata; 
-    meanVIDEO = imgaussfilt(squeeze(median(VIDEOdata(:,:,:),1)),3);
-    for fi = 1:nMovFrames
-        SmoothVIDEOdata(fi,:,:) = imgaussfilt(squeeze(VIDEOdata(fi,:,:)),3); 
-    end
-    filename = fullfile('\\feebox6\shared\emackev\GCaMP',[birdname, 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')])
-    save(filename, 'SOUNDdata', 'SOUNDfs', 'SOUNDabsstarttime', 'SOUNDdur',...
-        'VIDEOabsstarttime', 'VIDEOfs', 'tiffInfo', 'nFrames', 'VIDEOdur', ...
-        'Mov', 'VIDEOdata', 'SYNCdata', 'SmoothVIDEOdata', '-v7.3')
-    display('saved data')
         % Calculating indices and time vectors for time alignment 
     secInDay = 24*60*60;
-%     start_time = min(VIDEOabsstarttime,SOUNDabsstarttime); 
-%     end_time = max(VIDEOabsstarttime+VIDEOdur/secInDay, SOUNDabsstarttime+SOUNDdur/secInDay); 
-    %% click for ROIs
-
+    start_time = min(VIDEOabsstarttime,SOUNDabsstarttime); 
+    end_time = max(VIDEOabsstarttime+VIDEOdur/secInDay, SOUNDabsstarttime+SOUNDdur/secInDay); 
+    
+    plotROIs = 0; 
+    if plotROIs
+    %% make some ROIs (or, skip this and load previous ROIs)
     figure(3); clf; colormap gray;shg
-    smallVdata = SmoothVIDEOdata(round(size(VIDEOdata,1)/2)+(-100:100), :,:); %(1:min(150, size(VIDEOdata,1)),:,:); % just beginning so it takes less time
+    smallVdata = VIDEOdata(1:min(150, size(VIDEOdata,1)),:,:); % just beginning so it takes less time
     mSubTime = bsxfun(@minus,smallVdata,median(smallVdata,1)); 
-%     mSubPixel = bsxfun(@minus, mSubTime, median(median(mSubTime,2),3)); 
-    plotForRois = squeeze(max(mSubTime)); %squeeze(prctile(mSubPixel,99, 1)); % max proj
-%     plotForRois((plotForRois-mean(plotForRois(:)))>4*std(plotForRois(:))) = mean(plotForRois(:)); % throw out noise/dead pixels
+    mSubPixel = bsxfun(@minus, mSubTime, median(median(mSubTime,2),3)); 
+    plotForRois = squeeze(prctile(mSubPixel,99, 1)); % max proj
+    plotForRois((plotForRois-mean(plotForRois(:)))>4*std(plotForRois(:))) = mean(plotForRois(:)); % throw out noise/dead pixels
     
     
     imagesc(plotForRois)
     axis equal; axis off
     hold on
-    
-    if 0 % do i want to click rois??
     clicking = 1; 
     x = []; 
     y = []; 
@@ -118,13 +85,13 @@ for row = 207:229;
     end
     ROIx = x; 
     ROIy = y; 
-    % save ROIs (or load old ones)
+    %% save ROIs (or load old ones)
     %save C:\Users\emackev\Documents\MATLAB\FirstCalciumImagingROIs ROIx ROIy
     %save Q:\GCaMP\June19ROIs ROIx ROIy
 %     filenameroi = char(XLS.textdata.Sheet1(row,strmatch('ROIfilename', Columns))); 
 %     load(filenameroi); 
     
-    % plot ROIs
+    %% plot ROIs
 
     clf; colormap gray
     imagesc(plotForRois, [0 300])
@@ -138,39 +105,22 @@ for row = 207:229;
         ys = ROIy(roi) + [-20 -20 20 20 -20]; 
         patch(xs, ys, roicolors(roi,:), 'edgecolor', roicolors(roi,:), 'facecolor', 'none'); 
     end
-%%
-%% calculating delta F over F (following Jia et al Nature Protocols 2011)
+%     savefig(fullfile('O:\emackev\GCaMP', ['ROIs' birdname, 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
+
+    %% calculating delta F over F (following Jia et al Nature Protocols 2011)
 
     roiWin = 20; % size of each ROI in pixels
 
-%
-% figure(3); clf; colormap gray;shg
-% smallVdata = VIDEOdata; %(7*VIDEOfs:17*VIDEOfs, :,:);
-% [t,n,m] = size(smallVdata); 
-% vectorizedVideo = reshape(permute(smallVdata, [2 3 1]), n*m, t); 
-% tmp = sum(diff(vectorizedVideo,1,2).^2,2); 
-% PixelsToUse = tmp>prctile(tmp,99); 
-% imagesc(reshape(PixelsToUse,n,m)); set(gca, 'ydir', 'normal')
-% nFactors = 10; 
-% % [Zica A T mu] = myICA(vectorizedVideo(PixelsToUse,:),nFactors,1);
-% [W,H] = nnmf(vectorizedVideo(PixelsToUse,:),nFactors);
-% for i = 1:nFactors
-%     fill = W(:,i);
-%     blank = zeros(n*m,1); 
-%     blank(PixelsToUse) = fill;
-%     imagesc(reshape(blank,n,m));
-%     drawnow; pause(1)
-% end
     % parameters
     tau0 = .2; 
     tau1 = .75; 
     tau2 = 3; 
 
     % initialize 
-    F = [];%zeros(length(ROIx), nFrames);
-    F0 = [];%zeros(length(ROIx), nFrames);
-    DFF = [];%zeros(length(ROIx), nFrames);
-    DFFmedFil = [];%zeros(length(ROIx), nFrames);
+    F = zeros(length(ROIx), nFrames);
+    F0 = zeros(length(ROIx), nFrames);
+    DFF = zeros(length(ROIx), nFrames);
+    DFFmedFil = zeros(length(ROIx), nFrames);
 
     % Calculate the F(t) for each ROI
     for roi = 1:length(ROIx)
@@ -179,9 +129,9 @@ for row = 207:229;
                 abs((1:tiffInfo(1).Height)-ROIx(roi))<roiWin, abs((1:tiffInfo(1).Width)-ROIx(roi))<roiWin))); 
         end
     end
-%     F = H; 
+
     % Calculate the time-dependent baseline F0(t) for each ROI
-    for roi = 1:size(F,1)
+    for roi = 1:length(ROIx)
         Fbar = smooth(F(roi,:), tau1*VIDEOfs); 
         F0(:,1) = F(:,1); % so don't divide by 0
         for fi = 2:nFrames
@@ -196,136 +146,107 @@ for row = 207:229;
     % Apply noise filtering 
     for fi = 1:nFrames
         w = exp(-(1:fi)/(tau0*VIDEOfs)); 
-        w = repmat(w(:)', size(F,1),1); 
+        w = repmat(w(:)', length(ROIx),1); 
         DFF(:,fi) = sum(R(:,fi:-1:1).*w,2)./sum(w,2); 
         DFFmedFil(:,fi) = median(R(:,abs((1:nFrames)-fi)<(tau0*VIDEOfs)),2);
     end
     display('calculated deltaF/F')
-    % plot deltaF/F (or raw F) for each ROI
+    %% plot deltaF/F (or raw F) for each ROI
 
 
     % Vind = ceil((1:nFrames) + (start_time - VIDEOabsstarttime)*secInDay*VIDEOfs);
     % Sind = ceil((1:length(SOUNDdata)) + (start_time - SOUNDabsstarttime)*secInDay*SOUNDfs);
     % Vind = Vind(Vind>0&Vind<size(VIDEOdata,1)*VIDEOfs); 
     % Sind = Sind(Sind>0&Sind<length(SOUNDdata)*SOUNDfs); 
-    
+    tMovie = (1:nFrames)/VIDEOfs + (VIDEOabsstarttime - start_time)*secInDay; 
+    tSound = (1:length(SOUNDdata))/SOUNDfs + (SOUNDabsstarttime - start_time)*secInDay;
 
     figure(3); clf; title(filename); 
     % plot song
-    g = subplot(5,1,5)
-    spectrogramELM(SOUNDdata(AudBinWhenFrameStarts(1):AudBinWhenFrameStarts(end)), SOUNDfs,.005, 1); % find better way
-%     displaySpecgramQuick(SOUNDdata(AudBinWhenFrameStarts(1):AudBinWhenFrameStarts(end)), SOUNDfs); 
-%     plot(tSound(:), SOUNDdata(:), 'k')
-    box off; set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01])
+    g = subplot(9,1,9)
+    plot(tSound(:), SOUNDdata(:), 'k')
+    box off; set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
     xlabel('Time (s)')
 
     % plot F
-    h = subplot(5,1,1:2); cla
+    h = subplot(9,1,1:4); cla
     
     yspace = .005; 
     hold on
-    roicolors = lines(size(F,1)); 
-
-    for roi = 1:size(F,1)
-        plot(tMovie,F(roi,:)- F(roi,1) + (roi-1)*yspace*1, 'color', roicolors(roi,:))
+    for roi = 1:length(ROIx)
+        plot(tMovie,F(roi,:)- F(roi,1) + (roi-1)*yspace*3e6, 'color', roicolors(roi,:))
     end
     ylabel('F (au)');
     box off; axis tight
-    set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01])
+    set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
 
 
     % plot deltaF/F
-    k = subplot(5,1,3:4); cla
+    k = subplot(9,1,5:8); cla
+    roicolors = lines(length(ROIx)); 
     yspace = .005; 
     hold on
-    for roi = 1:size(F,1)
+    for roi = 1:length(ROIx)
         %plot(tMovie,F(roi,:)- F(roi,1) + (roi-1)*yspace*3e6, 'color', roicolors(roi,:))
         plot(tMovie,DFFmedFil(roi,:)+(roi-1)*yspace, 'color', roicolors(roi,:))
     end
     box off; axis tight
-    set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01])
+    set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
     ylabel('deltaF/F (au)')
     linkaxes([h g k], 'x'); 
     suptitle(['GCaMP ' datestr(VIDEOabsstarttime)])
     set(gcf, 'papersize', [5 8], 'paperposition',[0 0 5 8])
     shg
 
-%     figure(23); shg; set(gcf, 'color', [1 1 1])
+    savefig(fullfile('\\feebox6\shared\emackev\GCaMP', [birdname 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS')]))
+    display('saved figure')
+    end
+    %% Making movie
 
-%     nMovFrames = size(VIDEOdata,1); %(end_time - start_time)*secInDay*VIDEOfs; 
-%     SpecWinInd = round((-.5:1/SOUNDfs:.5)*SOUNDfs); 
-% %     meanVIDEO = squeeze(median(VIDEOdata,1)); 
-%     AudBinWhenFrameStarts = find(diff(SYNCdata)>2); 
-%     if length(AudBinWhenFrameStarts)~=nMovFrames
-%         warning(['frame alignment mismatch, nMovFrames = ' num2str(nMovFrames) ...
-%             ', nAudFrames = ' num2str(length(AudBinWhenFrameStarts))]); 
-%     end
-    %% save for electrogui
-    % decide folder, name
-    FolderForEgui = '\\feebox6\shared\emackev\GCAMP\TmpForEgui';  
-    filenametag = ['bird' birdname '_row' num2str(row)]; 
-    mkdir(FolderForEgui); 
-    % sound & sync
-    AudBinWhenFrameStarts = find(SYNCdata(2:end)>1 & SYNCdata(1:end-1)<1);
-    df = max(diff(AudBinWhenFrameStarts));
-    AudBinWhenFrameEnds = (AudBinWhenFrameStarts + df); %find(SYNCdata(2:end)<1 & SYNCdata(1:end-1)>1);
-    SoundToSave = SOUNDdata(AudBinWhenFrameStarts(1):AudBinWhenFrameEnds(end)); 
-    SyncToSave = SYNCdata(AudBinWhenFrameStarts(1):AudBinWhenFrameEnds(end)); 
-    % upsample the roi data according to sync
-    ROIdata = nan(size(F,1), length(SoundToSave)); 
-    for framei = 1:nMovFrames
-        tFrame = (AudBinWhenFrameStarts(framei):AudBinWhenFrameEnds(framei)) - AudBinWhenFrameStarts(1)+1;
-        ROIdata(:,tFrame) = ...
-            repmat(F(:,framei), 1, length(tFrame));
+    
 
-    end
-%      plot(ROIdata')
-    audiowrite(fullfile(FolderForEgui, [filenametag 'sound.wav']), ...
-        SoundToSave/max(abs(SoundToSave)), round(SOUNDfs)); 
-    audiowrite(fullfile(FolderForEgui, [filenametag 'sync.wav']), ...
-        SyncToSave/max(abs(SyncToSave)), round(SOUNDfs)); 
-    for roii = 1:size(ROIdata,1)
-        audiowrite(fullfile(FolderForEgui, [filenametag 'roi' num2str(roii) '.wav']), ...
-            ROIdata(roii,:)/max(abs(ROIdata(roii,:))), round(SOUNDfs)); 
-    end
-    end
-    %% making movie
-    if row<210 
-    folder = 'C:\Users\emackev\Documents\StuffICanDelete';
+    figure(23); shg; set(gcf, 'color', [1 1 1])
+
+    nMovFrames = (end_time - start_time)*secInDay*VIDEOfs; 
+    SpecWinInd = round((-.5:1/SOUNDfs:.5)*SOUNDfs); 
+    meanVIDEO = squeeze(median(VIDEOdata,1)); 
+
+    %
+    folder = '\\feebox6\shared\emackev\GCaMP';
     timestamp = datestr(now, 'dd-mmm-yyyy-HH-MM-SS');
     filename = [birdname 'GCaMP' datestr(VIDEOabsstarttime, 'dd-mmm-yyyy-HH-MM-SS') 'Saved' timestamp];
     obj = vision.VideoFileWriter(fullfile(folder, [filename, '.avi']), 'AudioInputPort', 1);%,  'fps', 20);
     obj.FrameRate = 20; 
-    msmoothVIDEO = VIDEOdata; 
     % if doing raw
-%     subsamp = VIDEOdata(1:10000:end); 
-%     clims = [prctile(subsamp, .0001) prctile(subsamp, 99.999)]; % not max to avoid dead pixels
-    meanVIDEO = imgaussfilt(squeeze(prctile(SmoothVIDEOdata(:,:,:),50,1)),3); % will only plot things over 75th percentile
+    clims = [prctile(VIDEOdata(:), 3) max(VIDEOdata(:))]
+
     for framei = 1:nMovFrames
-        Vind = framei; 
-        Sind = AudBinWhenFrameStarts(framei); 
-%         Vind = ceil(framei + (start_time - VIDEOabsstarttime)*secInDay*VIDEOfs);
-%         Sind = ceil(framei*SOUNDfs/VIDEOfs + (start_time - SOUNDabsstarttime)*secInDay*SOUNDfs);
+        Vind = ceil(framei + (start_time - VIDEOabsstarttime)*secInDay*VIDEOfs);
+        Sind = ceil(framei*SOUNDfs/VIDEOfs + (start_time - SOUNDabsstarttime)*secInDay*SOUNDfs);
         Aud = zeros(round(SOUNDfs/VIDEOfs),2); 
         % plot image
         subplot(4,1,1:3); cla; 
         set(gca, 'ydir', 'reverse')
-            % If doing median
-            clims = [10 110]; 
-            tmp = imgaussfilt(squeeze(SmoothVIDEOdata(Vind,:,:)) - meanVIDEO,3);
-            msmoothVIDEO(Vind,:,:) = tmp; 
-            imagesc(tmp, clims); 
-%             imagesc(imgaussfilt(squeeze(VIDEOdata(Vind,:,:))-meanVIDEO,3), clims)
-            hold on
-            umPerPixel = 900/1440; 
-            plot(50+[0 100]/umPerPixel, [50 50],  'color', [1 1 1])
-            text(mean(50+[0 100]/umPerPixel), [50], '100 um','color', [1 1 1],'HorizontalAlignment', 'center', 'VerticalAlignment', 'top')
+        if Vind>0 & Vind<=nFrames
+%             % If doing median
+%             clims = [-100 200];
+%             imagesc(squeeze(VIDEOdata(Vind,:,:))-meanVIDEO, clims)
+%             hold on
+%             umPerPixel = 900/1440; 
+%             plot(50+[0 100]/umPerPixel, [50 50],  'color', [1 1 1])
+%             text(mean(50+[0 100]/umPerPixel), [50], '100 um','color', [1 1 1],'HorizontalAlignment', 'center', 'VerticalAlignment', 'top')
 
 %             If doing raw
 %             clims = [0 950];
-%         imagesc(imgaussfilt(squeeze(VIDEOdata(Vind,:,:)),1), clims)
-        colormap gray; axis equal; axis off
-
+            imagesc(squeeze(VIDEOdata(Vind,:,:)), clims)
+            if plotROIs
+                scatter(ROIx,ROIy, 5+DFF(:,Vind).*(DFF(:,Vind)>0)*60000, lines(length(ROIx))); 
+            end
+            colormap gray; axis equal; axis off
+        else
+            text(0,0, 'waiting for video data')
+        end
+            
         % plot spectrogram
         subplot(4,1,4); cla; 
         indplot = Sind + SpecWinInd;
@@ -340,12 +261,12 @@ for row = 207:229;
         end
         xlim([SpecWinInd(1) SpecWinInd(end)]/SOUNDfs)
         box off
-        set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01])
+        set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
         hold on; plot([0 0], [0 8000], 'r')
 
         % write to video
         F = getframe(gcf);
-        if framei<nMovFrames
+        if Sind>0&Sind<(numel(SOUNDdata) - round(SOUNDfs/VIDEOfs))
             Aud = [SOUNDdata(Sind:(Sind+round(SOUNDfs/VIDEOfs)-1)) ...
                 SOUNDdata(Sind:(Sind+round(SOUNDfs/VIDEOfs)-1))]; 
         end
@@ -354,10 +275,7 @@ for row = 207:229;
 
     release(obj); 
     display('saved movie')
-    end
     sound(sin(1:1000)); 
-%     maxproj = squeeze(max(VIDEOdata - permute(repmat(meanVIDEO, 1,1,size(VIDEOdata,1)),[3 1 2])));
-%     imagesc(imgaussfilt(maxproj,2))
     %% save data
 
 end
@@ -366,14 +284,11 @@ end
 
 
 
-% %%
-% maxproj = squeeze(max(SmoothVIDEOdata - permute(repmat(meanVIDEO, 1,1,size(VIDEOdata,1)),[3 1 2])));
-% % medproj = squeeze(median(VIDEOdata - permute(repmat(meanVIDEO, 1,1,size(VIDEOdata,1)),[3 1 2])));
-% %%
-% imagesc(imgaussfilt(maxproj,2))
-% 
-% maxproj = squeeze(max(SmoothVIDEOdata - permute(repmat(meanVIDEO, 1,1,size(VIDEOdata,1)),[3 1 2])));
-% 
+
+
+
+
+
 
 
 

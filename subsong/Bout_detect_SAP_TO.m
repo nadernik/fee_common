@@ -1,4 +1,4 @@
-function Bout_detect_SAP_TO(pathName)
+        function Bout_detect_SAP_TO(pathName)
 %%% divide SAP wave files into bout files
 %%% originally written by Dmitiriy Aronov
 %%% Tatsuo Okubo
