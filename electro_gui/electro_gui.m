@@ -1,7 +1,12 @@
 function varargout = electro_gui(varargin)
-% electro_gui customized for Tatsuo
-% Tatsuo Okubo
-% 2009/07/01
+% ELECTRO_GUI songbird ephys analysis gui written by Dmitiry Aronov
+%   With additions by:
+%       Aaron Andalman
+%       Tatsuo Okubo
+%       Jesse Goldberg
+%       Michael Stetner
+%       Emily Mackevicius
+%       Galen Lynch
 
 % ELECTRO_GUI M-file for electro_gui.fig
 %      ELECTRO_GUI, by itself, creates a new ELECTRO_GUI or raises the existing
