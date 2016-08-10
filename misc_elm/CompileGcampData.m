@@ -5,14 +5,14 @@ XLS.data.Sheet1 = [NaN*ones(1, size(XLS.data.Sheet1,2)); XLS.data.Sheet1]; % add
 Columns = XLS.textdata.Sheet1(1,:);
 
 % decide where to save stuff
-savedir = 'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
+savedir = 'E:\ProcessedCalciumData'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 %% to populate xls...
-DIR1 = dir(fullfile('E:\HVCOpto\2016-07-01', '*chan0.dat'))
-DIR = dir(fullfile('E:\HVCgcamp07012016', '*.tif'))
+DIR1 = dir(fullfile('Z:\emackev\UnprocessedCalciumData\HVCOpto\2016-07-22', '*chan0.dat'))
+DIR = dir(fullfile('Z:\emackev\UnprocessedCalciumData\HVCgcamp07222016', '*.tif'))
 DIR = DIR(cellfun(@numel,(regexp( {DIR.name}', 'recording_\d+_\d+.tif')))==1);
 {DIR.name}'
 %% process data
-for row = [431:-1:382]; %[198:203 207:229]
+for row = 495:547; %[431:-1:382]; %[198:203 207:229]
     try
     clearvars -except row XLS Columns savedir
     display(['working on row ' num2str(row)])
@@ -98,16 +98,17 @@ for row = [431:-1:382]; %[198:203 207:229]
     end
 end
 %% display movie from saved data for one row
-savedir = 'Z:\emackev\inscopix'; %'C:\Users\emackev\Documents\StuffICanDelete';%'E:\StuffICanDelete'; %
+savedir = 'E:\ProcessedCalciumData\AllRows'; %'E:\ProcessedCalciumData\AllRows'; %'C:\Users\emackev\Documents\StuffICanDelete';%'E:\StuffICanDelete'; %
 
-row = 461
+row = 332
 savevid = 0; % see/hear it in real time no iff don't save
 load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'dffVIDEO', 'VIDEOfs', ...
         'SOUND', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
         'SPEC', 'specTime', 'F');%,'VIDEO'); 
-% showcontour = 1; 
-ShowCaVid(dffVIDEO,SOUND,SPEC, [] ,[],1)%, fullfile(savedir, 'tmp.avi'))
+showcontour = 0; 
+ShowCaVid(dffVIDEO,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\example1.avi' ,[],showcontour)%, fullfile(savedir, 'tmp.avi'))
+% HandpickROIs(dffVIDEO,SOUND,SPEC, [] ,[],showcontour)%, fullfile(savedir, 'tmp.avi'))
 %% montage video of all singing data from a particular folder
 % dir = 'C:\Users\emackev\Documents\StuffICanDelete\6636_selected_singing\2016-06-05'; 
 % dir = 'C:\Users\emackev\Documents\StuffICanDelete\6636_selected_singing\2016-06-09'; 
