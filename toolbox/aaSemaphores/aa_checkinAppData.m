@@ -3,14 +3,14 @@ function [status] = aa_checkinAppData(h, name, value)
 global AA_APPDATASEMAPHORE;
 theSem = 0;
 numSem = length(AA_APPDATASEMAPHORE);
-for(nSem = 1:numSem)
-    if((AA_APPDATASEMAPHORE(nSem).h == h) && strcmp(AA_APPDATASEMAPHORE(nSem).name, name))
+for nSem = 1:numSem
+    if AA_APPDATASEMAPHORE(nSem).h == h && strcmp(AA_APPDATASEMAPHORE(nSem).name, name)
         theSem = nSem;
         break;
     end
 end
 
-if(theSem == 0)
+if theSem == 0
     warning('aa_checkInAppData did not find semaphore.');
     status = 0;
     return;
