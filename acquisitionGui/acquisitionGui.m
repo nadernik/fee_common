@@ -235,7 +235,7 @@ if(~isempty(P.threadSafeData))
     setappdata(guiFig, 'threadSafeData', P.threadSafeData);
 end
 
-function acqgui_closereq(Src, EventData, guiFig)
+function acqgui_closereq(~, ~, guiFig)
 poisonPill = onCleanup(@() closereq());
 semaphoreKill = onCleanup(@() aa_resetCheckouts());
 daqKill = onCleanup(@() DaqBuffer.reset());
