@@ -1010,9 +1010,6 @@ dgd.actInSampRate = dgd.DaqBuffer.samplingRate;
 dgd.daqSetup{experNdx} = daqSetup;
 %Start data acquisition
 dgd.DaqBuffer.start();
-set(handles.textRecordingStatus, 'String', 'Buffering');
-set(handles.textRecordingStatus, 'BackgroundColor', 'yellow');
-pause(5); %uiwait(guifig,7);
 set(handles.textRecordingStatus, 'String', 'Ready to record');
 set(handles.textRecordingStatus, 'BackgroundColor', 'green');
 
