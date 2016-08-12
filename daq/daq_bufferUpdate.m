@@ -1,4 +1,4 @@
-function daq_bufferUpdate(obj, event, bufferUnitSamps, bufferLength, breal, realtimeFcnHandle)
+function daq_bufferUpdate(~, event, bufferUnitSize, numUnitsInBuff, breal, realtimeFcnHandle)
 %!!This function is called internally!!!
 %!!It should never be called explicitly!!!
 
@@ -7,7 +7,9 @@ function daq_bufferUpdate(obj, event, bufferUnitSamps, bufferLength, breal, real
 %peek requests.  Finally, if a realtimeFcn is specified is calls it.
 
 %%% NEVER access these global variables explicitly!
-
+randId = randi(1000);
+fprintf('Entered daq_bufferUpdate for update %d\n', randId);
+allTic = tic();
 global GINCHANS
 
 %Buffering variables
@@ -27,38 +29,40 @@ global NPEEK
 global PEEKDATASTORE;
 global PEEKTIMESTORE;
 
+setupTic = tic();
 FILEFORMATID = -4;
 daq_log(['numBufferUnits: ', num2str(NUMBUFFERUNITS)]);
-nBuff = bufferLength* bufferUnitSamps;
+nBuff = numUnitsInBuff * bufferUnitSize;
 %get data and add to buffer
 data = event.Data;
 time = event.TimeStamps;
 abstime = datevec(event.TriggerTime);
 %Not collecting native data -- this is just to maintain file compatibility
 nativeDataType = class(event.Data);
-buffLocation = mod(NUMBUFFERUNITS, bufferLength); %Circular buffer
-startNdx = buffLocation*bufferUnitSamps + 1;
-endNdx = buffLocation*bufferUnitSamps + bufferUnitSamps;
-GDAQDATA(startNdx:endNdx,:) = data;
+buffLocation = mod(NUMBUFFERUNITS, numUnitsInBuff); %Circular buffer
+startNdx = buffLocation * bufferUnitSize + 1;
+endNdx = buffLocation * bufferUnitSize + bufferUnitSize;
+GDAQDATA(startNdx:endNdx, :) = data;
 GDAQTIME(startNdx:endNdx) = time;
 NUMBUFFERUNITS = NUMBUFFERUNITS + 1;
-
+setupTime = toc(setupTic);
 %trigger: storing data to disk
+trigTic = tic();
 for chanNo = 1:numel(BTRIGGER)
     if BTRIGGER(chanNo) %there is a trigger
-        if (TRIGGERSTART(chanNo)==-1) || (NUMBUFFERUNITS * bufferUnitSamps >= TRIGGERSTART(chanNo)) %it has started (storing data to disk has started?)
+        if (TRIGGERSTART(chanNo)==-1) || (NUMBUFFERUNITS * bufferUnitSize >= TRIGGERSTART(chanNo)) %it has started (storing data to disk has started?)
             trigStartNdx = startNdx;
             %If this is first bufferUpdate since trigger started, then open the
             %file and prepare to write to it.
-            if (TRIGGERSTART(chanNo)~= -1) && (NUMBUFFERUNITS * bufferUnitSamps >= TRIGGERSTART(chanNo))
-                if(TRIGGERSTART(chanNo) < max(NUMBUFFERUNITS*bufferUnitSamps-bufferUnitSamps*bufferLength+1,1))
+            if (TRIGGERSTART(chanNo)~= -1) && (NUMBUFFERUNITS * bufferUnitSize >= TRIGGERSTART(chanNo))
+                if(TRIGGERSTART(chanNo) < max(NUMBUFFERUNITS * bufferUnitSize - bufferUnitSize * numUnitsInBuff + 1, 1))
                     warning('Trigger start outside buffer range.  Truncating start.');
-                    TRIGGERSTART(chanNo) = (NUMBUFFERUNITS*bufferUnitSamps) - min(NUMBUFFERUNITS*bufferUnitSamps, nBuff) + 1;
+                    TRIGGERSTART(chanNo) = (NUMBUFFERUNITS * bufferUnitSize) - min(NUMBUFFERUNITS * bufferUnitSize, nBuff) + 1;
                 end
                 if(exist(TRIGGERFILENAME{chanNo}, 'file'))
                     warning('File already exists, data being appended to end of file.')
                 end
-                trigStartNdx = endNdx - (NUMBUFFERUNITS * bufferUnitSamps - TRIGGERSTART(chanNo));
+                trigStartNdx = endNdx - (NUMBUFFERUNITS * bufferUnitSize - TRIGGERSTART(chanNo));
                 
                 TRIGGERFID(chanNo) = fopen(TRIGGERFILENAME{chanNo}, 'ab'); %'a': append, 'b': binary.
                 %First thing in the file is the trigger file format id.
@@ -92,13 +96,13 @@ for chanNo = 1:numel(BTRIGGER)
             end
             
             trigEndNdx = endNdx;
-            if((TRIGGEREND(chanNo)~=-2) && (NUMBUFFERUNITS * bufferUnitSamps >= TRIGGEREND(chanNo)))
+            if((TRIGGEREND(chanNo) ~= -2) && (NUMBUFFERUNITS * bufferUnitSize >= TRIGGEREND(chanNo)))
                 %The end of the trigger is within the buffer, therefore complete the
                 %file, and close it.
                 triggerEndCopy = TRIGGEREND(chanNo);
                 TRIGGEREND(chanNo) = -1;
-                trigEndNdx = endNdx - (NUMBUFFERUNITS * bufferUnitSamps - triggerEndCopy);
-                ndx = mod( (trigStartNdx-1):(trigEndNdx-1) ,nBuff) + 1;
+                trigEndNdx = endNdx - (NUMBUFFERUNITS * bufferUnitSize - triggerEndCopy);
+                ndx = mod((trigStartNdx - 1):(trigEndNdx - 1), nBuff) + 1;
                 fwrite(TRIGGERFID(chanNo), GDAQDATA(ndx,chanNo)', nativeDataType);
                 %Write the trigger file format id THREE times to
                 %mark the end of the window of samples.
@@ -108,49 +112,54 @@ for chanNo = 1:numel(BTRIGGER)
                 %Write the number and time of the last sample in the file
                 %for error checking.
                 fwrite(TRIGGERFID(chanNo), triggerEndCopy, 'float64');
-                ndx = mod( trigEndNdx-1 ,nBuff) + 1;
+                ndx = mod(trigEndNdx - 1, nBuff) + 1;
                 fwrite(TRIGGERFID(chanNo), GDAQTIME(ndx), 'float64');
                 %Close the file.
                 fclose(TRIGGERFID(chanNo));
                 BTRIGGER(chanNo) = false;
             elseif(trigStartNdx == startNdx)
                 %Save the entire latest update to the datafile.
-                fwrite(TRIGGERFID(chanNo), data(:,chanNo)', nativeDataType);
+                fwrite(TRIGGERFID(chanNo), data(:, chanNo)', nativeDataType);
             else
                 %The latest update to the buffer includes unnessary data, so
                 %save on the desired part.  This should only happen on the
                 %first update during the trigger.
-                ndx = mod((trigStartNdx-1):(trigEndNdx-1), nBuff) + 1;
-                fwrite(TRIGGERFID(chanNo), GDAQDATA(ndx,chanNo)', nativeDataType);
+                ndx = mod((trigStartNdx - 1):(trigEndNdx - 1), nBuff) + 1;
+                fwrite(TRIGGERFID(chanNo), GDAQDATA(ndx, chanNo)', nativeDataType);
             end
         end
     end
 end
-
+trigTime = toc(trigTic);
 %% peek: make recent samples available for processing
-if NPEEK
-    if NUMBUFFERUNITS * bufferUnitSamps < NPEEK %Not enough data to peek
+peekTic = tic();
+if NPEEK ~= 0 % Peak will be non-zero after call to daq_peek
+    if NUMBUFFERUNITS * bufferUnitSize < NPEEK %Not enough data to peek
         NPEEK = 0;
         warning('Cannot peek into future');
         PEEKDATASTORE = [];
         PEEKTIMESTORE = [];
-    elseif (NUMBUFFERUNITS * bufferUnitSamps - NPEEK) > (nBuff)
+    elseif (NUMBUFFERUNITS * bufferUnitSize - NPEEK) > (nBuff)
         NPEEK = 0;
         warning('Peek start is no longer in the buffer.');
         PEEKDATASTORE = [];
         PEEKTIMESTORE = [];
     else
-        numSamples = NUMBUFFERUNITS * bufferUnitSamps - NPEEK + 1;
-        ndx = mod((endNdx-numSamples):(endNdx-1),nBuff) + 1;
+        numSamples = NUMBUFFERUNITS * bufferUnitSize - NPEEK + 1;
+        ndx = mod((endNdx - numSamples):(endNdx - 1), nBuff) + 1;
         PEEKDATASTORE = GDAQDATA(ndx,:);
         PEEKTIMESTORE = GDAQTIME(ndx);
         NPEEK = 0;
     end
 end
+peekTime = toc(peekTic);
 
 if breal
     %real code
-    feval(realtimeFcnHandle, GDAQDATA, GDAQTIME, endNdx, bufferUnitSamps);
+    feval(realtimeFcnHandle, GDAQDATA, GDAQTIME, endNdx, bufferUnitSize);
 end
 
-daq_log('done');
+daq_log('done')
+allTime = toc(allTic);
+fprintf('update %d times\tTOTAL:%f\tsetup:%f\ttrig:%f\tpeek:%f\n', randId, allTime, setupTime, trigTime, peekTime);
+fprintf('Exited daq_bufferUpdate for update %d\n', randId);

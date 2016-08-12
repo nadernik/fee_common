@@ -51,25 +51,27 @@ function acquisitionGui_OpeningFcn(hObject, eventdata, handles, varargin)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to acquisitionGui (see VARARGIN
-guifig = hObject; %in this function only.
+guiFig = hObject; %in this function only.
 
 %clear any preexisting timers
 if(length(timerfind('Name','trigOnSong'))~=0)
     delete(timerfind('Name','trigOnSong'));
 end
-if(length(timerfind('Name','sutterPositionTimer'))~=0)
-    delete(timerfind('Name','sutterPositionTimer'));
-end
+% if(length(timerfind('Name','sutterPositionTimer'))~=0)
+%     delete(timerfind('Name','sutterPositionTimer'));
+% end
 
 %clear any semaphores...
 aa_resetCheckouts;
 
+guiFig.CloseRequestFcn = @(Src, EventData) acqgui_closereq(Src, EventData, guiFig);
+
 %Initialize app data, not necessary, but useful coding practice:
-aa_checkoutAppData(guifig, 'acqguidata');
+aa_checkoutAppData(guiFig, 'acqguidata');
 acqguidata.logfile = []; %filename
-acqguidata.sutterConnection = [];
-acqguidata.sutterStatus = [];
-acqguidata.sutterUpdateTimer = [];
+% acqguidata.sutterConnection = [];
+% acqguidata.sutterStatus = [];
+% acqguidata.sutterUpdateTimer = [];
 acqguidata.trigOnSongTimer = []; %the timer used for song trigger.
 acqguidata.bTrigOnSong = []; %array specifying which experiments are triggering on song.
 acqguidata.daqSetup = {}; %one for each open exper
@@ -102,9 +104,9 @@ acqguidata.experData = []; %one struct for each exper
         %windowAvg
         %durationThreshold
 
-aa_checkinAppData(guifig, 'acqguidata', acqguidata);    
+aa_checkinAppData(guiFig, 'acqguidata', acqguidata);    
     
-aa_checkoutAppData(guifig, 'acqdisplaydata');
+aa_checkoutAppData(guiFig, 'acqdisplaydata');
 acqdisplaydata.currFilenum = 0;
 acqdisplaydata.currChanAudio = 0;
 acqdisplaydata.currChan = 0;
@@ -113,43 +115,44 @@ acqdisplaydata.currChan3 = 0;
 acqdisplaydata.startNdx = 0;
 acqdisplaydata.endNdx = 0;
 acqdisplaydata.lengthFile = 0;
-aa_checkinAppData(guifig, 'acqdisplaydata', acqdisplaydata);
+aa_checkinAppData(guiFig, 'acqdisplaydata', acqdisplaydata);
 
-aa_checkoutAppData(guifig, 'acqrecordinfo');
+aa_checkoutAppData(guiFig, 'acqrecordinfo');
 recinfo = []; %one struct for each exper.   
     %filenum
     %recfilenum
     %bForcedRecording
     %bSongTrigRecording
+    %recordingListener
     %recFileTimes %list of the times at which files were recorded since last start.
-aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
+aa_checkinAppData(guiFig, 'acqrecordinfo', recinfo);
 
-aa_checkoutAppData(guifig, 'songtrigdata');
+aa_checkoutAppData(guiFig, 'songtrigdata');
 songtrigdata = []; %one struct for each exper.
     %nextPeek
     %songStartSampNum
     %startSamp
     %stopSamp
     %filenames
-aa_checkinAppData(guifig, 'songtrigdata', songtrigdata);
+    %PeekListener
+aa_checkinAppData(guiFig, 'songtrigdata', songtrigdata);
 
 %app data that does not need be made thread safe:
-threadSafeData.txtMessageParams = []; %for now, global settings, not per exper.
 threadSafeData.songTrigParams = []; % one for each exper..
         %preSecs
         %postSecs
         %maxFileLength
 threadSafeData.displayParams = []; % one for each exper..
         %audioCLim
-setappdata(guifig, 'threadSafeData', threadSafeData);
+setappdata(guiFig, 'threadSafeData', threadSafeData);
 
 % Choose default command line output for acquisitionGui
-handles.output = guifig;
-guidata(guifig, handles);
+handles.output = guiFig;
+guidata(guiFig, handles);
 
 %Make handle of figure visible so that command line timer function can find
 %it.
-set(guifig,'HandleVisibility','on');
+set(guiFig,'HandleVisibility','on');
 
 %parse varargin
 P.logfile = '';
@@ -189,30 +192,30 @@ set(handles.editStartTime, 'String', num2str(P.startHour));
 set(handles.editStopTime, 'String',num2str(P.stopHour));
 if(P.bRestartInMorning)
     set(handles.checkboxAutostart, 'Value', true);
-    setMorningRestartTimer(guifig);
+    setMorningRestartTimer(guiFig);
 end
 
 %Done with standard start up, now loading any experiments.
 %Load experiment if one was passed in
-aa_checkoutAppData(guifig, 'acqguidata');
+aa_checkoutAppData(guiFig, 'acqguidata');
 
 %set up sutter connection
-[acqguidata.sutterConnection, acqguidata.sutterStatus] = sutterOpenConnection;
-acqguidata.sutterUpdateTimer = timer;
-set(acqguidata.sutterUpdateTimer,'Name', 'sutterPositionTimer');
-set(acqguidata.sutterUpdateTimer,'TimerFcn','acqgui_updateSutterPosition(timerfind(''Name'', ''sutterUpdateTimer''), [], findobj(''Name'', ''acquisitionGui''))');
-set(acqguidata.sutterUpdateTimer,'Period',10);
-set(acqguidata.sutterUpdateTimer,'ExecutionMode','fixedSpacing');
-set(acqguidata.sutterUpdateTimer,'BusyMode', 'drop');
+% [acqguidata.sutterConnection, acqguidata.sutterStatus] = sutterOpenConnection;
+% acqguidata.sutterUpdateTimer = timer;
+% set(acqguidata.sutterUpdateTimer,'Name', 'sutterPositionTimer');
+% set(acqguidata.sutterUpdateTimer,'TimerFcn','acqgui_updateSutterPosition(timerfind(''Name'', ''sutterUpdateTimer''), [], findobj(''Name'', ''acquisitionGui''))');
+% set(acqguidata.sutterUpdateTimer,'Period',10);
+% set(acqguidata.sutterUpdateTimer,'ExecutionMode','fixedSpacing');
+% set(acqguidata.sutterUpdateTimer,'BusyMode', 'drop');
 
 %set up expers and log
 acqguidata.expers = {}; %will be updated below.
 acqguidata.logfile = P.logfile;
-aa_checkinAppData(guifig, 'acqguidata',acqguidata);  
+aa_checkinAppData(guiFig, 'acqguidata',acqguidata);  
 
 if(~isempty(P.expers))
     for nExper = 1:length(P.expers) 
-        addExperiment(guifig, P.expers(nExper), ...
+        addExperiment(guiFig, P.expers(nExper), ...
                       'songDensity', P.songDetection(nExper).songDensity, ...
                       'ratioThreshold', P.songDetection(nExper).powerThres, ...
                       'songLength', P.songDetection(nExper).songLength,...
@@ -221,7 +224,7 @@ if(~isempty(P.expers))
     end    
     for nExper = 1:length(P.expers)
         if(P.bTrigOnSong(nExper))
-           startTriggeringOnSong(guifig, nExper); 
+           toggleTriggeringOnSong(guiFig, nExper); 
         end
     end    
 end
@@ -229,33 +232,23 @@ end
 %pass along thread safe data.
 if(~isempty(P.threadSafeData))
     threadSafeData = P.threadSafeData;
-    setappdata(guifig, 'threadSafeData', P.threadSafeData);
+    setappdata(guiFig, 'threadSafeData', P.threadSafeData);
 end
 
-%handle restart text messaging needs...
-if(~isempty(threadSafeData.txtMessageParams))
-    %reset wake message sent flag for a new day.
-    threadSafeData.txtMessageParams.bSentWakeSong = false;
-    if(threadSafeData.txtMessageParams.bOnRestart)
-        txtP = threadSafeData.txtMessageParams;
-        if(length(P.expers)>0) %#ok<ISMT>
-            [st, res] = system(['dir "', P.expers(1).dir,'"']);
-        else
-            [st, res] = system('dir');
-        end
-        ndx = strfind(res,'Dir(s)');
-        if(ndx>0)
-            freeSpace = res(ndx+6:end);
-        else
-            freeSpace = ''
-        end
-        send_text_message(txtP.phonenum, txtP.carrier, [txtP.compName, ': has successfully restarted. ', freeSpace]);
+function acqgui_closereq(Src, EventData, guiFig)
+poisonPill = onCleanup(@() closereq());
+semaphoreKill = onCleanup(@() aa_resetCheckouts());
+daqKill = onCleanup(@() DaqBuffer.reset());
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+nExper = numel(dgd.expers);
+for experNo = 1:nExper
+    try
+        closeExperiment(guiFig, experNo);
+    catch ME
+        %Do nothing
     end
 end
-start(acqguidata.sutterUpdateTimer);
-        
-% UIWAIT makes acquisitionGui wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
+
 
 % --- Outputs from this function are returned to the command line.
 function varargout = acquisitionGui_OutputFcn(hObject, eventdata, handles) 
@@ -277,68 +270,79 @@ function buttonRecord_Callback(hObject, eventdata, handles)
 %It is crucial, that this function, which accesses daq_data, does not
 %interrupt the daq_bufferUpdate.  Interruptions result in crashes and
 %freezes.
-if(daq_isUpdating)
+
+
+guiFig = get(hObject,'Parent');
+handles = guidata(guiFig);
+
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+if(dgd.DaqBuffer.isUpdating)
     return;
 end
-
-guifig = get(hObject,'Parent');
-handles = guidata(guifig);
-
-[dgd] = aa_getAppDataReadOnly(guifig, 'acqguidata');
-[recinfo, bRecStatus] = aa_checkoutAppData(guifig, 'acqrecordinfo');
-if(~bRecStatus) 
+[recInfo, bRecStatus] = aa_checkoutAppData(guiFig, 'acqrecordinfo');
+if ~bRecStatus 
     return; 
 end
 
-if(~recinfo(dgd.ce).bSongTrigRecording)
-    bNewFile = false;
-    if(~recinfo(dgd.ce).bForcedRecording)
-        recSampNum = daq_getCurrSampNum;
+if ~recInfo(dgd.ce).bSongTrigRecording % no triggered recording
+    if recInfo(dgd.ce).bForcedRecording % Recording already started
+        ListenerHandle = addlistener(dgd.DaqBuffer, 'RecordingComplete', @(~, ~) error('lost the callback race!'));
+        
+        completionClosure = @(~, EventData) stop_forced_recording_callback(...
+            EventData, ListenerHandle, dgd.experData(dgd.ce).inChans, recInfo, guiFig); % recInfo checked back in by callback!
+        
+        ListenerHandle.Callback = completionClosure;
+        bStatus = dgd.DaqBuffer.stop_recording(dgd.DaqBuffer.lastSample, dgd.experData(dgd.ce).inChans);
+        if ~all(bStatus)
+            aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);
+            error('Song stop recording failed.');
+        end
+    else % Recording not started
+        recSampNum = dgd.DaqBuffer.lastSample + 1;
         [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.expers{dgd.ce});
-        recinfo(dgd.ce).recfilenum = recfilenum;
-        [bStatus, startSamp, filenames] = daq_recordStart(recSampNum, [dgd.expers{dgd.ce}.dir, filenamePrefix], dgd.experData(dgd.ce).inChans);
-        if(~bStatus)
-            error('Forced Start recording failed' );
+        recInfo(dgd.ce).recfilenum = recfilenum;
+        
+        %% Make Listener for recording
+        ListenerHandle = addlistener(dgd.DaqBuffer, 'RecordingComplete', @(~, ~) error('lost the callback race!'));
+        completionClosure = @(~, EventData) recording_completion_callback(...
+            EventData, ListenerHandle, dgd.experData(dgd.ce).inChans, guiFig,...
+            dgd.ce, recInfo(dgd.ce).recfilenum);
+        ListenerHandle.Callback = completionClosure;
+        [bStatus, ~] = dgd.DaqBuffer.start_recording(recSampNum, [dgd.expers{dgd.ce}.dir, filenamePrefix], dgd.experData(dgd.ce).inChans);
+        if ~all(bStatus)
+            delete(ListenerHandle);
+            aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);
+            error('Failed to start forced recording' );
         else
-            set(handles.textRecordingStatus, 'String', ['Started forced recording.', num2str(recinfo(dgd.ce).recfilenum)]);
+            set(handles.textRecordingStatus, 'String', ['Started forced recording.', num2str(recInfo(dgd.ce).recfilenum)]);
             set(handles.textRecordingStatus, 'BackgroundColor', 'cyan');
             set(handles.buttonRecord, 'String', 'Stop Recording');
-            recinfo(dgd.ce).bForcedRecording = true;
+            recInfo(dgd.ce).recordingListener = ListenerHandle;
+            recInfo(dgd.ce).bForcedRecording = true;
         end
-    else
-        recSampNum = daq_getCurrSampNum;
-        [bStatus, endSamp] = daq_recordStop(recSampNum, dgd.experData(dgd.ce).inChans);
-        if(~bStatus)
-            error('Song stop recording failed.');
-        else
-            bNewFile = true;
-            nNewFileNum = recinfo(dgd.ce).recfilenum;
-            recinfo(dgd.ce).filenum = recinfo(dgd.ce).recfilenum;
-            recinfo(dgd.ce).recFileTimes = [recinfo(dgd.ce).recFileTimes, now];
-            set(handles.textRecordingStatus, 'String', ['Finished forced recording.', num2str(recinfo(dgd.ce).recfilenum), '.   Ready to record.']);
-            set(handles.textRecordingStatus, 'BackgroundColor', 'green'); 
-            set(handles.buttonRecord, 'String', 'Start Recording');
-            recinfo(dgd.ce).bForcedRecording = false;       
-        end
+        aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);
     end
+else
+    aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);
 end
-aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
 
-if(bNewFile)
-    daq_waitForRecording(dgd.experData(dgd.ce).inChans);
-    if(dgd.sutterStatus)
-        [microsteps, micronsApprox, Status] = sutterGetCurrentPosition(dgd.sutterConnection);
-        if(Status)
-            filename = getExperDatafile(dgd.expers{dgd.ce},nNewFileNum,dgd.expers{dgd.ce}.audioCh);
-            path = dgd.expers{dgd.ce}.dir;
-            daq_appendProperty([path,filename], 'SutterMicronsX',  sprintf('%4.2f', micronsApprox(1)));
-            daq_appendProperty([path,filename], 'SutterMicronsY',  sprintf('%4.2f', micronsApprox(2)));
-            daq_appendProperty([path,filename], 'SutterMicronsZ',  sprintf('%4.2f', micronsApprox(3)));
-        end
-    end
-    if((get(handles.checkboxAutoDisplay,'Value') ~= 0)) 
-        acqgui_updateDisplayFile(guifig, recinfo(dgd.ce).filenum);
-    end
+function stop_forced_recording_callback(EventData, ListenerHandle, hwChannels, recInfo, guiFig)
+channelsMatch = compare_channels(hwChannels, EventData.hwChannels);
+if channelsMatch
+    delete(ListenerHandle); %Unsubscribe
+    dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+    handles = guidata(guiFig);
+    
+    %% Update recInfo
+    recInfo(dgd.ce).filenum = recInfo(dgd.ce).recfilenum;
+    recInfo(dgd.ce).recFileTimes = [recInfo(dgd.ce).recFileTimes, now];
+    recInfo(dgd.ce).bForcedRecording = false;
+    
+    %% Update GUI
+    set(handles.textRecordingStatus, 'String', ['Finished forced recording.', num2str(recInfo(dgd.ce).recfilenum), '.   Ready to record.']);
+    aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo); % Check in acqrecordinfo
+    set(handles.textRecordingStatus, 'BackgroundColor', 'green'); 
+    set(handles.buttonRecord, 'String', 'Start Recording');
 end
 
 % --- Executes on button press in pushbutton1.
@@ -347,67 +351,106 @@ function buttonTrigOnSong_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 guifig = get(hObject,'Parent');
-[dgd] = aa_getAppDataReadOnly(guifig, 'acqguidata');
-startTriggeringOnSong(guifig, dgd.ce);
+toggleTriggeringOnSong(guifig);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function startTriggeringOnSong(guifig, nExper)
-handles = guidata(guifig);
-[dgd, bDgdStatus] = aa_checkoutAppData(guifig, 'acqguidata');
-if(~bDgdStatus)
+function toggleTriggeringOnSong(guiFig)
+%% Try to checkout acqguidata
+handles = guidata(guiFig);
+[dgd, bDgdStatus] = aa_checkoutAppData(guiFig, 'acqguidata');
+if ~bDgdStatus
     return;
 end
-
-if(~dgd.bTrigOnSong(nExper))
-    [params, bParamStatus] = aa_checkoutAppData(guifig, 'songtrigdata');
-    if(~bParamStatus)
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
+experNo = dgd.ce;
+%% Toggle triggering state
+if dgd.bTrigOnSong(experNo) % If already triggering on song
+    recInfo = aa_getAppDataReadOnly(guiFig, 'acqrecordinfo');
+    if recInfo(experNo).bSongTrigRecording % In the middle of a recording
+        if dgd.DaqBuffer.isUpdating
+            %% Give up
+            aa_checkinAppData(guiFig, 'acqguidata', dgd);            
+            return
+        else
+            %% Create callback for when recording completes
+            ListenerHandle = addlistener(dgd.DaqBuffer, 'RecordingComplete', @(~, ~) error('lost the callback race!'));
+            completionClosure = @(~, EventData) disable_song_triggering_callback(...
+                EventData, ListenerHandle, dgd.experData(experNo).inChans, guiFig, experNo, dgd); % Call back checks in acqguidata
+            ListenerHandle.Callback = completionClosure;
+        end
+    else
+        %% Stop triggering
+        disable_song_triggering(guiFig, experNo, dgd); % Checks in acqguidata
+    end
+else  % If not already triggering on song
+    [params, bParamStatus] = aa_checkoutAppData(guiFig, 'songtrigdata');
+    if ~bParamStatus
+        aa_checkinAppData(guiFig, 'acqguidata', dgd);
         return; 
     end    
-    dgd.bTrigOnSong(nExper) = true;
-    params(nExper).nextPeek = ceil(daq_getCurrSampNum - dgd.actInSampRate);
-    aa_checkinAppData(guifig, 'songtrigdata', params);
+    dgd.bTrigOnSong(experNo) = true;
+    params(experNo).nextPeek = ceil(dgd.DaqBuffer.lastSample - dgd.actInSampRate); % Last second of the buffer
+    aa_checkinAppData(guiFig, 'songtrigdata', params);
 
-    %start the recurring song check timer...
-    if(isempty(dgd.trigOnSongTimer))
+    %% start the recurring song check timer...
+    if isempty(dgd.trigOnSongTimer) % Timer not created
         dgd.trigOnSongTimer = timer();
         set(dgd.trigOnSongTimer,'Name', 'trigOnSong');
-        set(dgd.trigOnSongTimer,'TimerFcn','acqgui_timerFcnAcqTrigOnSong(timerfind(''Name'', ''trigOnSong''), [], findobj(''Name'', ''acquisitionGui''))');
+        timerFcn = @(Src, EventData) acqgui_timerFcnAcqTrigOnSong(Src, EventData, guiFig);
+        songTrigErrFcn = @(~, ~) song_trigger_error(guiFig, experNo);
+        set(dgd.trigOnSongTimer,'TimerFcn', timerFcn, 'ErrorFcn', songTrigErrFcn);
         set(dgd.trigOnSongTimer,'Period',1);
         set(dgd.trigOnSongTimer,'ExecutionMode','fixedRate');
         set(dgd.trigOnSongTimer,'BusyMode', 'drop');
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
+        aa_checkinAppData(guiFig, 'acqguidata', dgd);
         start(dgd.trigOnSongTimer);
     else
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
+        aa_checkinAppData(guiFig, 'acqguidata', dgd);
     end
-    
-    if(nExper == dgd.ce)
-        set(handles.buttonTrigOnSong, 'String', 'Stop Triggering On Song');
-    end
-
-else  
-    [recinfo] = aa_getAppDataReadOnly(guifig, 'acqrecordinfo');
-    if(recinfo(nExper).bSongTrigRecording)
-        if(daq_isUpdating)
-            aa_checkinAppData(guifig, 'acqguidata', dgd);            
-            return;
-        else  
-            daq_waitForRecording(dgd.experData(nExper).inChans);
-        end
-    end
-    dgd.bTrigOnSong(nExper) = false;
-    if(~dgd.bTrigOnSong)
-        stop(dgd.trigOnSongTimer);
-        delete(dgd.trigOnSongTimer);
-        dgd.trigOnSongTimer = [];
-    end
-    if(nExper == dgd.ce)
-        set(handles.buttonTrigOnSong, 'String', 'Start Triggering On Song');
-        set(handles.textSongScore, 'String', 'Not triggering on song.');
-    end
-    aa_checkinAppData(guifig, 'acqguidata', dgd);
+    set(handles.buttonTrigOnSong, 'String', 'Stop Triggering On Song');
 end
+
+function song_trigger_error(guiFig, experNo)
+TRYINTERVAL = 0.1;
+MAXTRIES = 200;
+warning('Error during song triggering for experiment %d', experNo);
+warning('Attempting to disable song triggering');
+[dgd, succeeded] = aa_checkoutAppData(guiFig, 'acqguidata');
+tryNo = 1;
+while ~succeeded && tryNo <= MAXTRIES
+    pause(TRYINTERVAL);
+    [dgd, succeeded] = aa_checkoutAppData(guiFig, 'acqguidata');
+end
+if tryNo > MAXTRIES
+    error('Could not recover from song triggering error!');
+end
+disable_song_triggering(guiFig, experNo, dgd);
+error('Error during song triggering! Succesfully disabled triggering.');
+
+function disable_song_triggering_callback(EventData, ListenerHandle, hwChannels, guiFig, experNo, dgd)
+channelsMatch = compare_channels(hwChannels, EventData.hwChannels);
+if channelsMatch
+    delete(ListenerHandle); %Unsubscribe to future events
+    disable_song_triggering(guiFig, experNo, dgd);
+end
+
+function disable_song_triggering(guiFig, experNo, dgd)
+%% Disable song triggering
+dgd.bTrigOnSong(experNo) = false;
+if ~dgd.bTrigOnSong
+    stop(dgd.trigOnSongTimer);
+    delete(dgd.trigOnSongTimer);
+    dgd.trigOnSongTimer = [];
+end
+
+%% Update gui
+if experNo == dgd.ce
+    handles = guidata(guiFig);
+    set(handles.buttonTrigOnSong, 'String', 'Start Triggering On Song');
+    set(handles.textSongScore, 'String', 'Not triggering on song.');
+end
+
+%% Check in AppData
+aa_checkinAppData(guiFig, 'acqguidata', dgd);
 
 function editSongDensity_Callback(hObject, eventdata, handles)
 % hObject    handle to editSongThreshold (see GCBO)
@@ -901,6 +944,7 @@ recinfo(experNdx).filenum = getLatestDatafileNumber(dgd.expers{experNdx});
 recinfo(experNdx).recfilenum = -1;
 recinfo(experNdx).bForcedRecording = false;
 recinfo(experNdx).bSongTrigRecording = false;
+recinfo(experNdx).recordingListener = [];
 recinfo(experNdx).recFileTimes = [];
 %song trig info
 params(experNdx).nextPeek = 0;
@@ -947,24 +991,25 @@ else
 end
 
 %START THE DAQ
-%reset 
-daq_Quit();
+%reset
+DaqBuffer.reset();
 if(isempty(timerfind('Name','trigOnSong')))
     delete(timerfind('Name','trigOnSong'));
 end
 %parameters
-buffer=15; %Seconds %parameterize
+buffer = 15; %Seconds %parameterize
 updateFreq = 4; %Hz %parameterize
-[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
-daqSetup.actInSampleRate = actInSampleRate;
-daqSetup.actOutSampleRate = actOutSampleRate;
+dgd.DaqBuffer = DaqBuffer.get_instance(allChannels, desiredInSampRate, buffer, updateFreq);
+dgd.DaqBuffer.logFID = fopen('daq_log.txt', 'w');
+daqSetup.actInSampleRate = dgd.DaqBuffer.samplingRate;
+daqSetup.actOutSampleRate = nan;
 daqSetup.buffer = buffer;
-daqSetup.actUpdateFreq = actUpdateFreq;
-save([exper.dir,'daqSetup',datestr(now,30),'.mat'], 'daqSetup');
-dgd.actInSampRate = actInSampleRate;
+daqSetup.actUpdateFreq = dgd.DaqBuffer.updateFreq;
+save([exper.dir,'daqSetup', datestr(now,30), '.mat'], 'daqSetup');
+dgd.actInSampRate = dgd.DaqBuffer.samplingRate;
 dgd.daqSetup{experNdx} = daqSetup;
 %Start data acquisition
-daq_Start;
+dgd.DaqBuffer.start();
 set(handles.textRecordingStatus, 'String', 'Buffering');
 set(handles.textRecordingStatus, 'BackgroundColor', 'yellow');
 pause(5); %uiwait(guifig,7);
@@ -1039,17 +1084,17 @@ end
 %Remove exper from data structures...
 dgd.expers = dgd.expers([1:experNdx-1,experNdx+1:length(dgd.expers)]);
 dgd.bTrigOnSong(experNdx) = [];
-dgd.daqSetup = dgd.daqSetup([1:experNdx-1,experNdx+1:length(dgd.daqSetup)]);
+dgd.daqSetup = dgd.daqSetup([1:(experNdx - 1), (experNdx + 1):length(dgd.daqSetup)]);
 dgd.experData(experNdx) = [];
 recinfo(experNdx) = [];
 params(experNdx) = [];
 
 %UPDATE THE EXPER POPUP
-if(length(dgd.expers) == 0)
+if isempty(dgd.expers)
     experStrings{experNdx} = '';
     set(handles.popupExperiments, 'String', experStrings);
     set(handles.popupExperiments, 'Value', 1);
-    daq_Quit();
+    DaqBuffer.reset();
     dgd.ce = 0;
     cla(handles.axesAudio);
     cla(handles.axesSignal);
@@ -1069,22 +1114,22 @@ else
     set(handles.popupExperiments, 'Value', 1);
     dgd.ce = 1;
     %reset 
-    daq_Quit();
+    delete(dgd.DaqBuffer);
     if(isempty(timerfind('Name','trigOnSong')))
         delete(timerfind('Name','trigOnSong'));
     end
     %parameters
     buffer= 90; %Seconds %parameterize
     updateFreq = 4; %Hz %parameterize
-    [s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(allChannels, desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
-    daqSetup.actInSampleRate = actInSampleRate;
-    daqSetup.actOutSampleRate = actOutSampleRate;
+    dgd.DaqBuffer = DaqBuffer.get_instance(allChannels, desiredInSampRate, buffer, updateFreq);
+    daqSetup.actInSampleRate = dgd.DaqBuffer.samplingRate;
+    daqSetup.actOutSampleRate = nan;
     daqSetup.buffer = buffer;
-    daqSetup.actUpdateFreq = actUpdateFreq;
-    dgd.actInSampRate = actInSampleRate;
+    daqSetup.actUpdateFreq = dgd.DaqBuffer.updateFreq;
+    dgd.actInSampRate = dgd.DaqBuffer.samplingRate;
 
     %Start data acquisition
-    daq_Start;
+    dgd.DaqBuffer.start();
     set(handles.textRecordingStatus, 'String', 'Buffering');
     set(handles.textRecordingStatus, 'BackgroundColor', 'yellow');
     pause(7); %uiwait(guifig,7);
@@ -1585,16 +1630,6 @@ if(~all(isspace(commentStr)))
 end
 
 % --------------------------------------------------------------------
-function dlgTextMessaging_Callback(hObject, eventdata, handles)
-% hObject    handle to dlgTextMessaging (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-guifig = findobj('Name','acquisitionGui');
-tsd = getappdata(guifig,'threadSafeData');
-tsd.txtMessageParams = acqgui_txtMessageDlg(tsd.txtMessageParams);
-setappdata(guifig,'threadSafeData', tsd);
-
-% --------------------------------------------------------------------
 function MenuAudioAxis_Callback(hObject, eventdata, handles)
 % hObject    handle to MenuAudioAxis (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -1769,7 +1804,7 @@ function buttonUp_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonUp (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-[microsteps, micronsApprox, Status] = sutterGetCurrentPosition(dgd.sutterConnection);
+%[microsteps, micronsApprox, Status] = sutterGetCurrentPosition(dgd.sutterConnection);
 
 
 % --- Executes on button press in buttonDown.

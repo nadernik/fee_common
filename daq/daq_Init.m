@@ -60,7 +60,6 @@ function [s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(inChan
 %%GFL I'm not confident code for analog output, test before use.
 
 %informational globals
-%global GAI;
 global GS;
 global GINCHANS;
 global GOUTCHANS;
@@ -179,15 +178,15 @@ if hasIn
     BUFFERUNITSIZE = bufferUnitSize;
     
     %Set up buffer
-    bufferLength = ceil(actUpdateFreq * bufferSecs);    %Length of buffer in terms of number update units
+    numUnitsInBuff = ceil(actUpdateFreq * bufferSecs);    %Length of buffer in terms of number update units
     NUMBUFFERUNITS = 0; %Running total number of buffer units recorded.
-    GDAQDATA = zeros(bufferUnitSize * bufferLength, numel(inChannels));
-    GDAQTIME = zeros(bufferUnitSize * bufferLength, 1); 
-    BTRIGGER = zeros(numel(inChannels), 1);
+    GDAQDATA = zeros(bufferUnitSize * numUnitsInBuff, numel(inChannels));
+    GDAQTIME = zeros(bufferUnitSize * numUnitsInBuff, 1); 
+    BTRIGGER = false(numel(inChannels), 1);
     NPEEK = 0;
     
     %Set buffer update fcn
-    lhi = addlistener(s, 'DataAvailable', @(src, event) daq_bufferUpdate(src, event, bufferUnitSize, bufferLength, breal, realtimeFcnHandle));
+    lhi = addlistener(s, 'DataAvailable', @(src, event) daq_bufferUpdate(src, event, bufferUnitSize, numUnitsInBuff, breal, realtimeFcnHandle));
     GLISTENERS = [GLISTENERS, {lhi}];
     s.NotifyWhenDataAvailableExceeds = BUFFERUNITSIZE; %Trigger DataAvailable event when this many samples acquired
 end

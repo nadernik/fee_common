@@ -13,7 +13,7 @@ dddRO = aa_getAppDataReadOnly(guifig, 'acqdisplaydata');
 if(dddRO.currFilenum == dispfilenum)
     acqgui_updateDisplay(guifig);
 else
-    [ddd,status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
+    [ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
     if(~status)
         set(handles.editFilenum, 'String', num2str(dddRO.currFilenum));
         return;
