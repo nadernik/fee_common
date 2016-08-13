@@ -248,6 +248,11 @@ for experNo = 1:nExper
         %Do nothing
     end
 end
+try
+    fclose(fopen(dgd.logfile)); % Attempt to close the log file, if it's open
+catch ME
+    % Do nothing
+end
 
 
 % --- Outputs from this function are returned to the command line.
@@ -1000,7 +1005,9 @@ end
 buffer = 15; %Seconds %parameterize
 updateFreq = 4; %Hz %parameterize
 dgd.DaqBuffer = DaqBuffer.get_instance(allChannels, desiredInSampRate, buffer, updateFreq);
-dgd.DaqBuffer.logFID = fopen('daq_log.txt', 'w');
+LOGFILE = 'daq_log.txt';
+dgd.DaqBuffer.logFID = fopen(LOGFILE, 'w');
+dgd.logfile = LOGFILE;
 daqSetup.actInSampleRate = dgd.DaqBuffer.samplingRate;
 daqSetup.actOutSampleRate = nan;
 daqSetup.buffer = buffer;

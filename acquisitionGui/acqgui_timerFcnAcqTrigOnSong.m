@@ -3,25 +3,38 @@ function acqgui_timerFcnAcqTrigOnSong(~, ~, guiFig)
 %interrupt the daq_bufferUpdate.  Interruptions result in crashes and
 %freezes.
 
-handles = guidata(guiFig);
-
 dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
 dgd.DaqBuffer.log('Entered song triggering timer');
-%% Check if DaqBuffer is busy, quit if it is
-if(dgd.DaqBuffer.isPeeking || dgd.DaqBuffer.isUpdating)
-    return; % Snooze
+%% Check if DaqBuffer is busy, requeue or quit if it is
+if dgd.DaqBuffer.isPeeking || dgd.DaqBuffer.isUpdating
+    if dgd.DaqBuffer.isPeeking
+        dgd.DaqBuffer.log('Peek already occurring, exiting song trigger timer');
+    else
+        dgd.DaqBuffer.log('DaqBuffer is updating, registering listener for UpdateComplete...');
+        NewListenerHandle = addlistener(dgd.DaqBuffer, 'UpdateComplete', @(~, ~) error('lost the callback race!'));
+        peekClosure = @(~, ~) queue_peek(guiFig);
+        NewListenerHandle.Callback = peekClosure;
+    end
+else
+    queue_peek(guiFig);
+end
 end
 
+function queue_peek(guiFig)
+%% Get relevant information structures from guiFig
+handles = guidata(guiFig);
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+dgd.DaqBuffer.log('Entered song triggering timer');
 %% Checkout recording info
 [recInfo, success] = aa_checkoutAppData(guiFig, 'acqrecordinfo');
-if(~success)
+if ~success
     dgd.DaqBuffer.log('Could not check out acqrecordinfo');
     return;
 end
 
 %% Checkout triggering data
 [params, success] = aa_checkoutAppData(guiFig, 'songtrigdata');
-if(~success)
+if ~success
     dgd.DaqBuffer.log('Could not check out songtrigdata');
     aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);
     return;
@@ -30,7 +43,7 @@ end
 dgd.DaqBuffer.log('Checked out all app data');
 
 %% Toggle songscore background color for "heartbeat" effect
-if(isequal(get(handles.textSongScore, 'BackgroundColor'), [1, 1, 1]))
+if isequal(get(handles.textSongScore, 'BackgroundColor'), [1, 1, 1])
     set(handles.textSongScore, 'BackgroundColor', [1, 1, .5]);
 else
     set(handles.textSongScore, 'BackgroundColor', [1, 1, 1]);
@@ -65,23 +78,23 @@ peekStartSample = round(nextPeek - dgd.actInSampRate / 10); % 1/10 of a second b
 
 %% Register peek listener
 ListenerHandle = addlistener(dgd.DaqBuffer, 'PeekAvailable', @(~, ~) error('lost the callback race!'));
-peekClosure = @(~, EventData) peek_callback(...
+peekClosure = @(~, EventData) analyze_peek(...
     EventData, guiFig, ListenerHandle, recInfo, params, peekStartSample); % Call back checks in recInfo and params
 ListenerHandle.Callback = peekClosure;
 %% Request peek
 dgd.DaqBuffer.request_peek(micHwChans, peekStartSample);
 end
 
-function peek_callback(EventData, guiFig, ListenerHandle, recInfo, params, peekStartSample)
+function analyze_peek(EventData, guiFig, ListenerHandle, recInfo, params, peekStartSample)
 delete(ListenerHandle); % Unsubscribe from peek notifications
 dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
 
 %% Check if daq_bufferUpdate is running
-if(dgd.DaqBuffer.isUpdating)
+if dgd.DaqBuffer.isUpdating
     warning('Peek callback occurred while DaqBuffer is updating! Attempting to requeue!');
     %% Attempt to requeue with UpdatingComplete event
     NewListenerHandle = addlistener(dgd.DaqBuffer, 'UpdateComplete', @(~, ~) error('lost the callback race!'));
-    peekClosure = @(~, ~) peek_callback(...
+    peekClosure = @(~, ~) analyze_peek(...
         EventData, guiFig, NewListenerHandle, recInfo, params, peekStartSample); % Call back checks in recInfo and params
     NewListenerHandle.Callback = peekClosure;
     return;
@@ -102,7 +115,7 @@ for experIdx = triggeredExperIdxs
 end
 
 %% Update GUI song score
-if(~dgd.bTrigOnSong(dgd.ce)) % If current experiment is not triggering on song
+if ~dgd.bTrigOnSong(dgd.ce) % If current experiment is not triggering on song
     set(handles.textSongScore, 'String', 'Song Score: --');
 end
 peekData = EventData.data;
@@ -134,7 +147,7 @@ for trigExperNo = 1:nTriggedExpers
     maxSongScore = max(smoothThreshCross);
     
     %% Update GUI with song score
-    if(experIdx == dgd.ce)
+    if experIdx == dgd.ce
         set(handles.textSongScore, 'String', ['Song Score: ', num2str(maxSongScore)]);
     end
     
