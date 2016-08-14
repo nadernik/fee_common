@@ -22,6 +22,8 @@ end
 
 function queue_peek_callback(guiFig, ListenerHandle)
 delete(ListenerHandle); % Unsubscribe
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+dgd.DaqBuffer.log('Entered queue_peek_callback');
 queue_peek(guiFig);
 end
 
@@ -29,7 +31,7 @@ function queue_peek(guiFig)
 %% Get relevant information structures from guiFig
 handles = guidata(guiFig);
 dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
-dgd.DaqBuffer.log('Entered song triggering timer');
+dgd.DaqBuffer.log('Entered queue_peek');
 %% Checkout recording info
 [recInfo, success] = aa_checkoutAppData(guiFig, 'acqrecordinfo');
 if ~success
