@@ -11,13 +11,18 @@ if dgd.DaqBuffer.isPeeking || dgd.DaqBuffer.isUpdating
         dgd.DaqBuffer.log('Peek already occurring, exiting song trigger timer');
     else
         dgd.DaqBuffer.log('DaqBuffer is updating, registering listener for UpdateComplete...');
-        NewListenerHandle = addlistener(dgd.DaqBuffer, 'UpdateComplete', @(~, ~) error('lost the callback race!'));
-        peekClosure = @(~, ~) queue_peek(guiFig);
-        NewListenerHandle.Callback = peekClosure;
+        ListenerHandle = addlistener(dgd.DaqBuffer, 'UpdateComplete', @(~, ~) error('lost the callback race!'));
+        peekClosure = @(~, ~) queue_peek_callback(guiFig, ListenerHandle);
+        ListenerHandle.Callback = peekClosure;
     end
 else
     queue_peek(guiFig);
 end
+end
+
+function queue_peek_callback(guiFig, ListenerHandle)
+delete(ListenerHandle); % Unsubscribe
+queue_peek(guiFig);
 end
 
 function queue_peek(guiFig)
