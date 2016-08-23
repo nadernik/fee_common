@@ -54,7 +54,7 @@ function acquisitionGui_OpeningFcn(hObject, eventdata, handles, varargin)
 guiFig = hObject; %in this function only.
 
 %clear any preexisting timers
-if(length(timerfind('Name','trigOnSong'))~=0)
+if ~isempty(timerfind('Name','trigOnSong'))
     delete(timerfind('Name','trigOnSong'));
 end
 % if(length(timerfind('Name','sutterPositionTimer'))~=0)
@@ -214,17 +214,17 @@ acqguidata.logfile = P.logfile;
 aa_checkinAppData(guiFig, 'acqguidata',acqguidata);  
 
 if(~isempty(P.expers))
-    for nExper = 1:length(P.expers) 
-        addExperiment(guiFig, P.expers(nExper), ...
-                      'songDensity', P.songDetection(nExper).songDensity, ...
-                      'ratioThreshold', P.songDetection(nExper).powerThres, ...
-                      'songLength', P.songDetection(nExper).songLength,...
-                      'minFreq', P.songDetection(nExper).minFreq,...
-                      'maxFreq', P.songDetection(nExper).maxFreq);               
+    for experNo = 1:length(P.expers) 
+        addExperiment(guiFig, P.expers(experNo), ...
+                      'songDensity', P.songDetection(experNo).songDensity, ...
+                      'ratioThreshold', P.songDetection(experNo).powerThres, ...
+                      'songLength', P.songDetection(experNo).songLength,...
+                      'minFreq', P.songDetection(experNo).minFreq,...
+                      'maxFreq', P.songDetection(experNo).maxFreq);               
     end    
-    for nExper = 1:length(P.expers)
-        if(P.bTrigOnSong(nExper))
-           toggleTriggeringOnSong(guiFig, nExper); 
+    for experNo = 1:length(P.expers)
+        if(P.bTrigOnSong(experNo))
+           toggleTriggeringOnSong(guiFig, experNo); 
         end
     end    
 end
@@ -249,7 +249,9 @@ for experNo = 1:nExper
     end
 end
 try
-    fclose(fopen(dgd.logfile)); % Attempt to close the log file, if it's open
+    if ~isempty(dgd.logfile)
+        fclose(fopen(dgd.logfile)); % Attempt to close the log file, if it's open
+    end
 catch ME
     % Do nothing
 end
@@ -351,22 +353,22 @@ if channelsMatch
 end
 
 % --- Executes on button press in pushbutton1.
-function buttonTrigOnSong_Callback(hObject, eventdata, handles)
+function buttonTrigOnSong_Callback(hObject, ~, ~)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = get(hObject,'Parent');
-toggleTriggeringOnSong(guifig);
+guiFig = get(hObject,'Parent');
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+toggleTriggeringOnSong(guiFig, dgd.ce);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function toggleTriggeringOnSong(guiFig)
+function toggleTriggeringOnSong(guiFig, experNo)
 %% Try to checkout acqguidata
 handles = guidata(guiFig);
 [dgd, bDgdStatus] = aa_checkoutAppData(guiFig, 'acqguidata');
 if ~bDgdStatus
     return;
 end
-experNo = dgd.ce;
 %% Toggle triggering state
 if dgd.bTrigOnSong(experNo) % If already triggering on song
     recInfo = aa_getAppDataReadOnly(guiFig, 'acqrecordinfo');
@@ -1005,9 +1007,9 @@ end
 buffer = 15; %Seconds %parameterize
 updateFreq = 4; %Hz %parameterize
 dgd.DaqBuffer = DaqBuffer.get_instance(allChannels, desiredInSampRate, buffer, updateFreq);
-LOGFILE = 'daq_log.txt';
-dgd.DaqBuffer.logFID = fopen(LOGFILE, 'w');
-dgd.logfile = LOGFILE;
+% LOGFILE = 'daq_log.txt';
+% dgd.DaqBuffer.logFID = fopen(LOGFILE, 'w');
+dgd.logfile = '';
 daqSetup.actInSampleRate = dgd.DaqBuffer.samplingRate;
 daqSetup.actOutSampleRate = nan;
 daqSetup.buffer = buffer;
@@ -1312,7 +1314,7 @@ function editFilenum_Callback(hObject, eventdata, handles)
 guifig = get(hObject,'Parent');
 dispfile = get(handles.editFilenum, 'String');
 [dispfilenum, bOk] = str2num(dispfile);
-if(bOk)
+if bOk
     acqgui_updateDisplayFile(guifig, dispfilenum);
 end
 
@@ -1322,23 +1324,23 @@ function buttonPrevFile_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 guifig = get(hObject,'Parent');
-[dispfilenum, ok] = str2num(get(handles.editFilenum,'String'));
+dispfilenum = str2double(get(handles.editFilenum,'String'));
 dispfilenum = dispfilenum - 1;
 acqgui_updateDisplayFile(guifig, dispfilenum);
 
 % --- Executes on button press in buttonNextFile.
-function buttonNextFile_Callback(hObject, eventdata, handles)
+function buttonNextFile_Callback(hObject, ~, handles)
 % hObject    handle to buttonNextFile (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 guifig = get(hObject,'Parent');
-[dispfilenum, ok] = str2num(get(handles.editFilenum,'String'));
+dispfilenum = str2double(get(handles.editFilenum,'String'));
 dispfilenum = dispfilenum + 1;
 acqgui_updateDisplayFile(guifig, dispfilenum);
 
 
 % --- Executes during object creation, after setting all properties.
-function editFilenum_CreateFcn(hObject, eventdata, handles)
+function editFilenum_CreateFcn(hObject, ~, ~)
 % hObject    handle to editFilenum (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
