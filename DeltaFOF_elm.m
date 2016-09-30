@@ -1,8 +1,8 @@
 function DFFmedFil = DeltaFOF_elm(F,VIDEOfs)
 % parameters
-tau0 = .2; 
-tau1 = .75; 
-tau2 = 3; 
+tau0 = .05; % changed from .2 for 6s
+tau1 = .25; % changed from .75 for 6s
+tau2 = 1; % changed from 3 for 6s
 
 % initialize 
 F0 = F;
@@ -25,7 +25,7 @@ end
 R = (F - F0)./F0; 
 
 % Apply noise filtering 
-wind = (-tau0*VIDEOfs):(tau0*VIDEOfs);
+wind = floor(-tau0*VIDEOfs):ceil(tau0*VIDEOfs);
 for fi = 1:nFrames
 %     w = exp(-(1:fi)/(tau0*VIDEOfs)); 
 %     w = repmat(w(:)', size(F,1),1); 
