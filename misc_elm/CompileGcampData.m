@@ -109,23 +109,23 @@ end
 %% display movie from saved data for one row
 % savedir = 'E:\ProcessedCalciumData\AllRows'; %'E:\ProcessedCalciumData\AllRows'; %'C:\Users\emackev\Documents\StuffICanDelete';%'E:\StuffICanDelete'; %
 close all; 
-savedir = 'E:\ProcessedCalciumData'
-row = 929; %770;  %930; %758; %678; %744 
+savedir = 'E:\ProcessedCalciumData\AllRows'
+row = 678; %770;  %930; %758; %678; %744 
 savevid = 0; % see/hear it in real time no iff don't save
 load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'dffVIDEO', 'VIDEOfs', ...
         'SOUND', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
         'SPEC', 'specTime', 'F');%,'VIDEO'); 
 showcontour = 0; 
-params.VIDEOfs = VIDEOfs;
+params.VIDEOfs = 20;
 params.SOUNDfs = SOUNDfs;
 params.specTime = -.5:(1/params.SOUNDfs):.5;
 params.F = linspace(507.8125, 5976.6, 141);
 params.AudBinWhenFrameStarts = AudBinWhenFrameStarts; 
 params.AudBinWhenFrameEnds =  AudBinWhenFrameEnds; 
-% ShowCaVid(dffVIDEO,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\gCAMP6f_fasterframerate.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-% ShowCaVid(dffVIDEO,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-HandpickROIs(dffVIDEO,SOUND,SPEC, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+ShowCaVid(dffVIDEO,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\gCAMP6f_IsWorking.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+ShowCaVid(dffVIDEO,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+% HandpickROIs(dffVIDEO,SOUND,SPEC, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
 title(num2str(row)); 
 %%
 rows = [552:558 561:563]

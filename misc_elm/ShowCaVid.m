@@ -40,7 +40,7 @@ subplot('position', [.1 .3 .8 .6]);
 maxproj = squeeze(max(VIDEO,[],1)); 
 
 % clims = [0 .1]; %[0 prctile(dffVIDEO(:),99.999)]; 
-clims = [0 prctile(VIDEO(:),99.95)]; 
+clims = [0 prctile(VIDEO(:),99.996)]; % [.1 .5]; %
 im = imagesc(maxproj,clims); axis image; axis off; drawnow; shg
 if showcontour
     hold on
