@@ -1,4 +1,4 @@
-function [data,time,startSamp] = daq_peek(startSamp)
+function [data, time, startSamp] = daq_peek(startSamp)
 %Copy a window of data from the buffer for use in matlab.  
 %The window begins at sample number startSamp, and ends with the most
 %recently recorded sample.
@@ -8,7 +8,7 @@ function [data,time,startSamp] = daq_peek(startSamp)
 
 global NPEEK;
 NPEEK = startSamp;
-daq_waitForPeek;
+daq_waitForPeek();
 
 global PEEKDATASTORE;
 global PEEKTIMESTORE;

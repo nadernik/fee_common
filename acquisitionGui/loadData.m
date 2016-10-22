@@ -1,4 +1,4 @@
-function [data, time, HWChannels, startSamp, timeCreated, startTime, names, values, info] = loadData(exper,num,chan,whichSamples)
+function [data, time, HWChannels, startSamp, timeCreated, startTime, names, values, info] = loadData(exper, num, chan, whichSamples)
 %LOADDATA Loads data from acquisitionGui exper
 %
 %Syntax:
@@ -51,15 +51,27 @@ if(~exist('whichSamples','var'))
     whichSamples = [];
 end
 
-filename = getExperDatafile(exper,num,chan);
-if(~strcmp(filename,''))
-    timeCreated = extractDatafileTime(exper,filename);
+filename = getExperDatafile(exper, num, chan);
+if strcmp(filename, '')
+    data = [];
+    time = [];
+    HWChannels = [];
+    startSamp = [];
+    timeCreated = '';
+    startTime = [];
+    names = {};
+    values = {};
+    info = emptystruct('absStartTime', 'startSampleNum', 'numSamples',...
+        'fs', 'daqchannels', 'propertyNames', 'propertyTypes',...
+        'propertyValues', 'trigFileFormat', [0, 1]);
+else
+     timeCreated = extractDatafileTime(exper, filename);
     
     %old
     %[HWChannels, data, time, startSamp, names, values, trigFileFormat] = daq_readDatafile([exper.dir,filename],false, whichSamples);
     
     %new
-    [data, info] = daq_readDatafile(fullfile(exper.dir,filename),true, whichSamples);
+    [data, info] = daq_readDatafile(fullfile(exper.dir, filename), true, whichSamples);
     HWChannels = info.daqchannels;
     time = [datevec(info.absStartTime - (info.startSampleNum/(info.fs*60*60*24))), ...
             datevec(convertExperTimeStr2MatlabTime(timeCreated)), ...
@@ -75,13 +87,4 @@ if(~strcmp(filename,''))
     else
         startTime = datenum(timeCreated,'yyyymmddTHHMMSS');
     end
-else
-    data = [];
-    time = [];
-    HWChannels = [];
-    startSamp = [];
-    timeCreated = '';
-    startTime = [];
-    names = {};
-    values = {};
 end

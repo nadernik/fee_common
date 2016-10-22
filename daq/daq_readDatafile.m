@@ -78,7 +78,7 @@ fid = fopen(filename);
 trigFileFormat = fread(fid, 1, 'float64');
 
 if(trigFileFormat == -4)
-    
+    EOFMARKER = [-4;-4;-4];
     %Read absolute clock times in datevec format, 6 number [Y,M,D,H,M,S]. 
     acquisitionStartTime = fread(fid, 6, 'float64');  %Time the daq was started.
     approxFileCreatedTime = fread(fid, 6, 'float64'); %Approximate time this file was writtin.
@@ -131,7 +131,7 @@ if(trigFileFormat == -4)
         fidScan = fidScan - 1;
         fseek(fid, fidScan, 'bof');
         test = fread(fid, 3, nativeDataType);
-        if(isequal(test, [-4;-4;-4]))
+        if(isequal(test, EOFMARKER))
             break;
         end
         if(fidScan <= 1)
