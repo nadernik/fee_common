@@ -6,7 +6,7 @@
 clf;
 clear;
 
-isEPS = 1; 
+isEPS = 0; 
 
 if isEPS 
     PlottingParams.msize = 8; % change to what is best for EPS figure
@@ -121,7 +121,7 @@ for i = 1:niter
     p.input = bdyn;
     % One 'bout' of learning
     %tmp = p; tmp.eta = 0; 
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
 end
 HVCtestRaster_intoThree(xdyn,PsylInput,w,PlottingParams);
 wpsyl = w; 
@@ -137,7 +137,7 @@ for i = 1:niter
     p.input = bdyn;
     % One 'bout' of learning
     %tmp = p; tmp.eta = 0; 
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
 end
 HVCtestRaster_intoThree(xdyn,PsylInput,w,PlottingParams);
 wpsyl = w; 
@@ -158,7 +158,7 @@ for i = 1:niter
     p.w = w; 
     p.input = bdyn;
     p.gamma = gammas(i); 
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
     if  PlotIters &   mod(i,50)==0 ; % if you want to plot each step as it goes
         i
         HVCtestRaster(xdyn,AltInput,w,PlottingParams);
@@ -181,7 +181,7 @@ for i = (Niter(3)+1):Niter(4)
     p.w = w; 
     p.input = bdyn;
     p.gamma = gammas(i); 
-    [w xdyn] = HVCBout(p);
+    [w xdyn] = HVCIter(p);
 end
 HVCtestRaster_intoThree(xdyn,AltInput,w,PlottingParams);
 

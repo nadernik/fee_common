@@ -11,11 +11,14 @@ function add_raster_line(axisHandle, rasterTimes, yBase, yHeight, varargin)
 %  See also: POPULATION_RASTERPLOT_GL
 
 %   Galen Lynch, 8/22/2014
-options = struct('lineWidth', .5, 'lineColor', [0,0,0]);
-options = gl_parse_args(options, varargin);
+p = inputParser();
+addParameter(p, 'lineWidth', 0.5);
+addParameter(p, 'lineColor', [0, 0, 0]);
+parse(p, varargin{:});
+Options = p.Results;
 
 assert(ishghandle(axisHandle), 'axesHandle must be a matlab handle');
-assert(yBase<=yHeight, 'non sensical height parameters');
+assert(yHeight > 0, 'non sensical height parameters');
 holdStatus = ishold(axisHandle);
 nPoint = length(rasterTimes);
 xx = nan(nPoint*3, 1);
@@ -25,8 +28,8 @@ xx(2:3:3*nPoint) = rasterTimes;
 yy(1:3:3*nPoint) = yBase;
 yy(2:3:3*nPoint) = yBase+ yHeight;
 hold(axisHandle, 'on');
-plot(axisHandle, xx, yy, 'color', options.lineColor,...
-    'linewidth', options.lineWidth);
+plot(axisHandle, xx, yy, 'color', Options.lineColor,...
+    'linewidth', Options.lineWidth);
 if ~holdStatus
    hold(axisHandle, 'off');
 end

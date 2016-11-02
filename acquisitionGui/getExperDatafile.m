@@ -1,33 +1,48 @@
 function filename = getExperDatafile(exper, num, chan)
 %This function assumes the dir command returns the filenames in alphebetical order.
-persistent d;
+persistent dirStruct;
 persistent d_exper;
+persistent d_searchstring
+
+if isnumeric(chan)
+    chanstr = ['chan' int2str(chan)];
+elseif ischar(chan)
+    chanstr = chan;
+else
+    error('Chan must be an integer or a string')
+end
+searchstring = [exper.birdname '_d*' chanstr '.*'];
 
 filename = '';
-if(~isempty(d_exper) && strcmp(exper.dir, d_exper.dir) && strcmp(exper.birdname, d_exper.birdname) &&  strcmp(exper.expername, d_exper.expername))
-    filename = helper_getExperDatafile(d, exper, num, chan, true);
+if strcmp(searchstring, d_searchstring) && ...
+        ~isempty(d_exper) && ...
+        strcmp(exper.dir,       d_exper.dir) && ...
+        strcmp(exper.birdname,  d_exper.birdname) &&  ...
+        strcmp(exper.expername, d_exper.expername)
+    filename = helper_getExperDatafile(dirStruct, exper, num, chanstr, true);
 end
-if(strcmp(filename, ''))
-    searchstring = [exper.birdname '_d*chan' num2str(chan) '.dat'];
-    d = dir(fullfile(exper.dir, searchstring));
-    filename = helper_getExperDatafile(d, exper, num, chan, false);
+if strcmp(filename, '')
+    dirStruct = dir(fullfile(exper.dir, searchstring));
+    d_exper = exper;
+    d_searchstring = searchstring;
+    filename = helper_getExperDatafile(dirStruct, exper, num, chanstr, false);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function filename = helper_getExperDatafile(d,exper, num, chan, bSilent)
+function filename = helper_getExperDatafile(dirStruct, exper, num, chanstr, bSilent)
 filename = ''; %#ok<NASGU>
 
-if(isempty(d))
+if isempty(dirStruct)
     if(~bSilent)
-        warning(['getExperDatafile failed:  No .dat filenum ', num2str(num),' chan ', num2str(chan), ' in ', exper.dir,'.']);           
+        fprintf('getExperDatafile failed:  No file number %d for channel ''%s'' in %s.', num, chanstr, exper.dir);           
     end
     filename = '';
     return;  
 end
 
-if(num < length(d))
-    filename = d(num).name;
+if num < length(dirStruct)
+    filename = dirStruct(num).name;
     currNum = extractDatafileNumber(exper, filename);
 else
     filename = '';
@@ -35,15 +50,15 @@ else
 end
 
 %%If sorted method failed, use binary search...
-if(num ~= currNum)
+if num ~= currNum
     lf = 1;
-    rt = length(d);    
-    while(true)
+    rt = length(dirStruct);    
+    while true
         mid = floor((lf + rt)/2);
-        filename = d(mid).name;
+        filename = dirStruct(mid).name;
         currNum = extractDatafileNumber(exper, filename);
         if(num == currNum)
-            filename = d(mid).name;
+            filename = dirStruct(mid).name;
             break;
         elseif(num > currNum)
             lf = mid+1;
@@ -51,9 +66,9 @@ if(num ~= currNum)
             rt = mid-1;
         end
         
-        if(lf>rt)
-            if(~bSilent)
-                warning(['getExperDatafile failed:  No filenum ', num2str(num) , 'found on chan ', num2str(chan), ' in ', exper.dir,'.']);           
+        if lf > rt
+            if ~bSilent
+                warning(['getExperDatafile failed:  No filenum ', num2str(num) , 'found on channel ''', chanstr, ''' in ', exper.dir,'.']);           
             end
             filename = '';
             return;  

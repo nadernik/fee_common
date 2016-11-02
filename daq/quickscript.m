@@ -1,8 +1,8 @@
 %script quick data test
-daqreset;
+daq_Quit();
 sampRate = 40000;
 chan = [1,2];
-[ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(chan, sampRate, [], sampRate, 20, 1);
+[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(chan, sampRate, [], sampRate, 20, 1);
 daq_Start;
 pause(3);
 daq_recordStart(daq_getCurrSampNum, 'aa130_multiunit_RA_20060503_postop_', chan);

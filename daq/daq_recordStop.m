@@ -10,17 +10,18 @@ global GINCHANS;
 
 %convert hardware channel numbers into matlab channel indices.
 %[junk, matchannels] = intersect(GINCHANS, channels); %intersect function does not preserve order
-matchannels = [];
-for(i = 1:length(channels))
-    matchannels(i) = find(GINCHANS == channels(i));
+nChan = numel(channels);
+matchannels = nan(1,nChan);
+for chanNo = 1:nChan
+    matchannels(chanNo) = find(GINCHANS == channels(chanNo));
 end
-
-for(i = 1:length(matchannels))
-    if(BTRIGGER(matchannels(i)) & TRIGGEREND(matchannels(i))==-2)
-        TRIGGEREND(matchannels(i)) = endSamp;
-        bStatus(i) = true;
+bStatus = false(nChan, 1);
+for chanNo = 1:nChan
+    if BTRIGGER(matchannels(chanNo)) && TRIGGEREND(matchannels(chanNo))==-2 %channel is recording and has been set to open ended
+        TRIGGEREND(matchannels(chanNo)) = endSamp;
+        bStatus(chanNo) = true;
     else
-        warning(['Record stop failed for channel number ', num2str(channels(i))]);
-        bStatus(i) = false;
+        warning(['Record stop failed for channel number ', num2str(channels(chanNo))]);
+        bStatus(chanNo) = false;
     end
 end

@@ -1,4 +1,6 @@
 function handles = egm_Aligned_to_stim_plot(handles)
+persistent prevparams
+
 fls = get(handles.list_Files,'string');
 found = [];
 for c = 1:handles.TotalFileNumber
@@ -54,38 +56,65 @@ end
 chan = eval(['menu(''Choose channel''' mn ')']);
 chan = f(chan);
 
+%% Ask user for parameters
+names{1}    = 'Min time (sec)';
+defaults{1} = '-0.05';
+names{2}    = 'Max time (sec)';
+defaults{2} = '0.05';
+names{3}    = 'Min value';
+defaults{3} = '-0.4';
+names{4}    = 'Max value';
+defaults{4} = '0.4';
+names{5}    = 'Spacing (%)';
+defaults{5} = '-25';
 
-answer = inputdlg({'Min time (sec)','Max time (sec)','Min value','Max value','Spacing (%)'},'Options',1,{'-0.05','0.05','-0.4','0.4','-25'});
+% Use parameters from last time as default, if possible
+if ~isempty(prevparams)
+    defaults = prevparams;
+end
+
+answer = inputdlg(names, 'Options', 1, defaults);
 if isempty(answer)
     return
 end
-t1 = round(str2num(answer{1})*handles.fs);
-t2 = round(str2num(answer{2})*handles.fs);
-mn = str2num(answer{3});
-mx = str2num(answer{4});
-spc = (1+str2num(answer{5})/100)*(mx-mn);
-
-offs = 0;
-figure
+t1 = round(str2double(answer{1})*handles.fs);
+t2 = round(str2double(answer{2})*handles.fs);
+mn = str2double(answer{3});
+mx = str2double(answer{4});
+spc = (1+str2double(answer{5})/100)*(mx-mn);
+prevparams = answer; % store current parameters - will use as defaults next time
+%% Get all data to plot
+rownum = 0;
+alldata = [];
 for c = 1:handles.TotalFileNumber
     if ~isempty(evtimes{c})
-        [data fs dt lab props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name '\' handles.chan_files{chan}(c).name '''],1)']);
+        [data, ~, ~, ~, ~] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name '\' handles.chan_files{chan}(c).name '''],1)']);
         for d = 1:1:length(evtimes{c})
-            if evtimes{c}(d)+t1>0 & evtimes{c}(d)+t2<=length(data)
+            if evtimes{c}(d) + t1 >  0 && ...
+               evtimes{c}(d) + t2 <= length(data)
                 dt = data(evtimes{c}(d)+t1:evtimes{c}(d)+t2);
-                dt(find(dt<mn)) = mn;
-                dt(find(dt>mx)) = mx;
-                plot((t1:t2)/fs*1000,offs+dt)
-                hold on
-                offs = offs + spc;
+                dt(dt < mn) = mn;
+                dt(dt > mx) = mx;
+                rownum = rownum + 1;
+                alldata(rownum, :) = dt';
             end
         end
     end
 end
 
+
+%% Plot data
+figure
+hold on
+x = (t1:t2)/handles.fs*1000;
+offs = 0;
+for rownum = 1:size(alldata, 1);
+    plot(x, alldata(rownum, :) + offs)
+    offs = offs + spc;
+end
 axis tight;
 ps = get(gcf,'position');
-ps(2) = -400;
+ps(2) = 400;
 ps(4) = range(ylim)*40;
 set(gcf,'position',ps);
 set(gca,'ytick',[]);

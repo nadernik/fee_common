@@ -537,10 +537,10 @@ try
         end %%% Tatsuo
                 
         if(P.EventNdx == 0)
-            [sig nfs] = eval(['egl_' dbase.SoundLoader '([''' dbase.PathName '\' dbase.SoundFiles(nFile).name '''],1)']);
+            [sig nfs] = eval(['egl_' dbase.SoundLoader '([''' dbase.PathName filesep dbase.SoundFiles(nFile).name '''],1)']);
         else
             chan = str2num(dbase.EventSources{P.EventNdx}(9:end));
-            [sig nfs] = eval(['egl_' dbase.ChannelLoader{chan} '([''' dbase.PathName '\' dbase.ChannelFiles{chan}(nFile).name '''],1)']);
+            [sig nfs] = eval(['egl_' dbase.ChannelLoader{chan} '([''' dbase.PathName filesep dbase.ChannelFiles{chan}(nFile).name '''],1)']);
         end
         if(round(nfs) ~= round(fs))
             error('Unexpected sampling rate.');

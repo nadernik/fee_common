@@ -223,25 +223,25 @@ for filei = handles.filerange
     % load channel A
     if indxA == 0
         [A fsA dt label props] = eval(['egl_' handles.egh.sound_loader ...
-            '([''' handles.egh.path_name '\' handles.egh.sound_files(filei).name '''],1)']);
+            '([''' handles.egh.path_name filesep handles.egh.sound_files(filei).name '''],1)']);
     else
         [A fsA dt label props] = eval(['egl_' handles.egh.chan_loader{indxA} ...
-            '([''' handles.egh.path_name '\' handles.egh.chan_files{indxA}(filei).name '''],1)']);
+            '([''' handles.egh.path_name filesep handles.egh.chan_files{indxA}(filei).name '''],1)']);
     end
 
     % load channel B
     if indxB == 0
         [B fsB dt label props] = eval(['egl_' handles.egh.sound_loader ...
-            '([''' handles.egh.path_name '\' handles.egh.sound_files(filei).name '''],1)']);
+            '([''' handles.egh.path_name filesep handles.egh.sound_files(filei).name '''],1)']);
     else
         [B fsB dt label props] = eval(['egl_' handles.egh.chan_loader{indxB} ...
-            '([''' handles.egh.path_name '\' handles.egh.chan_files{indxB}(filei).name '''],1)']);
+            '([''' handles.egh.path_name filesep handles.egh.chan_files{indxB}(filei).name '''],1)']);
     end
 
     % ind_time = lims(1):1/fs:lims(2);
     % song = handles.egh.sound(round(ind_time*fs));
     % units = handles.egh.chan1(round(ind_time*fs));
-    %[handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name '\' handles.chan_files{chan}(filenum).name '''],1)']);
+    %[handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name filesep handles.chan_files{chan}(filenum).name '''],1)']);
     % time = 0:1/fs:(lims(2)-lims(1));
     A = (log(conv(A.^2, gausswin(ceil(handles.egh.fs*handles.smoothwin)), 'same')));
     A = A - mean(A); 

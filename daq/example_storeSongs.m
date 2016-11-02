@@ -21,7 +21,7 @@ end
 
 %Initialize the daq toolbox
 %Assume bird 1 audio on hardware channel 1, bird 2 audio on channel hardware 2... 
-[ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init([1:numBirds], desiredInputSampleRate, [], 1, 90, 4);
+[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init([1:numBirds], desiredInputSampleRate, [], 1, 90, 4);
 
 %Start data acquisition
 daq_Start;

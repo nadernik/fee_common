@@ -1,9 +1,15 @@
-%% Main text figure 5
+%% Code for HVC model in Okubo et al
 
-% see Posting folder: 
+% Emily Mackevicius 7/18/2015, based on Hannah Payne's code
+% which builds off Ila Fiete's model, with help from Michale Fee and Tatsuo
+% Okubo. 
 
-% Alternating Differentiation
-% Code to generate figure 5 a-f, which shows alternating seed neuron 
+%% To run 1 iteration of the model. 
+% See this file for step-by-step model dynamics and learning.
+edit HVCIter
+%% To get paper figures:
+%% Alternating Differentiation
+% Code to generate Figure 5 a-f, which shows alternating seed neuron 
 % differentiation, from subsong through protosyllable stage through 
 % splitting.
 
@@ -24,8 +30,8 @@ edit AlternatingDifferentiation  % run this file
 % findLatency               % called by plotting functions, tests what neurons
                             % participate in each syllable, and at what latencies
                     
-% Bout onset differentiation
-% Code to generate figure 5 j-m, which shows bout onset differentiation
+%% Bout onset differentiation
+% Code to generate Figure EDF 10 a-d, which shows bout onset differentiation
 
 edit BoutOnsetDifferentiation    % run this file
 
@@ -43,19 +49,6 @@ edit BoutOnsetDifferentiation    % run this file
 %% latency distribution over development    
 
 edit SigLatDistOverDev.m
-%load 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\sigLatDistOverDev1'; 
-
-
-%% Shared Neurons Over Time
-
-% main model: 
-edit SharedNeuronsOverTime_new.m
-% load C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime13
-
-% denovo: 
-edit SharedNeuronsOverTime_denovo.m
-%load C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\SharedNeuronsOverTime14
-
 
 %% Bout onset element
 

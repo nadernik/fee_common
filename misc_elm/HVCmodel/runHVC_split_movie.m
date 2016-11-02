@@ -14,7 +14,7 @@ rasterh = 3/4;
 netoffset = Margin/3;
 neth = 1/4-Margin/4-.01; 
 
-highQual = 1; 
+highQual = 0; 
 
 % PlottingParams.msize = 25;
 % PlottingParams.linewidth = 1; 
@@ -71,15 +71,16 @@ ms = protosyllableStage*mStart + splittingStage*mSplit;
 % plotting params and inputs 
 nplots = 4;
 
-PlottingParams.msize = 20;
-PlottingParams.linewidth = .5;
-PlottingParams.labelFontSize = 12; 
+PlottingParams.msize = 50; %20
+PlottingParams.linewidth = 1; %.5;
+PlottingParams.labelFontSize = 20; %12; 
+PlottingParams.SeedColor = [.95 .5 1];
 PlottingParams.Syl1Color = [1 0 0]; 
-PlottingParams.Syl2Color = [0 0 1]; % please choose orthogonal colors.. if you don't I'll try and normalize colors and it'll look muddy
-PlottingParams.ProtoSylColor = [1 0 1]; 
-PlottingParams.Syl1Color = PlottingParams.Syl1Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
-PlottingParams.Syl2Color = PlottingParams.Syl2Color/max(PlottingParams.Syl1Color+PlottingParams.Syl2Color);
-PlottingParams.SubsongSylColor = [1 0 1]; 
+PlottingParams.Syl2Color = [0 0 1]; 
+PlottingParams.ProtoSylColor = [0 0 0]; 
+PlottingParams.ProtoSylBarColor = [.5 .5 .5];
+PlottingParams.SubsongSylColor = [0 0 0]; 
+PlottingParams.SubsongBarColor = [1 1 1]; 
 PlottingParams.numFontSize = 5; 
 PlottingParams.wplotmin = 0; 
 PlottingParams.wplotmax = 2; % this should be wmaxSplit
@@ -144,11 +145,15 @@ trainingNeuronsAlt = trainingNeurons; clear trainingNeurons;
 
 
 % set up to record movie
-folder = 'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
+folder = fileparts(mfilename('fullpath')); %'C:\Users\emackev\Documents\MATLAB\code\misc_elm\HVCmodel\NetworkMovies';
 timestamp = datestr(now, 'mmm-dd-yyyy-HH-MM-SS');
 filename = ['NetLearnsSeed' num2str(seed) timestamp];
-aviobj = avifile(fullfile(folder, filename), 'compression', 'none', 'fps', 20);
-
+%aviobj = avifile(fullfile(folder, filename), 'compression', 'none', 'fps',
+%20); -- old matlab version
+obj = vision.VideoFileWriter(fullfile(folder, [filename, '.mp4']));
+obj.FrameRate = 20; 
+obj.FileFormat='MPEG4';
+%obj.VideoCompressor='None (uncompressed)';
 %% run simulation
 
 % initialize weight matrix
@@ -169,20 +174,21 @@ pSubsong.input = subsongInput;
 w = wSubsong;
 
 figure
-set(gcf, 'color', ones(1,3));
+set(gcf, 'color', ones(1,3), 'units', 'inches', 'position', [.1 1 16 9]);
 plotHVCnet(wSubsong, xdynSubsong, p.trainint, trainingNeuronsSubsong, PlottingParams)
-title('Subsong', 'fontsize', PlottingParams.labelFontSize, 'color', [1 1 1], 'backgroundcolor', [1 0 1], 'fontweight', 'bold')
+text(5,10,'Subsong', 'fontsize', PlottingParams.labelFontSize, 'color', [0 0 0], 'horizontalalignment', 'center', 'verticalalignment', 'bottom')%, 'fontweight', 'bold')
 
 set(gca, 'color', 'none');
 if highQual
     s = rng; 
-    myaa % anti-aliasing
+    %myaa % anti-aliasing
     rng(s);
 end
 F = getframe(gcf)
 slowrate =20;
 for l = 1:slowrate
-    aviobj = addframe(aviobj,F);
+    step(obj, F.cdata);
+    %aviobj = addframe(aviobj,F); -- old matlab version
 end
 close all
 %%
@@ -210,15 +216,15 @@ for i = 1:(nIterProto+nIterPlotSplit2)
             slowrate = 1;
         end
         figure
-        set(gcf, 'color', ones(1,3));
+        set(gcf, 'color', ones(1,3), 'units', 'inches', 'position', [.1 1 16 9]);
         if protosyllableStage(i)
             plotHVCnet(w,xdyn,p.trainint,trainingNeuronsPsyl,PlottingParams)
-            title(['Protosyllable stage: iteration ', num2str(i)], ...
-                'fontsize', PlottingParams.labelFontSize, 'color', [1 1 1], 'backgroundcolor', [1 0 1], 'fontweight', 'bold')
+            text(5,10,['Protosyllable stage: iteration ', num2str(i)], 'fontsize', PlottingParams.labelFontSize, 'color', [0 0 0], 'horizontalalignment', 'center', 'verticalalignment', 'bottom')%, 'fontweight', 'bold')
+%             title(['Protosyllable stage: iteration ', num2str(i)], ...
+%                 'fontsize', PlottingParams.labelFontSize, 'color', [1 0 1])%, 'fontweight', 'bold')
         else
             plotHVCnet(w,xdyn,p.trainint,trainingNeuronsAlt,PlottingParams)
-            title(['Splitting stage: iteration ', num2str(i - nIterProto)],  ...
-                'fontsize', PlottingParams.labelFontSize, 'color', [0 0 1], 'backgroundcolor', [1 0 0], 'fontweight', 'bold')
+            text(5,10,['Splitting stage: iteration ', num2str(i - nIterProto)], 'fontsize', PlottingParams.labelFontSize, 'color', [1 0 0], 'horizontalalignment', 'center', 'verticalalignment', 'bottom')%, 'fontweight', 'bold')
         end
         set(gca, 'color', 'none');
         if highQual
@@ -228,7 +234,8 @@ for i = 1:(nIterProto+nIterPlotSplit2)
         end
         F = getframe(gcf) 
         for l = 1:slowrate
-            aviobj = addframe(aviobj,F);
+            step(obj, F.cdata);
+            %aviobj = addframe(aviobj,F); -- old matlab version
         end
         close all
     end
@@ -340,7 +347,7 @@ for i = 1:(nIterProto+nIterPlotSplit2)
 end
 slowrate = 20; % leave last network state on screen longer
 for l = 1:slowrate
-    aviobj = addframe(aviobj,F);
+    step(obj, F.cdata);
+    %aviobj = addframe(aviobj,F); -- old matlab version
 end
-
-aviobj = close(aviobj);
+release(obj);

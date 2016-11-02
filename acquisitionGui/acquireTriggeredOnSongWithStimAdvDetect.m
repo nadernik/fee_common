@@ -18,7 +18,7 @@ inChans = [inChans, exper.sigCh];
 %parameters
 buffer= 90; %Seconds
 updateFreq = 4; %Hz
-[ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(inChans, exper.desiredInSampRate, [], 1, buffer, updateFreq);
+[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(inChans, exper.desiredInSampRate, [], 1, buffer, updateFreq);
 
 daqSetup.actInSampleRate = actInSampleRate;
 daqSetup.actOutSampleRate = actOutSampleRate;
@@ -126,7 +126,7 @@ while(true)
                 timeV = datevec(now);
                 if(((timeV(4) == 24) | (timeV(4) == 0)) & (timeV(5) == 3))
                     disp('Stopping for night.  Restart timer set.');
-                    daqreset;
+                    daq_Quit();
                     timerAcqRestart = timer('TimerFcn', {'CBacquireTriggeredOnSongWithStimAdvDetect', exper, stimChan});
                     startat(timerAcqRestart,now+(8/24)); %Restart 8 hours later.
                     return;
@@ -208,7 +208,7 @@ while(true)
                 elseif(char == 'd')
                     bDisplay = ~bDisplay
                 elseif(char == 'q')
-                    daqreset;
+                    daq_Quit();
                     return;
                 end
                 pause(.05);

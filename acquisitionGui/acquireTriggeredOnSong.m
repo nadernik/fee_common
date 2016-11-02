@@ -18,7 +18,7 @@ inChans = [inChans, exper.sigCh];
 %parameters
 buffer= 90; %Seconds
 updateFreq = 4; %Hz
-[ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(inChans, exper.desiredInSampRate, [], 1, buffer, updateFreq);
+[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(inChans, exper.desiredInSampRate, [], 1, buffer, updateFreq);
 
 daqSetup.actInSampleRate = actInSampleRate;
 daqSetup.actOutSampleRate = actOutSampleRate;
@@ -170,7 +170,7 @@ while(true)
                     currnum = filenum;
                     nextPeek = recSampNum;
                 elseif(char == 'q')
-                    daqreset;
+                    daq_Quit();
                     return;
                 end
                 pause(.05);

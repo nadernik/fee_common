@@ -47,7 +47,7 @@ function varargout = vc_imp_ElectroGuiDbase(varargin)
 
 % Edit the above text to modify the response to help vc_imp_ElectroGuiDbase
 
-% Last Modified by GUIDE v2.5 06-Jun-2008 20:17:13
+% Last Modified by GUIDE v2.5 02-Jun-2015 15:55:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -205,7 +205,6 @@ if(~isempty(fn))
     if(~exist('dbase'))
         warning('The file selected was not an electro_gui file.');
     end    
-    
     %Use the dbase to populate the event pop-ups:
     eventStrs{1} = 'Audio Segments';
     for ne = 1:length(dbase.EventSources)
@@ -242,7 +241,6 @@ function popupEvent_Callback(hObject, eventdata, handles)
 %Update the marker start and stop popups.
 eventVal = get(handles.popupEvent,'Value');
 dbase = handles.dbase;
-
 if(eventVal==1) %dbbase Audio segments    
     markerStr = {'Segment Start','Segment End'};
 else %dbase event
@@ -525,6 +523,7 @@ try
     en = round(P.endDelta/1000*fs); %round(P.endDelta*1000*fs); %%% fixed Tatsuo
     
     nVect = 0;
+
     h_waitbar = waitbar(0,'Please wait...','Name','Analyzing file...','CreateCancelBtn','setappdata(gcbf,''canceling'',1)'); %%% Tatsuo
     setappdata(h_waitbar,'canceling',0); %%% Tatsuo
     for n = 1:length(P.FileRange)
@@ -537,10 +536,10 @@ try
         end %%% Tatsuo
                 
         if(P.EventNdx == 0)
-            [sig nfs] = eval(['egl_' dbase.SoundLoader '([''' dbase.PathName '\' dbase.SoundFiles(nFile).name '''],1)']);
+            [sig nfs] = eval(['egl_' dbase.SoundLoader '([''' dbase.PathName filesep() dbase.SoundFiles(nFile).name '''],1)']);
         else
             chan = str2num(dbase.EventSources{P.EventNdx}(9:end));
-            [sig nfs] = eval(['egl_' dbase.ChannelLoader{chan} '([''' dbase.PathName '\' dbase.ChannelFiles{chan}(nFile).name '''],1)']);
+            [sig nfs] = eval(['egl_' dbase.ChannelLoader{chan} '([''' dbase.PathName filesep() dbase.ChannelFiles{chan}(nFile).name '''],1)']);
         end
         if(round(nfs) ~= round(fs))
             error('Unexpected sampling rate.');
@@ -639,19 +638,6 @@ try
             handles.identity{nVect,1}.dbaseEventNdx = eventNdx(ne);
             handles.scalar_features(nVect,1) = duration(ne);
             
-            %compute scalar feature which is number of spikes in 50ms window
-            %around syl onset
-            Premotor{1} = []; 
-            Premotor{2} = []; 
-            for ei = 1:length(dbase.EventTimes)
-                Premotor{ei} = sum((dbase.EventTimes{ei}{1,nFile}>((alignS(ne)-.050*dbase.Fs))) & ...
-                        (dbase.EventTimes{ei}{1,nFile}<(alignS(ne))) & ...
-                        (dbase.EventIsSelected{ei}{1,nFile})'); 
-                    %display([num2str(Premotor{ei}), 'file', num2str(nFile), 'syl', num2str(ne)])
-            end
-
-            
-            
             % sound amplitue (dB) Tatsuo
             filtered_sound = egf_BandPass860to8600(syllAudio,dbase.Fs); %  bandpass from 860 to 8600
             wind = round(0.0025*dbase.Fs); % 2.5 ms sliding window
@@ -665,11 +651,10 @@ try
             Mean_frequency{nVect,1} = features{9}; % also known as gravity center
             Spectral_width{nVect,1} = features{10}; % second-order statistics
             
-            
-            handles.scalar_features(nVect,2:(14 + length(dbase.EventTimes))) = [mean(pi), std(pi), mean(pg), std(pg), mean(ent),std(ent),...
+            handles.scalar_features(nVect,2:14) = [mean(pi), std(pi), mean(pg), std(pg), mean(ent),std(ent),...
                 mean(FM{nVect}),std(FM{nVect}),mean(Mean_frequency{nVect}),std(Mean_frequency{nVect}),...
-                mean(Spectral_width{nVect}), std(Spectral_width{nVect}), clust(ne), Premotor{1}, Premotor{2}];
-            handles.scalar_features(nVect,(14 + length(dbase.EventTimes)) + (1:3)) =  [timeInFile(ne), isi(ne), interval(ne)];
+                mean(Spectral_width{nVect}), std(Spectral_width{nVect}), clust(ne)];
+            handles.scalar_features(nVect,15:17) =  [timeInFile(ne), isi(ne), interval(ne)];
             Pitch{nVect,1} = pi;
             PitchGoodness{nVect,1} = pg;
             Entropy{nVect,1} = ent;
@@ -678,11 +663,7 @@ try
     end    
     handles.scalar_feature_names = {'duration';'mean_pitch';'std_pitch';'mean_pitchGoodness';'std_pitchGoodness';...
         'mean_entropy';'std_entropy';'mean_FM'; 'std_FM';'mean_Mean_frequency';'std_Mean_frequency';...
-        'mean_Spectral_width';'std_Spectral_width';'clust';}; %%% changed to column vector, Tatsuo
-    for ei = 1:length(dbase.EventTimes)
-        handles.scalar_feature_names{end+1} = ['spikesIn50msInterval', dbase.EventSources{ei}]; 
-    end
-    handles.scalar_feature_names((end+1):(end+3)) = {'timeInFile';'isi';'interval';}; 
+        'mean_Spectral_width';'std_Spectral_width';'clust';'timeInFile';'isi';'interval';}; %%% changed to column vector, Tatsuo
     handles.vector_features = {Pitch,PitchGoodness,Entropy,FM,Mean_frequency, Amplitude, Spectral_width}; %%% Tatsuo
     handles.vector_feature_names = {'pitch';'pitchGoodness';'entropy';'FM';'Mean_frequency'; 'Amplitude';...
         'Spectral_width'};  %%% Tatsuo
@@ -696,3 +677,11 @@ catch
     bSuccess = false;
     warndlg(['Import failed: ', lasterr]);
 end
+
+
+% --- If Enable == 'on', executes on mouse press in 5 pixel border.
+% --- Otherwise, executes on mouse press in 5 pixel border or over buttonOpen.
+function buttonOpen_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to buttonOpen (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

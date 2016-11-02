@@ -1,37 +1,37 @@
-function varargout = daqAcquire(varargin)
-% DAQACQUIRE M-file for daqAcquire.fig
-%      DAQACQUIRE, by itself, creates a new DAQACQUIRE or raises the existing
+function varargout = daqAcquire_old(varargin)
+% DAQACQUIRE_OLD M-file for daqAcquire_old.fig
+%      DAQACQUIRE_OLD, by itself, creates a new DAQACQUIRE_OLD or raises the existing
 %      singleton*.
 %
-%      H = DAQACQUIRE returns the handle to a new DAQACQUIRE or the handle to
+%      H = DAQACQUIRE_OLD returns the handle to a new DAQACQUIRE_OLD or the handle to
 %      the existing singleton*.
 %
-%      DAQACQUIRE('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in DAQACQUIRE.M with the given input arguments.
+%      DAQACQUIRE_OLD('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in DAQACQUIRE_OLD.M with the given input arguments.
 %
-%      DAQACQUIRE('Property','Value',...) creates a new DAQACQUIRE or raises the
+%      DAQACQUIRE_OLD('Property','Value',...) creates a new DAQACQUIRE_OLD or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
 %      applied to the GUI before daqAcquire_OpeningFunction gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to daqAcquire_OpeningFcn via varargin.
+%      stop.  All inputs are passed to daqAcquire_old_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help daqAcquire
+% Edit the above text to modify the response to help daqAcquire_old
 
-% Last Modified by GUIDE v2.5 07-Jan-2009 17:38:07
+% Last Modified by GUIDE v2.5 17-Feb-2015 15:46:52
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
-                   'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @daqAcquire_OpeningFcn, ...
-                   'gui_OutputFcn',  @daqAcquire_OutputFcn, ...
-                   'gui_LayoutFcn',  [] , ...
-                   'gui_Callback',   []);
+    'gui_Singleton',  gui_Singleton, ...
+    'gui_OpeningFcn', @daqAcquire_old_OpeningFcn, ...
+    'gui_OutputFcn',  @daqAcquire_old_OutputFcn, ...
+    'gui_LayoutFcn',  [] , ...
+    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
     gui_State.gui_Callback = str2func(varargin{1});
 end
@@ -39,20 +39,19 @@ end
 if nargout
     [varargout{1:nargout}] = gui_mainfcn(gui_State, varargin{:});
 else
-gui_State.gui_Name='daqAcquire';
+    gui_State.gui_Name='daqAcquire_old';
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before daqAcquire is made visible.
-function daqAcquire_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before daqAcquire_old is made visible.
+function daqAcquire_old_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to daqAcquire (see VARARGIN)
-
+% varargin   command line arguments to daqAcquire_old (see VARARGIN)
 
 set(handles.edit_Folder,'string',pwd);
 handles.channels = zeros(1,8);
@@ -67,12 +66,13 @@ handles.output = hObject;
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes daqAcquire wait for user response (see UIRESUME)
+
+% UIWAIT makes daqAcquire_old wait for user response (see UIRESUME)
 % uiwait(handles.fig_daq);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = daqAcquire_OutputFcn(hObject, eventdata, handles) 
+function varargout = daqAcquire_old_OutputFcn(hObject, eventdata, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -119,7 +119,7 @@ set(findobj(handles.fig_daq,'style','checkbox'),'backgroundcolor',[.5 .5 .5]);
 
 for c = 1:length(handles.RecChannels{indx})
     plot((0:size(data,1)-1)/rec.Fs,data(:,c),'color',cols(c,:));
-%     plot((0:size(data,1)-1)/rec.Fs,filter(ones(1000,1),1,data(:,c).^2),'color',cols(c,:));
+    %     plot((0:size(data,1)-1)/rec.Fs,filter(ones(1000,1),1,data(:,c).^2),'color',cols(c,:));
     set(handles.(['check' num2str(handles.RecChannels{indx}(c))]),'backgroundcolor',cols(c,:));
 end
 xlim([0 size(data,1)-1]/rec.Fs);
@@ -338,10 +338,10 @@ guidata(hObject, handles);
 
 
 function handles = readChecks(handles)
-
 for c = 0:7
     handles.channels(c+1) = get(handles.(['check' num2str(c)]),'value');
 end
+
 
 
 % --- Executes on button press in push_Record.
@@ -367,7 +367,10 @@ daqreset;
 ai = analoginput('nidaq','Dev1');
 
 for(nChan = 1:length(chans))
-    addchannel(ai,[chans(nChan)]);
+    ichan = addchannel(ai,[chans(nChan)]);
+    set(ichan(nChan), 'SensorRange' ,[-10,10]);%Potential range of the input.
+    set(ichan(nChan), 'InputRange' ,[-10,10]);%Expected range across which we digitize. Discrete Set of possible values ([-10,10], [-5,5], [-.5,.5], [-.05,.05])
+    set(ichan(nChan), 'UnitsRange'  ,[-10,10]); %Scaling of input into desired units.
 end
 actInSampRate = setverify(ai,'SampleRate', sampRate);
 set(ai,'TriggerType','Manual');
@@ -450,7 +453,6 @@ if get(handles.check_Chirp,'value')==1
 end
 
 guidata(hObject, handles);
-
 
 
 function edit_Comment_Callback(hObject, eventdata, handles)

@@ -13,7 +13,7 @@ currchan = ddd.currChan;
 currchan2 = ddd.currChan2;
 currchan3 = ddd.currChan3;
 
-if(dispfilenum == 0)
+if dispfilenum == 0
     cla(handles.axesAudio);
     cla(handles.axesSignal);
     cla(handles.axesSignal2);
@@ -23,11 +23,12 @@ end
 
 try
     %check if file is loadable...
+    
     %load file without loading data...
-    [audio, junk1, junk2, startSamp, timeFileCreated, startTime, names, values, info] = loadData(exper, dispfilenum, currchanAudio, 0);
+    [~, ~, ~, ~, ~, ~, ~, ~, info] = loadData(exper, dispfilenum, currchanAudio, 0);
     whichSamples = [];
     maxLoadSize = 2000000;
-    if(info.numSamples > maxLoadSize)
+    if info.numSamples > maxLoadSize
         whichSamples = [1,maxLoadSize];
         h = warndlg(['File is too big. Only loading first ', num2str(maxLoadSize), ' samples.']);
         uiwait(h, 5);
@@ -35,21 +36,22 @@ try
 
     %Load the data...
     tic;
-    [audio, junk1, junk2, startSamp, timeFileCreated, startTime, names, values] = loadData(exper, dispfilenum, currchanAudio, whichSamples);
-    [sig,  sigTimes, HWChannels, startSamp, timeCreated] = loadData(exper, dispfilenum, currchan, whichSamples);
-    [sig2, sigTimes, HWChannels, startSamp, timeCreated] = loadData(exper, dispfilenum, currchan2, whichSamples);
-    [sig3, sigTimes, HWChannels, startSamp, timeCreated] = loadData(exper, dispfilenum, currchan3, whichSamples);
+    [audio, ~, ~, ~, ~, ~, names, values] = loadData(exper, dispfilenum, currchanAudio, whichSamples);
+    [sig,  ~, ~, ~, ~] = loadData(exper, dispfilenum, currchan, whichSamples);
+    [sig2, ~, ~, ~, ~] = loadData(exper, dispfilenum, currchan2, whichSamples);
+    [sig3, ~, ~, ~, timeCreated] = loadData(exper, dispfilenum, currchan3, whichSamples);
     daq_log(['Time to loadfiles: ' num2str(toc)]);
 
     %Display any file properties
-    strList = {};
-    for(nProp = 1:length(names))
+    nName = numel(names);
+    strList = cell(nName, 1);
+    for nProp = 1:nName
         strList{nProp} = [names{nProp},': ',values{nProp}];
     end
     set(handles.listboxDatafileProperties, 'String', strList);
 
     %Clip according to current zoom if current.
-    if(ddd.startNdx > 0 & ddd.endNdx > 0)
+    if ddd.startNdx > 0 && ddd.endNdx > 0
         sn = min(ddd.startNdx, length(audio));
         en = max(1, ddd.endNdx);
         if(sn < en)
@@ -65,11 +67,11 @@ try
 
     %Display the audio specgram.
 
-    timeAxis = [sn-1:en-1]/exper.desiredInSampRate;
+    timeAxis = (sn-1:en-1) / exper.desiredInSampRate;
     if(~isempty(audio))
         axes(handles.axesAudio);
         audio = audio - mean(audio);
-        displaySpecgramQuick(audio, exper.desiredInSampRate, [0,8000], tsd.displayParams(dgd.ce).audioCLim, timeAxis(1));
+        displaySpecgramQuick(audio, exper.desiredInSampRate, [0, 8000], tsd.displayParams(dgd.ce).audioCLim, timeAxis(1));
         title([exper.birdname, ' ', exper.expername, ' ', num2str(dispfilenum), ' ', timeCreated]);
         set(handles.axesAudio,'ButtonDownFcn', @acqguiAxesButtonPress);
         ud.data = audio; ud.fs = info.fs;
@@ -108,16 +110,15 @@ try
         set(handles.axesSignal3,'UserData', ud);
         set(handles.axesSignal3,'XTickLabel', []);
     end
-catch
-    disp('Error caught in acqgui_updateDisplay:');
-    disp(lasterr);
+catch ME
+    disp(['Error caught in acqgui_updateDisplay:', ME.message]);
     cla(handles.axesAudio);
     cla(handles.axesSignal);
     cla(handles.axesSignal2);
     cla(handles.axesSignal3);
 end
 
-function acqguiAxesButtonPress(src, event)
+function acqguiAxesButtonPress(src, ~)
 %Load the appdata we need...
 guifig = get(src,'Parent');
 handles = guidata(guifig);
@@ -187,10 +188,9 @@ try
     else
         aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
     end
-catch
+catch ME
     if(dispfilenum > 0)
-        disp('Error caught in acqguiAxesButtonPress:');
-        disp(lasterr);
+        disp(['Error caught in acqguiAxesButtonPress:', ME.message]);
     end
     aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
     cla(handles.axesAudio);

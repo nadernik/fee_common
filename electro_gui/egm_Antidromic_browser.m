@@ -957,6 +957,9 @@ switch str{val}
         xlabel('Time from stim (ms)');
         ylim(handles.ylim);
         xlim([-handles.xlim(1),handles.xlim(2)]*1000);
+        box off
+        set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025])
+        set(gcf, 'Color', [1 1 1], 'papersize', [4 3], 'paperposition', [0 0 4 3]); 
     case 'Trial average'
         fig = figure;
         xs = linspace(-handles.EventLims(1),handles.EventLims(2),size(handles.trials,2))*1000;

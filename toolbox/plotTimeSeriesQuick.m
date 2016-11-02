@@ -69,8 +69,10 @@ else
     maxy = max(boxy,[],1);
      
     axes(ud.ax);
-    ls(1) = plot(minx, miny, ud.varargin{:}); hold on;
-    ls(2) = plot(maxx, maxy, ud.varargin{:}); hold off;
+    colorOrder = get(ud.ax, 'ColorOrder');
+    lineColor = colorOrder(1,:);
+    ls(1) = plot(minx, miny, 'Color', lineColor, ud.varargin{:}); hold on;
+    ls(2) = plot(maxx, maxy, 'Color', lineColor, ud.varargin{:}); hold off;
     axis tight;
     set(ls, 'HitTest', 'off');
 end

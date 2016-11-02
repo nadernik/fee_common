@@ -1,11 +1,13 @@
-function [data, fs, dateandtime, label, props] = egl_Open_Ephys(filename, loaddata)
+function [data, fs, dateandtime, label, Props] = egl_Open_Ephys(filename, loadData)
 
 label = 'Voltage (mV)';
-
 [data, ~, info] = load_open_ephys_data(filename);
 data = data.*info.header.bitVolts;
+if loadData ~= 1
+    data = [];
+end
 fs = info.header.sampleRate;
 dateandtime = datenum(info.header.date_created, 'dd-mmm-yyyy HHMMSS');
-props.Names = {'Comment'};%made up properties because I don't understand what they should be
-props.Types = 1;
-props.Values = {''};
+Props.Names = {'Comment'};%made up properties because I don't understand what they should be
+Props.Types = 1;
+Props.Values = {''};

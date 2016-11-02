@@ -656,11 +656,11 @@ function buttonStop_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonStop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-daqreset;
+daq_Quit();
 
 %%%%%%%%%%%%%%%%%%%%%%%%% HELPER FUNCTIONS *********************
 
-function updateExperiment(guifig);
+function updateExperiment(guifig)
 handles = guidata(guifig);
 [dgd,status] = aa_checkoutAppData(guifig, 'daqguidata');
 if(~status)
@@ -685,7 +685,7 @@ set(handles.popupChannel,'String', chanstrings);
 dgd.currChan = dgd.exper.audioCh;
 
 %Initialize the daq toolbox
-daqreset;
+daq_Quit();
 
 %input channels
 dgd.inChans = [];
@@ -699,7 +699,7 @@ dgd.inChans = [dgd.inChans, dgd.exper.sigCh];
 %parameters
 buffer= 90; %Seconds
 updateFreq = 4; %Hz
-[ai, ao, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(dgd.inChans, dgd.exper.desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
+[s, actInSampleRate, actOutSampleRate, actUpdateFreq] = daq_Init(dgd.inChans, dgd.exper.desiredInSampRate, [], 1, buffer, updateFreq, dgd.logfile);
 
 dgd.daqSetup.actInSampleRate = actInSampleRate;
 dgd.daqSetup.actOutSampleRate = actOutSampleRate;

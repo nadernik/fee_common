@@ -1,7 +1,12 @@
 function varargout = electro_gui(varargin)
-% electro_gui customized for Tatsuo
-% Tatsuo Okubo
-% 2009/07/01
+% ELECTRO_GUI songbird ephys analysis gui written by Dmitiry Aronov
+%   With additions by:
+%       Aaron Andalman
+%       Tatsuo Okubo
+%       Jesse Goldberg
+%       Michael Stetner
+%       Emily Mackevicius
+%       Galen Lynch
 
 % ELECTRO_GUI M-file for electro_gui.fig
 %      ELECTRO_GUI, by itself, creates a new ELECTRO_GUI or raises the existing
@@ -60,7 +65,7 @@ function electro_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 % egdir is the directory containing electro_gui.m All support m-files (for macros etc.)
 % must be in this same directory.
 egdir = fileparts(mfilename('fullpath'));
-egfile = @(filename) [egdir filesep filename];
+egfile = @(filename) [egdir filesep() filename];
 handles.egdir = egdir;
 handles.egfile = egfile;
 % egfile is a function that prepends egdir to a filename
@@ -91,7 +96,7 @@ if isempty(mt)
     fgetl(fid1);
     str = ['function handles = ' handles.userfile(1:end-2) '(handles)'];
     while isstr(str)
-        f = findstr(str,'\');
+        f = findstr(str,filesep);
         for d = length(f):-1:1
             str = [str(1:f(d)-1) '\\' str(f(d)+1:end)];
         end
@@ -131,8 +136,8 @@ else
     handles = eval(['defaults_' lst{val} '(handles)']);
 end
 
-dr = dir([mfilename('fullpath') '*m']);
-set(handles.figure_Main,'name',['ElectroGui v. ' datestr(datenum(dr.date),'yy.mm.dd.HH.MM')]);
+dr = dir([mfilename('fullpath'), '.m']);
+set(handles.figure_Main,'name',['ElectroGui v. ' datestr(datenum(char(dr.date), 'dd-mmm-yyyy HH:MM:SS'),'yy.mm.dd.HH.MM')]);
 
 
 handles.ChanLimits1 = handles.ChanLimits(1,:);
@@ -306,8 +311,33 @@ set(handles.popup_Function2,'string',str,'userdata',cell(1,length(str)));
 
 % Find all macros
 mt = dir(egfile('egm_*.m'));
-for c = 1:length(mt)
-    handles.menu_Macros(c) = uimenu(handles.context_Macros,'label',mt(c).name(5:end-2),...
+macronames = cell(length(mt), 1);
+for ii = 1:length(mt)
+    % extract 'Macro_name' from 'egm_Macro_name.m'
+    tkn = regexp(mt(ii).name, '^egm_(.+)\.m$', 'tokens');
+    macronames{ii} = tkn{1}{1};
+end
+% Macro Manager goes at the top of the macro list, if it exists
+if any(strcmp(macronames, 'Macro_Manager'))
+    handles.menu_Macros(1) = uimenu(handles.context_Macros, ...
+        'Label', 'Macro_Manager',...
+        'callback','electro_gui(''MacrosMenuclick'',gcbo,[],guidata(gcbo))');
+    macronames = macronames(~strcmp(macronames, 'Macro_Manager'));
+    pos = 1;
+else 
+    pos = 0;
+end
+
+% Remove excluded macros, if there are any
+if isfield(handles, 'MacrosExcluded')
+    macronames = macronames(~ismember(macronames, handles.MacrosExcluded));
+end
+
+% Add remaining macros to list
+for c = 1:length(macronames)
+    pos = pos+1;
+    handles.menu_Macros(pos) = uimenu(handles.context_Macros, ...
+        'Label', macronames{c},...
         'callback','electro_gui(''MacrosMenuclick'',gcbo,[],guidata(gcbo))');
 end
 
@@ -397,6 +427,7 @@ patch([0 handles.WorksheetWidth handles.WorksheetWidth 0],[0 0 handles.Worksheet
 axis equal;
 axis tight;
 axis off;
+drawnow expose
 
 handles.WorksheetTitle = 'Untitled';
 
@@ -701,6 +732,7 @@ else
         else
             h(c) = plot([xd(2) xd(2)]/handles.fs,ylim,'color',handles.ProgressBarColor,'linewidth',2);
         end
+        drawnow expose
     end
     y = audioplayer(wav,fs);
     play(y);
@@ -713,7 +745,7 @@ else
                 set(h(c),'xdata',(xd(2)-[pos pos]+1)/handles.fs);
             end
         end
-        drawnow;
+        drawnow expose;
     end
     stop(y);
     clear y;
@@ -828,7 +860,7 @@ handles.BackupTitle = {'',''};
 
 % Plot sound
 subplot(handles.axes_Sound)
-[handles.sound handles.fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(filenum).name '''],1)']);
+[handles.sound handles.fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(filenum).name '''],1)']);
 handles.DatesAndTimes(filenum) = dt;
 handles.FileLength(filenum) = length(handles.sound);
 set(handles.text_DateAndTime,'string',datestr(dt,0));
@@ -851,6 +883,7 @@ set(gca,'color',[0 0 0]);
 axis tight;
 yl = max(abs(ylim));
 ylim([-yl*1.2 yl*1.2]);
+drawnow expose
 
 % Set limits
 yl = ylim;
@@ -860,6 +893,7 @@ handles.xlimbox = plot([0 xmax xmax 0 0],[yl(1) yl(1) yl(2) yl(2) yl(1)]*.93,':y
 xlim([0 xmax]);
 hold off
 box on;
+drawnow expose
 
 % Clear selected channel (I think this should be happening? GL 6/23/2014)
 handles.SelectedEvent = [];
@@ -883,6 +917,7 @@ set(handles.axes_Sonogram,'xlim',[0 xmax]);
 set(handles.axes_Amplitude,'xlim',[0 xmax]);
 set(handles.axes_Channel1,'xlim',[0 xmax]);
 set(handles.axes_Channel2,'xlim',[0 xmax]);
+drawnow expose
 
 % Load properties
 handles = eg_LoadProperties(handles);
@@ -924,6 +959,7 @@ else
     handles = eg_LoadChannel(handles,1);
     handles = EventSetThreshold(handles,1);
 end
+drawnow expose
 
 
 % Plot amplitude
@@ -940,7 +976,8 @@ if ~isempty(handles.amplitude)
     set(gca,'buttondownfcn','electro_gui(''click_Amplitude'',gcbo,[],guidata(gcbo))');
     set(get(gca,'children'),'uicontextmenu',get(gca,'uicontextmenu'));
     set(get(gca,'children'),'buttondownfcn',get(gca,'buttondownfcn'));
-
+    drawnow expose
+    
     if handles.SoundThresholds(filenum)==inf
         if strcmp(get(handles.menu_AutoThreshold,'checked'),'on')
             handles.CurrentThreshold = eg_AutoThreshold(handles.amplitude);
@@ -985,9 +1022,9 @@ end
 if val <= length(str)-sum(nums)
     chan = str2num(str{val}(9:end));
     if length(str{val})>4 & strcmp(str{val}(1:5),'Sound')
-        [handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(filenum).name '''],1)']);
+        [handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(filenum).name '''],1)']);
     else
-        [handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name '\' handles.chan_files{chan}(filenum).name '''],1)']);
+        [handles.(['chan',num2str(axnum)]) fs dt handles.(['Label',num2str(axnum)]) props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name filesep handles.chan_files{chan}(filenum).name '''],1)']);
     end
 else
     ev = zeros(1,length(handles.sound));
@@ -1086,7 +1123,7 @@ if strcmp(get(handles.(['menu_AutoLimits' num2str(axnum)]),'checked'),'on')
 else
     ylim(handles.(['ChanLimits' num2str(axnum)]));
 end
-
+drawnow expose
 handles = eg_Overlay(handles);
 
 %%
@@ -1133,6 +1170,7 @@ set(gca,'uicontextmenu',handles.(['context_Channel',num2str(axnum)]));
 set(gca,'buttondownfcn','electro_gui(''click_Channel'',gcbo,[],guidata(gcbo))');
 set(get(gca,'children'),'uicontextmenu',get(gca,'uicontextmenu'));
 set(get(gca,'children'),'buttondownfcn',get(gca,'buttondownfcn'));
+drawnow expose
 
 
 function handles = SetThreshold(handles)
@@ -1164,7 +1202,7 @@ else
 end
 
 set(handles.axes_Segments,'uicontextmenu',handles.context_Segments,'buttondownfcn','electro_gui(''click_segmentaxes'',gcbo,[],guidata(gcbo))');
-
+drawnow expose
 
 %--------
 function handles = SegmentSounds(handles)
@@ -1225,7 +1263,7 @@ set(gca,'xcolor',bg,'ycolor',bg,'color',bg);
 set(gca,'uicontextmenu',handles.context_Segments,'buttondownfcn','electro_gui(''click_segmentaxes'',gcbo,[],guidata(gcbo))');
 set(get(gca,'children'),'uicontextmenu',get(gca,'uicontextmenu'));
 set(gcf,'keypressfcn','electro_gui(''labelsegment'',gcbo,[],guidata(gcbo))');
-
+drawnow expose
 %-------
 function h = eg_peak_detect(ax,x,y)
 
@@ -1254,7 +1292,7 @@ else
     hold off
 end
 xlim(xl);
-
+drawnow expose
 %%
 % --------------------------------------------------------------------
 function context_Sonogram_Callback(hObject, eventdata, handles)
@@ -1348,6 +1386,7 @@ handles.xlimbox = plot([xd(1) xd(2) xd(2) xd(1) xd(1)],[yl(1) yl(1) yl(2) yl(2) 
 xlim([0 length(handles.sound)/handles.fs]);
 hold off
 box on;
+drawnow expose
 
 set(gca,'buttondownfcn','electro_gui(''click_sound'',gcbo,[],guidata(gcbo))');
 ch = get(gca,'children');
@@ -1482,7 +1521,7 @@ ch = get(gca,'children');
 for c = 1:length(ch)
     set(ch(c),'buttondownfcn',get(gca,'buttondownfcn'));
 end
-
+drawnow expose
 handles = eg_Overlay(handles); % Update overlay trace as well if any. TO
 
 %%
@@ -1601,6 +1640,7 @@ else
     cl(indx,:) = repmat(handles.BackgroundColors(2,:),length(indx),1);
     colormap(cl);
     set(gca,'clim',[-pi/2 pi/2]);
+    drawnow expose
 end
 
 %%
@@ -1639,7 +1679,7 @@ handles.DefaultDirectory = handles.path_name;
 handles.DefaultFile = 'analysis.mat';
 
 if strcmp(handles.WorksheetTitle,'Untitled')
-    f = findstr(handles.path_name,'\');
+    f = findstr(handles.path_name, filesep);
     handles.WorksheetTitle = handles.path_name(f(end)+1:end);
 end
 
@@ -1652,7 +1692,7 @@ handles.Properties.Names = cell(1,handles.TotalFileNumber);
 handles.Properties.Values = cell(1,handles.TotalFileNumber);
 handles.Properties.Types = cell(1,handles.TotalFileNumber);
 for c = 1:handles.TotalFileNumber
-    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(c).name '''],0)']);
+    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(c).name '''],0)']);
     handles.Properties.Names{c} = props.Names;
     handles.Properties.Values{c} = props.Values;
     handles.Properties.Types{c} = props.Types;
@@ -1820,13 +1860,26 @@ function push_Open_Callback(hObject, eventdata, handles)
 % hObject    handle to push_Open (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-[file, path] = uigetfile('*.mat','Load analysis'); % open file dialog box
-if ~isstr(file)
-    return % file name is not a string
+if isfield(handles, 'path_name')
+    [file, path] = uigetfile('*.mat','Load analysis', handles.path_name); % open file dialog box
+else
+    [file, path] = uigetfile('*.mat','Load analysis'); 
 end
+if length(file)<=1 % if you clicked cancel
+    answer = questdlg('Do you want to load a NIf row?');
+    if issame(answer, 'Yes')
+        % ask which row you want to
+        answer = inputdlg('Which row?');
+        [XLS, Columns] = loadNIfSpreadsheet_elm(); 
+        [dbase rowstr path file] = getDbase_elm(str2num(answer{1}), XLS, Columns);
+    end
+else
+    if ~isstr(file)
+        return % file name is not a string
+    end
 
-load([path file],'dbase'); % load variable 'dbase'
+    load(fullfile(path, file),'dbase'); % load variable 'dbase'
+end
 
 handles.BackupChan = cell(1,2);
 handles.BackupLabel = cell(1,2);
@@ -1841,7 +1894,7 @@ if ~isdir(handles.path_name)
     handles.path_name = path2;
 end
 
-handles.DefaultFile = [path file];
+handles.DefaultFile = fullfile(path, file);
 
 handles.DefaultDirectory = handles.path_name;
 handles.DatesAndTimes = dbase.Times;
@@ -1872,7 +1925,7 @@ set(handles.popup_EventList,'value',1);
 set(handles.axes_Events,'visible','off');
 
 if strcmp(handles.WorksheetTitle,'Untitled')
-    f = findstr(handles.path_name,'\');
+    f = findstr(handles.path_name,filesep);
     handles.WorksheetTitle = handles.path_name(f(end)+1:end);
 end
 
@@ -2009,8 +2062,8 @@ function push_Save_Callback(hObject, eventdata, handles)
 % hObject    handle to push_Save (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-
+pause(.5); 
+drawnow expose
 [file, path] = uiputfile(handles.DefaultFile,'Save analysis');
 if ~isstr(file)
     return
@@ -2018,8 +2071,8 @@ end
 
 dbase = GetDBase(handles);
 
-save([path file],'dbase');
-handles.DefaultFile = [path file];
+save(fullfile(path, file),'dbase', '-v7.3'); % added v7.3 in hopes of avoiding crashing -ELM
+handles.DefaultFile = fullfile(path, file);
 
 guidata(hObject, handles);
 
@@ -2262,7 +2315,7 @@ function click_loadfile(hObject, eventdata, handles)
 temp = handles.TooLong;
 handles.TooLong = inf;
 cla(handles.axes_Sonogram);
-drawnow;
+drawnow expose;
 handles = eg_LoadFile(handles);
 handles.TooLong = temp;
 
@@ -3098,7 +3151,7 @@ else
 end
 xlim(xl);
 ylim(yl);
-
+drawnow expose
 %%
 % --------------------------------------------------------------------
 function menu_AllowYZoom1_Callback(hObject, eventdata, handles)
@@ -3122,7 +3175,7 @@ if strcmp(get(handles.menu_AllowYZoom1,'checked'),'on')
 else
     set(handles.menu_AllowYZoom1,'checked','on');
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 %%
@@ -3148,7 +3201,7 @@ if strcmp(get(handles.menu_AllowYZoom2,'checked'),'on')
 else
     set(handles.menu_AllowYZoom2,'checked','on');
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 %%
@@ -3172,7 +3225,7 @@ else
     ylim([mean(yl)+(yl(1)-mean(yl))*1.1 mean(yl)+(yl(2)-mean(yl))*1.1]);
     handles = eg_Overlay(handles);
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 %%
@@ -3196,7 +3249,7 @@ else
     ylim([mean(yl)+(yl(1)-mean(yl))*1.1 mean(yl)+(yl(2)-mean(yl))*1.1]);
     handles = eg_Overlay(handles);
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 %%
@@ -3235,7 +3288,7 @@ end
 
 subplot(handles.(['axes_Channel' num2str(axnum)]));
 ylim([str2num(answer{1}) str2num(answer{2})]);
-
+drawnow expose
 handles = eg_Overlay(handles);
 
 %%
@@ -3675,7 +3728,7 @@ for c = 1:length(ev)
         handles.EventHandles{axnum}{c} = [];
     end
 end
-
+drawnow expose
 subplot(handles.(['axes_Channel' num2str(axnum)]));
 
 
@@ -3685,7 +3738,7 @@ for c = 1:length(handles.EventHandles{axnum})
     end
 end
 
-
+%FIXME
 function ClickEventSymbol(hObject, eventdata, handles)
 
 if get(hObject,'parent')==handles.axes_Channel1
@@ -4340,13 +4393,14 @@ tmall = handles.EventTimes{f}(:,filenum);
 tm = handles.EventTimes{f}{g,filenum};
 sel = handles.EventSelected{f}{g,filenum};
 
-if strcmp(get(handles.menu_EventsFromZoomBox, 'checked'), 'on')
-    % determine which events are in the window
-    xd = get(handles.xlimbox,'xdata');
-    xdsamples = xd * handles.fs;
-    inwindow = (xdsamples(1) <= tm) & (tm <= xdsamples(2));
-    sel = sel & inwindow'; % display if is selected AND is in window
+eventNumber = cumsum(sel);
+if strcmp(get(handles.menu_EventsFromZoomBox, 'checked'), 'on') && ~isempty(sel)
+    isDisplayed = sel & eventInZoomBox(handles, f);
+else
+    isDisplayed = sel;
 end
+
+handles.eventsInViewer = eventNumber(logical(isDisplayed));
 
 if strcmp(get(handles.menu_DisplayValues,'checked'),'on')
     handles.EventWaveHandles = [];
@@ -4354,7 +4408,7 @@ if strcmp(get(handles.menu_DisplayValues,'checked'),'on')
         for c = 1:length(tm)
             mn = max([1 tm(c)-round(handles.EventLims(get(handles.popup_EventList,'value'),1)*handles.fs)]);
             mx = min([length(chan) tm(c)+round(handles.EventLims(get(handles.popup_EventList,'value'),2)*handles.fs)]);
-            if sel(c)==1
+            if isDisplayed(c)==1 %FIXME
                 h = plot(((mn:mx)-tm(c))/handles.fs*1000,chan(mn:mx),'color','k');
                 handles.EventWaveHandles = [handles.EventWaveHandles h];
             end
@@ -4380,8 +4434,9 @@ else
         [feature2 name2] = eval(['ega_' str '(chan,handles.fs,tmall,g,round(handles.EventLims(get(handles.popup_EventList,''value''),:)*handles.fs))']);
 
         for c = 1:length(feature1)
-            if sel(c)==1
+            if isDisplayed(c)==1 %FIXME
                 h = plot(feature1(c),feature2(c),'o','markerfacecolor','k','markeredgecolor','k','markersize',2);
+                drawnow expose
                 handles.EventWaveHandles = [handles.EventWaveHandles h];
             end
         end
@@ -4418,26 +4473,53 @@ if strcmp(get(handles.menu_AutoApplyYLim,'checked'),'on')
         end
     end
 end
-
+drawnow expose
 
 function click_eventwave(hObject, eventdata, handles)
+filenum = str2num(get(handles.edit_FileNumber,'string'));
+nums = [];
+for c = 1:length(handles.EventTimes);
+    nums(c) = size(handles.EventTimes{c},1);
+end
+indx = get(handles.popup_EventList,'value')-1;
+cs = cumsum(nums);
+f = length(find(cs<indx))+1;
+if f>1
+    g = indx-cs(f-1);
+else
+    g = indx;
+end
 
 i = find(handles.EventWaveHandles==hObject);
+sel = handles.EventSelected{f}{g,filenum};
+
+if strcmp(get(handles.menu_EventsFromZoomBox, 'checked'), 'on') && ~isempty(sel)
+    sel = sel & eventInZoomBox(handles, f);
+end
+
+selectedevent = handles.eventsInViewer(i);
+ii = sum(sel(1:selectedevent));
+
+
 if strcmp(get(gcf,'selectiontype'),'normal')%normal click
-    handles = SelectEvent(handles,i);
+    handles = SelectEvent(handles,selectedevent);
     guidata(hObject, handles);
 elseif strcmp(get(gcf,'selectiontype'),'extend')%Shift click
     set(hObject,'xdata',[],'ydata',[]);
     hold on
-    handles.EventWaveHandles(i) = plot(mean(xlim),mean(ylim),'w.');%Make a dot in the center of the plot??
+    handles.EventWaveHandles(ii) = plot(mean(xlim),mean(ylim),'w.');%Make a dot in the center of the plot??
     hold off
-    handles = DeleteEvents(handles,i);
+    drawnow expose
+    handles = DeleteEvents(handles,ii);
     guidata(hObject, handles);
     delete(hObject);
 end
 
-function handles = SelectEvent(handles,i)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function handles = SelectEvent(handles,i)
+% handles is the guidata from electro_gui
+% i is the number of the event to select
 if isempty(i)
     return
 end
@@ -4445,18 +4527,19 @@ delete(findobj('parent',handles.axes_Events,'linewidth',2));
 delete(findobj('linestyle','-.'));
 handles.SelectedEvent = i;
 
-if i<=length(handles.EventWaveHandles)
+if ismember( i, handles.eventsInViewer)
+    ndx = handles.eventsInViewer == i;
     subplot(handles.axes_Events);
     hold on
     xl = xlim;
     yl = ylim;
-    x = get(handles.EventWaveHandles(i),'xdata');
-    y = get(handles.EventWaveHandles(i),'ydata');
-    m = get(handles.EventWaveHandles(i),'marker');
+    x = get(handles.EventWaveHandles(ndx),'xdata');
+    y = get(handles.EventWaveHandles(ndx),'ydata');
+    m = get(handles.EventWaveHandles(ndx),'marker');
     if strcmp(m,'none')
         h = plot(x,y,'r','linewidth',2);
     else
-        ms = get(handles.EventWaveHandles(i),'markersize');
+        ms = get(handles.EventWaveHandles(ndx),'markersize');
         h = plot(x,y,'linewidth',2,'marker',m,'markersize',ms,'markerfacecolor','r','markeredgecolor','r');
     end
     set(h,'buttondownfcn','electro_gui(''unselect_event'',gcbo,[],guidata(gcbo))');
@@ -4464,7 +4547,7 @@ if i<=length(handles.EventWaveHandles)
     ylim(yl);
     hold off
 end
-
+drawnow expose
 
 set(handles.EventWaveHandles,'buttondownfcn','electro_gui(''click_eventwave'',gcbo,[],guidata(gcbo))');
 
@@ -4483,6 +4566,7 @@ else
 end
 tm = handles.EventTimes{f}{g,filenum};
 sel = handles.EventSelected{f}{g,filenum};
+
 tm = tm(find(sel==1));
 if i > length(tm)
     warning('selected event is invalid');
@@ -4511,8 +4595,10 @@ if strcmp(get(handles.axes_Channel2,'visible'),'on')
     h(end+1) = plot(xs(tm(i)),ys(tm(i)),'-.o','linewidth',2,'markersize',5,'markerfacecolor','r','markeredgecolor','r');
     hold off;
 end
+drawnow expose
 set(h,'buttondownfcn','electro_gui(''unselect_event'',gcbo,[],guidata(gcbo))');
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function unselect_event(hObject, eventdata, handles)
 
@@ -4630,6 +4716,13 @@ else
     g = indx;
 end
 sel = handles.EventSelected{f}{g,filenum};
+
+% If only events from zoom window are displayed, take that into account
+% when figuring out which event to delete
+if strcmp(get(handles.menu_EventsFromZoomBox, 'checked'), 'on')
+    sel = sel & eventInZoomBox(handles, f);
+end
+
 alr = find(sel==1);
 
 handles.EventSelected{f}{g,filenum}(alr(todel)) = 0;
@@ -4665,6 +4758,8 @@ for axn = 1:2
 end
 
 set(handles.axes_Events,'xlim',xlb,'ylim',ylb);
+
+handles = UpdateEventBrowser(handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -5048,7 +5143,7 @@ function push_Export_Callback(hObject, eventdata, handles)
 subplot(handles.axes_Sonogram)
 txtexp = text(mean(xlim),mean(ylim),'Exporting...',...
     'horizontalalignment','center','color','r','backgroundcolor',[1 1 1],'fontsize',14);
-drawnow
+drawnow expose
 
 %%%
 str = get(handles.popup_Export,'String');
@@ -5140,7 +5235,7 @@ switch str
 
                 wav = handles.sound(handles.SegmentTimes{filenum}(c,1):handles.SegmentTimes{filenum}(c,2));
                 warning off
-                wavwrite(wav,handles.fs,16,[path '\' str '.wav']);
+                wavwrite(wav,handles.fs,16,[path filesep str '.wav']);
                 warning on
             end
         end
@@ -5149,7 +5244,7 @@ switch str
     case 'Sonogram'
         if get(handles.radio_Files,'value')==1
             [pathstr,name,ext] = fileparts(get(handles.text_FileName,'string'));
-            [file, path] = uiputfile([handles.DefaultDirectory '\' name '.jpg'],'Save image');
+            [file, path] = uiputfile([handles.DefaultDirectory filesep name '.jpg'],'Save image');
             if ~isstr(file)
                 delete(txtexp)
                 return
@@ -5313,7 +5408,7 @@ if get(handles.radio_Matlab,'value')==1
                 if handles.WorksheetIncludeTitle == 1
                     txt = text(handles.WorksheetMargin/handles.WorksheetWidth,(handles.WorksheetHeight-handles.WorksheetMargin)/handles.WorksheetHeight,handles.WorksheetTitle);
                     set(txt,'HorizontalAlignment','left','VerticalAlignment','top','fontsize',14);
-                    txt = text((handles.WorksheetWidth-handles.WorksheetMargin)/handles.WorksheetWidth,(handles.WorksheetHeight-handles.WorksheetMargin)/handles.WorksheetHeight,['Page ' num2str(j) '/' num2str(max(pagenum))]);
+                    txt = text((handles.WorksheetWidth-handles.WorksheetMargin)/handles.WorksheetWidth,(handles.WorksheetHeight-handles.WorksheetMargin)/handles.WorksheetHeight,['Page ' num2str(j) filesep num2str(max(pagenum))]);
                     set(txt,'HorizontalAlignment','right','VerticalAlignment','top','fontsize',14);
                 end
                 f = find(pagenum==j);
@@ -5400,7 +5495,7 @@ elseif get(handles.radio_Files,'value')==1
 
         case {'Current sound', 'Sound mix'}
             [pathstr,name,ext] = fileparts(get(handles.text_FileName,'string'));
-            [file, path] = uiputfile([handles.DefaultDirectory '\' name '.wav'],'Save sound');
+            [file, path] = uiputfile([handles.DefaultDirectory filesep name '.wav'],'Save sound');
             if ~isstr(file)
                 delete(txtexp)
                 return
@@ -5411,7 +5506,7 @@ elseif get(handles.radio_Files,'value')==1
             warning on
 
     end
-
+drawnow expose
 %%%%%%%%%%%%%%%%%%%%%%%
 % The Microsoft APIs for Office 2007 are different from those used for Office 2003. You can create a new presentation in Powerpoint 2007 and add slides to it using MATLAB with the following code (note the commented sections for modifying an existing presentation):
 % 
@@ -5574,7 +5669,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                     set(txt,'Top',72*handles.WorksheetMargin+offy);
 
                     txt = invoke(newslide.Shapes,'AddTextBox',1,0,0,0,0);
-                    set(txt.TextFrame.TextRange,'Text',['Page ' num2str(j) '/' num2str(max(pagenum))]);
+                    set(txt.TextFrame.TextRange,'Text',['Page ' num2str(j) filesep num2str(max(pagenum))]);
                     set(txt.TextFrame,'VerticalAnchor','msoAnchorTop','WordWrap','msoFalse',...
                         'MarginLeft',0,'MarginRight',0,'MarginTop',0,'MarginBottom',0);
                     set(txt.TextFrame.TextRange.Font,'Size',14);
@@ -5608,7 +5703,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         end
                         xlim(handles.WorksheetXLims{lst{indx}(d)});
                         ylim(handles.WorksheetYLims{lst{indx}(d)});
-
+                        drawnow expose
                         print('-dmeta',['-f' num2str(fig)]);
                         pic = invoke(newslide.Shapes,'PasteSpecial',2);
                         ug = invoke(pic,'Ungroup');
@@ -5705,6 +5800,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                                     imagesc(x(f),y(g),m(g,f));
                                 end
                             end
+                            drawnow expose
                         else
                             xlim(xl);
                             ylim(yl);
@@ -5728,7 +5824,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         set(gcf,'colormap',col);
                         axis tight;
                         axis off;
-                        
+                        drawnow expose
                         
 
                     case 'Segments'
@@ -5804,6 +5900,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         ylim(get(handles.axes_Amplitude,'ylim'));
                         set(gca,'ydir','normal');
                         axis off
+                        drawnow expose
 
                     case {'Top plot','Bottom plot'}
                         if ~isempty(find(progbar==1)) & strcmp(handles.template.Plot{c},'Bottom plot')
@@ -5836,6 +5933,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         ylim(get(handles.(['axes_Channel' num2str(axnum)]),'ylim'));
                         set(gca,'ydir','normal');
                         axis off
+                        drawnow expose
 
                     case 'Sound wave'
                         if ~isempty(find(progbar==6))
@@ -5855,6 +5953,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         ylim(get(handles.axes_Sound,'ylim'));
                         set(gca,'ydir','normal');
                         axis off
+                        drawnow expose
 
                 end
 
@@ -5866,7 +5965,12 @@ elseif get(handles.radio_PowerPoint,'value')==1
                 
                 
                 if ~strcmp(handles.template.Plot{c},'Segment labels')
-                    print('-dmeta',['-f' num2str(fig)]);
+                    if verLessThan('matlab','8.4.0')
+                        figNo = fig;
+                    else
+                        figNo = fig.Number;
+                    end
+                    print('-dmeta',['-f' num2str(figNo)]);
                     pic = invoke(newslide.Shapes,'PasteSpecial',2);
                     ug = invoke(pic,'Ungroup');
                     set(ug,'Height',72*handles.template.Height(c));
@@ -6084,9 +6188,16 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         fs = handles.fs * handles.SoundSpeed;
 
                         warning off
-                        wavwrite(wav,fs,16,'eg_temp.wav');
+                        if verLessThan('matlab','8.4.0')
+                            wavwrite(wav, fs, 16, 'eg_temp.wav');
+                            snd = invoke(newslide.Shapes,'AddMediaObject',[pwd '\eg_temp.wav']);
+                        else
+                            audiowrite('eg_temp.wav', wav, round(fs), 'BitsPerSample', 16);
+                            snd = invoke(newslide.Shapes,'AddMediaObject2',[pwd '\eg_temp.wav']);
+                        end
+                        
                         warning on
-                        snd = invoke(newslide.Shapes,'AddMediaObject',[pwd '\eg_temp.wav']);
+                        
                         set(snd,'Left',get(ug,'Left'));
                         set(snd,'Top',get(ug,'Top'));
                         mt = dir('eg_temp.wav');
@@ -6416,7 +6527,7 @@ handles.WorksheetTimes(end+1) = datenum(dt);
 handles = UpdateWorksheet(handles);
 
 str = get(handles.panel_Worksheet,'title');
-f = findstr(str,'/');
+f = findstr(str,filesep);
 tot = str2num(str(f+1:end));
 handles.WorksheetCurrentPage = tot;
 handles = UpdateWorksheet(handles);
@@ -6426,7 +6537,7 @@ if length(handles.WorksheetHandles)>=length(handles.WorksheetMs)
         set(handles.WorksheetHandles(length(handles.WorksheetMs)),'facecolor','r');
     end
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 
@@ -6509,8 +6620,8 @@ axis equal;
 axis tight;
 axis off;
 
-set(handles.panel_Worksheet,'title',['Worksheet: Page ' num2str(handles.WorksheetCurrentPage) '/' num2str(max([1 max(pagenum)]))]);
-
+set(handles.panel_Worksheet,'title',['Worksheet: Page ' num2str(handles.WorksheetCurrentPage) filesep num2str(max([1 max(pagenum)]))]);
+drawnow expose
 
 function click_Worksheet(hObject, eventdata, handles)
 
@@ -6525,7 +6636,7 @@ set(hObject,'facecolor','r');
 if strcmp(get(gcf,'selectiontype'),'open')
     ViewWorksheet(handles);
 end
-
+drawnow expose
 guidata(hObject, handles);
 
 
@@ -6557,7 +6668,7 @@ function push_PageLeft_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 str = get(handles.panel_Worksheet,'title');
-f = findstr(str,'/');
+f = findstr(str,filesep);
 tot = str2num(str(f+1:end));
 
 handles.WorksheetCurrentPage = mod(handles.WorksheetCurrentPage-1,tot);
@@ -6577,7 +6688,7 @@ function push_PageRight_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 str = get(handles.panel_Worksheet,'title');
-f = findstr(str,'/');
+f = findstr(str, filesep);
 tot = str2num(str(f+1:end));
 
 handles.WorksheetCurrentPage = mod(handles.WorksheetCurrentPage+1,tot);
@@ -6845,7 +6956,7 @@ set(gcf,'colormap',handles.WorksheetColormap{f});
 axis tight;
 axis off;
 set(fig,'visible','on');
-
+drawnow expose
 
 % --- Executes on button press in push_Macros.
 function push_Macros_Callback(hObject, eventdata, handles)
@@ -7183,7 +7294,7 @@ set(get(gca,'children'),'buttondownfcn',get(gca,'buttondownfcn'));
 hold off;
 xlim(xl);
 ylim(yl);
-
+drawnow expose
 
 % --------------------------------------------------------------------
 function menu_SonogramParameters_Callback(hObject, eventdata, handles)
@@ -7462,7 +7573,7 @@ else
     if strcmp(get(handles.menu_SourceSoundAmplitude,'checked'),'on')
         amp = smooth(10*log10(handles.filtered_sound.^2+eps),wind);
         amp = amp-min(amp(wind:length(amp)-wind));
-        amp(find(amp<0))=0;
+        amp(amp<0) = 0;
         labs = 'Loudness (dB)';
     elseif strcmp(get(handles.menu_SourceTopPlot,'checked'),'on')
         if strcmp(get(handles.axes_Channel1,'visible'),'on');
@@ -7701,7 +7812,7 @@ handles.xlimbox = plot([xd(1) xd(2) xd(2) xd(1) xd(1)],[yl(1) yl(1) yl(2) yl(2) 
 xlim([0 length(handles.sound)/handles.fs]);
 hold off
 box on;
-
+drawnow expose
 set(gca,'buttondownfcn','electro_gui(''click_sound'',gcbo,[],guidata(gcbo))');
 ch = get(gca,'children');
 set(ch,'buttondownfcn',get(gca,'buttondownfcn'));
@@ -8009,81 +8120,90 @@ handles = eg_AddProperty(handles,3);
 guidata(hObject, handles);
 
 
-function handles = eg_AddProperty(handles,type)
+function handles = eg_AddProperty(handles,type,varargin)
+% eg_AddProperty(handles, type, name, val, files)
+% eg_AddProperty(handles, type)
+%     user is prompted for name, val, and files
 
 filenum = str2num(get(handles.edit_FileNumber,'string'));
 
-typestr = {'string','boolean','list'};
-button = questdlg(['Add a new ' typestr{type} ' property to'],'Add property','Current file','Some files...','All files','All files');
-switch button
-    case ''
-        return
-    case 'Current file'
-        indx = filenum;
-        selstr = 'current file';
-    case 'Some files...'
-        str = get(handles.list_Files,'string');
-        for c = 1:length(str)
-            str{c} = [num2str(c) '. ' str{c}(26:end-14)];
-        end
-        [indx,ok] = listdlg('ListString',str,'InitialValue',filenum,'ListSize',[300 450],'Name','Select files','PromptString','Files to add new property to');
-        if ok == 0
+if nargin >= 5
+    name = varargin{1};
+    val  = varargin{2};
+    indx = varargin{3};
+else
+    typestr = {'string','boolean','list'};
+    button = questdlg(['Add a new ' typestr{type} ' property to'],'Add property','Current file','Some files...','All files','All files');
+    switch button
+        case ''
             return
-        end
-        selstr = 'selected files';
-    case 'All files'
-        indx = 1:handles.TotalFileNumber;
-        selstr = 'all files';
-end
-
-
-switch type
-    case 1
-        answer = inputdlg({'Property name',['Value for ' selstr]},'Add property',1,{'',''});
-        if isempty(answer)
-            return
-        end
-        name = answer{1};        
-        val = answer{2};
-    case 2
-        answer = inputdlg({'Property name'},'Add property',1,{''});
-        if isempty(answer)
-            return
-        end
-        name = answer{1};
-        button = questdlg(['Value for ' selstr],'Add property','On','Off','Off');
-        switch button
-            case ''
+        case 'Current file'
+            indx = filenum;
+            selstr = 'current file';
+        case 'Some files...'
+            str = get(handles.list_Files,'string');
+            for c = 1:length(str)
+                str{c} = [num2str(c) '. ' str{c}(26:end-14)];
+            end
+            [indx,ok] = listdlg('ListString',str,'InitialValue',filenum,'ListSize',[300 450],'Name','Select files','PromptString','Files to add new property to');
+            if ok == 0
                 return
-            case 'On'
-                val = 1;
-            case 'Off'
-                val = 0;
-        end
-    case 3
-        answer = inputdlg({'Property name','List of possible values'},'Add property',[1; 5],{'',''});
-        if isempty(answer)
-            return
-        end
-        name = answer{1};
-        lst = answer{2};
-        str = {};
-        for c = 1:size(lst,1)
-            str{c} = strtrim(lst(c,:));
-        end
-        
-        [val,ok] = listdlg('ListString',str,'Name','Add property','PromptString',['Value for ' selstr],'SelectionMode','single');
-        if ok == 0
-            return
-        end
-        val = str{val};
-        
-        str{end+1} = 'Dummy';
-        handles.PropertyNames{end+1} = name;
-        handles.PropertyObjectHandles(end+1) = uicontrol(handles.panel_Properties,'Style','popupmenu',...
-            'units','normalized','string',str,'position',[0 0 .1 .1],'visible','off',...
-            'FontSize',10,'horizontalalignment','center','backgroundcolor',[1 1 1]);
-        handles.DefaultPropertyValues{end+1} = str{1};
+            end
+            selstr = 'selected files';
+        case 'All files'
+            indx = 1:handles.TotalFileNumber;
+            selstr = 'all files';
+    end
+    
+    
+    switch type
+        case 1
+            answer = inputdlg({'Property name',['Value for ' selstr]},'Add property',1,{'',''});
+            if isempty(answer)
+                return
+            end
+            name = answer{1};
+            val = answer{2};
+        case 2
+            answer = inputdlg({'Property name'},'Add property',1,{''});
+            if isempty(answer)
+                return
+            end
+            name = answer{1};
+            button = questdlg(['Value for ' selstr],'Add property','On','Off','Off');
+            switch button
+                case ''
+                    return
+                case 'On'
+                    val = 1;
+                case 'Off'
+                    val = 0;
+            end
+        case 3
+            answer = inputdlg({'Property name','List of possible values'},'Add property',[1; 5],{'',''});
+            if isempty(answer)
+                return
+            end
+            name = answer{1};
+            lst = answer{2};
+            str = {};
+            for c = 1:size(lst,1)
+                str{c} = strtrim(lst(c,:));
+            end
+            
+            [val,ok] = listdlg('ListString',str,'Name','Add property','PromptString',['Value for ' selstr],'SelectionMode','single');
+            if ok == 0
+                return
+            end
+            val = str{val};
+            
+            str{end+1} = 'Dummy';
+            handles.PropertyNames{end+1} = name;
+            handles.PropertyObjectHandles(end+1) = uicontrol(handles.panel_Properties,'Style','popupmenu',...
+                'units','normalized','string',str,'position',[0 0 .1 .1],'visible','off',...
+                'FontSize',10,'horizontalalignment','center','backgroundcolor',[1 1 1]);
+            handles.DefaultPropertyValues{end+1} = str{1};
+    end
 end
 
 for c = 1:length(indx)
@@ -8849,7 +8969,7 @@ handles.Properties.Names = cell(1,handles.TotalFileNumber);
 handles.Properties.Values = cell(1,handles.TotalFileNumber);
 handles.Properties.Types = cell(1,handles.TotalFileNumber);
 for c = 1:handles.TotalFileNumber
-    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(c).name '''],0)']);
+    [snd fs dt label props] = eval(['egl_' handles.sound_loader '([''' handles.path_name filesep handles.sound_files(c).name '''],0)']);
     handles.Properties.Names{c} = props.Names;
     handles.Properties.Values{c} = props.Values;
     handles.Properties.Types{c} = props.Types;
@@ -8970,3 +9090,46 @@ set(handles.menu_EventsFromZoomBox,   'checked', 'on')
 handles = UpdateEventBrowser(handles);
 
 guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function y = eventInZoomBox(handles, eventnum)
+filenum = str2double(get(handles.edit_FileNumber,'string'));
+t = handles.EventTimes{eventnum}(:,filenum);
+if isempty(t)
+    y = [];
+    return
+end
+
+xboxSeconds = get(handles.xlimbox,'xdata');
+xmin = xboxSeconds(1) * handles.fs;
+xmax = xboxSeconds(2) * handles.fs;
+
+y = false(size(t{1}));
+for subevent = 1:size(t,1)
+    subeventInBox = (xmin <= t{subevent,1}) & (t{subevent,1} <= xmax);
+    y = y | subeventInBox;
+end
+y = y';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function trueEventNumber = selectedEventNumber(handles, n)
+[tm, sel] = eventInfoForCurrentFile(handles);
+selectedEventNums = find(sel);
+trueEventNumber = selectedEventNums(n);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [tm, sel] = eventInfoForCurrentFile(handles)
+filenum = str2num(get(handles.edit_FileNumber,'string'));
+nums = [];
+for c = 1:length(handles.EventTimes);%For every event detector
+    nums(c) = size(handles.EventTimes{c},1);%For each set of event times within the same detector
+end
+indx = get(handles.popup_EventList,'value')-1;
+cs = cumsum(nums);%Cumulative number of series by event type
+f = length(find(cs<indx))+1;%The first element which is not less than indx
+if f>1
+    g = indx-cs(f-1);
+else
+    g = indx;
+end
+tm = handles.EventTimes{f}{g,filenum};
+sel = handles.EventSelected{f}{g,filenum};
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

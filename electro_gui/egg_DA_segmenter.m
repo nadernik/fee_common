@@ -20,7 +20,7 @@ else
     min_stop = str2num(params.Values{2})/1000; % minimum interval (ms)
 end
 
-if th < 0
+if th < 0 % this seems weird, switching pos thres crossings to neg thres crossings... 
     a = -a;
     th = -th;
 end
