@@ -362,56 +362,56 @@ dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
 toggleTriggeringOnSong(guiFig, dgd.ce);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function toggleTriggeringOnSong(guiFig, experNo)
+function toggleTriggeringOnSong(GuiFig, experNo)
 %% Try to checkout acqguidata
-handles = guidata(guiFig);
-[dgd, bDgdStatus] = aa_checkoutAppData(guiFig, 'acqguidata');
+handles = guidata(GuiFig);
+[dgd, bDgdStatus] = aa_checkoutAppData(GuiFig, 'acqguidata');
 if ~bDgdStatus
     return;
 end
 %% Toggle triggering state
 if dgd.bTrigOnSong(experNo) % If already triggering on song
-    recInfo = aa_getAppDataReadOnly(guiFig, 'acqrecordinfo');
+    recInfo = aa_getAppDataReadOnly(GuiFig, 'acqrecordinfo');
     if recInfo(experNo).bSongTrigRecording % In the middle of a recording
         if dgd.DaqBuffer.isUpdating
             %% Give up
-            aa_checkinAppData(guiFig, 'acqguidata', dgd);            
+            aa_checkinAppData(GuiFig, 'acqguidata', dgd);            
             return
         else
             %% Create callback for when recording completes
             ListenerHandle = addlistener(dgd.DaqBuffer, 'RecordingComplete', @(~, ~) error('lost the callback race!'));
             completionClosure = @(~, EventData) disable_song_triggering_callback(...
-                EventData, ListenerHandle, dgd.experData(experNo).inChans, guiFig, experNo, dgd); % Call back checks in acqguidata
+                EventData, ListenerHandle, dgd.experData(experNo).inChans, GuiFig, experNo, dgd); % Call back checks in acqguidata
             ListenerHandle.Callback = completionClosure;
         end
     else
         %% Stop triggering
-        disable_song_triggering(guiFig, experNo, dgd); % Checks in acqguidata
+        disable_song_triggering(GuiFig, experNo, dgd); % Checks in acqguidata
     end
 else  % If not already triggering on song
-    [params, bParamStatus] = aa_checkoutAppData(guiFig, 'songtrigdata');
+    [params, bParamStatus] = aa_checkoutAppData(GuiFig, 'songtrigdata');
     if ~bParamStatus
-        aa_checkinAppData(guiFig, 'acqguidata', dgd);
+        aa_checkinAppData(GuiFig, 'acqguidata', dgd);
         return; 
     end    
     dgd.bTrigOnSong(experNo) = true;
     params(experNo).nextPeek = ceil(dgd.DaqBuffer.lastSample - dgd.actInSampRate); % Last second of the buffer
-    aa_checkinAppData(guiFig, 'songtrigdata', params);
+    aa_checkinAppData(GuiFig, 'songtrigdata', params);
 
     %% start the recurring song check timer...
     if isempty(dgd.trigOnSongTimer) % Timer not created
         dgd.trigOnSongTimer = timer();
-        set(dgd.trigOnSongTimer,'Name', 'trigOnSong');
-        timerFcn = @(Src, EventData) acqgui_timerFcnAcqTrigOnSong(Src, EventData, guiFig);
-        songTrigErrFcn = @(~, ~) song_trigger_error(guiFig, experNo);
-        set(dgd.trigOnSongTimer,'TimerFcn', timerFcn, 'ErrorFcn', songTrigErrFcn);
-        set(dgd.trigOnSongTimer,'Period',1);
-        set(dgd.trigOnSongTimer,'ExecutionMode','fixedRate');
-        set(dgd.trigOnSongTimer,'BusyMode', 'drop');
-        aa_checkinAppData(guiFig, 'acqguidata', dgd);
+        set(dgd.trigOnSongTimer, 'Name', 'trigOnSong');
+        timerFcn = @(Src, EventData) acqgui_timerFcnAcqTrigOnSong(Src, EventData, GuiFig);
+        songTrigErrFcn = @(~, ~) song_trigger_error(GuiFig, experNo);
+        set(dgd.trigOnSongTimer, 'TimerFcn', timerFcn, 'ErrorFcn', songTrigErrFcn);
+        set(dgd.trigOnSongTimer, 'Period', 1);
+        set(dgd.trigOnSongTimer, 'ExecutionMode','fixedRate');
+        set(dgd.trigOnSongTimer, 'BusyMode', 'drop');
+        aa_checkinAppData(GuiFig, 'acqguidata', dgd);
         start(dgd.trigOnSongTimer);
     else
-        aa_checkinAppData(guiFig, 'acqguidata', dgd);
+        aa_checkinAppData(GuiFig, 'acqguidata', dgd);
     end
     set(handles.buttonTrigOnSong, 'String', 'Stop Triggering On Song');
 end
