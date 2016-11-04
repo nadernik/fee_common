@@ -22,7 +22,7 @@ function varargout = createExperMulti(varargin)
 
 % Edit the above text to modify the response to help createExperMulti
 
-% Last Modified by GUIDE v2.5 07-Jan-2011 14:10:46
+% Last Modified by GUIDE v2.5 03-Nov-2016 12:19:28
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1117,3 +1117,10 @@ handles.val = temp.handles.val;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function save_values(filename, handles)
 save(filename,'handles')
+
+
+% --- Executes during object creation, after setting all properties.
+function figure1_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
