@@ -14,6 +14,8 @@ classdef SongTriggeredExperiment < handle
         maxFileDuration % to record, in seconds
     end
     properties (SetAccess = private)
+        birdName
+        
         desiredFs
         
         songScore
@@ -28,14 +30,19 @@ classdef SongTriggeredExperiment < handle
         
         %% Recording/monitoring status
         detectingSong
-        forcedRecording
+        isRecording
     end
     properties (Access = private)
         mutexTaken % mutex for critical sections (if they exist?)
         
-        recordingListener
+        fileNameFormat
+        
+        RecordingListener
+        
+        inChannels
         
         %% DAQ parameters
+        DaqObj
         daqFs
         daqBufferSecs
         daqUpdateFreq % in Hz
@@ -49,10 +56,11 @@ classdef SongTriggeredExperiment < handle
     end
     
     methods
-        function self = SongTriggeredExperiment(directory, songHWChannel, nonSongHWChannels, desiredFs, varargin)
+        function self = SongTriggeredExperiment(birdName, directory, songHWChannel, nonSongHWChannels, desiredFs, varargin)
             persistent p;
             if isempty(p)
                 p = inputParser();
+                addParameter(p, 'lastFileNo', 0);
                 addParameter(p, 'minFreq', 2000);
                 addParameter(p, 'maxFreq', 6000);
                 addParameter(p, 'ratioThreshold', 2); % aka powerThreshold
@@ -63,16 +71,21 @@ classdef SongTriggeredExperiment < handle
                 addParameter(p, 'preSongSeconds', 1);
                 addParameter(p, 'postSongSeconds', 0);
                 addParameter(p, 'maxFileDuration', 30); % in seconds
+                addParameter(p, 'fileNameFormat', '%s_d%06g_%s');% format with bird name, file number, and datestring
             end
             parse(p, varargin{:});
             Params = p.Results;
             
             %% Set properties
+            self.birdName = birdName;
             self.songScore = nan;
             self.mutexTaken = false;
             self.directory = directory;
+            self.detectingSong = false;
+            self.isRecording = false;
             self.songHWChannel = songHWChannel;
             self.nonSongHWChannels = nonSongHWChannels;
+            self.inChannels = [songHWChannel, nonSongHWChannels];
             self.desiredFs = desiredFs;
             self.minFreq = Params.minFreq;
             self.maxFreq = Params.maxFreq;
@@ -84,6 +97,7 @@ classdef SongTriggeredExperiment < handle
             self.preSongSeconds = Params.preSongSeconds;
             self.postSongSeconds = Params.postSongSeconds;
             self.maxFileDuration = Params.maxFileDuration;
+            self.lastFileNo = SongTriggeredExperiment.last_fileno(self.directory, self.birdName);
             
             %% Set daq properties to -1 to indicate that daq has not been set up
             self.daqFs = -1;
@@ -97,6 +111,11 @@ classdef SongTriggeredExperiment < handle
             self.daqUpdateFreq = daqUpdateFreq;
             self.calculate_derived_song_params();
             self.write_daqsetup();
+        end
+        
+        function prefix = get_next_file_prefix(self)
+            nextNo = self.lastFileNo + 1;
+            prefix = sprintf(self.fileNameFormat, self.birdName, nextNo, datestr(now,30));
         end
         
         function [isSong, firstSongTime] = check_for_song(self, audioData)
@@ -117,6 +136,45 @@ classdef SongTriggeredExperiment < handle
                 firstSongTime = nan;
             end
         end
+        
+        function status = start_recording(self)
+            if self.DaqObj.isUpdating
+                status = false;
+            else
+                recSampNum = self.DaqObj.lastSample + 1;
+                self.RecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.recording_completion_callback);
+                recFilePrefix = fullfile(self.directory, self.get_next_file_prefix());
+                [startedChannels, ~] = self.DaqObj.start_recording(recSampNum, recFilePrefix, self.inChannels);
+                status = all(startedChannels);
+                if status
+                    self.isRecording = true;
+                else
+                    delete(self.RecordingListener);
+                end
+            end
+        end
+        
+        function status = stop_recording(self)
+            if self.DaqObj.isUpdating
+                status = false;
+            else
+                stoppedChannels = self.DaqObj.stop_recording(self.DaqObj.lastSample, self.inChannels);
+                status = all(stoppedChannels);
+            end
+        end
+        
+        function recording_completion_callback(self, ~, EventData)
+            %% See if these are the channels we are looking for
+            channelsMatch = compare_channels([self.songHWChannel, self.nonSongHWChannels], EventData.hwChannels);
+            %% Respond to event if all channels match
+            if channelsMatch
+                delete(self.RecordingListener); % Un-subcribe to future events
+                self.isRecording = false;
+                self.lastFileNo = self.lastFileNo + 1;
+                notify(self, 'RecordingComplete');
+            end
+        end
+        
     end
     methods (Access = private)
         function calculate_derived_song_params(self)
@@ -185,12 +243,31 @@ classdef SongTriggeredExperiment < handle
                 exper.sigDesc{nName} = input(sprintf('Enter description of signal on channel %d:', exper.sigCh(nName)),'s');
             end
             save(fullfile(exper.dir, 'exper.mat'), 'exper');
-            Exper = SongTriggeredExperiment(exper.dir, exper.audioCh, exper.sigCh, exper.desiredInSampRate);
+            Exper = SongTriggeredExperiment(exper.birdName, exper.dir, exper.audioCh, exper.sigCh, exper.desiredInSampRate);
         end
         
         function Exper = load_experiment(fileName)
             S = load(fileName, 'exper');
-            Exper = SongTriggeredExperiment(S.exper.dir, S.exper.audioCh, S.exper.sigCh, S.exper.desiredInSampRate);
+            Exper = SongTriggeredExperiment(S.exper.birdName, S.exper.dir, S.exper.audioCh, S.exper.sigCh, S.exper.desiredInSampRate);
         end
+        
+        function fileNo = last_fileno(directory, birdName)
+            dirstat = dir(fullfile(directory, [birdName, '_d*']));
+            name = dirstat(end).name;
+            fileNo = extract_datafile_number(name);
+        end
+        
+        function fileNos = extract_datafile_number(names)
+            REGSTR = '^.+_d(\d{6})_\d{8}T\d{6}chan\d+\.dat$';
+            if ~iscell(names)
+                names = {names};
+            end
+            tokens = regexp(names, REGSTR, 'tokens', 'once');
+            fileNos = str2double([tokens{:}]);
+        end
+    end
+    
+    events (NotifyAccess = private)
+        RecordingComplete
     end
 end
