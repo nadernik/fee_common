@@ -142,8 +142,8 @@ classdef SongTriggeredExperiment < handle
             songPowerRatio = powerSong ./ powerNonSong;
             
             %% Smooth song power ratio
-            threshCross = songPowerRatio > self.ratioThreshold; % Cast into double for convolution
-            threshCrossMovingAv = conv(double(threshCross), self.songConvKernel);
+            threshCross = songPowerRatio > self.ratioThreshold;
+            threshCrossMovingAv = conv(double(threshCross), self.songConvKernel); % Cast into double for convolution
             maxSongScore = max(threshCrossMovingAv);
             isSong = maxSongScore > self.songDensity;
             if isSong
