@@ -153,17 +153,17 @@ classdef SongTriggeredExperiment < handle
         end
         
         function status = start_recording(self)
-            if self.DaqObj.isUpdating
+            if self.DaqObj.isUpdating || self.isRecording
                 status = false;
             else
+                self.isRecording = true;
                 recSampNum = self.DaqObj.lastSample + 1;
                 self.RecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.recording_completion_callback);
                 recFilePrefix = fullfile(self.directory, self.get_next_file_prefix());
                 [startedChannels, ~] = self.DaqObj.start_recording(recSampNum, recFilePrefix, self.inChannels);
                 status = all(startedChannels);
-                if status
-                    self.isRecording = true;
-                else
+                if ~status
+                    self.isRecording = false;
                     delete(self.RecordingListener);
                 end
             end
