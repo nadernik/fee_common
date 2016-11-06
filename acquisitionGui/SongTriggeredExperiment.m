@@ -98,6 +98,7 @@ classdef SongTriggeredExperiment < handle
             self.postSongSeconds = Params.postSongSeconds;
             self.maxFileDuration = Params.maxFileDuration;
             self.lastFileNo = SongTriggeredExperiment.last_fileno(self.directory, self.birdName);
+            self.fileTimes = [];
             
             %% Set daq properties to -1 to indicate that daq has not been set up
             self.daqFs = -1;
@@ -185,6 +186,7 @@ classdef SongTriggeredExperiment < handle
                 delete(self.RecordingListener); % Un-subcribe to future events
                 self.isRecording = false;
                 self.lastFileNo = self.lastFileNo + 1;
+                self.fileTimes = [self.fileTimes, now()];
                 notify(self, 'RecordingComplete');
             end
         end
