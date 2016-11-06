@@ -119,8 +119,9 @@ classdef SongTriggeredExperiment < handle
             self.maxFreq = maxFreq;
         end
         
-        function set_daq_params(self, daqFs, daqBufferSecs, daqUpdateFreq)
-            self.daqFs = daqFs;
+        function set_daq_params(self, DaqObj, daqBufferSecs, daqUpdateFreq)
+            self.DaqObj = DaqObj;
+            self.daqFs = self.DaqObj.samplingRate;
             self.nyqFreq = self.daqFs ./ 2;
             self.daqBufferSecs = daqBufferSecs;
             self.daqUpdateFreq = daqUpdateFreq;
