@@ -181,7 +181,7 @@ classdef SongTriggeredExperiment < handle
         
         function recording_completion_callback(self, ~, EventData)
             %% See if these are the channels we are looking for
-            channelsMatch = compare_channels([self.songHWChannel, self.nonSongHWChannels], EventData.hwChannels);
+            channelsMatch = compare_channels(self.inChannels, EventData.hwChannels);
             %% Respond to event if all channels match
             if channelsMatch
                 delete(self.RecordingListener); % Un-subcribe to future events
