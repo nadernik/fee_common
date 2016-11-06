@@ -134,27 +134,35 @@ classdef SongTriggeredExperiment < handle
             prefix = sprintf(self.fileNameFormat, self.birdName, nextNo, datestr(now,30));
         end
         
-        function [isSong, firstSongTime] = check_for_song(self, audioData)
-            %% Take specgram and measure in-band vs. out-band power in each time-slice
-            [s, ~, t] = spectrogram(audioData, self.windowSampleSize, self.windowSampleOverlap, self.specNfft, self.daqFs);
-            powerSong = mean(abs(s(self.minNdx:self.maxNdx, :)), 1);
-            powerNonSong = mean(abs(s([1:(self.minNdx - 1), (self.maxNdx + 1):end], :)), 1) + eps;
-            songPowerRatio = powerSong ./ powerNonSong;
-            
-            %% Smooth song power ratio
-            threshCross = songPowerRatio > self.ratioThreshold;
-            threshCrossMovingAv = conv(double(threshCross), self.songConvKernel); % Cast into double for convolution
-            maxSongScore = max(threshCrossMovingAv);
-            isSong = maxSongScore > self.songDensity;
-            if isSong
-                firstSongTime = t(find(threshCross, 1, 'first'));
-            else
+        function [status, isSong, firstSongTime] = check_for_song(self, audioData)
+            % Should only be called once daq is set up
+            if  self.daqFs < 0 
+                status = false;
+                isSong = false;
                 firstSongTime = nan;
+            else
+                status = true;
+                %% Take specgram and measure in-band vs. out-band power in each time-slice
+                [s, ~, t] = spectrogram(audioData, self.windowSampleSize, self.windowSampleOverlap, self.specNfft, self.daqFs);
+                powerSong = mean(abs(s(self.minNdx:self.maxNdx, :)), 1);
+                powerNonSong = mean(abs(s([1:(self.minNdx - 1), (self.maxNdx + 1):end], :)), 1) + eps;
+                songPowerRatio = powerSong ./ powerNonSong;
+                
+                %% Smooth song power ratio
+                threshCross = songPowerRatio > self.ratioThreshold;
+                threshCrossMovingAv = conv(double(threshCross), self.songConvKernel); % Cast into double for convolution
+                maxSongScore = max(threshCrossMovingAv);
+                isSong = maxSongScore > self.songDensity;
+                if isSong
+                    firstSongTime = t(find(threshCross, 1, 'first'));
+                else
+                    firstSongTime = nan;
+                end
             end
         end
         
         function status = start_recording(self)
-            if self.DaqObj.isUpdating || self.isRecording
+            if self.daqFs < 0 || self.DaqObj.isUpdating || self.isRecording
                 status = false;
             else
                 self.isRecording = true;
@@ -171,7 +179,7 @@ classdef SongTriggeredExperiment < handle
         end
         
         function status = stop_recording(self)
-            if self.DaqObj.isUpdating
+            if ~self.isRecording || self.DaqObj.isUpdating
                 status = false;
             else
                 stoppedChannels = self.DaqObj.stop_recording(self.DaqObj.lastSample, self.inChannels);
