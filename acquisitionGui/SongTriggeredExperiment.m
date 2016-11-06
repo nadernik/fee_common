@@ -1,8 +1,6 @@
 classdef SongTriggeredExperiment < handle
     properties
         %% Song detection parameters
-        minFreq
-        maxFreq
         ratioThreshold
         songDensity
         songDuration
@@ -19,6 +17,9 @@ classdef SongTriggeredExperiment < handle
         desiredFs
         
         songScore
+        
+        minFreq
+        maxFreq
         %% Information about which channels are part of this experiment
         songHWChannel
         nonSongHWChannels
@@ -33,8 +34,6 @@ classdef SongTriggeredExperiment < handle
         isRecording
     end
     properties (Access = private)
-        mutexTaken % mutex for critical sections (if they exist?)
-        
         fileNameFormat
         
         RecordingListener
@@ -53,6 +52,9 @@ classdef SongTriggeredExperiment < handle
         maxNdx
         windowSampleSize
         windowSampleOverlap
+        specNfft
+        nFreq
+        nyqFreq
     end
     
     methods
@@ -79,7 +81,6 @@ classdef SongTriggeredExperiment < handle
             %% Set properties
             self.birdName = birdName;
             self.songScore = nan;
-            self.mutexTaken = false;
             self.directory = directory;
             self.detectingSong = false;
             self.isRecording = false;
@@ -87,8 +88,7 @@ classdef SongTriggeredExperiment < handle
             self.nonSongHWChannels = nonSongHWChannels;
             self.inChannels = [songHWChannel, nonSongHWChannels];
             self.desiredFs = desiredFs;
-            self.minFreq = Params.minFreq;
-            self.maxFreq = Params.maxFreq;
+            self.set_freq_range(Params.minFreq, Params.maxFreq);
             self.ratioThreshold = Params.ratioThreshold;
             self.songDensity = Params.songDensity;
             self.songDuration = Params.songDuration;
@@ -105,8 +105,22 @@ classdef SongTriggeredExperiment < handle
             self.daqUpdateFreq = -1;
         end
         
+        function set_freq_range(self, minFreq, maxFreq)
+            assert(minFreq < maxFreq, 'minimum frequency must be strictly less than maximum frequency');
+            assert(minFreq >= 0 && maxFreq >= 0, 'frequencies must be postiive');
+            if self.daqFs >= 0 % Daq is set up
+                assert(minFreq <= self.nyqFreq && maxFreq <= self.nyqFreq, 'frequencies must be less than nyquist freqeuncy');
+            else
+                desiredNyqF = self.desifredFs / 2;
+                assert(minFreq <= desiredNyqF && maxFreq <= desiredNyqF, 'frequencies must be less than desired nyquist frequency');
+            end
+            self.minFreq = minFreq;
+            self.maxFreq = maxFreq;
+        end
+        
         function set_daq_params(self, daqFs, daqBufferSecs, daqUpdateFreq)
             self.daqFs = daqFs;
+            self.nyqFreq = self.daqFs ./ 2;
             self.daqBufferSecs = daqBufferSecs;
             self.daqUpdateFreq = daqUpdateFreq;
             self.calculate_derived_song_params();
@@ -120,7 +134,7 @@ classdef SongTriggeredExperiment < handle
         
         function [isSong, firstSongTime] = check_for_song(self, audioData)
             %% Take specgram and measure in-band vs. out-band power in each time-slice
-            [s, ~, t] = spectrogram(audioData, self.windowSampleSize, self.windowSampleOverlap, self.windowSampleSize, self.daqFs);
+            [s, ~, t] = spectrogram(audioData, self.windowSampleSize, self.windowSampleOverlap, self.specNfft, self.daqFs);
             powerSong = mean(abs(s(self.minNdx:self.maxNdx, :)), 1);
             powerNonSong = mean(abs(s([1:(self.minNdx - 1), (self.maxNdx + 1):end], :)), 1) + eps;
             songPowerRatio = powerSong ./ powerNonSong;
@@ -181,8 +195,11 @@ classdef SongTriggeredExperiment < handle
             if self.daqFs >= 0 % DAQ is set up
                 self.windowSampleSize = floor(self.daqFs * self.windowSize);
                 self.windowSampleOverlap = floor(self.windowSampleSize * self.windowOverlap);
-                self.minNdx = floor((self.windowSampleSize / self.daqFs) * self.minFreq + 1);
-                self.maxNdx = ceil((self.windowSampleSize / self.daqFs) * self.maxFreq + 1);
+                self.specNfft = 2 ^ nextpow2(self.windowSampleSize);
+                self.nFreq = self.specNfft / 2 + 1;
+                self.minNdx = self.hz_to_freqndx(@floor, self.minFreq);
+                self.maxNdx = self.hz_to_freqndx(@ceil, self.maxFreq);
+                self.fix_freq_range();
                 kernelLength = (self.songDuration * self.daqFs) / (self.windowSampleSize - self.windowSampleOverlap); % This is from the original function, I don't understand why it's normalized this way
                 if kernelLength <= 0 || kernelLength == Inf
                     kernelLength = 1;
@@ -200,6 +217,22 @@ classdef SongTriggeredExperiment < handle
             daqSetup.actUpdateFreq = self.daqUpdateFreq;
             fileName = fullfile(self.directory, sprintf('daqSetup%s.mat', datestr(now, 30)));
             save(fileName, 'daqSetup');
+        end
+        
+        function fix_freq_range(self)
+            if self.daqFs >= 0 % Daq is set up
+                self.minFreq = self.freqndx_to_hz(self.minNdx);
+                self.maxFreq = self.freqndx_to_hz(self.maxNdx);
+            else
+                warning('Cannot fix frequency range before DAQ is set up');
+            end
+        end
+        
+        function hz = freqndx_to_hz(self, freqNdx)
+            hz = self.nyqFreq * (freqNdx - 1) ./ (self.nFreq - 1);
+        end
+        function freqNdx = hz_to_freqndx(self, roundFun, hz)
+            freqNdx = roundFun((self.nFreq - 1) * hz / self.nyqFreq) + 1;
         end
     end
     methods (Static)
