@@ -59,6 +59,8 @@ classdef SongTriggeredExperiment < handle
         specNfft
         nFreq
         nyqFreq
+        
+        DeletionListener
     end
     
     methods
@@ -138,6 +140,25 @@ classdef SongTriggeredExperiment < handle
                 self.lastFileNo = SongTriggeredExperiment.last_fileno(self.experDirectory, self.birdName);
             else
                 self.lastFileNo = 0;
+            end
+        end
+        
+        function delete(self)
+            % Clean up
+            try
+                if ~isempty(self.DeletionListener) && isvalid(self.DeletionListener)
+                    delete(self.DeletionListener);
+                end
+                if self.isRecording
+                    self.DeletionListener = addlistener(self, 'RecordingComplete', @(~, ~) self.delete());
+                    status = self.stop_recording();
+                    while ~status
+                        status = self.stop_recording();
+                    end
+                end
+                delete(self.RecordingListener);
+            catch
+                % do nothing
             end
         end
         
