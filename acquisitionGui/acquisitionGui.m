@@ -178,7 +178,6 @@ set(GuiFig,'HandleVisibility','on');
 %% initialize properties of ui elements
 set(handles.buttonTrigOnSong,'Enable','off');
 set(handles.buttonRecord,'Enable','off');
-set(handles.buttonTrigOnChan,'Enable','off');
 fields = fieldnames(handles);
 for nField = 1:numel(fields)
     hand = handles.(fields{nField});
@@ -1100,7 +1099,6 @@ set(handles.textRecordingStatus, 'String', 'Ready to record');
 set(handles.textRecordingStatus, 'BackgroundColor', 'green');
 set(handles.buttonTrigOnSong,'Enable','on');
 set(handles.buttonRecord,'Enable','on');
-set(handles.buttonTrigOnChan,'Enable','on');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function closeExperiment(guifig, experNdx)
@@ -1157,7 +1155,6 @@ if isempty(dgd.expers)
     
     set(handles.buttonTrigOnSong,'Enable','off');
     set(handles.buttonRecord,'Enable','off');
-    set(handles.buttonTrigOnChan,'Enable','off');
     
     aa_checkinAppData(guifig, 'acqguidata', dgd);
     aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
@@ -1194,7 +1191,6 @@ else
 
     set(handles.buttonTrigOnSong,'Enable','on');
     set(handles.buttonRecord,'Enable','on');
-    set(handles.buttonTrigOnChan,'Enable','on');
 
     aa_checkinAppData(guifig, 'acqguidata', dgd);
     aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
@@ -1342,13 +1338,6 @@ end
 aa_checkinAppData(guifig, 'acqguidata',dgd);
 aa_checkinAppData(guifig, 'acqdisplaydata',ddd);
 acqgui_updateDisplay(guifig);
-
-
-% --- Executes on button press in buttonTrigOnChan.
-function buttonTrigOnChan_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonTrigOnChan (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 function editFilenum_Callback(hObject, eventdata, handles)
 % hObject    handle to editFilenum (see GCBO)
