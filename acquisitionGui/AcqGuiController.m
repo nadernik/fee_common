@@ -29,7 +29,7 @@ classdef (Sealed) AcqGuiController < handle
             p = inputParser();
             addParameter(p, 'restartDaily', false);
             addParameter(p, 'startHour', 7);
-            addParameter(p, 'stopHour', 22);
+            addParameter(p, 'stopHour', 23);
             parse(p, varargin{:});
             Params = p.Results;
             
@@ -56,6 +56,12 @@ classdef (Sealed) AcqGuiController < handle
         end
     end
     methods (Access = private)
+        function halt_experiments(self)
+        end
+        
+        function resume_experiments(self)
+        end
+        
         function reset_experiments(self)
             ClonedExperiments = cellfun(@SongTriggeredExperiment.clone_experiment, self.Experiments);
             cellfun(@delete, self.Experiments);
@@ -63,8 +69,6 @@ classdef (Sealed) AcqGuiController < handle
         end
         
         function set_restart(self)
-            %clear restart timer just in case.
-            clearMorningRestartTimer();
             %build a timer that calls the restart function.
             self.RestartTimer = timer('Name', 'acqguiRestartInMorning', ...
                 'TimerFcn', @() acqgui_restartGUI(timerfind('Name', 'acqguiRestartInMorning'), [], findobj('Name', 'acquisitionGui')),...
@@ -86,10 +90,9 @@ classdef (Sealed) AcqGuiController < handle
         end
         
         function clear_restart(self)
-            %delete restart timer if there is one.
-            if(~isempty(timerfind('Name','acqguiRestartInMorning')))
-                stop(timerfind('Name','acqguiRestartInMorning'));
-                delete(timerfind('Name','acqguiRestartInMorning'));
+            if ~isempty(self.RestartTimer) && isvalid(self.RestartTimer)
+                stop(self.RestartTimer);
+                delete(self.RestartTimer);
             end
         end
         
