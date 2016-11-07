@@ -61,6 +61,8 @@ classdef SongTriggeredExperiment < handle
         nyqFreq
         
         DeletionListener
+        ChangeDetectionListener
+        detectionChange
     end
     
     methods
@@ -162,6 +164,24 @@ classdef SongTriggeredExperiment < handle
             end
         end
         
+        function status = change_detectingSong(self, detectingSong)
+            if self.isRecording
+                if ~isempty(self.ChangeDetectionListener) && ...
+                        isvalid(self.ChangeDetectionListener)
+                    status = true;
+                    self.detectionChange = detectingSong;
+                    self.ChangeDetectionListener = ...
+                        addlistener(self, 'RecordingComplete',...
+                        @self.change_detectingSong_callback);
+                else  
+                    status = false;
+                end
+            else
+                status = true;
+                self.detectingSong = detectingSong;
+            end
+        end
+        
         function set_freq_range(self, minFreq, maxFreq)
             assert(minFreq < maxFreq, ...
                 'minimum frequency must be strictly less than maximum frequency');
@@ -257,6 +277,11 @@ classdef SongTriggeredExperiment < handle
                 self.lastFileNo = self.lastFileNo + 1;
                 notify(self, 'RecordingComplete');
             end
+        end
+        
+        function change_detectingSong_callback(self, ~, ~)
+            delete(self.DisableDetectionListener);
+            self.detectingSong = self.detectionChange;
         end
     end
     
