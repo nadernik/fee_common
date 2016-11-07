@@ -353,6 +353,8 @@ classdef SongTriggeredExperiment < handle
                 'experDesc', ExperIn.experDesc, ...
                 'signalName', ExperIn.signalName, ...
                 'signalDesc', ExperIn.signalDesc);
+            ClonedExper.make_exper_dir();
+            ClonedExper.write_exper_file();
         end
         
         function Exper = create_experiment_prompt(varargin)
