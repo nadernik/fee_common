@@ -28,7 +28,6 @@ if theSem == 0
 end
 
 if AA_APPDATASEMAPHORE(theSem).status == 0
-    fprintf('Semaphore %s now held by %s\n', name, st(2).name);
     AA_APPDATASEMAPHORE(theSem).status = st(2).name;
     value = getappdata(h, name);
     status = true;

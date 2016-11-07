@@ -21,5 +21,4 @@ end
 %checker-out.  
 setappdata(h, name, value);
 status = true;
-fprintf('Cleared %s semaphore held by %s\n', name, AA_APPDATASEMAPHORE(theSem).status);
 AA_APPDATASEMAPHORE(theSem).status = 0;
