@@ -13,38 +13,42 @@ classdef SongTriggeredExperiment < handle
     end
     properties (SetAccess = private)
         birdName
+        birdDesc
+        experName
+        experDesc
+        signalName
+        signalDesc
+        timeCreated
         
         desiredFs
-        
-        songScore
-        
+        songScore = nan;
         minFreq
         maxFreq
+        
         %% Information about which channels are part of this experiment
         songHWChannel
         nonSongHWChannels
         
         %% Information about saved files
-        directory
-        lastFileNo
-        fileTimes
+        rootDirectory
+        birdDirectory
+        experDirectory
+        lastFileNo = 0;
         
         %% Recording/monitoring status
-        detectingSong
-        isRecording
+        detectingSong = false;
+        isRecording = false;
     end
     properties (Access = private)
         fileNameFormat
-        
         RecordingListener
-        
         inChannels
         
         %% DAQ parameters
         DaqObj
-        daqFs
-        daqBufferSecs
-        daqUpdateFreq % in Hz
+        daqFs = -1; % -1 indicates daq is not set up
+        daqBufferSecs = -1;
+        daqUpdateFreq = -1;% in Hz
         
         %% Derived song detection parameters
         songConvKernel
@@ -58,10 +62,15 @@ classdef SongTriggeredExperiment < handle
     end
     
     methods
-        function self = SongTriggeredExperiment(birdName, directory, songHWChannel, nonSongHWChannels, desiredFs, varargin)
+        function self = SongTriggeredExperiment(birdName, ...
+                rootDirectory, songHWChannel, ...
+                nonSongHWChannels, desiredFs, varargin)
             persistent p;
             if isempty(p)
                 p = inputParser();
+                addParameter(p, 'birdDirectory', '');
+                addParameter(p, 'experDirectory', '');
+                addParameter(p, 'experName', '');
                 addParameter(p, 'lastFileNo', 0);
                 addParameter(p, 'minFreq', 2000);
                 addParameter(p, 'maxFreq', 6000);
@@ -74,6 +83,11 @@ classdef SongTriggeredExperiment < handle
                 addParameter(p, 'postSongSeconds', 0);
                 addParameter(p, 'maxFileDuration', 30); % in seconds
                 addParameter(p, 'fileNameFormat', '%s_d%06g_%s');% format with bird name, file number, and datestring
+                addParameter(p, 'birdDesc', '');
+                addParameter(p, 'experDesc', '');
+                addParameter(p, 'signalName', {});
+                addParameter(p, 'signalDesc', {});
+                addParameter(p, 'timeCreated', nan);
             end
             parse(p, varargin{:});
             Params = p.Results;
@@ -81,7 +95,7 @@ classdef SongTriggeredExperiment < handle
             %% Set properties
             self.birdName = birdName;
             self.songScore = nan;
-            self.directory = directory;
+            self.rootDirectory = rootDirectory;
             self.detectingSong = false;
             self.isRecording = false;
             self.songHWChannel = songHWChannel;
@@ -97,23 +111,47 @@ classdef SongTriggeredExperiment < handle
             self.preSongSeconds = Params.preSongSeconds;
             self.postSongSeconds = Params.postSongSeconds;
             self.maxFileDuration = Params.maxFileDuration;
-            self.lastFileNo = SongTriggeredExperiment.last_fileno(self.directory, self.birdName);
-            self.fileTimes = [];
-            
-            %% Set daq properties to -1 to indicate that daq has not been set up
-            self.daqFs = -1;
-            self.daqBufferSecs = -1;
-            self.daqUpdateFreq = -1;
+            self.birdDesc = Params.birdDesc;
+            self.experDesc = Params.experDesc;
+            self.signalName = Params.signalName;
+            self.signalDesc = Params.signalDesc;
+            if isnan(Params.timeCreated)
+                self.timeCreated = datetime();
+            else
+                self.timeCreated = Params.timeCreated;
+            end
+            if isempty(Params.experName)
+                self.experName = datestr(self.timeCreated, 29);
+            else
+                self.experName = Params.experName;
+            end
+            if isempty(Params.birdDirectory)
+                self.birdDirectory = fullfile(self.rootDirectory, self.birdName);
+            else
+            end
+            if isempty(Params.experDirectory)
+                self.experDirectory = fullfile(self.birdDirectory, self.experName);
+            else
+                self.experDirectory = Params.experDirectory;
+            end
+            if exist(self.experDirectory, 'dir')
+                self.lastFileNo = SongTriggeredExperiment.last_fileno(self.experDirectory, self.birdName);
+            else
+                self.lastFileNo = 0;
+            end
         end
         
         function set_freq_range(self, minFreq, maxFreq)
-            assert(minFreq < maxFreq, 'minimum frequency must be strictly less than maximum frequency');
+            assert(minFreq < maxFreq, ...
+                'minimum frequency must be strictly less than maximum frequency');
             assert(minFreq >= 0 && maxFreq >= 0, 'frequencies must be postiive');
             if self.daqFs >= 0 % Daq is set up
-                assert(minFreq <= self.nyqFreq && maxFreq <= self.nyqFreq, 'frequencies must be less than nyquist freqeuncy');
+                assert(minFreq <= self.nyqFreq && maxFreq <= self.nyqFreq, ...
+                    'frequencies must be less than nyquist freqeuncy');
             else
                 desiredNyqF = self.desifredFs / 2;
-                assert(minFreq <= desiredNyqF && maxFreq <= desiredNyqF, 'frequencies must be less than desired nyquist frequency');
+                assert(minFreq <= desiredNyqF && maxFreq <= desiredNyqF, ...
+                    'frequencies must be less than desired nyquist frequency');
             end
             self.minFreq = minFreq;
             self.maxFreq = maxFreq;
@@ -131,7 +169,7 @@ classdef SongTriggeredExperiment < handle
         
         function prefix = get_next_file_prefix(self)
             nextNo = self.lastFileNo + 1;
-            prefix = sprintf(self.fileNameFormat, self.birdName, nextNo, datestr(now,30));
+            prefix = sprintf(self.fileNameFormat, self.birdName, nextNo, datestr(datetime(), 30));
         end
         
         function [status, isSong, firstSongTime] = check_for_song(self, audioData)
@@ -143,7 +181,8 @@ classdef SongTriggeredExperiment < handle
             else
                 status = true;
                 %% Take specgram and measure in-band vs. out-band power in each time-slice
-                [s, ~, t] = spectrogram(audioData, self.windowSampleSize, self.windowSampleOverlap, self.specNfft, self.daqFs);
+                [s, ~, t] = spectrogram(audioData, self.windowSampleSize,...
+                    self.windowSampleOverlap, self.specNfft, self.daqFs);
                 powerSong = mean(abs(s(self.minNdx:self.maxNdx, :)), 1);
                 powerNonSong = mean(abs(s([1:(self.minNdx - 1), (self.maxNdx + 1):end], :)), 1) + eps;
                 songPowerRatio = powerSong ./ powerNonSong;
@@ -168,7 +207,7 @@ classdef SongTriggeredExperiment < handle
                 self.isRecording = true;
                 recSampNum = self.DaqObj.lastSample + 1;
                 self.RecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.recording_completion_callback);
-                recFilePrefix = fullfile(self.directory, self.get_next_file_prefix());
+                recFilePrefix = fullfile(self.experDirectory, self.get_next_file_prefix());
                 [startedChannels, ~] = self.DaqObj.start_recording(recSampNum, recFilePrefix, self.inChannels);
                 status = all(startedChannels);
                 if ~status
@@ -195,12 +234,11 @@ classdef SongTriggeredExperiment < handle
                 delete(self.RecordingListener); % Un-subcribe to future events
                 self.isRecording = false;
                 self.lastFileNo = self.lastFileNo + 1;
-                self.fileTimes = [self.fileTimes, now()];
                 notify(self, 'RecordingComplete');
             end
         end
-        
     end
+    
     methods (Access = private)
         function calculate_derived_song_params(self)
             if self.daqFs >= 0 % DAQ is set up
@@ -211,7 +249,8 @@ classdef SongTriggeredExperiment < handle
                 self.minNdx = self.hz_to_freqndx(@floor, self.minFreq);
                 self.maxNdx = self.hz_to_freqndx(@ceil, self.maxFreq);
                 self.fix_freq_range();
-                kernelLength = (self.songDuration * self.daqFs) / (self.windowSampleSize - self.windowSampleOverlap); % This is from the original function, I don't understand why it's normalized this way
+                kernelLength = (self.songDuration * self.daqFs) / ...
+                    (self.windowSampleSize - self.windowSampleOverlap); % This is from the original function, I don't understand why it's normalized this way
                 if kernelLength <= 0 || kernelLength == Inf
                     kernelLength = 1;
                 end
@@ -221,12 +260,38 @@ classdef SongTriggeredExperiment < handle
             end
         end
         
+        function make_exper_dir(self)
+            if ~exist(self.birdDirectory, 'dir');
+                mkdir(self.birdDirectory);
+            end
+            if ~exist(self.experDirectory, 'dir')
+                mkdir(self.experDirectory);
+            end
+        end
+        
+        function write_exper_file(self)
+            exper.rootdir = self.rootDirectory;
+            exper.birddir = self.birdDirectory;
+            exper.dir = self.experDirectory;
+            exper.birdname = self.birdName;
+            exper.birddesc = self.birdDesc;
+            exper.expername = self.experName;
+            exper.experdesc = self.experDesc;
+            exper.datecreated = datestr(self.timeCreated, 30);
+            exper.desiredInSampRate = self.desiredFs;
+            exper.audioCh = self.songHWChannel;
+            exper.sigCh = self.nonSongHWChannels;
+            exper.sigName = self.signalName;
+            exper.sigDesc = self.signalDesc;
+            save(fullfile(self.experDirectory, 'exper.mat'), 'exper');
+        end
+        
         function write_daqsetup(self)
             daqSetup.actInSampleRate = self.daqFs;
             daqSetup.actOutSampleRate = nan;
             daqSetup.buffer = self.daqBufferSecs;
             daqSetup.actUpdateFreq = self.daqUpdateFreq;
-            fileName = fullfile(self.directory, sprintf('daqSetup%s.mat', datestr(now, 30)));
+            fileName = fullfile(self.experDirectory, sprintf('daqSetup%s.mat', datestr(datetime(), 30)));
             save(fileName, 'daqSetup');
         end
         
@@ -253,46 +318,57 @@ classdef SongTriggeredExperiment < handle
             persistent p;
             if isempty(p)
                 p = inputParser();
-                addOptional(p, 'directory', '');
+                addOptional(p, 'rootDirectory', '');
             end
             parse(p, varargin{:});
             Params = p.Results; 
-            if isempty(Params.directory)
-                rootdir = pwd();
+            if isempty(Params.rootDirectory)
+                rootDir = pwd();
             else
-                rootdir = Params.directory;
+                rootDir = Params.rootDirectory;
             end
             
-            birdname = input('Enter a bird name: (no spaces or strange characters)', 's');
-            birddesc = input('Enter a description of the bird:', 's');
-            expername = input('Enter a experiment name:', 's');
-            experdesc = input('Enter a description of the exper:', 's');
+            birdName = input('Enter a bird name: (no spaces or strange characters)', 's');
+            birdDesc = input('Enter a description of the bird:', 's');
+            experName = input('Enter a experiment name (nothing for default):', 's');
+            experDesc = input('Enter a description of the exper:', 's');
+            desiredInSampRate = input('Enter the desired input sampling rate:');
+            audioCh = input('What hw channel will audio be on: (-1 if no audio)');
+            sigCh = input('Enter vector of other hw channels to be recorded: ([] if none)');
             
-            mkdir(rootdir, birdname);
-            mkdir(fullfile(rootdir, birdname), expername);
-            
-            exper.dir = fullfile(rootdir,birdname,expername);
-            exper.birdname = birdname;
-            exper.birddesc = birddesc;
-            exper.expername = expername;
-            exper.experdesc = experdesc;
-            exper.datecreated = datestr(now,30);
-            
-            exper.desiredInSampRate = input('Enter the desired input sampling rate:');
-            exper.audioCh = input('What hw channel will audio be on: (-1 if no audio)');
-            exper.sigCh = input('Enter vector of other hw channels to be recorded: ([] if none)');
-            
-            for nName = 1:numel(exper.sigCh)
-                exper.sigName{nName} = input(sprintf('Enter name of signal on channel %d:', exper.sigCh(nName)),'s');
-                exper.sigDesc{nName} = input(sprintf('Enter description of signal on channel %d:', exper.sigCh(nName)),'s');
+            nCh = numel(sigCh);
+            sigName = cell(nCh, 1);
+            sigDesc = cell(nCh, 1);
+            for chanNo = 1:nCh
+                sigName{chanNo} = input(sprintf('Enter name of signal on channel %d:', sigCh(chanNo)), 's');
+                sigDesc{chanNo} = input(sprintf('Enter description of signal on channel %d:', sigCh(chanNo)), 's');
             end
-            save(fullfile(exper.dir, 'exper.mat'), 'exper');
-            Exper = SongTriggeredExperiment(exper.birdName, exper.dir, exper.audioCh, exper.sigCh, exper.desiredInSampRate);
+            
+            Exper = SongTriggeredExperiment(birdName, rootDir, audioCh, sigCh, ...
+                desiredInSampRate, ...
+                'experName', experName, ...
+                'birdDesc', birdDesc, ...
+                'experDesc', experDesc, ...
+                'signalName', sigName, ...
+                'signalDesc', sigDesc);
+            Exper.make_exper_dir();
+            Exper.write_exper_file();
         end
         
         function Exper = load_experiment(fileName)
             S = load(fileName, 'exper');
-            Exper = SongTriggeredExperiment(S.exper.birdName, S.exper.dir, S.exper.audioCh, S.exper.sigCh, S.exper.desiredInSampRate);
+            Exper = SongTriggeredExperiment(S.exper.birdname, ...
+                S.exper.rootdir, ...
+                S.exper.audioCh, ...
+                S.exper.sigCh, ...
+                S.exper.desiredInSampRate, ...
+                'birdDirectory', S.exper.birddir, ...
+                'experDirectory', S.exper.dir, ...
+                'experName', S.exper.expername, ...
+                'experDesc', S.exper.experdesc, ...
+                'timeCreated', datetime(S.exper.datecreated), ...
+                'signalName', S.exper.sigName, ...
+                'signalDesc', S.exper.sigDesc);
         end
         
         function fileNo = last_fileno(directory, birdName)

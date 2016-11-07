@@ -81,13 +81,17 @@ classdef (Sealed) AcqGuiController < handle
         end
     end
     methods (Access = private)
+        function reset_experiments(self)
+            
+        end
+        
         function set_restart(self)
             %clear restart timer just in case.
             clearMorningRestartTimer();
             %build a timer that calls the restart function.
             self.RestartTimer = timer('Name', 'acqguiRestartInMorning', ...
-                );
-            set(self.RestartTimer,'TimerFcn','acqgui_restartGUI(timerfind(''Name'', ''acqguiRestartInMorning''), [], findobj(''Name'', ''acquisitionGui''))');
+                'TimerFcn', @() acqgui_restartGUI(timerfind('Name', 'acqguiRestartInMorning'), [], findobj('Name', 'acquisitionGui'),...
+            set(self.RestartTimer,);
             set(self.RestartTimer,'Period',5);
             set(self.RestartTimer,'ExecutionMode','fixedDelay');
             set(self.RestartTimer,'BusyMode', 'queue');
