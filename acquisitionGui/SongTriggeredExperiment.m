@@ -28,6 +28,7 @@ classdef SongTriggeredExperiment < handle
         %% Information about which channels are part of this experiment
         songHWChannel
         nonSongHWChannels
+        inChannels
         
         %% Information about saved files
         rootDirectory
@@ -42,7 +43,7 @@ classdef SongTriggeredExperiment < handle
     properties (Access = private)
         fileNameFormat
         RecordingListener
-        inChannels
+        
         
         %% DAQ parameters
         DaqObj
@@ -198,12 +199,12 @@ classdef SongTriggeredExperiment < handle
             self.maxFreq = maxFreq;
         end
         
-        function set_daq_params(self, DaqObj, daqBufferSecs, daqUpdateFreq)
+        function set_daq_params(self, DaqObj)
             self.DaqObj = DaqObj;
             self.daqFs = self.DaqObj.samplingRate;
             self.nyqFreq = self.daqFs ./ 2;
-            self.daqBufferSecs = daqBufferSecs;
-            self.daqUpdateFreq = daqUpdateFreq;
+            self.daqBufferSecs = DaqObj.bufferSecs;
+            self.daqUpdateFreq = DaqObj.updateFreq;
             self.calculate_derived_song_params();
             self.write_daqsetup();
         end
@@ -307,7 +308,7 @@ classdef SongTriggeredExperiment < handle
         end
         
         function make_exper_dir(self)
-            if ~exist(self.birdDirectory, 'dir');
+            if ~exist(self.birdDirectory, 'dir')
                 mkdir(self.birdDirectory);
             end
             if ~exist(self.experDirectory, 'dir')

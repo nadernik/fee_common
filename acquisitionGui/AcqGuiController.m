@@ -5,7 +5,7 @@ classdef (Sealed) AcqGuiController < handle
         GuiData
         
         %% Experiment related properties
-        Experiments = {}; % N x 1 cell array of SongTriggeredExperiment objects
+        Experiments % N x 1 cell array of SongTriggeredExperiment objects
         rememberedDetect = []; % N x 1 boolean array of songDetection states when experiments last suspended, empty if not suspended
         
         %% Display data
@@ -17,16 +17,27 @@ classdef (Sealed) AcqGuiController < handle
         
         %% Daq related properties
         DaqObj
+        daqLogFile
+        songHWChannels = [];
+        inChannels = [];
+        daqFs = -1;
+        bufferSecs = -1;
+        updateFreq = -1;
         
+        %% Restart related properties
         restartDaily
         startHour
         stopHour
         RestartTimer
-        SongMonitoringTimer
+        
+        %% Monitoring related properties
+        SongDetectionTimer
+        detectingSong
     end
     properties (Access = private, Dependent = true)
         restartTimerValid
         isDaytime
+        detectionTimerValid
     end
     methods
         function self = AcqGuiController(GuiFig, varargin)
@@ -35,25 +46,38 @@ classdef (Sealed) AcqGuiController < handle
             addParameter(p, 'restartDaily', false);
             addParameter(p, 'startHour', 7);
             addParameter(p, 'stopHour', 23);
+            addParameter(p, 'Experiments', {});
+            addParameter(p, 'daqLogFile', '');
             parse(p, varargin{:});
             Params = p.Results;
             
             %% Set properties
             self.GuiFig = GuiFig;
             self.GuiData = guidata(self.GuiFig);
-            self.experDisplayChannels = nan(3, 0);
-            self.displayRecordingNo = nan(0, 1);
-            self.startNdx = 0;
-            self.endNdx = 0;
+            self.GuiData.AcqGuiController = self; % insert self reference into gui data
             self.restartDaily = Params.restartDaily;
             self.startHour = Params.startHour;
             self.stopHour = Params.stopHour;
+            self.Experiments = Params.Experiments;
+            self.daqLogFile = Params.daqLogFile;
+            
+            %% Set gui into initial, disabled, state
+            self.gui_init();
+            
+            %% Add a reference to this object into gui data
+            guidata(self.GuiFig, self.GuiData); % Place guidata back into gui figure
+            
+            %% Set restart timer
             if self.restartDaily
-                setMorningRestartTimer(GuiFig);
+                self.set_restart();
             end
             
-            %% Set up GUI
-            self.gui_init();
+            %% Set up daq
+            self.init_daq();
+            self.start_daq();
+            
+            %% Finish setting up GUI
+            self.gui_exper();
         end
         
         function delete(self)
@@ -83,6 +107,9 @@ classdef (Sealed) AcqGuiController < handle
         function restartTimerValid = get.restartTimerValid(self)
             restartTimerValid = ~isempty(self.RestartTimer) && isvalid(self.RestartTimer);
         end
+        function val = get.detectionTimerValid(self)
+            val = ~isempty(self.SongDetectionTimer) && isvalid(self.SongDetectionTimer);
+        end
         function isDaytime = get.isDaytime(self)
             currentTime = datetime();
             isDaytime = currentTime.Hour >= self.startHour && ...
@@ -90,6 +117,59 @@ classdef (Sealed) AcqGuiController < handle
         end
     end
     methods (Access = private)
+        function init_daq(self)
+            if isempty(self.Experiments)
+                return
+            end
+            %% Make sure all experiments are compatible
+            desiredFs = cellfun(@(E) E.desiredFs, self.Experiments);
+            updateFreq = cellfun(@(E) E.daqUpdateFreq, self.Experiments);
+            bufferSecs = cellfun(@(E) E.daqBufferSecs, self.Experiments);
+            assert(all(desiredFs == desiredFs(1)), 'All experiments must have the same sampling rate');
+            assert(all(updateFreq == updateFreq(1)), 'All experiments must have the same update frequency');
+            assert(all(bufferSecs == bufferSecs(1)), 'All experiments must have the same buffer size');
+            self.inChannels = cellfun(@(E) E.inChannels, self.Experiments);
+            self.songHWChannels = cellfun(@(E) E.songHWChannel, self.Experiments);
+            DaqBuffer.reset(); % Clear any existing channels
+            self.DaqObj = DaqBuffer.get_instance(self.inChannels, desiredFs(1), bufferSecs(1), updateFreq(1));
+            self.daqFs = self.DaqObj.samplingRate;
+            self.bufferSecs = self.DaqObj.bufferSecs;
+            self.updateFreq = self.DaqObj.updateFreq;
+            if ~isempty(self.daqLogFile)
+                self.DaqObj.logFID = fopen(self.daqLogFile, 'w');
+            end
+            cellfun(@(E) E.set_daq_params(self.DaqObj), self.Experiments);
+        end
+        function start_daq(self)
+            self.DaqObj.start();
+            self.gui_startdaq();
+            self.update_song_detection();
+        end
+        function status = stop_daq(self)
+        end
+        
+        function update_song_detection(self)
+            nowDetectingSong = any(cellfun(@(E) E.detectingSong, self.Experiments));
+            if nowDetectiongSong ~= self.detectingSong % State changed
+                if nowDetectingSong % start detecting song
+                    self.start_song_detection();
+                else % turn off song detection
+                    self.stop_song_detection();
+                end
+            end
+        end
+        function start_song_detection(self)
+            assert(~self.detectionTimerValid, 'Song timer already exists');
+        end
+        function stop_song_detection(self)
+            assert(self.detectionTimerValid, 'Song timer does not exist');
+        end
+        
+        function append_experiment(self, Experiment)
+        end
+        function remove_experiment(self, experNo)
+        end
+        
         function suspend_experiments(self)
             maxTries = 100;
             if isempty(self.rememberedDetect)
@@ -189,6 +269,7 @@ classdef (Sealed) AcqGuiController < handle
             end
         end
         
+        %% GUI and UI code
         function gui_init(self)
             %% Initialize GUI
             set(self.GuiFig, 'HandleVisibility', 'on');
@@ -197,7 +278,6 @@ classdef (Sealed) AcqGuiController < handle
             %% Initialize properties of UI elements
             set(self.GuiData.buttonTrigOnSong,'Enable','off');
             set(self.GuiData.buttonRecord,'Enable','off');
-            set(self.GuiData.buttonTrigOnChan,'Enable','off');
             fields = fieldnames(handles);
             for fieldNo = 1:numel(fields)
                 UIControl = self.GuiData.(fields{fieldNo});
@@ -209,10 +289,20 @@ classdef (Sealed) AcqGuiController < handle
                 end
             end
             
-            %% Initialize and start restart timer
+            %% Set restart timer UI elements
             set(self.GuiData.editStartTime, 'String', num2str(self.startHour));
             set(self.GuiData.editStopTime, 'String', num2str(self.stopHour));
             set(self.GuiData.checkboxAutostart, 'Value', self.restartDaily);
+        end
+        function gui_exper(self)
+        end
+        function gui_stopdaq(self)
+        end
+        function gui_startdaq(self)
+            set(self.GuiData.textRecordingStatus, 'String', 'Ready to record');
+            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'green');
+            set(self.GuiData.buttonTrigOnSong,'Enable','on');
+            set(self.GuiData.buttonRecord,'Enable','on');
         end
     end
 end

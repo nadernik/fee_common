@@ -5,6 +5,7 @@ classdef (Sealed) DaqBuffer < handle
     end
     properties (Dependent = true)
         isLogging
+        bufferSecs
     end
     properties (SetAccess = private)
         %% DAQ properties
@@ -97,6 +98,10 @@ classdef (Sealed) DaqBuffer < handle
             else
                 val = false;
             end
+        end
+        
+        function val = get.bufferSecs(self)
+            val = self.buffSize ./ self.samplingRate;
         end
         
         function set.logFID(self, fID)
