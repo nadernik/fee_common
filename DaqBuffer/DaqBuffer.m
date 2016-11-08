@@ -171,13 +171,13 @@ classdef (Sealed) DaqBuffer < handle
             
             %% Delayed until end to avoid concurrency problems
             self.isUpdating = false;
-            notify(self, 'UpdateComplete');
             if recReady
                 notify(self, 'RecordingComplete', recCompleteEvent);
             end
             if peekReady
                 notify(self, 'PeekAvailable', peekEvent);
             end
+            notify(self, 'UpdateComplete'); % Put this at the end if peeks are schedule on UpdateComplete events
             
         end % bufferUpdate
         
