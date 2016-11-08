@@ -133,16 +133,24 @@ classdef (Sealed) AcqGuiController < handle
             assert(all(desiredFs == desiredFs(1)), 'All experiments must have the same sampling rate');
             assert(all(updateFreq == updateFreq(1)), 'All experiments must have the same update frequency');
             assert(all(bufferSecs == bufferSecs(1)), 'All experiments must have the same buffer size');
+            
+            %% Store channel parameters
             self.inChannels = cellfun(@(E) E.inChannels, self.Experiments);
             self.songHWChannels = cellfun(@(E) E.songHWChannel, self.Experiments);
+            
+            %% Set up DAQ
             DaqBuffer.reset(); % Clear any existing channels
             self.DaqObj = DaqBuffer.get_instance(self.inChannels, desiredFs(1), bufferSecs(1), updateFreq(1));
-            self.daqFs = self.DaqObj.samplingRate;
-            self.bufferSecs = self.DaqObj.bufferSecs;
-            self.updateFreq = self.DaqObj.updateFreq;
             if ~isempty(self.daqLogFile)
                 self.DaqObj.logFID = fopen(self.daqLogFile, 'w');
             end
+            
+            %% Store daq parameters
+            self.daqFs = self.DaqObj.samplingRate;
+            self.bufferSecs = self.DaqObj.bufferSecs;
+            self.updateFreq = self.DaqObj.updateFreq;
+            
+            %% Pass daq information to experiments
             cellfun(@(E) E.set_daq_params(self.DaqObj), self.Experiments);
         end
         function start_daq(self)
@@ -155,15 +163,20 @@ classdef (Sealed) AcqGuiController < handle
         
         function wait_for_buffer(self)
             self.gui_wait_buffer();
-            self.BufferTimer = timer('Name', 'bufferTimer',...
-                'TimerFcn', @self.buffering_complete);
+            self.BufferTimer = timer('Name', 'bufferTimer', ...
+                'TimerFcn', @self.buffering_complete, ...
+                'ExecutionMode', 'singleShot', ...
+                'BusyMode', 'queue');
+            CurrentTime = datetime();
+            BufferUntil = CurrentTime + seconds(self.peekSecs);
+            startat(self.BufferTimer, BufferUntil);
         end
         
         function buffering_complete(self, ~, ~)
             stop(self.BufferTimer);
             delete(self.BufferTimer);
-            self.gui_buffering_complete();
             self.update_song_detection();
+            self.gui_buffering_complete();
         end
         
         function update_song_detection(self)
@@ -258,7 +271,9 @@ classdef (Sealed) AcqGuiController < handle
             StopTime.Minute = 0;
             StopTime.Second = 0;
             self.RestartTimer = timer('Name', 'acqguiNightRestart', ...
-                'TimerFcn', @self.restart_morning_callback);
+                'TimerFcn', @self.restart_morning_callback, ...
+                'ExecutionMode', 'singleShot', ...
+                'BusyMode', 'queue');
             startat(self.RestartTimer, StopTime);
         end
         function queue_morning_timer(self)
@@ -277,7 +292,9 @@ classdef (Sealed) AcqGuiController < handle
             StartTime.Minute = 0;
             StartTime.Second = 0;
             self.RestartTimer = timer('Name', 'acqguiMorningRestart', ...
-                'TimerFcn', @self.restart_morning_callback);
+                'TimerFcn', @self.restart_morning_callback, ...
+                'ExecutionMode', 'singleShot', ...
+                'BusyMode', 'queue');
             startat(self.RestartTimer, StartTime);
         end
         
