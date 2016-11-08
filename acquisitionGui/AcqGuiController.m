@@ -33,6 +33,9 @@ classdef (Sealed) AcqGuiController < handle
         %% Monitoring related properties
         SongDetectionTimer
         detectingSong
+        peekSecs
+        peekNSamp = -1;
+        BufferTimer
     end
     properties (Access = private, Dependent = true)
         restartTimerValid
@@ -48,6 +51,7 @@ classdef (Sealed) AcqGuiController < handle
             addParameter(p, 'stopHour', 23);
             addParameter(p, 'Experiments', {});
             addParameter(p, 'daqLogFile', '');
+            addParameter(p, 'peekSecs', 1); % in seconds
             parse(p, varargin{:});
             Params = p.Results;
             
@@ -60,6 +64,7 @@ classdef (Sealed) AcqGuiController < handle
             self.stopHour = Params.stopHour;
             self.Experiments = Params.Experiments;
             self.daqLogFile = Params.daqLogFile;
+            self.peekSecs = Params.peekSecs;
             
             %% Set gui into initial, disabled, state
             self.gui_init();
@@ -143,9 +148,22 @@ classdef (Sealed) AcqGuiController < handle
         function start_daq(self)
             self.DaqObj.start();
             self.gui_startdaq();
-            self.update_song_detection();
+            self.wait_for_buffer();
         end
         function status = stop_daq(self)
+        end
+        
+        function wait_for_buffer(self)
+            self.gui_wait_buffer();
+            self.BufferTimer = timer('Name', 'bufferTimer',...
+                'TimerFcn', @self.buffering_complete);
+        end
+        
+        function buffering_complete(self, ~, ~)
+            stop(self.BufferTimer);
+            delete(self.BufferTimer);
+            self.gui_buffering_complete();
+            self.update_song_detection();
         end
         
         function update_song_detection(self)
@@ -160,6 +178,7 @@ classdef (Sealed) AcqGuiController < handle
         end
         function start_song_detection(self)
             assert(~self.detectionTimerValid, 'Song timer already exists');
+            
         end
         function stop_song_detection(self)
             assert(self.detectionTimerValid, 'Song timer does not exist');
@@ -303,6 +322,10 @@ classdef (Sealed) AcqGuiController < handle
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'green');
             set(self.GuiData.buttonTrigOnSong,'Enable','on');
             set(self.GuiData.buttonRecord,'Enable','on');
+        end
+        function gui_wait_buffer(self)
+        end
+        function gui_buffering_complete(self)
         end
     end
 end
