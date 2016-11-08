@@ -335,14 +335,17 @@ classdef (Sealed) AcqGuiController < handle
         function gui_stopdaq(self)
         end
         function gui_startdaq(self)
-            set(self.GuiData.textRecordingStatus, 'String', 'Ready to record');
-            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'green');
-            set(self.GuiData.buttonTrigOnSong,'Enable','on');
             set(self.GuiData.buttonRecord,'Enable','on');
         end
         function gui_wait_buffer(self)
+            set(self.GuiData.buttonTrigOnSong,'Enable','off');
+            set(self.GuiData.textRecordingStatus, 'String', 'Buffering for song detection but ready to record...');
+            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
         end
         function gui_buffering_complete(self)
+            set(self.GuiData.textRecordingStatus, 'String', 'Ready to record and detect song');
+            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'green');
+            set(self.GuiData.buttonTrigOnSong,'Enable','on');
         end
     end
 end
