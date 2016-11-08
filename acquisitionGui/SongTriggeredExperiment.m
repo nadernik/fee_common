@@ -44,7 +44,6 @@ classdef SongTriggeredExperiment < handle
         fileNameFormat
         RecordingListener
         
-        
         %% DAQ parameters
         DaqObj
         daqFs = -1; % -1 indicates daq is not set up
@@ -180,6 +179,7 @@ classdef SongTriggeredExperiment < handle
             else
                 status = true;
                 self.detectingSong = detectingSong;
+                notify(self, 'DetectionChanged');
             end
         end
         
@@ -283,6 +283,7 @@ classdef SongTriggeredExperiment < handle
         function change_detectingSong_callback(self, ~, ~)
             delete(self.DisableDetectionListener);
             self.detectingSong = self.detectionChange;
+            notify(self, 'DetectionChange');
         end
     end
     
@@ -329,7 +330,7 @@ classdef SongTriggeredExperiment < handle
             exper.audioCh = self.songHWChannel;
             exper.sigCh = self.nonSongHWChannels;
             exper.sigName = self.signalName;
-            exper.sigDesc = self.signalDesc;
+            exper.sigDesc = self.signalDesc; %#ok<STRNU>
             save(fullfile(self.experDirectory, 'exper.mat'), 'exper');
         end
         
@@ -460,5 +461,6 @@ classdef SongTriggeredExperiment < handle
     
     events (NotifyAccess = private)
         RecordingComplete
+        DetectionChanged
     end
 end
