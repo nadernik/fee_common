@@ -11,6 +11,9 @@ classdef SongTriggeredExperiment < handle
         postSongSeconds % to record
         maxFileDuration % to record, in seconds
     end
+    properties (Access = private, Dependent = true)
+        
+    end
     properties (SetAccess = private)
         birdName
         birdDesc
@@ -39,10 +42,13 @@ classdef SongTriggeredExperiment < handle
         %% Recording/monitoring status
         detectingSong = false;
         isRecording = false;
+        forcedRecording = false;
+        lastSingingSample = -1;
     end
     properties (Access = private)
         fileNameFormat
         RecordingListener
+        lastDetectingSong
         
         %% DAQ parameters
         DaqObj
@@ -151,11 +157,11 @@ classdef SongTriggeredExperiment < handle
                 if ~isempty(self.DeletionListener) && isvalid(self.DeletionListener)
                     delete(self.DeletionListener);
                 end
-                if self.isRecording
+                if self.isRecording && self.forcedRecording
                     self.DeletionListener = addlistener(self, 'RecordingComplete', @(~, ~) self.delete());
-                    status = self.stop_recording();
+                    status = self.stop_forced_recording();
                     while ~status
-                        status = self.stop_recording();
+                        status = self.stop_forced_recording();
                     end
                 end
                 delete(self.RecordingListener);
@@ -242,11 +248,15 @@ classdef SongTriggeredExperiment < handle
             end
         end
         
-        function status = start_recording(self)
+        function update_detected_recording(self, isSinging)
+        end
+        
+        function status = force_recording(self)
             if self.daqFs < 0 || self.DaqObj.isUpdating || self.isRecording
                 status = false;
             else
                 self.isRecording = true;
+                self.forcedRecording = true;
                 recSampNum = self.DaqObj.lastSample + 1;
                 self.RecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.recording_completion_callback);
                 recFilePrefix = fullfile(self.experDirectory, self.get_next_file_prefix());
@@ -259,7 +269,7 @@ classdef SongTriggeredExperiment < handle
             end
         end
         
-        function status = stop_recording(self)
+        function status = force_stop_recording(self)
             if ~self.isRecording || self.DaqObj.isUpdating
                 status = false;
             else
