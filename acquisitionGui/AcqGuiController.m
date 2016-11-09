@@ -121,10 +121,12 @@ classdef (Sealed) AcqGuiController < handle
         
         function analyze_peek(self, ~, PeekEvent)
             nDetect = numel(self.detectingExperNdx);
+            peekStartSamp = PeekEvent.startDaqSample;
             for experNo = 1:nDetect
                 experNdx = self.detectingExperNdx(experNo);
-                [status, isSong, firstSongTime] = ...
-                    self.Experiments{experNdx}.check_for_song(PeekEvent.data(:, experNo));
+                [status, isSong, firstSongSamp] = ...
+                    self.Experiments{experNdx}.check_for_song(...
+                    PeekEvent.data(:, experNo), peekStartSamp);
                 assert(status, 'Song detetion failed');
                 if isSong
                 end

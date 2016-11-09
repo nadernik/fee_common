@@ -122,6 +122,7 @@ classdef (Sealed) DaqBuffer < handle
             else
                 startBackground(self.Session);
                 self.isStarted = true;
+                
             end
         end
         
@@ -154,6 +155,7 @@ classdef (Sealed) DaqBuffer < handle
             %% Place event data into buffer
             self.daqData(updateStartIdx:updateStopIdx, :) = EventData.Data;
             self.daqTimeStamps(updateStartIdx:updateStopIdx) = EventData.TimeStamps;
+            self.triggerTime = EventData.TriggerTime;
             
             %% Update DaqBuffer State
             self.buffUpdateCnt = self.buffUpdateCnt + 1;
@@ -166,7 +168,7 @@ classdef (Sealed) DaqBuffer < handle
             end
             
             %% Process peek and triggers
-            [recReady, recCompleteEvent] = self.process_triggers(EventData.TriggerTime, updateStartIdx, updateStopIdx);
+            [recReady, recCompleteEvent] = self.process_triggers(updateStartIdx, updateStopIdx);
             [peekReady, peekEvent] = self.process_peek(updateStopIdx);
             
             %% Delayed until end to avoid concurrency problems
@@ -308,10 +310,10 @@ classdef (Sealed) DaqBuffer < handle
             %% Set up peeks
         end % constructor
         
-        function [readyToNotify, recCompleteEvent] = process_triggers(self, TriggerTime, updateStartIdx, updateStopIdx)
+        function [readyToNotify, recCompleteEvent] = process_triggers(self, updateStartIdx, updateStopIdx)
         %PROCESSTRIGGERS checks if channels should be saved to disk
             self.log('Entering process_triggers');
-            absTime = datevec(TriggerTime);
+            absTime = datevec(self.triggerTime);
             completedRecordings = false(self.numInCh, 1);
             for chanNo = 1:self.numInCh
                 if self.chanIsTriggered(chanNo) % channel is ready to record
@@ -459,11 +461,11 @@ classdef (Sealed) DaqBuffer < handle
                     
                     %% Notify listeners
                     readyToNotify = true;
-                    peekEvent = PeekEvent(self.peekData, self.peekTimeStamps);
+                    peekEvent = PeekEvent(self.peekData, self.peekTimeStamps, self.triggerTime, self.peekSample);
                 end
             end
             if ~readyToNotify
-                peekEvent = PeekEvent([], []);
+                peekEvent = PeekEvent([], [], [], -1);
             end
         end % process_peek
         

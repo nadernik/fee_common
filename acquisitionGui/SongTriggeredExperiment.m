@@ -12,7 +12,8 @@ classdef SongTriggeredExperiment < handle
         maxFileDuration % to record, in seconds
     end
     properties (Access = private, Dependent = true)
-        
+        changeDetectionValid
+        deletionListenerValid
     end
     properties (SetAccess = private)
         birdName
@@ -47,14 +48,14 @@ classdef SongTriggeredExperiment < handle
     end
     properties (Access = private)
         fileNameFormat
-        RecordingListener
-        lastDetectingSong
+        DeletionListener
         
         %% DAQ parameters
         DaqObj
         daqFs = -1; % -1 indicates daq is not set up
         daqBufferSecs = -1;
         daqUpdateFreq = -1;% in Hz
+        DaqRecordingListener
         
         %% Derived song detection parameters
         songConvKernel
@@ -66,12 +67,15 @@ classdef SongTriggeredExperiment < handle
         nFreq
         nyqFreq
         
-        DeletionListener
+        %% Song detection
         ChangeDetectionListener
-        detectionChange
+        queuedDetectionChange
+        lastDetectingSong
+        songStartSamp
     end
     
     methods
+        %% Constructor and destructor
         function self = SongTriggeredExperiment(birdName, ...
                 rootDirectory, songHWChannel, ...
                 nonSongHWChannels, desiredFs, varargin)
@@ -154,39 +158,26 @@ classdef SongTriggeredExperiment < handle
         function delete(self)
             % Clean up
             try
-                if ~isempty(self.DeletionListener) && isvalid(self.DeletionListener)
+                if self.deletionListenerValid
                     delete(self.DeletionListener);
                 end
                 if self.isRecording && self.forcedRecording
                     self.DeletionListener = addlistener(self, 'RecordingComplete', @(~, ~) self.delete());
-                    status = self.stop_forced_recording();
+                    status = self.stop_recording();
                     while ~status
-                        status = self.stop_forced_recording();
+                        status = self.stop_recording();
                     end
                 end
-                delete(self.RecordingListener);
+                delete(self.DaqRecordingListener);
             catch
                 % do nothing
             end
         end
         
-        function status = change_detectingSong(self, detectingSong)
-            if self.isRecording
-                if ~isempty(self.ChangeDetectionListener) && ...
-                        isvalid(self.ChangeDetectionListener)
-                    status = true;
-                    self.detectionChange = detectingSong;
-                    self.ChangeDetectionListener = ...
-                        addlistener(self, 'RecordingComplete',...
-                        @self.change_detectingSong_callback);
-                else  
-                    status = false;
-                end
-            else
-                status = true;
-                self.detectingSong = detectingSong;
-                notify(self, 'DetectionChanged');
-            end
+        %% Parameter setting methods
+        function set.detectingSong(self, val)
+            self.detectingSong = val;
+            notify(self, 'DetectionChanged');
         end
         
         function set_freq_range(self, minFreq, maxFreq)
@@ -215,17 +206,45 @@ classdef SongTriggeredExperiment < handle
             self.write_daqsetup();
         end
         
-        function prefix = get_next_file_prefix(self)
-            nextNo = self.lastFileNo + 1;
-            prefix = sprintf(self.fileNameFormat, self.birdName, nextNo, datestr(datetime(), 30));
+        function status = change_detectingSong(self, detectingSong)
+            % Public method to ask for a change in detection state
+            if self.isRecording
+                %% Make the change after this recording
+                if ~self.changeDetectionValid
+                    status = true;
+                    self.queuedDetectionChange = detectingSong;
+                    self.ChangeDetectionListener = ...
+                        addlistener(self, 'RecordingComplete',...
+                        @self.change_detectingSong_callback);
+                else  
+                    status = false;
+                end
+            else
+                %% Make the change now
+                status = true;
+                self.detectingSong = detectingSong;
+            end
         end
         
-        function [status, isSong, firstSongTime] = check_for_song(self, audioData)
+        %% Song detection methods
+        function status = detect_song_and_record(self, audioData, StartTime)
+            if self.forcedRecording
+                status = false;
+            else
+                [status, isSong, songScore, firstSongSamp] = detect_song(self, audioData, StartTime); %#ok<PROPLC>
+                self.songScore = songScore; %#ok<PROPLC>
+                if status
+                    self.update_triggered_recording(isSong, firstSongSamp);
+                end
+            end
+        end
+        
+        function [status, isSong, songScore, firstSongSamp] = detect_song(self, audioData, peekStartSamp)
             % Should only be called once daq is set up
             if  self.daqFs < 0 
                 status = false;
                 isSong = false;
-                firstSongTime = nan;
+                firstSongSamp = nan;
             else
                 status = true;
                 %% Take specgram and measure in-band vs. out-band power in each time-slice
@@ -238,66 +257,80 @@ classdef SongTriggeredExperiment < handle
                 %% Smooth song power ratio
                 threshCross = songPowerRatio > self.ratioThreshold;
                 threshCrossMovingAv = conv(double(threshCross), self.songConvKernel); % Cast into double for convolution
-                self.songScore = max(threshCrossMovingAv);
-                isSong = self.songScore > self.songDensity;
+                songScore = max(threshCrossMovingAv);
+                isSong = songScore > self.songDensity;
                 if isSong
-                    firstSongTime = t(find(threshCross, 1, 'first'));
+                    relSongStartSamp = floor(t(find(threshCross, 1, 'first')) .* self.daqFs) + 1;
+                    firstSongSamp = peekStartSamp + relSongStartSamp;
                 else
-                    firstSongTime = nan;
+                    firstSongSamp = nan;
                 end
             end
         end
         
-        function update_detected_recording(self, isSinging)
-        end
         
+        
+        %% public recording methods (use these to ask for recordings)
         function status = force_recording(self)
             if self.daqFs < 0 || self.DaqObj.isUpdating || self.isRecording
+                %% Cannot safely start recording
                 status = false;
             else
-                self.isRecording = true;
                 self.forcedRecording = true;
-                recSampNum = self.DaqObj.lastSample + 1;
-                self.RecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.recording_completion_callback);
-                recFilePrefix = fullfile(self.experDirectory, self.get_next_file_prefix());
-                [startedChannels, ~] = self.DaqObj.start_recording(recSampNum, recFilePrefix, self.inChannels);
-                status = all(startedChannels);
+                
+                %% Stop song triggering during the forced recording
+                self.lastDetectingSong = self.detectingSong;
+                self.detectingSong = false;
+                
+                %% Start the recording
+                status = self.record();
                 if ~status
-                    self.isRecording = false;
-                    delete(self.RecordingListener);
+                    self.forcedRecording = false;
                 end
             end
         end
         
         function status = force_stop_recording(self)
-            if ~self.isRecording || self.DaqObj.isUpdating
-                status = false;
+            if self.isRecording
+                if ~self.forcedRecording % recording was song triggered
+                    %% Stop song detection or the recording will resume after
+                    self.detectingSong = false;
+                end
+                status = self.stop_recording();
             else
-                stoppedChannels = self.DaqObj.stop_recording(self.DaqObj.lastSample, self.inChannels);
-                status = all(stoppedChannels);
+                status = false;
             end
         end
         
-        function recording_completion_callback(self, ~, EventData)
+        %% Callbacks
+        function daq_recording_finished(self, ~, EventData)
             %% See if these are the channels we are looking for
             channelsMatch = compare_channels(self.inChannels, EventData.hwChannels);
             %% Respond to event if all channels match
             if channelsMatch
-                delete(self.RecordingListener); % Un-subcribe to future events
-                self.isRecording = false;
-                self.lastFileNo = self.lastFileNo + 1;
-                notify(self, 'RecordingComplete');
+                delete(self.DaqRecordingListener); % Un-subcribe to future events
+                self.recording_complete();
             end
         end
         
         function change_detectingSong_callback(self, ~, ~)
             delete(self.DisableDetectionListener);
-            self.detectingSong = self.detectionChange;
-            notify(self, 'DetectionChange');
+            self.detectingSong = self.queuedDetectionChange;
+        end
+        
+        %% Derived getters
+        function val = get.changeDetectionValid(self)
+            val = ~isempty(self.ChangeDetectionListener) && ...
+                isvalid(self.ChangeDetectionListener);
+        end
+        function val = get.deletionListenerValid(self)
+            val = ~isempty(self.DeletionListener) && ...
+                isvalid(self.DeletionListener);
         end
     end
     
     methods (Access = private)
+        %% Methods for updating parameters
         function calculate_derived_song_params(self)
             if self.daqFs >= 0 % DAQ is set up
                 self.windowSampleSize = floor(self.daqFs * self.windowSize);
@@ -318,6 +351,66 @@ classdef SongTriggeredExperiment < handle
             end
         end
         
+        function fix_freq_range(self)
+            if self.daqFs >= 0 % Daq is set up
+                self.minFreq = self.freqndx_to_hz(self.minNdx);
+                self.maxFreq = self.freqndx_to_hz(self.maxNdx);
+            else
+                warning('Cannot fix frequency range before DAQ is set up');
+            end
+        end
+        
+        %% Recording methods
+        function status = record(self)
+            if self.DaqObj.isUpdating || self.isRecording
+                status = false;
+            else
+                self.isRecording = true;
+                recSampNum = self.DaqObj.lastSample + 1;
+                self.DaqRecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.daq_recording_finished);
+                recFilePrefix = fullfile(self.experDirectory, self.get_next_file_prefix());
+                [startedChannels, ~] = self.DaqObj.start_recording(recSampNum, recFilePrefix, self.inChannels);
+                status = all(startedChannels);
+                if ~status
+                    self.isRecording = false;
+                    delete(self.DaqRecordingListener);
+                end
+            end
+        end
+        
+        function status = stop_recording(self)
+            if ~self.isRecording || self.DaqObj.isUpdating
+                status = false;
+            else
+                stoppedChannels = self.DaqObj.stop_recording(self.DaqObj.lastSample, self.inChannels);
+                status = all(stoppedChannels);
+            end
+        end
+        
+        function recording_complete(self)
+            self.isRecording = false;
+            self.lastFileNo = self.lastFileNo + 1;
+            if self.forcedRecording
+                self.forcedRecording = false;
+                self.detectingSong = self.lastDetectingSong;
+            end
+            notify(self, 'RecordingComplete');
+        end
+        
+        function update_triggered_recording(self, isSinging, firstSongSamp)
+            if self.forcedRecording
+                return
+            end
+            if self.isSinging
+                if self.isRecording % Continue writing file
+                else % Start to write file
+                    self.record()
+                end
+            else
+            end
+        end
+        
+        %% Methods for experiment persistence
         function make_exper_dir(self)
             if ~exist(self.birdDirectory, 'dir')
                 mkdir(self.birdDirectory);
@@ -353,15 +446,12 @@ classdef SongTriggeredExperiment < handle
             save(fileName, 'daqSetup');
         end
         
-        function fix_freq_range(self)
-            if self.daqFs >= 0 % Daq is set up
-                self.minFreq = self.freqndx_to_hz(self.minNdx);
-                self.maxFreq = self.freqndx_to_hz(self.maxNdx);
-            else
-                warning('Cannot fix frequency range before DAQ is set up');
-            end
+        function prefix = get_next_file_prefix(self)
+            nextNo = self.lastFileNo + 1;
+            prefix = sprintf(self.fileNameFormat, self.birdName, nextNo, datestr(datetime(), 30));
         end
         
+        %% Utility methods
         function hz = freqndx_to_hz(self, freqNdx)
             hz = self.nyqFreq * (freqNdx - 1) ./ (self.nFreq - 1);
         end
