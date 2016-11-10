@@ -176,10 +176,16 @@ for trigExperNo = 1:nTriggedExpers
             %% Recording variables
             [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.expers{experIdx});
             recInfo(experIdx).recfilenum = recfilenum;
-            recBaseFileName = [dgd.expers{experIdx}.dir, filenamePrefix];
+            
+            nChan = numel(dgd.experData(dgd.ce).inChans);
+            datFileNames = cell(nChan, 1);
+            for chanNo = 1:nChan
+                fileName = sprintf('%schan%d.dat', filenamePrefix, dgd.experData(dgd.ce).inChans(chanNo));
+                datFileNames{chanNo} = fullfile(dgd.expers{dgd.ce}.dir, fileName);
+            end
             
             [bStatus, params(experIdx).filenames] = ...
-                dgd.DaqBuffer.start_recording(recStartSample, recBaseFileName, dgd.experData(experIdx).inChans);
+                dgd.DaqBuffer.start_recording(recStartSample, datFileNames, dgd.experData(experIdx).inChans);
             params(experIdx).startSamp = recStartSample;
             
             %% Check that we succesffuly started recording

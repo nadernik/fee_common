@@ -199,12 +199,11 @@ classdef (Sealed) DaqBuffer < handle
             end
         end
         
-        function [status, datFileNames] = record(self, startSample, stopSample, baseFileName, channels)
+        function [status, datFileNames] = record(self, startSample, stopSample, datFileNames, channels)
             self.log('Received recording request');
             nChans = numel(channels);
             chanIdxs = self.hwChans_2_idx(channels);
             status = false(nChans, 1);
-            datFileNames = cell(nChans, 1);
             if ~any(self.chanIsTriggered(chanIdxs)) % only attempt to record if all are free
                 for chanNo = 1:nChans
                     chanIdx = chanIdxs(chanNo);
@@ -214,7 +213,6 @@ classdef (Sealed) DaqBuffer < handle
                         self.trigStartSamples(chanIdx) = startSample;
                         self.trigStopSamples(chanIdx) = stopSample;
                         self.log(sprintf('\tStart Sample: %d Stop Sample: %d', startSample, stopSample));
-                        datFileNames{chanNo} = [baseFileName, 'chan', num2str(self.inChannels(chanIdx)), '.dat'];
                         self.trigFileNames{chanNo} = datFileNames{chanNo};
                         self.log(sprintf('\tDerived file name: %s', datFileNames{chanNo}));
                         status(chanNo) = true;
@@ -230,9 +228,9 @@ classdef (Sealed) DaqBuffer < handle
             isRecording = self.chanIsTriggered(chanIdx);
         end
         
-        function [status, datFileNames] = start_recording(self, startSample, baseFileName, channels)
+        function [status, datFileNames] = start_recording(self, startSample, datFileNames, channels)
             self.log('Received request for open ended recordings');
-            [status, datFileNames] = self.record(startSample, DaqBuffer.openEnded, baseFileName, channels);
+            [status, datFileNames] = self.record(startSample, DaqBuffer.openEnded, datFileNames, channels);
         end
         
         function status = stop_recording(self, endSample, channels)

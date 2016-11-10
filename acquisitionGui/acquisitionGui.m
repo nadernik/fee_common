@@ -318,7 +318,14 @@ if ~recInfo(dgd.ce).bSongTrigRecording % no triggered recording
             EventData, ListenerHandle, dgd.experData(dgd.ce).inChans, guiFig,...
             dgd.ce, recInfo(dgd.ce).recfilenum);
         ListenerHandle.Callback = completionClosure;
-        [bStatus, ~] = dgd.DaqBuffer.start_recording(recSampNum, [dgd.expers{dgd.ce}.dir, filenamePrefix], dgd.experData(dgd.ce).inChans);
+        
+        nChan = numel(dgd.experData(dgd.ce).inChans);
+        datFileNames = cell(nChan, 1);
+        for chanNo = 1:nChan
+            fileName = sprintf('%schan%d.dat', filenamePrefix, dgd.experData(dgd.ce).inChans(chanNo));
+            datFileNames{chanNo} = fullfile(dgd.expers{dgd.ce}.dir, fileName);
+        end
+        [bStatus, ~] = dgd.DaqBuffer.start_recording(recSampNum, datFileNames, dgd.experData(dgd.ce).inChans);
         if ~all(bStatus)
             delete(ListenerHandle);
             aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);

@@ -148,10 +148,8 @@ classdef SongTriggeredExperiment < handle
             else
                 self.experDirectory = Params.experDirectory;
             end
-            if exist(self.experDirectory, 'dir')
+            if any(strcmp(p.UsingDefault, 'lastFileNo')) && exist(self.experDirectory, 'dir')
                 self.lastFileNo = SongTriggeredExperiment.last_fileno(self.experDirectory, self.birdName);
-            else
-                self.lastFileNo = 0;
             end
         end
         
@@ -206,6 +204,15 @@ classdef SongTriggeredExperiment < handle
             self.write_daqsetup();
         end
         
+        function clear_daq_params(self)
+            self.DaqObj = [];
+            self.daqFs = -1;
+            self.nyqFreq = -1;
+            self.daqBufferSecs = -1;
+            self.daqUpdateFreq = -1;
+            delete(self.DaqRecordingListener);
+        end
+        
         function status = change_detectingSong(self, detectingSong)
             % Public method to ask for a change in detection state
             if self.isRecording
@@ -231,8 +238,8 @@ classdef SongTriggeredExperiment < handle
             if self.forcedRecording
                 status = false;
             else
-                [status, isSong, songScore, firstSongSamp] = detect_song(self, audioData, peekStartSamp);  %#ok<PROP>
-                self.songScore = songScore;  %#ok<PROP>
+                [status, isSong, songScore, firstSongSamp] = detect_song(self, audioData, peekStartSamp);   %#ok<PROPLC>
+                self.songScore = songScore;   %#ok<PROPLC>
                 if status
                     lastPeekSamp = peekStartSamp + numel(audioData) - 1;
                     self.update_triggered_recording(isSong, firstSongSamp, lastPeekSamp);
@@ -304,6 +311,28 @@ classdef SongTriggeredExperiment < handle
             end
         end
         
+        function fileNames = get_filenames(self, recNo, hwChannels)
+            nChan = numel(hwChannels);
+            prefix = sprintf(self.fileNameFormat, self.birdName, recNo, datestr(datetime(), 30));
+            fileNames = cell(nChan, 1);
+            for chanNo = 1:nChan
+                file = sprintf('%schan%d.dat', prefix, hwChannels(chanNo));
+                fileNames{chanNo} = fullfile(self.experDirectory, file);
+            end
+        end
+        
+        function [fileNames, hwChannels] = find_files(self, recordingNo)
+            REGSTR = sprintf('^%s_d%06g_\\d{8}T\\d{6}chan(\\d+)\\.dat$', self.birdName, recordingNo); %slashes escaped
+            experDir = self.experDirectory;
+            listing = dir(experDir);
+            candidateNames = {listing.name};
+            candidateFiles = candidateNames(~[listing.isdir]);
+            [rawMatch, rawTokens] = regexp(candidateFiles, REGSTR, 'match', 'tokens', 'once');
+            nonEmptyMask = ~cellfun(@isempty, rawMatch);
+            fileNames = rawMatch(nonEmptyMask);
+            hwChannels = str2double([rawTokens{nonEmptyMask}]);
+        end
+        
         %% Callbacks
         function daq_recording_finished(self, ~, EventData)
             %% See if these are the channels we are looking for
@@ -370,8 +399,8 @@ classdef SongTriggeredExperiment < handle
                 self.isRecording = true;
                 
                 self.DaqRecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.daq_recording_finished);
-                recFilePrefix = fullfile(self.experDirectory, self.get_next_file_prefix());
-                [startedChannels, ~] = self.DaqObj.start_recording(startSamp, recFilePrefix, self.inChannels);
+                recFileNames = self.get_filenames(self.lastFileNo + 1, self.inChannels);
+                [startedChannels, ~] = self.DaqObj.start_recording(startSamp, recFileNames, self.inChannels);
                 status = all(startedChannels);
                 if ~status
                     self.isRecording = false;
@@ -459,11 +488,6 @@ classdef SongTriggeredExperiment < handle
             daqSetup.actUpdateFreq = self.daqUpdateFreq;
             fileName = fullfile(self.experDirectory, sprintf('daqSetup%s.mat', datestr(datetime(), 30)));
             save(fileName, 'daqSetup');
-        end
-        
-        function prefix = get_next_file_prefix(self)
-            nextNo = self.lastFileNo + 1;
-            prefix = sprintf(self.fileNameFormat, self.birdName, nextNo, datestr(datetime(), 30));
         end
         
         %% Utility methods
@@ -560,8 +584,12 @@ classdef SongTriggeredExperiment < handle
         
         function fileNo = last_fileno(directory, birdName)
             dirstat = dir(fullfile(directory, [birdName, '_d*']));
-            name = dirstat(end).name;
-            fileNo = extract_datafile_number(name);
+            if isempty(dirstat)
+                fileNo = 0;
+            else
+                name = dirstat(end).name;
+                fileNo = extract_datafile_number(name);
+            end
         end
         
         function fileNos = extract_datafile_number(names)

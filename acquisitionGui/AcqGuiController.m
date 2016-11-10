@@ -6,15 +6,27 @@ classdef (Sealed) AcqGuiController < handle
         
         %% Experiment related properties
         Experiments % N x 1 cell array of SongTriggeredExperiment objects
+        experimentStrings % strings used to describe experiments
         rememberedDetect = []; % N x 1 boolean array of songDetection states when experiments last suspended, empty if not suspended
         DetectionChangeListeners % N x 1 cell array of DetectionChangeListeners
         
         %% Display data
         currentExperNdx = 0;
-        experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
-        displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display
+        experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
+        displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
         startNdx = 0;
         endNdx = 0;
+        fileFs
+        autoSpec
+        maxLoadSize
+        samplesToLoad
+        fileNames
+        fileHwChans
+        audioSignal
+        nonSongSignals = cell(0, 1);
+        nonSongSignalNdx
+        propertyNames
+        propertyValues
         
         %% Daq related properties
         DaqObj
@@ -67,6 +79,8 @@ classdef (Sealed) AcqGuiController < handle
             addParameter(p, 'peekOverlap', 0.1);
             addParameter(p, 'updateFreq', 4);
             addParameter(p, 'bufferSecs', 20);
+            addParameter(p, 'autoSpec', true);
+            addParameter(p, 'maxLoadSize', 2000000);
             parse(p, varargin{:});
             Params = p.Results;
             
@@ -97,6 +111,11 @@ classdef (Sealed) AcqGuiController < handle
             
             %% Set up DaqBuffer
             if ~isempty(self.Experiments)
+                nExper = numel(self.Experiments);
+                self.experDisplayChannels = -1 * ones(3, nExper); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
+                self.displayRecordingNo = zeros(nExper, 1);% Nx1 matrix of file number to display
+                self.default_exper_display(1:nExper);
+                self.update_exper_strings();
                 self.init_daq();
                 self.start_daq();
             end
@@ -124,12 +143,9 @@ classdef (Sealed) AcqGuiController < handle
             peekStartSamp = PeekEvent.startDaqSample;
             for experNo = 1:nDetect
                 experNdx = self.detectingExperNdx(experNo);
-                [status, isSong, firstSongSamp] = ...
-                    self.Experiments{experNdx}.check_for_song(...
-                    PeekEvent.data(:, experNo), peekStartSamp); %#ok<ASGLU>
+                status = self.Experiments{experNdx}. ...
+                    detect_song_and_record(PeekEvent.data(:, experNo), peekStartSamp);
                 assert(status, 'Song detetion failed');
-                if isSong
-                end
             end
         end
         
@@ -169,10 +185,108 @@ classdef (Sealed) AcqGuiController < handle
         end
     end
     methods (Access = private)
+        %% Display methods
+        function load_recording(self)
+            
+            experNdx = self.currentExperNdx;
+            currExper = self.Experiments{self.currentExperNdx};
+            nChan = numel(self.nonSongHWChannels{experNdx});
+            self.nonSongSignals = cell(nChan, 1);
+            currDir = currExper.experDir;
+            [relFileNames, self.fileHwChans] = currExper.find_files(recordingNo);
+            self.fileNames = fullfile(currDir, relFileNames);
+            songFile = self.fileNames{self.songHWChannels(experNdx) == hwChannels};
+            [~, info] = daq_readDatafile(songFile, true, 0);
+            if info.numSamples > self.maxLoadSize
+                self.samplesToLoad = [1, self.maxLoadSize];
+            else
+                self.samplesToLoad = []; % Load everything
+            end
+            [self.audioSignal, info] = daq_readDatafile(songFile, true, self.samplesToLoad);
+            self.fileFs = info.fs;
+            self.propertyNames = info.propertyNames;
+            self.propertyValues = info.propertyValues;
+            for dispCh = 1:3
+                self.load_channel(self.experDisplayChannels(dispCh, experNdx));
+            end
+            self.gui_file_properties();
+        end
+        
+        function load_channel(self, hwChan)
+            experNdx = self.currentExperNdx;
+            nonSongChans = self.nonSongHWChannels{experNdx};
+            chanNdx = find(nonSongChans == hwChan, 1, 'first');
+            if isempty(self.nonSongSignals{chanNdx}) % Still need to load this file
+                fileName = self.fileNames{self.fileHwChans == hwChan};
+                [self.nonSongSignals{chanNdx}, info] = ...
+                    daq_readDatafile(fileName, true, self.samplesToLoad);
+                assert(info.fs == self.fileFs, 'Different sampling frequency!');
+            end
+        end
+        
         %% Methods to add or remove experiments
         function append_experiment(self, Experiment)
+            assert(~self.DaqObj.isRunning, 'Cannot add experiment when DAQ is running');
+            self.Experiments{end + 1} = Experiment;
+            self.experDisplayChannels(:, end + 1) = -1 * ones(1, 3);
+            self.displayRecordingNo(end + 1) = 0;
+            experNo = numel(self.Experiments);
+            self.default_exper_display(experNo);
+            self.update_exper_strings();
         end
         function remove_experiment(self, experNo)
+            % Must be called when daq is stopped, and init_daq should be
+            % called after all modifications to experiment list are made
+            nExper = numel(self.Experiments);
+            assert(nExper >= experNo, 'Cannot remove experiment as it does not exist');
+            assert(~self.DaqObj.isRunning, 'Cannot remove experiments when DAQ is running');
+            %% Remove data related to this experiment
+            self.Experiments(experNo) = [];
+            self.experDisplayChannels(:, experNo) = [];
+            self.displayRecordingNo(experNo) = [];
+            
+            %% Update current experiment, if necessary
+            if experNo == self.currentExperNdx
+                if nExper > experNo
+                    self.switch_experiment(experNo);
+                elseif nExper > 1
+                    self.switch_experiment(experNo - 1);
+                else
+                    self.no_experiment()
+                end
+            elseif experNo < self.currentExperNdx
+                self.switch_experiment(self.currentExperNdx - 1); % Because the current experiment has moved in the now shortened list
+            end
+        end
+        function switch_experiment(self, experNo)
+            
+        end
+        function no_experiment(self)
+            self.currentExperNdx = 0;
+            self.experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
+            self.displayRecordingNo = zeros(0, 1);% Nx1 matrix of file number to display
+            self.startNdx = 0;
+            self.endNdx = 0;
+            self.update_exper_strings();
+        end
+        function default_exper_display(self, experNdxArray)
+            nExper = numel(experNdxArray);
+            for experNo = 1:nExper
+                experNdx = experNdxArray(experNo);
+                nCh = numel(self.Experiments{experNdx}.nonSongHWChannels);
+                self.experDisplayChannels(:, experNo) = self.Experiments{experNdx}.songHWChannel;
+                self.experDisplayChannels(1:nCh, experNo) = self.Experiments{experNdx}.nonSongHWChannels;
+                self.displayRecordingNo(experNo) = self.Experiments{experNdx}.lastFileNo;
+            end
+        end
+        function update_exper_strings(self)
+            if isempty(self.Experiments)
+                self.experimentStrings = {''};
+            else
+                formatFun = @(E) sprintf('%s: %s', E.birdName, E.experName);
+                self.experimentStrings = cellfun(formatFun, self.Experiments, 'UniformOutput', false);
+            end
+            self.gui_experstrings();
         end
         
         %% Methods to interface with DaqBuffer
@@ -219,7 +333,13 @@ classdef (Sealed) AcqGuiController < handle
             self.gui_startdaq();
             self.wait_for_buffer();
         end
-        function status = stop_daq(self)
+        function stop_daq(self)
+            recordingExpers = cellfun(@(E) E.isRecording, self.Experiments);
+            if any(recordingExpers)
+                cellfun(@(E) E.force_stop_recording(), self.Experiments(recordingExpers));
+            end
+            self.DaqObj.stop();
+            self.gui_stopdaq();
         end
         
         function request_peek(self)
@@ -422,9 +542,14 @@ classdef (Sealed) AcqGuiController < handle
         function gui_exper(self)
         end
         function gui_stopdaq(self)
+            set(self.GuiData.buttonRecord, 'Enable', 'off');
+            set(self.GuiData.textRecordingStatus, 'String', 'Daq stopped');
+            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
         end
         function gui_startdaq(self)
             set(self.GuiData.buttonRecord,'Enable','on');
+            set(self.GuiData.textRecordingStatus, 'String', 'Buffering for song detection but ready to record...');
+            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
         end
         function gui_wait_buffer(self)
             set(self.GuiData.buttonTrigOnSong,'Enable','off');
@@ -435,6 +560,18 @@ classdef (Sealed) AcqGuiController < handle
             set(self.GuiData.textRecordingStatus, 'String', 'Ready to record and detect song');
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'green');
             set(self.GuiData.buttonTrigOnSong,'Enable','on');
+        end
+        function gui_experstrings(self)
+            set(self.GuiData.popupExperiments, 'String', self.experimentStrings);
+        end
+        function gui_file_properties(self)
+            nPropName = numel(self.propertyNames);
+            strList = cell(nPropName, 1);
+            for propNo = 1:nPropName
+                strList{propNo} = sprtintf('%s: %s', ...
+                    self.propertyNames{propNo}, self.propertyValues{propNo});
+            end
+            set(self.GuiData.listboxDatafileProperties, 'String', strList);
         end
     end
 end
