@@ -163,9 +163,9 @@ classdef SongTriggeredExperiment < handle
                 end
                 if self.isRecording && self.forcedRecording
                     self.DeletionListener = addlistener(self, 'RecordingComplete', @(~, ~) self.delete());
-                    status = self.stop_recording();
+                    status = self.stop_recording(self.DaqObj.lastSample);
                     while ~status
-                        status = self.stop_recording();
+                        status = self.stop_recording(self.DaqObj.lastSample);
                     end
                 end
                 delete(self.DaqRecordingListener);
@@ -227,14 +227,15 @@ classdef SongTriggeredExperiment < handle
         end
         
         %% Song detection methods
-        function status = detect_song_and_record(self, audioData, StartTime)
+        function status = detect_song_and_record(self, audioData, peekStartSamp)
             if self.forcedRecording
                 status = false;
             else
-                [status, isSong, songScore, firstSongSamp] = detect_song(self, audioData, StartTime); %#ok<PROPLC>
-                self.songScore = songScore; %#ok<PROPLC>
+                [status, isSong, songScore, firstSongSamp] = detect_song(self, audioData, peekStartSamp);  %#ok<PROP>
+                self.songScore = songScore;  %#ok<PROP>
                 if status
-                    self.update_triggered_recording(isSong, firstSongSamp);
+                    lastPeekSamp = peekStartSamp + numel(audioData) - 1;
+                    self.update_triggered_recording(isSong, firstSongSamp, lastPeekSamp);
                 end
             end
         end
@@ -283,7 +284,8 @@ classdef SongTriggeredExperiment < handle
                 self.detectingSong = false;
                 
                 %% Start the recording
-                status = self.record();
+                startSamp = self.DaqObj.lastSample + 1;
+                status = self.record(startSamp);
                 if ~status
                     self.forcedRecording = false;
                 end
@@ -296,7 +298,7 @@ classdef SongTriggeredExperiment < handle
                     %% Stop song detection or the recording will resume after
                     self.detectingSong = false;
                 end
-                status = self.stop_recording();
+                status = self.stop_recording(self.DaqObj.lastSample);
             else
                 status = false;
             end
@@ -361,15 +363,15 @@ classdef SongTriggeredExperiment < handle
         end
         
         %% Recording methods
-        function status = record(self)
+        function status = record(self, startSamp)
             if self.DaqObj.isUpdating || self.isRecording
                 status = false;
             else
                 self.isRecording = true;
-                recSampNum = self.DaqObj.lastSample + 1;
+                
                 self.DaqRecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.daq_recording_finished);
                 recFilePrefix = fullfile(self.experDirectory, self.get_next_file_prefix());
-                [startedChannels, ~] = self.DaqObj.start_recording(recSampNum, recFilePrefix, self.inChannels);
+                [startedChannels, ~] = self.DaqObj.start_recording(startSamp, recFilePrefix, self.inChannels);
                 status = all(startedChannels);
                 if ~status
                     self.isRecording = false;
@@ -378,12 +380,15 @@ classdef SongTriggeredExperiment < handle
             end
         end
         
-        function status = stop_recording(self)
+        function status = stop_recording(self, stopSamp)
             if ~self.isRecording || self.DaqObj.isUpdating
                 status = false;
             else
-                stoppedChannels = self.DaqObj.stop_recording(self.DaqObj.lastSample, self.inChannels);
+                stoppedChannels = self.DaqObj.stop_recording(stopSamp, self.inChannels);
                 status = all(stoppedChannels);
+                if status
+                    self.isRecording = false;
+                end
             end
         end
         
@@ -397,16 +402,26 @@ classdef SongTriggeredExperiment < handle
             notify(self, 'RecordingComplete');
         end
         
-        function update_triggered_recording(self, isSinging, firstSongSamp)
+        function update_triggered_recording(self, isSinging, firstSongSamp, lastPeekSamp)
             if self.forcedRecording
                 return
             end
-            if self.isSinging
-                if self.isRecording % Continue writing file
-                else % Start to write file
-                    self.record()
+            if isSinging
+                if ~self.isRecording % Start to write file
+                    startSamp = firstSongSamp - round(self.daqFs * self.preSongSeconds);
+                    self.record(startSamp)
                 end
+                self.lastSingingSample = lastPeekSamp;
             else
+                sampsSinceLastSong = lastPeekSamp - self.lastSingingSample;
+                postSongSamples = ceil(self.daqFs * self.postSongSeconds);
+                if sampsSinceLastSong > postSongSamples
+                    %% End recording
+                    stopSamp = self.lastSingingSample + postSongSamples;
+                    self.stop_recording(stopSamp);
+                else
+                    self.lastSingingSample = lastPeekSamp;
+                end
             end
         end
         
@@ -433,7 +448,7 @@ classdef SongTriggeredExperiment < handle
             exper.audioCh = self.songHWChannel;
             exper.sigCh = self.nonSongHWChannels;
             exper.sigName = self.signalName;
-            exper.sigDesc = self.signalDesc; %#ok<STRNU>
+            exper.sigDesc = self.signalDesc; 
             save(fullfile(self.experDirectory, 'exper.mat'), 'exper');
         end
         

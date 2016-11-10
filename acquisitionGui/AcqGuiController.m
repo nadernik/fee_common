@@ -126,7 +126,7 @@ classdef (Sealed) AcqGuiController < handle
                 experNdx = self.detectingExperNdx(experNo);
                 [status, isSong, firstSongSamp] = ...
                     self.Experiments{experNdx}.check_for_song(...
-                    PeekEvent.data(:, experNo), peekStartSamp);
+                    PeekEvent.data(:, experNo), peekStartSamp); %#ok<ASGLU>
                 assert(status, 'Song detetion failed');
                 if isSong
                 end
