@@ -1,5 +1,7 @@
-%% montage video of all singing data from a particular folder
-path = 'C:\Users\emackev\Documents\StuffICanDelete\6636_July1\asleep'; 
+
+
+%% montage video during sleep
+path = 'E:\ProcessedCalciumData\6636_July1\asleep'; 
 DIR = dir(fullfile(path, '*.mat')); 
 
 CompVid = [];
@@ -23,8 +25,8 @@ maxproj = squeeze(max(CompVid,[],1));
 sumproj = squeeze(sum(CompVid,1)); 
 save(fullfile(path, 'compiled'), 'CompVid', 'CompSound', 'CompSpec', '-v7.3');
 save(fullfile(path, 'compiled'), 'maxproj', 'sumproj', '-append')
-%%
-path = 'C:\Users\emackev\Documents\StuffICanDelete\6636_July1\awake'; 
+%% montage video awake
+path = 'E:\ProcessedCalciumData\6636_July1\awake'; 
 load(fullfile(path, 'analysis.mat')); 
 CompVidSONG = [];
 CompSoundSONG = [];
@@ -104,6 +106,29 @@ end
 % showcontour = 1; 
 % ShowCaVid(CompVid,CompSound,CompSpec, fullfile(dir, 'tmp.avi'), [], showcontour)
 % ShowCaVid(CompVid,CompSound,CompSpec, [], [], showcontour)
+%%
+clear all; close all; 
+load('E:\ProcessedCalciumData\6636_July1\awake\compiled.mat', ...
+    'CompVidSONG', 'CompSoundSONG','CompSpecSONG')
+ShowCaVid(CompVidSONG,CompSoundSONG,CompSpecSONG, [], [], 1)
+
+A = CompVidSONG;
+[t y x] = size(A); 
+[X1,X2] = meshgrid(1:x,1:y);
+ccoor = [x/2 y/2];
+Amat = reshape(permute(A,[2 3 1]),y*x,t); 
+mask = sqrt((X2(:)-ccoor(2)).^2 + (X1(:)-ccoor(1)).^2)<175; 
+Amat(~mask,:) = 0; 
+maxproj = reshape(max(Amat,[],2),y,x); %squeeze(max(A,[],1));
+imagesc(maxproj)
+
+Clusters = clusterdata(Amat(mask,1:50), 'maxclust', 100, 'distance', 'correlation'); 
+%%
+im = zeros(300,400); 
+im(mask) = Clusters; 
+figure; imagesc(im); colormap lines
+
+
 %%
 clear all; close all; clc
 load('C:\Users\emackev\Documents\StuffICanDelete\6636_July1\asleep\compiled.mat', 'CompVid')

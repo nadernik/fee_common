@@ -1,4 +1,4 @@
-function num = extractDatafileNumber(exper, name)
+function num = extractDatafileNumber(~, name)
 %extractDatafileNumber number of file recorded by acquisitionGui
 %
 % num = extractDatafileNumber(exper, name)

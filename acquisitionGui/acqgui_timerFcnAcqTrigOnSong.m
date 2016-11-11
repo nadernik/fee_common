@@ -1,173 +1,279 @@
-function acqgui_timerFcnAcqTrigOnSong(~, ~, guifig)
-
+function acqgui_timerFcnAcqTrigOnSong(~, ~, guiFig)
 %It is crucial, that this function, which accesses daq_data, does not
 %interrupt the daq_bufferUpdate.  Interruptions result in crashes and
 %freezes.
-if(daq_isUpdating)
+
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+dgd.DaqBuffer.log('Entered song triggering timer');
+%% Check if DaqBuffer is busy, requeue or quit if it is
+if dgd.DaqBuffer.isPeeking || dgd.DaqBuffer.isUpdating
+    if dgd.DaqBuffer.isPeeking
+        dgd.DaqBuffer.log('Peek already occurring, exiting song trigger timer');
+    else
+        dgd.DaqBuffer.log('DaqBuffer is updating, registering listener for UpdateComplete...');
+        ListenerHandle = addlistener(dgd.DaqBuffer, 'UpdateComplete', @(~, ~) error('lost the callback race!'));
+        peekClosure = @(~, ~) queue_peek_callback(guiFig, ListenerHandle);
+        ListenerHandle.Callback = peekClosure;
+    end
+else
+    queue_peek(guiFig);
+end
+end
+
+function queue_peek_callback(guiFig, ListenerHandle)
+delete(ListenerHandle); % Unsubscribe
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+dgd.DaqBuffer.log('Entered queue_peek_callback');
+queue_peek(guiFig);
+end
+
+function queue_peek(guiFig)
+%% Get relevant information structures from guiFig
+handles = guidata(guiFig);
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+dgd.DaqBuffer.log('Entered queue_peek');
+%% Checkout recording info
+[recInfo, success] = aa_checkoutAppData(guiFig, 'acqrecordinfo');
+if ~success
+    dgd.DaqBuffer.log('Could not check out acqrecordinfo');
     return;
 end
 
-%check out necessary data.
-daq_log('Not updating');
-handles = guidata(guifig);
-tsd = getappdata(guifig, 'threadSafeData');
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-[recinfo, bStatus] = aa_checkoutAppData(guifig, 'acqrecordinfo');
-if(~bStatus)
-    return;
-end
-[params, bStatus] = aa_checkoutAppData(guifig, 'songtrigdata');
-if(~bStatus)
-    aa_checkinAppData(guifig, 'acqrecordinfo',recinfo);
+%% Checkout triggering data
+[params, success] = aa_checkoutAppData(guiFig, 'songtrigdata');
+if ~success
+    dgd.DaqBuffer.log('Could not check out songtrigdata');
+    aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);
     return;
 end
 
-%grab new data with 100ms overlap
-daq_log('Starting Peek.');
-%nextPeek that the lowest next peek, they will generally all be equal.
+dgd.DaqBuffer.log('Checked out all app data');
+
+%% Toggle songscore background color for "heartbeat" effect
+if isequal(get(handles.textSongScore, 'BackgroundColor'), [1, 1, 1])
+    set(handles.textSongScore, 'BackgroundColor', [1, 1, .5]);
+else
+    set(handles.textSongScore, 'BackgroundColor', [1, 1, 1]);
+end
+
+%% Choose nextPeek to satisfy the peek asking for the most data
 nextPeek = min([params(logical(dgd.bTrigOnSong)).nextPeek]); 
-if(abs(nextPeek - daq_getCurrSampNum) > dgd.actInSampRate*10)
-    beep;
-    daq_log('Falling behind.  Skipping data for song detect.');
-    warning('Falling behind.  Skipping data for song detect.');
-    nextPeek = daq_getCurrSampNum - dgd.actInSampRate;
-end
-[data, time, sampNum] = daq_peek(round(nextPeek-dgd.actInSampRate/10));
-for nExper = find(dgd.bTrigOnSong)
-    params(nExper).nextPeek = sampNum+length(time);
-end
-daq_log('Peek Completed.');
+dgd.DaqBuffer.log(sprintf('Next peek set to %d', nextPeek));
 
-if(~dgd.bTrigOnSong(dgd.ce))
+%% Check that we're not falling behind in the buffer
+if dgd.DaqBuffer.lastSample - nextPeek > dgd.actInSampRate * 10 % If the peek is more than 10 seconds ago
+    beep;
+    dgd.DaqBuffer.log('Falling behind on song monitoring. Skipping data for song detect.');
+    warning('Falling behind on song monitoring. Skipping data for song detect.');
+    nextPeek = dgd.DaqBuffer.lastSample - dgd.actInSampRate; % Last second of the buffer
+end
+
+%% Find the triggered experiments
+triggeredExperIdxs = find(dgd.bTrigOnSong);
+nTriggedExpers = numel(triggeredExperIdxs);
+micHwChans = nan(nTriggedExpers, 1);
+%% Determine which channels we should peek at
+for trigExperNo = 1:nTriggedExpers
+    experIdx = triggeredExperIdxs(trigExperNo);
+    micIdx = dgd.experData(experIdx).ndxOfAudioChan;
+    micHwChans(trigExperNo) = dgd.experData(experIdx).inChans(micIdx);
+end
+dgd.DaqBuffer.log(sprintf('Requesting peek for microphone channels %s', mat2str(micHwChans)));
+
+%% grab new data with 100ms overlap
+peekStartSample = round(nextPeek - dgd.actInSampRate / 10); % 1/10 of a second behind 'nextPeek'
+
+%% Register peek listener
+ListenerHandle = addlistener(dgd.DaqBuffer, 'PeekAvailable', @(~, ~) error('lost the callback race!'));
+peekClosure = @(~, EventData) analyze_peek(...
+    EventData, guiFig, ListenerHandle, recInfo, params, peekStartSample); % Call back checks in recInfo and params
+ListenerHandle.Callback = peekClosure;
+%% Request peek
+dgd.DaqBuffer.request_peek(micHwChans, peekStartSample);
+end
+
+function analyze_peek(EventData, guiFig, ListenerHandle, recInfo, params, peekStartSample)
+delete(ListenerHandle); % Unsubscribe from peek notifications
+dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+
+%% Check if daq_bufferUpdate is running
+if dgd.DaqBuffer.isUpdating
+    warning('Peek callback occurred while DaqBuffer is updating! Attempting to requeue!');
+    %% Attempt to requeue with UpdatingComplete event
+    NewListenerHandle = addlistener(dgd.DaqBuffer, 'UpdateComplete', @(~, ~) error('lost the callback race!'));
+    peekClosure = @(~, ~) analyze_peek(...
+        EventData, guiFig, NewListenerHandle, recInfo, params, peekStartSample); % Call back checks in recInfo and params
+    NewListenerHandle.Callback = peekClosure;
+    return;
+end
+dgd.DaqBuffer.log('Successfully entered peek callback');
+tsd = getappdata(guiFig, 'threadSafeData');
+handles = guidata(guiFig);
+
+%% Find the triggered experiments
+triggeredExperIdxs = find(dgd.bTrigOnSong);
+nTriggedExpers = numel(triggeredExperIdxs);
+
+%% Set next peek to be the same number of points in the future
+nSampsThisPeek = numel(EventData.timeStamps);
+peekStopSample = peekStartSample + nSampsThisPeek - 1;
+for experIdx = triggeredExperIdxs
+    params(experIdx).nextPeek = peekStartSample + nSampsThisPeek;
+end
+
+%% Update GUI song score
+if ~dgd.bTrigOnSong(dgd.ce) % If current experiment is not triggering on song
     set(handles.textSongScore, 'String', 'Song Score: --');
 end
-if(isequal(get(handles.textSongScore, 'BackgroundColor'),[1,1,1]))
-    set(handles.textSongScore, 'BackgroundColor', [1,1,.5]);
-else
-    set(handles.textSongScore, 'BackgroundColor', [1,1,1]);
-end
+peekData = EventData.data;
 
-bNewFile = false(1,length(dgd.expers));
-for nExper = find(dgd.bTrigOnSong)
-    fs = dgd.expers{nExper}.desiredInSampRate;
-    audio = data(:,dgd.experData(nExper).ndxOfAudioChan);
-    sd = dgd.experData(nExper).songDetection;
-    srp = tsd.songTrigParams(nExper);
-    %Take specgram and measure power in each time-slice
-    [b,~,t] = specgram(audio, sd.windowSize, dgd.actInSampRate, sd.windowSize, sd.windowOverlap);
-    powerSong = mean(abs(b(sd.minNdx:sd.maxNdx,:)), 1);
-    powerNonSong = mean(abs(b([1:sd.minNdx-1,sd.maxNdx+1:end],:)), 1) + eps;
-    songRatio = powerSong./powerNonSong;
-    thresCross = double(songRatio>sd.ratioThreshold);
-    songDet = conv(thresCross,sd.windowAvg);
-    maxSongScore = max(songDet);
-    if(nExper == dgd.ce)
+nExper = numel(length(dgd.expers));
+recordingsStarted = false(nExper, 1);
+recordingsComplete = false(nExper, 1);
+recordingStartSamples = nan(nExper, 1);
+
+%% Loop through all triggering experiments
+dgd.DaqBuffer.log(sprintf('\tAnalyzing peek data'));
+for trigExperNo = 1:nTriggedExpers
+    experIdx = triggeredExperIdxs(trigExperNo);
+    
+    %% Convenience variables
+    fs = dgd.actInSampRate;
+    sDctParams = dgd.experData(experIdx).songDetection;
+    sTrigParams = tsd.songTrigParams(experIdx);
+    
+    %% Take specgram and measure in-band vs. out-band power in each time-slice
+    [s, ~, t] = spectrogram(peekData(:, trigExperNo), sDctParams.windowSize, sDctParams.windowOverlap, sDctParams.windowSize, fs);
+    powerSong = mean(abs(s(sDctParams.minNdx:sDctParams.maxNdx, :)), 1);
+    powerNonSong = mean(abs(s([1:(sDctParams.minNdx - 1), (sDctParams.maxNdx + 1):end], :)), 1) + eps;
+    songPowerRatio = powerSong ./ powerNonSong;
+    
+    %% Smooth song power ratio
+    threshCross = songPowerRatio > sDctParams.ratioThreshold; % Cast into double for convolution
+    smoothThreshCross = conv(double(threshCross), sDctParams.windowAvg);
+    maxSongScore = max(smoothThreshCross);
+    
+    %% Update GUI with song score
+    if experIdx == dgd.ce
         set(handles.textSongScore, 'String', ['Song Score: ', num2str(maxSongScore)]);
     end
-    daq_log('Song score computed');
-    bNewFile(nExper) = false;
-    if ~recinfo(nExper).bSongTrigRecording && ~recinfo(nExper).bForcedRecording%(~daq_isRecording(dgd.expers{dgd.ce}.audioCh))
+    
+    %% Check if already recording
+    if ~recInfo(experIdx).bSongTrigRecording && ~recInfo(experIdx).bForcedRecording % if not already recording
         %Since not currently recording this bird, check for song start.
-        if( (maxSongScore > sd.durationThreshold) )
-            %If sufficient power to signify song, then begin recording            
-            daq_log('Attempt start song triggered recording.');            
-            firstCrossTime = t(find(songRatio>sd.ratioThreshold, 1, 'first'));
-            firstCrossSamp = floor(firstCrossTime * dgd.actInSampRate) + 1;
-            params(nExper).songStartSampNum = sampNum + firstCrossSamp;
-            [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.expers{nExper});
-            recinfo(nExper).recfilenum = recfilenum;
-            [bStatus, params(nExper).startSamp, params(nExper).filenames] = daq_recordStart(params(nExper).songStartSampNum - round(srp.preSecs*fs), [dgd.expers{nExper}.dir, filenamePrefix], dgd.experData(nExper).inChans);
-            if(~bStatus)
+        
+        %% See if recording contains section usually over power-ratio threshold
+        if maxSongScore > sDctParams.durationThreshold % Usually above threshold
+            dgd.DaqBuffer.log(sprintf('\tExperiment %d will be triggered based on song', experIdx));
+            %If sufficient power to signify song, then begin recording
+            
+            %% Calculate sample number when power-ratio is first above threshold
+            firstCrossTime = t(find(threshCross, 1, 'first')); % First time song power ratio crosses threshold
+            firstCrossSampFromPeek = floor(firstCrossTime * dgd.actInSampRate) + 1;
+            params(experIdx).songStartSampNum = peekStartSample + firstCrossSampFromPeek;
+            recStartSample = params(experIdx).songStartSampNum - round(sTrigParams.preSecs * fs); % Include time before this sample
+            dgd.DaqBuffer.log(sprintf('\tRequesting recording from sample %d', recStartSample));
+            %% Recording variables
+            [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.expers{experIdx});
+            recInfo(experIdx).recfilenum = recfilenum;
+            recBaseFileName = [dgd.expers{experIdx}.dir, filenamePrefix];
+            
+            [bStatus, params(experIdx).filenames] = ...
+                dgd.DaqBuffer.start_recording(recStartSample, recBaseFileName, dgd.experData(experIdx).inChans);
+            params(experIdx).startSamp = recStartSample;
+            
+            %% Check that we succesffuly started recording
+            if ~all(bStatus)
                 beep;
-                warning('Start recording failed'); %#ok<WNTAG>
+                warning('Failed to start triggered recording'); %#ok<WNTAG>
             else
-                if(nExper == dgd.ce)
-                    set(handles.textRecordingStatus, 'String', ['Started recording.', num2str(recinfo(nExper).recfilenum)]);
+                dgd.DaqBuffer.log(sprintf('\tSuccessfully requested recording'));
+                if experIdx == dgd.ce
+                    set(handles.textRecordingStatus, 'String', ['Started recording.', num2str(recInfo(experIdx).recfilenum)]);
                     set(handles.textRecordingStatus, 'BackgroundColor', 'red');
                 end
-                recinfo(nExper).bSongTrigRecording = true;
-                daq_log('Started song triggered recordings.');
+                recInfo(experIdx).bSongTrigRecording = true;
+                recordingsStarted(experIdx) = true;
             end
-            params(nExper).stopSamp = sampNum + length(time) - 1;
+            params(experIdx).stopSamp = peekStopSample; % Set the stop sample to be at the end of this peek
         end
-    elseif(recinfo(nExper).bSongTrigRecording)
+    elseif recInfo(experIdx).bSongTrigRecording % triggered recording already started
+        dgd.DaqBuffer.log(sprintf('\tExperiment %d is already triggered based on song', experIdx));
         %Since already recording this bird, check for silence and file
         %getting too long.
-        if (maxSongScore > sd.durationThreshold) && (sampNum - params(nExper).songStartSampNum < round(srp.maxFileLength*fs))
-            params(nExper).stopSamp = sampNum + length(time) - 1;
+        if maxSongScore > sDctParams.durationThreshold && ... % Still have song
+                peekStartSample - params(experIdx).songStartSampNum < round(sTrigParams.maxFileLength * fs) % And the file is within limits
+            %% Extend recording
+            params(experIdx).stopSamp = peekStopSample; % Extend time of last song detection
+            dgd.DaqBuffer.log(sprintf('\tExtending recording based on song...'));
         end
-        if( sampNum + length(audio) - 1 - params(nExper).stopSamp > round(srp.postSecs*fs) )
-            daq_log('Attempt to stop song triggered recordings.');
-            songEndSampNum = sampNum + length(audio) - 1;
-            [bStatus, ~] = daq_recordStop(songEndSampNum, dgd.experData(nExper).inChans);
+        
+        if peekStopSample - params(experIdx).stopSamp > round(sTrigParams.postSecs * fs) % Enough peeks have elapsed since song was last detected
+            dgd.DaqBuffer.log(sprintf('\tAttempting to stop recording'));
+            %% Stop recording
+            bStatus = dgd.DaqBuffer.stop_recording(peekStopSample, dgd.experData(experIdx).inChans);
             if(~bStatus)
                 beep;
                 warning('Song stop recording failed.'); %#ok<WNTAG>
-            else
-                if(nExper == dgd.ce)
-                    set(handles.textRecordingStatus, 'String', ['Finished recording.', num2str(recinfo(nExper).recfilenum), '.   Ready to record.']);
-                    set(handles.textRecordingStatus, 'BackgroundColor', 'green');            
-                end                           
-                bNewFile(nExper) = true;
-                daq_log('Requested finish song recordings.');
+            else                        
+                recordingsComplete(experIdx) = true;
             end    
         end
     end
 end
-
+if any(recordingsStarted)
+    dgd.DaqBuffer.log('Registering listeners for new recordings');
+    recChans = [dgd.experData(recordingsStarted).inChans];
+    recExperIdxs = find(recordingsStarted);
+    recFileNums = [recInfo(recordingsStarted).recfilenum];
+    ListenerHandle = addlistener(dgd.DaqBuffer, 'RecordingComplete', @(~, ~) error('lost the callback race!'));
+    completionClosure = @(~, EventData) recording_completion_callback(...
+        EventData, ListenerHandle, recChans, guiFig,...
+        recExperIdxs, recFileNums);
+    ListenerHandle.Callback = completionClosure;
+end
+if any(recordingsComplete)
+    dgd.DaqBuffer.log('Registering listeners to stop recordings');
+    finishedChans = [dgd.experData(recordingsComplete).inChans];
+    finishedExperIdxs = find(recordingsComplete);
+    ListenerHandle = addlistener(dgd.DaqBuffer, 'RecordingComplete', @(~, ~) error('lost the callback race!'));
+    completionClosure = @(~, EventData) stop_triggered_rec_callback(...
+        EventData, ListenerHandle, finishedChans, recInfo, guiFig,...
+        finishedExperIdxs); % Callback will check in acqrecordinfo
+    ListenerHandle.Callback = completionClosure;
+else
+    aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);
+end
 %moved to before checkin to make sure that new recording can't begin
 %while we wait for recording to complete.
-for nExper = find(bNewFile)
-    daq_log('Wait for new file to be written.');
-    daq_waitForRecording(dgd.experData(nExper).inChans);
-    if(dgd.sutterStatus)
-        [~, micronsApprox, Status] = sutterGetCurrentPosition(dgd.sutterConnection);        
-        if(Status)
-            daq_appendProperty(params(nExper).filenames{1}, 'SutterMicronsX',  sprintf('%4.2f', micronsApprox(1)));
-            daq_appendProperty(params(nExper).filenames{1}, 'SutterMicronsY',  sprintf('%4.2f', micronsApprox(2)));
-            daq_appendProperty(params(nExper).filenames{1}, 'SutterMicronsZ',  sprintf('%4.2f', micronsApprox(3)));
-        end
-    end
-    daq_log('File completed.');
-    recinfo(nExper).bSongTrigRecording = false; 
-    recinfo(nExper).filenum = recinfo(nExper).recfilenum;
-    recinfo(nExper).recFileTimes = [recinfo(nExper).recFileTimes, now];
-    %%check for possible text messages to be sent:
-    times = recinfo(nExper).recFileTimes;
-    tmp = tsd.txtMessageParams;
-    if(~isempty(tmp) && tmp.bOnWake && ~tmp.bSentWakeSong)
-        if(length(times) >= tmp.nWakeFiles)
-            if((times(end) - times(end - tmp.nWakeFiles + 1))*24*60 < tmp.nWakeMinutes)
-                send_text_message(tmp.phonenum, tmp.carrier, [tmp.compName, ': ', dgd.expers{nExper}.birdname, ' has begun singing.']);
-                tsd.txtMessageParams.bSentWakeSong = true;
-                tsd.txtMessageParams.bSentNextSong = true;
-            end
-        end
-    end
-    if(~isempty(tmp) && tmp.bOnSong && ~tmp.bSentNextSong)
-        if(length(times) >= tmp.nSongFiles)
-            if((times(end) - times(end - tmp.nSongFiles + 1))*24*60 < tmp.nSongMinutes)
-                send_text_message(tmp.phonenum, tmp.carrier, [tmp.compName, ': ', dgd.expers{nExper}.birdname, ' is singing.']);
-                tsd.txtMessageParams.bSentNextSong = true;
-            end
-        end
-    end  
+
+setappdata(guiFig, 'threadSafeData', tsd);
+
+aa_checkinAppData(guiFig, 'songtrigdata', params);
+dgd.DaqBuffer.log('Exiting peek callback');
 end
 
-setappdata(guifig, 'threadSafeData', tsd);
-aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
-aa_checkinAppData(guifig, 'songtrigdata', params);
-
-if bNewFile(dgd.ce) && dgd.experData(dgd.ce).autoUpdate
-    daq_log('Updating Display.');
-    acqgui_updateDisplayFile(guifig, recinfo(dgd.ce).filenum);
-    daq_log('Completed waiting and display.');
+function stop_triggered_rec_callback(EventData, ListenerHandle, hwChannels, recInfo, guiFig, experIdxs)
+%% See if these are the channels we are looking for
+channelsMatch = compare_channels(hwChannels, EventData.hwChannels);
+if channelsMatch
+    delete(ListenerHandle);
+    handles = guidata(guiFig);
+    %% Update recInfo
+    nExper = numel(experIdxs);
+    for experNo = 1:nExper
+        experIdx = experIdxs(experNo);
+        recInfo(experIdx).bSongTrigRecording = false; 
+        recInfo(experIdx).filenum = recInfo(experIdx).recfilenum;
+        recInfo(experIdx).recFileTimes = [recInfo(experIdx).recFileTimes, now()];
+    end
+        %% Update GUI
+    dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
+    if any(experIdxs == dgd.ce)
+        set(handles.textRecordingStatus, 'String', ...
+            ['Finished recording.', num2str(recInfo(dgd.ce).recfilenum), '.   Ready to record.']);
+        set(handles.textRecordingStatus, 'BackgroundColor', 'green');            
+    end
+    aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo);
 end
-
-% try
-%     for nExper = find(bNewFile)
-%         tempRealTimePitchPlot(dgd.expers{nExper}, recinfo(nExper).filenum);
-%     end
-% catch
-%     lasterr
-% end
+end

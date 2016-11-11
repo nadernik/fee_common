@@ -1,4 +1,8 @@
 function ShowCaVid(VIDEO,SOUND,SPEC, filename, params, showcontour)
+slowfac = 1; 
+if slowfac~=1
+    SOUND = pvocnormalized(SOUND,1/slowfac,200);
+end
 if nargin<4
     filename = []; 
 end
@@ -17,8 +21,8 @@ SOUNDfs = params.SOUNDfs;
 specTime = params.specTime; 
 F = params.F; 
 VIDEOfs = params.VIDEOfs; 
-AudBinWhenFrameStarts = params.AudBinWhenFrameStarts;
-AudBinWhenFrameEnds = params.AudBinWhenFrameEnds;
+AudBinWhenFrameStarts = params.AudBinWhenFrameStarts*slowfac;
+AudBinWhenFrameEnds = params.AudBinWhenFrameEnds*slowfac;
 tSound = (0:AudBinWhenFrameEnds(end))/SOUNDfs;
 
 if length(filename) == 0;
@@ -34,7 +38,9 @@ clf; set(gcf, 'color', 'w')
 % setting up gcamp plot
 subplot('position', [.1 .3 .8 .6]); 
 maxproj = squeeze(max(VIDEO,[],1)); 
-clims = [0 .1]; %[0 prctile(dffVIDEO(:),99.999)]; 
+
+% clims = [0 .1]; %[0 prctile(dffVIDEO(:),99.999)]; 
+clims = [0 prctile(VIDEO(:),99.996)]; % [.1 .5]; % [0 prctile(VIDEO(:),99.996)];
 im = imagesc(maxproj,clims); axis image; axis off; drawnow; shg
 if showcontour
     hold on
@@ -52,9 +58,9 @@ drawnow
 
 if savevid
     obj = vision.VideoFileWriter(filename, 'AudioInputPort', 1);%,  'fps', 20);
-    obj.FrameRate = 20; 
+    obj.FrameRate = VIDEOfs; 
 else
-    a = audioplayer(SOUND(tSound>1/VIDEOfs & tSound<size(VIDEO,1)/VIDEOfs),SOUNDfs); 
+    a = audioplayer(SOUND(tSound>1/VIDEOfs & (tSound<(size(VIDEO,1)/VIDEOfs-1/VIDEOfs)*slowfac)),SOUNDfs); 
     play(a); tic; 
 end
 
@@ -64,7 +70,7 @@ for framei = 1:size(VIDEO,1)
     drawnow
     if savevid
         Frame = getframe(gcf);
-        Aud = SOUND(round((AudBinWhenFrameStarts(framei))+1):(round(AudBinWhenFrameStarts(framei))+floor(SOUNDfs/VIDEOfs)));
+        Aud = SOUND(round((AudBinWhenFrameStarts(framei))+1):((round(AudBinWhenFrameStarts(framei))+floor(SOUNDfs/slowfac/VIDEOfs))));
         Aud = [Aud(:) Aud(:)]; 
 %         size(Aud)
         step(obj, Frame.cdata, Aud)
