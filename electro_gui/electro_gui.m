@@ -965,7 +965,7 @@ drawnow expose
 % Plot amplitude
 [handles.amplitude labs] = eg_CalculateAmplitude(handles);
 
-if ~isempty(handles.amplitude)
+if ~isempty(handles.amplitude) && ~all(handles.amplitude == 0)
     subplot(handles.axes_Amplitude);
     h = plot(linspace(0,length(handles.sound)/handles.fs,length(handles.sound)),handles.amplitude,'color',handles.AmplitudeColor);
     set(gca,'xticklabel',[]);
@@ -1452,6 +1452,9 @@ set(handles.slider_Time,'value',xd(1));
 stp = min([1 (xd(2)-xd(1))/((length(handles.sound)/handles.fs-(xd(2)-xd(1)))+eps)]);
 set(handles.slider_Time,'sliderstep',[0.1*stp 0.5*stp]);
 
+if ~isfield(handles, 'LabelHandles')
+    handles.LabelHandles = [];
+end
 for c = 1:length(handles.LabelHandles)
     if ishandle(handles.LabelHandles(c))
         pos = get(handles.LabelHandles(c),'extent');
