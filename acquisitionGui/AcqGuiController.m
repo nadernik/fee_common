@@ -27,6 +27,7 @@ classdef (Sealed) AcqGuiController < handle
         nonSongSignalNdx
         propertyNames
         propertyValues
+        fileCreationTime
         
         %% Daq related properties
         DaqObj
@@ -187,36 +188,50 @@ classdef (Sealed) AcqGuiController < handle
     methods (Access = private)
         %% Display methods
         function load_recording(self)
-            
+            %% Convenience variables
             experNdx = self.currentExperNdx;
             currExper = self.Experiments{self.currentExperNdx};
+            currDir = currExper.experDir;
+            
+            %% Reset signal variables
             nChan = numel(self.nonSongHWChannels{experNdx});
             self.nonSongSignals = cell(nChan, 1);
-            currDir = currExper.experDir;
+            
+            %% Find data files
             [relFileNames, self.fileHwChans] = currExper.find_files(recordingNo);
             self.fileNames = fullfile(currDir, relFileNames);
             songFile = self.fileNames{self.songHWChannels(experNdx) == hwChannels};
+            
+            %% Determine if the recording is too big to load
             [~, info] = daq_readDatafile(songFile, true, 0);
             if info.numSamples > self.maxLoadSize
                 self.samplesToLoad = [1, self.maxLoadSize];
             else
                 self.samplesToLoad = []; % Load everything
             end
+            
+            %% Load the audio signal
             [self.audioSignal, info] = daq_readDatafile(songFile, true, self.samplesToLoad);
             self.fileFs = info.fs;
+            self.fileCreationTime = datetime(info.absStartTime, 'ConvertFrom', 'datenum');
             self.propertyNames = info.propertyNames;
             self.propertyValues = info.propertyValues;
+            
+            %% Load the other signals
             for dispCh = 1:3
                 self.load_channel(self.experDisplayChannels(dispCh, experNdx));
             end
+            
+            self.gui_spectrogram();
             self.gui_file_properties();
+            self.gui_signals();
         end
         
         function load_channel(self, hwChan)
             experNdx = self.currentExperNdx;
             nonSongChans = self.nonSongHWChannels{experNdx};
             chanNdx = find(nonSongChans == hwChan, 1, 'first');
-            if isempty(self.nonSongSignals{chanNdx}) % Still need to load this file
+            if ~isempty(chandNdx) && isempty(self.nonSongSignals{chanNdx}) % Still need to load this file
                 fileName = self.fileNames{self.fileHwChans == hwChan};
                 [self.nonSongSignals{chanNdx}, info] = ...
                     daq_readDatafile(fileName, true, self.samplesToLoad);
@@ -572,6 +587,15 @@ classdef (Sealed) AcqGuiController < handle
                     self.propertyNames{propNo}, self.propertyValues{propNo});
             end
             set(self.GuiData.listboxDatafileProperties, 'String', strList);
+        end
+        function gui_spectrogram(self)
+            % Consider replacing displaySpecgramQuick with
+            % updated_specgram_quick
+            if self.autoSpec
+                
+            end
+        end
+        function gui_signals(self)
         end
     end
 end
