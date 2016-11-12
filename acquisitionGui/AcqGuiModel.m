@@ -1,4 +1,4 @@
-classdef (Sealed) AcqGuiController < handle
+classdef (Sealed) AcqGuiModel < handle
     properties (Access = private)
         %% Gui properties
         GuiFig
