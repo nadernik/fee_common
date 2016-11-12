@@ -43,36 +43,21 @@ classdef (Sealed) AcqGuiModel < handle
         RestartManager
         
         %% Monitoring related properties
-        detectingSong
-        songDetectingExpers
-        detectingExperNdx
-        peekHWChannels
-        UpdateCompleteListener
-        PeekAvailableListener
-        peekSecs
-        peekOverlap % Fraction of peekSecs shared between successive peeks
-        sampBetweenRequests = -1;
-        peekNSamp = -1;
-        peekOverlapSamp = -1;
-        lastPeekSamp = -1;
+        SongMonitor
         isBuffering
         BufferTimer
-    end
-    properties (Access = private, Dependent = true)
-        updateListenerValid
     end
     methods
         %% Constructor and destructor
         function self = AcqGuiModel(GuiFig, varargin)
             %% Parse inputs
             p = inputParser();
+            p.keepUnmatched = true;
             addParameter(p, 'restartDaily', false);
             addParameter(p, 'startHour', 7);
             addParameter(p, 'stopHour', 23);
             addParameter(p, 'Experiments', {});
             addParameter(p, 'daqLogFile', '');
-            addParameter(p, 'peekSecs', 1); % in seconds
-            addParameter(p, 'peekOverlap', 0.1);
             addParameter(p, 'updateFreq', 4);
             addParameter(p, 'bufferSecs', 20);
             addParameter(p, 'autoSpec', true);
@@ -88,8 +73,7 @@ classdef (Sealed) AcqGuiModel < handle
                 Params.startHour, Params.stopHour);
             self.Experiments = Params.Experiments;
             self.daqLogFile = Params.daqLogFile;
-            self.peekSecs = Params.peekSecs;
-            self.peekOverlap = Params.peekOverlap;
+            self.SongMonitor = AcqGuiMonitor(self, varargin{:});
             self.updateFreq = Params.updateFreq;
             self.bufferSecs = Params.bufferSecs;
             
@@ -118,36 +102,6 @@ classdef (Sealed) AcqGuiModel < handle
             % Clean up
         end
         
-        %% Song detection Callbacks
-        function update_complete_callback(self, ~, ~)
-            if self.detectingSong
-                sampsSincePeek = self.DaqObj.lastSample - self.lastPeekSamp;
-                if sampsSincePeek >= self.sampBetweenRequests
-                    self.request_peek();
-                end
-            end
-        end
-        
-        function analyze_peek(self, ~, PeekEvent)
-            nDetect = numel(self.detectingExperNdx);
-            peekStartSamp = PeekEvent.startDaqSample;
-            for experNo = 1:nDetect
-                experNdx = self.detectingExperNdx(experNo);
-                status = self.Experiments{experNdx}. ...
-                    detect_song_and_record(PeekEvent.data(:, experNo), peekStartSamp);
-                assert(status, 'Song detetion failed');
-            end
-        end
-        
-        %% Callbacks -- do not use externally
-        function detection_changed_callback(self, ~, ~)
-            self.update_song_detection();
-        end
-        
-        %% Dependent property getters
-        function val = get.updateListenerValid(self)
-            val = ~isempty(self.UpdateCompleteListener) && isvalid(self.UpdateCompleteListener);
-        end
     end
     methods (Access = private)
         %% Display methods
@@ -295,16 +249,11 @@ classdef (Sealed) AcqGuiModel < handle
             self.bufferSecs = self.DaqObj.bufferSecs;
             self.updateFreq = self.DaqObj.updateFreq;
             
-            %% Calculate convenience variables for peeking
-            secBetweenReq = (1 + self.peekOverlap) * self.peekSecs - (1 / self.updateFreq); % Amount of time between peek requests
-            self.sampBetweenRequests = ceil(secBetweenReq * self.daqFs);
-            self.peekNSamp = ceil(self.peekSecs * self.daqFs);
-            self.peekOverlapSamp = ceil(self.peekNSamp * self.peekOverlap);
-            
             %% Pass daq information to experiments
             cellfun(@(E) E.set_daq_params(self.DaqObj), self.Experiments);
+            MonitorObj = self.SongMonitor; % Needed for the function reference I think?
             self.DetectionChangeListeners = cellfun(...
-                @(E) addlistener(E, 'DetectionChanged', @self.detection_changed_callback), ...
+                @(E) addlistener(E, 'DetectionChanged', @MonitorObj.detection_changed_callback), ...
                 self.Experiments);
         end
         function start_daq(self)
@@ -321,14 +270,6 @@ classdef (Sealed) AcqGuiModel < handle
             self.gui_stopdaq();
         end
         
-        function request_peek(self)
-            %REQUEST_PEEK Ask DAQ for peek of data in buffer
-            if ~self.DaqObj.isUpdating && ~self.DaqObj.isPeeking % will re-attempt at next update
-                peekSample = self.lastPeekSamp - self.peekOverlapSamp;
-                self.DaqObj.request_peek(self.peekHWChannels, peekSample);
-            end
-        end
-        
         %% Methods related to state transitions
         function wait_for_buffer(self)
             self.isBuffering = true;
@@ -338,56 +279,15 @@ classdef (Sealed) AcqGuiModel < handle
                 'ExecutionMode', 'singleShot', ...
                 'BusyMode', 'queue');
             CurrentTime = datetime();
-            BufferUntil = CurrentTime + seconds(self.peekSecs * self.peekOverlap);
+            BufferUntil = CurrentTime + self.SongMonitor.bufferDelay;
             startat(self.BufferTimer, BufferUntil);
         end
         
         function buffering_complete(self, ~, ~)
             self.isBuffering = false;
             delete(self.BufferTimer);
-            self.update_song_detection();
+            self.SongMonitor.update_song_detection();
             self.gui_buffering_complete();
-        end
-        
-        %% Methods related to song detection
-        function update_song_detection(self)
-            self.songDetectingExpers = cellfun(@(E) E.detectingSong, self.Experiments);
-            self.peekHWChannels = self.songHWChannels(self.songDetectingExpers);
-            self.detectingExperNdx = find(self.songDetectingExpers);
-            nowDetectingSong = any(self.songDetectingExpers);
-            if nowDetectiongSong ~= self.detectingSong % State changed
-                if nowDetectingSong % start detecting song
-                    self.start_song_detection();
-                else % turn off song detection
-                    self.stop_song_detection();
-                end
-            end
-        end
-        function start_song_detection(self)
-            % This should not be called for starting song detection of an
-            % individual experiment, only call to start ANY song detection
-            if self.detectingSong
-                warning('Song detection already happening');
-                return
-            end
-            self.detectingSong = true;
-            self.lastPeekSamp = self.DaqObj.lastSample;
-            self.UpdateCompleteListener = ...
-                addlistener(self.DaqObj, 'UpdateComplete', @self.update_complete_callback);
-            self.PeekAvailableListener = ...
-                addlistener(self.DaqObj, 'PeekAvailable', @self.analyze_peek);
-        end
-        function stop_song_detection(self)
-            % This should not be called for stopping song detection of an
-            % individual experiment, only call if NO experiments are doing
-            % song detection
-            if ~self.detectingSong
-                warning('Song detection not happening');
-                return
-            end
-            delete(self.UpdateCompleteListener);
-            delete(self.PeekAvailableListener);
-            self.detectingSong = false;
         end
         
         %% GUI and UI code
@@ -411,9 +311,9 @@ classdef (Sealed) AcqGuiModel < handle
             end
             
             %% Set restart timer UI elements
-            set(self.GuiData.editStartTime, 'String', num2str(self.startHour));
-            set(self.GuiData.editStopTime, 'String', num2str(self.stopHour));
-            set(self.GuiData.checkboxAutostart, 'Value', self.restartDaily);
+            set(self.GuiData.editStartTime, 'String', num2str(self.RestartManager.startHour));
+            set(self.GuiData.editStopTime, 'String', num2str(self.RestartManager.stopHour));
+            set(self.GuiData.checkboxAutostart, 'Value', self.RestartManager.restartDaily);
         end
         function gui_exper(self)
         end
