@@ -68,7 +68,7 @@ classdef (Sealed) AcqGuiModel < handle
     end
     methods
         %% Constructor and destructor
-        function self = AcqGuiController(GuiFig, varargin)
+        function self = AcqGuiModel(GuiFig, varargin)
             %% Parse inputs
             p = inputParser();
             addParameter(p, 'restartDaily', false);
