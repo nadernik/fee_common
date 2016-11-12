@@ -5,10 +5,11 @@ classdef (Sealed) AcqGuiModel < handle
         GuiData
         
         %% Experiment related properties
+        ExperimentManager
         Experiments % N x 1 cell array of SongTriggeredExperiment objects
         experimentStrings % strings used to describe experiments
         rememberedDetect = []; % N x 1 boolean array of songDetection states when experiments last suspended, empty if not suspended
-        DetectionChangeListeners % N x 1 cell array of DetectionChangeListeners
+        
         
         %% Display data
         currentExperNdx = 0;
@@ -53,9 +54,6 @@ classdef (Sealed) AcqGuiModel < handle
             %% Parse inputs
             p = inputParser();
             p.keepUnmatched = true;
-            addParameter(p, 'restartDaily', false);
-            addParameter(p, 'startHour', 7);
-            addParameter(p, 'stopHour', 23);
             addParameter(p, 'Experiments', {});
             addParameter(p, 'daqLogFile', '');
             addParameter(p, 'updateFreq', 4);
@@ -69,13 +67,13 @@ classdef (Sealed) AcqGuiModel < handle
             self.GuiFig = GuiFig;
             self.GuiData = guidata(self.GuiFig);
             self.GuiData.AcqGuiController = self; % insert self reference into gui data
-            self.RestartManager = AcqGuiRestartManager(self, Params.restartDaily, ...
-                Params.startHour, Params.stopHour);
             self.Experiments = Params.Experiments;
             self.daqLogFile = Params.daqLogFile;
-            self.SongMonitor = AcqGuiMonitor(self, varargin{:});
             self.updateFreq = Params.updateFreq;
             self.bufferSecs = Params.bufferSecs;
+            self.ExperimentManager = AcqGuiExperimentManager();
+            self.RestartManager = AcqGuiRestartManager(self.ExperimentManager, varargin{:});
+            self.SongMonitor = AcqGuiMonitor(self, varargin{:});
             
             %% Set gui into initial, disabled, state
             self.gui_init();
@@ -97,11 +95,6 @@ classdef (Sealed) AcqGuiModel < handle
             %% Finish setting up GUI
             self.gui_exper();
         end
-        
-        function delete(self)
-            % Clean up
-        end
-        
     end
     methods (Access = private)
         %% Display methods
@@ -191,9 +184,6 @@ classdef (Sealed) AcqGuiModel < handle
                 self.switch_experiment(self.currentExperNdx - 1); % Because the current experiment has moved in the now shortened list
             end
         end
-        function switch_experiment(self, experNo)
-            
-        end
         function no_experiment(self)
             self.currentExperNdx = 0;
             self.experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
@@ -249,12 +239,11 @@ classdef (Sealed) AcqGuiModel < handle
             self.bufferSecs = self.DaqObj.bufferSecs;
             self.updateFreq = self.DaqObj.updateFreq;
             
+            self.SongMonitor.monitor_init();
+            
             %% Pass daq information to experiments
             cellfun(@(E) E.set_daq_params(self.DaqObj), self.Experiments);
             MonitorObj = self.SongMonitor; % Needed for the function reference I think?
-            self.DetectionChangeListeners = cellfun(...
-                @(E) addlistener(E, 'DetectionChanged', @MonitorObj.detection_changed_callback), ...
-                self.Experiments);
         end
         function start_daq(self)
             self.DaqObj.start();

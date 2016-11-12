@@ -9,16 +9,23 @@ classdef (Sealed) AcqGuiRestartManager < handle
         restartTimerValid
     end
     properties (Access = private)
-        GuiModel
+        ExperimentManager
         RestartTimer
         rememberedDetect
     end
     methods
-        function self = AcqGuiReset(GuiModel, restartDaily, startHour, stopHour)
-            self.GuiModel = GuiModel;
-            self.restartDaily = restartDaily;
-            self.startHour = startHour;
-            self.stopHour = stopHour;
+        function self = AcqGuiReset(ExperimentManager, varargin)
+            p = inputParser();
+            p.KeepUnmatched = true;
+            addParameter(p, 'restartDaily', false);
+            addParameter(p, 'startHour', 7);
+            addParameter(p, 'stopHour', 23);
+            parse(p, varargin{:});
+            Params = p.Results;
+            self.ExperimentManager = ExperimentManager;
+            self.restartDaily = Params.restartDaily;
+            self.startHour = Params.startHour;
+            self.stopHour = Params.stopHour;
             if self.restartDaily
                 self.set_restart();
             end
@@ -29,7 +36,7 @@ classdef (Sealed) AcqGuiRestartManager < handle
             if self.isDaytime
                 self.queue_night_timer()
             else
-                self.suspend_experiments();
+                self.ExperimentManager.suspend_experiments();
                 self.queue_morning_timer();
             end
         end
@@ -47,7 +54,7 @@ classdef (Sealed) AcqGuiRestartManager < handle
                 error('Error with night restart timer');
             end
             delete(self.RestartTimer);
-            self.suspend_experiments();
+            self.ExperimentManager.suspend_experiments();
             self.queue_morning_timer();
         end
         function restart_morning_callback(self, ~, ~)
@@ -55,8 +62,8 @@ classdef (Sealed) AcqGuiRestartManager < handle
                 error('Error with morning restart timer');
             end
             delete(self.RestartTimer);
-            self.reset_experiments(); % Creates new experiments for the new day
-            self.resume_experiments(); % Restores whatever triggering state they had before the night timer
+            self.ExperimentManager.reset_experiments(); % Creates new experiments for the new day
+            self.ExperimentManager.resume_experiments(); % Restores whatever triggering state they had before the night timer
             self.queue_night_timer(); % Start the night timer for later in the day
         end
         
@@ -71,53 +78,6 @@ classdef (Sealed) AcqGuiRestartManager < handle
         end
     end
     methods (Access = private)
-        function reset_experiments(self)
-            ClonedExperiments = cellfun(@SongTriggeredExperiment.clone_experiment, self.GuiModel.Experiments);
-            cellfun(@delete, self.GuiModel.Experiments);
-            self.GuiModel.Experiments = ClonedExperiments;
-        end
-        
-        function suspend_experiments(self)
-            maxTries = 100;
-            if isempty(self.rememberedDetect)
-                nExper = numel(self.GuiModel.Experiments);
-                self.rememberedDetect = false(nExper, 1);
-                for experNo = 1:nExper
-                    self.rememberedDetect(experNo) = self.GuiModel.Experiments{experNo}.detectingSong;
-                    status = false;
-                    tryNo = 1;
-                    while ~status && tryNo <= maxTries
-                        status = self.GuiModel.Experiments{experNo}.change_detectingSong(false);
-                        tryNo = tryNo + 1;
-                    end
-                    if ~status
-                        error('Could not suspend experiments');
-                    end
-                end
-            else
-                warning('Experiments already suspended');
-            end
-        end
-        
-        function resume_experiments(self)
-            maxTries = 100;
-            if isempty(self.rememberedDetect)
-                error('Cannot resume experiments: no remembered state');
-            else
-                for expNo = 1:numel(self.GuiModel.Experiments)
-                    status = false;
-                    tryNo = 1;
-                    while ~status && tryNo <= maxTries
-                        status = self.GuiModel.Experiments{expNo}.change_detectingSong(self.rememberedDetect(expNo));
-                        tryNo = tryNo + 1;
-                    end
-                    if ~status
-                        error('Could not resume experiments');
-                    end
-                end
-            end
-        end
-        
         function queue_night_timer(self)
             if self.restartTimerValid
                 error('Restart timer already exists');

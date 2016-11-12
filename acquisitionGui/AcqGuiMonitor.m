@@ -1,6 +1,16 @@
 classdef (Sealed) AcqGuiMonitor < handle
     properties
         GuiModel
+    end
+    properties (SetAccess = private, Dependent = true)
+        updateListenerValid
+        bufferDelay
+    end
+    properties (Access = private)
+        %% Daq related properties
+        daqFs
+        bufferSecs
+        updateFreq
         
         %% Monitoring related properties
         detectingSong
@@ -15,15 +25,7 @@ classdef (Sealed) AcqGuiMonitor < handle
         peekNSamp = -1;
         peekOverlapSamp = -1;
         lastPeekSamp = -1;
-        isBuffering
-        BufferTimer
-    end
-    properties (SetAccess = private, Dependent = true)
-        updateListenerValid
-        bufferDelay
-    end
-    properties (Access = private)
-        
+        DetectionChangeListeners % N x 1 cell array of DetectionChangeListeners
     end
     methods
         function self = AcqGuiMonitor(GuiModel, varargin)
@@ -37,7 +39,10 @@ classdef (Sealed) AcqGuiMonitor < handle
         end
         
         %% public methods
-        function peek_init(self)
+        function init_monitor(self)
+            self.daqFs = self.GuiModel.DaqObj.samplingRate;
+            self.bufferSecs = self.GuiModel.DaqObj.bufferSecs;
+            self.updateFreq = self.GuiModel.DaqObj.updateFreq;
             secBetweenReq = (1 + self.peekOverlap) * self.peekSecs - (1 / self.GuiModel.updateFreq); % Amount of time between peek requests
             self.sampBetweenRequests = ceil(secBetweenReq * self.GuiModel.daqFs);
             self.peekNSamp = ceil(self.peekSecs * self.GuiModel.daqFs);
