@@ -40,10 +40,7 @@ classdef (Sealed) AcqGuiModel < handle
         updateFreq;
         
         %% Restart related properties
-        restartDaily
-        startHour
-        stopHour
-        RestartTimer
+        RestartManager
         
         %% Monitoring related properties
         detectingSong
@@ -62,8 +59,6 @@ classdef (Sealed) AcqGuiModel < handle
         BufferTimer
     end
     properties (Access = private, Dependent = true)
-        restartTimerValid
-        isDaytime
         updateListenerValid
     end
     methods
@@ -89,9 +84,8 @@ classdef (Sealed) AcqGuiModel < handle
             self.GuiFig = GuiFig;
             self.GuiData = guidata(self.GuiFig);
             self.GuiData.AcqGuiController = self; % insert self reference into gui data
-            self.restartDaily = Params.restartDaily;
-            self.startHour = Params.startHour;
-            self.stopHour = Params.stopHour;
+            self.RestartManager = AcqGuiRestartManager(self, Params.restartDaily, ...
+                Params.startHour, Params.stopHour);
             self.Experiments = Params.Experiments;
             self.daqLogFile = Params.daqLogFile;
             self.peekSecs = Params.peekSecs;
@@ -104,11 +98,6 @@ classdef (Sealed) AcqGuiModel < handle
             
             %% Add a reference to this object into gui data
             guidata(self.GuiFig, self.GuiData); % Place guidata back into gui figure
-            
-            %% Set restart timer
-            if self.restartDaily
-                self.set_restart();
-            end
             
             %% Set up DaqBuffer
             if ~isempty(self.Experiments)
@@ -150,39 +139,14 @@ classdef (Sealed) AcqGuiModel < handle
             end
         end
         
-        %% Restart callbacks
+        %% Callbacks -- do not use externally
         function detection_changed_callback(self, ~, ~)
             self.update_song_detection();
         end
-        function restart_night_callback(self, ~, ~)
-            if ~self.restartTimerValid
-                error('Error with night restart timer');
-            end
-            delete(self.RestartTimer);
-            self.suspend_experiments();
-            self.queue_morning_timer();
-        end
-        function restart_morning_callback(self, ~, ~)
-            if ~self.restartTimerValid
-                error('Error with morning restart timer');
-            end
-            delete(self.RestartTimer);
-            self.reset_experiments(); % Creates new experiments for the new day
-            self.resume_experiments(); % Restores whatever triggering state they had before the night timer
-            self.queue_night_timer(); % Start the night timer for later in the day
-        end
         
         %% Dependent property getters
-        function restartTimerValid = get.restartTimerValid(self)
-            restartTimerValid = ~isempty(self.RestartTimer) && isvalid(self.RestartTimer);
-        end
         function val = get.updateListenerValid(self)
             val = ~isempty(self.UpdateCompleteListener) && isvalid(self.UpdateCompleteListener);
-        end
-        function isDaytime = get.isDaytime(self)
-            currentTime = datetime();
-            isDaytime = currentTime.Hour >= self.startHour && ...
-                currentTime.Hour <= self.stopHour;
         end
     end
     methods (Access = private)
@@ -424,109 +388,6 @@ classdef (Sealed) AcqGuiModel < handle
             delete(self.UpdateCompleteListener);
             delete(self.PeekAvailableListener);
             self.detectingSong = false;
-        end
-        
-        %% Methods for daily restarts
-        function reset_experiments(self)
-            ClonedExperiments = cellfun(@SongTriggeredExperiment.clone_experiment, self.Experiments);
-            cellfun(@delete, self.Experiments);
-            self.Experiments = ClonedExperiments;
-        end
-        
-        function suspend_experiments(self)
-            maxTries = 100;
-            if isempty(self.rememberedDetect)
-                nExper = numel(self.Experiments);
-                self.rememberedDetect = false(nExper, 1);
-                for experNo = 1:nExper
-                    self.rememberedDetect(experNo) = self.Experiments{experNo}.detectingSong;
-                    status = false;
-                    tryNo = 1;
-                    while ~status && tryNo <= maxTries
-                        status = self.Experiments{experNo}.change_detectingSong(false);
-                        tryNo = tryNo + 1;
-                    end
-                    if ~status
-                        error('Could not suspend experiments');
-                    end
-                end
-            else
-                warning('Experiments already suspended');
-            end
-        end
-        
-        function resume_experiments(self)
-            maxTries = 100;
-            if isempty(self.rememberedDetect)
-                error('Cannot resume experiments: no remembered state');
-            else
-                for expNo = 1:numel(self.Experiments)
-                    status = false;
-                    tryNo = 1;
-                    while ~status && tryNo <= maxTries
-                        status = self.Experiments{expNo}.change_detectingSong(self.rememberedDetect(expNo));
-                        tryNo = tryNo + 1;
-                    end
-                    if ~status
-                        error('Could not resume experiments');
-                    end
-                end
-            end
-        end
-        function set_restart(self)
-            if self.isDaytime
-                self.queue_night_timer()
-            else
-                self.suspend_experiments();
-                self.queue_morning_timer();
-            end
-        end
-        
-        function queue_night_timer(self)
-            if self.restartTimerValid
-                error('Restart timer already exists');
-            end
-            if ~self.isDaytime
-                error('Should be queueing morning timer instead');
-            end
-            CurrentTime = datetime();
-            StopTime = CurrentTime;
-            StopTime.Hour = self.stopHour;
-            StopTime.Minute = 0;
-            StopTime.Second = 0;
-            self.RestartTimer = timer('Name', 'acqguiNightRestart', ...
-                'TimerFcn', @self.restart_morning_callback, ...
-                'ExecutionMode', 'singleShot', ...
-                'BusyMode', 'queue');
-            startat(self.RestartTimer, StopTime);
-        end
-        function queue_morning_timer(self)
-            if self.restartTimerValid
-                error('Restart timer already exists');
-            end
-            if self.isDaytime
-                error('Should be queueing night timer instead');
-            end
-            CurrentTime = datetime();
-            StartTime = CurrentTime;
-            if CurrentTime.Hour >= self.startHour % restart happens tomorrow
-                StartTime = StartTime + days(1);
-            end
-            StartTime.Hour = self.startHour;
-            StartTime.Minute = 0;
-            StartTime.Second = 0;
-            self.RestartTimer = timer('Name', 'acqguiMorningRestart', ...
-                'TimerFcn', @self.restart_morning_callback, ...
-                'ExecutionMode', 'singleShot', ...
-                'BusyMode', 'queue');
-            startat(self.RestartTimer, StartTime);
-        end
-        
-        function clear_restart(self)
-            if self.restartTimerValid
-                stop(self.RestartTimer);
-                delete(self.RestartTimer);
-            end
         end
         
         %% GUI and UI code
