@@ -1,37 +1,7 @@
 classdef (Sealed) AcqMaster < handle
     properties (Access = private)
-        %% Gui properties
-        GuiFig
-        GuiData
-        Views
-        
         %% Experiment related properties
         ExperimentManager
-        Experiments % N x 1 cell array of SongTriggeredExperiment objects
-        experimentStrings % strings used to describe experiments
-        rememberedDetect = []; % N x 1 boolean array of songDetection states when experiments last suspended, empty if not suspended
-        
-        
-        %% Display data
-        CurrentRecording
-        
-        currentExperNdx = 0;
-        experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
-        displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
-        startNdx = 0;
-        endNdx = 0;
-        fileFs
-        autoSpec
-        maxLoadSize
-        samplesToLoad
-        fileNames
-        fileHwChans
-        audioSignal
-        nonSongSignals = cell(0, 1);
-        nonSongSignalNdx
-        propertyNames
-        propertyValues
-        fileCreationTime
         
         %% Daq related properties
         DaqObj
@@ -96,80 +66,6 @@ classdef (Sealed) AcqMaster < handle
         end
     end
     methods (Access = private)
-        %% Display methods
-        function load_recording(self)
-            %% Convenience variables
-            experNdx = self.currentExperNdx;
-            currExper = self.Experiments{self.currentExperNdx};
-            currDir = currExper.experDir;
-            
-            %% Reset signal variables
-            nChan = numel(self.nonSongHWChannels{experNdx});
-            self.nonSongSignals = cell(nChan, 1);
-            
-            %% Find data files
-            [relFileNames, self.fileHwChans] = currExper.find_files(recordingNo);
-            self.fileNames = fullfile(currDir, relFileNames);
-            songFile = self.fileNames{self.songHWChannels(experNdx) == hwChannels};
-            
-            %% Determine if the recording is too big to load
-            [~, info] = daq_readDatafile(songFile, true, 0);
-            if info.numSamples > self.maxLoadSize
-                self.samplesToLoad = [1, self.maxLoadSize];
-            else
-                self.samplesToLoad = []; % Load everything
-            end
-            
-            %% Load the audio signal
-            [self.audioSignal, info] = daq_readDatafile(songFile, true, self.samplesToLoad);
-            self.fileFs = info.fs;
-            self.fileCreationTime = datetime(info.absStartTime, 'ConvertFrom', 'datenum');
-            self.propertyNames = info.propertyNames;
-            self.propertyValues = info.propertyValues;
-            
-            %% Load the other signals
-            for dispCh = 1:3
-                self.load_channel(self.experDisplayChannels(dispCh, experNdx));
-            end
-            
-            self.gui_spectrogram();
-            self.gui_file_properties();
-            self.gui_signals();
-        end
-        
-        function load_channel(self, hwChan)
-            experNdx = self.currentExperNdx;
-            nonSongChans = self.nonSongHWChannels{experNdx};
-            chanNdx = find(nonSongChans == hwChan, 1, 'first');
-            if ~isempty(chandNdx) && isempty(self.nonSongSignals{chanNdx}) % Still need to load this file
-                fileName = self.fileNames{self.fileHwChans == hwChan};
-                [self.nonSongSignals{chanNdx}, info] = ...
-                    daq_readDatafile(fileName, true, self.samplesToLoad);
-                assert(info.fs == self.fileFs, 'Different sampling frequency!');
-            end
-        end
-        
-        %% Methods to add or remove experiments
-        function append_experiment(self, Experiment)
-            assert(~self.DaqObj.isRunning, 'Cannot add experiment when DAQ is running');
-            self.Experiments{end + 1} = Experiment;
-            self.experDisplayChannels(:, end + 1) = -1 * ones(1, 3);
-            self.displayRecordingNo(end + 1) = 0;
-            experNo = numel(self.Experiments);
-            self.default_exper_display(experNo);
-            self.update_exper_strings();
-        end
-        function default_exper_display(self, experNdxArray)
-            nExper = numel(experNdxArray);
-            for experNo = 1:nExper
-                experNdx = experNdxArray(experNo);
-                nCh = numel(self.Experiments{experNdx}.nonSongHWChannels);
-                self.experDisplayChannels(:, experNo) = self.Experiments{experNdx}.songHWChannel;
-                self.experDisplayChannels(1:nCh, experNo) = self.Experiments{experNdx}.nonSongHWChannels;
-                self.displayRecordingNo(experNo) = self.Experiments{experNdx}.lastFileNo;
-            end
-        end
-        
         %% Methods to interface with DaqBuffer
         function init_daq(self)
             if isempty(self.Experiments)
