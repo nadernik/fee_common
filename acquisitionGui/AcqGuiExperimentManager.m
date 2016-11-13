@@ -1,28 +1,52 @@
 classdef (Sealed) AcqGuiExperimentManager < handle
-    properties
+    properties (SetAccess = private)
         Experiments % N x 1 cell array of SongTriggeredExperiment objects
         experimentStrings % strings used to describe experiments
+        songHWChannels = [];
+        nonSongHWChannels = {};
+        inChannels = [];
+        commonFs
+    end
+    properties (SetAccess = private, Dependent = true)
+        isEmpty
+        daqValid
     end
     properties (Access = private)
         rememberedDetect
-        GuiModel
+        DaqObj
+        DetectionListeners
     end
     methods
-        function self = AcqGuiExperimentManager(GuiModel, varargin)
+        function self = AcqGuiExperimentManager(varargin)
+            %% Parse inputs
             p = inputParser();
             p.keepUnmatched = true;
             addParameter(p, 'Experiments', {});
             parse(p, varargin{:});
             Params = p.Results;
             
-            self.GuiModel = GuiModel;
+            %% Set parameters
             self.Experiments = Params.Experiments;
+            
+            %% Setup
+            self.init();
+        end
+        
+        function set_daq_params(self, DaqObj)
+            self.DaqObj = DaqObj;
+            cellfun(@(E) E.set_daq_params(DaqObj), self.Experiments);
         end
         
          %% Methods to add or remove experiments
         function append_experiment(self, Experiment)
-            assert(~self.DaqObj.isRunning, 'Cannot add experiment when DAQ is running');
+            assert(self.daqValid && ~self.DaqObj.isRunning, 'Cannot add experiment when DAQ is running');
             self.Experiments{end + 1} = Experiment;
+            nIn = 1 + numel(self.nonSongHWChannels{end}); % Always have one song channel
+            self.inChannels((end + 1):(end + nIn)) = Experiment.inChannels;
+            self.check_consistency();
+            self.songHWChannels(end + 1) = Experiment.songHWCHannel;
+            self.nonSongHWChannels{end + 1} = Experiment.nonSongHWChannels;
+            self.DetectionListeners{end + 1} = addlistener(Experiment, 'DetectionChanged', @self.detection_changed_callback);
             self.update_exper_strings();
             notify(self, 'ExperimentsChanged');
         end
@@ -31,35 +55,25 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             % called after all modifications to experiment list are made
             nExper = numel(self.Experiments);
             assert(nExper >= experNo, 'Cannot remove experiment as it does not exist');
-            assert(~self.DaqObj.isRunning, 'Cannot remove experiments when DAQ is running');
+            assert(self.daqValid && ~self.DaqObj.isRunning, 'Cannot remove experiments when DAQ is running');
             
             %% Remove data related to this experiment
             self.Experiments(experNo) = [];
-            
+            self.songHWChannels(experNo) = [];
+            self.nonSongHWChannels(experNo) = [];
+            delete(self.DetectionListeners{experNo});
+            self.DetectionListeners(experNo) = [];
+            self.get_inchannels();
             self.update_exper_strings();
-            %% Update current experiment, if necessary
-            if experNo == self.currentExperNdx
-                if nExper > experNo
-                    self.switch_experiment(experNo);
-                elseif nExper > 1
-                    self.switch_experiment(experNo - 1);
-                else
-                    self.no_experiment()
-                end
-                notify(self, 'ExerimentsChanged');
-            elseif experNo < self.currentExperNdx
-                self.switch_experiment(self.currentExperNdx - 1); % Because the current experiment has moved in the now shortened list
-                notify(self, 'ExperimentsChanged');
-            end
+            notify(self, 'ExerimentsChanged');
         end
         
-        function switch_experiment(self, experNo)
-        end
-        
+        %% Methods used by reset timer
         function reset_experiments(self)
             ClonedExperiments = cellfun(@SongTriggeredExperiment.clone_experiment, self.Experiments);
             cellfun(@delete, self.Experiments);
             self.Experiments = ClonedExperiments;
+            % Should I check that they're all the same?
         end
         
         function suspend_experiments(self)
@@ -83,7 +97,6 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 warning('Experiments already suspended');
             end
         end
-        
         function resume_experiments(self)
             maxTries = 100;
             if isempty(self.rememberedDetect)
@@ -102,7 +115,43 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 end
             end
         end
-
+        
+        %% callbacks -- do not use externally
+        function detection_changed_callback(self, ~, ~)
+            notify(self, 'DetectionChanged');
+        end
+        
+        %% Dependent getters
+        function val = get.isEmpty(self)
+            val = isempty(self.Experiments);
+        end
+        function val = get.daqValid(self)
+            val = ~isempty(self.DaqObj);
+        end
+    end
+    methods (Access = private)
+        function init(self)
+            %% Check that these experiments have compatible Fs
+            self.get_inchannels();
+            self.check_consistency();
+            self.songHWChannels = cellfun(@(E) E.songHWChannel, self.Experiments);
+            self.nonSongHWChannels = cellfun(@(E) E.nonSongHWChannels, self.Experiments, 'UniformOutput', false);
+            self.update_exper_strings();
+            self.DetectionListeners = cellfun( ...
+                @(E) addlistener(E, 'DetectionChanged', @self.detection_changed_callback), ...
+                self.Experiments, ...
+                'UniformOutput', false);
+        end
+        function get_inchannels(self)
+            inChannels = cellfun(@(E) E.inChannels, self.Experiments, 'UniformOutput', false); %#ok<PROP>
+            self.inChannels = vertcat(inChannels{:}); %#ok<PROP>
+        end
+        function check_consistency(self)
+            desiredFs = cellfun(@(E) E.desiredFs, self.Experiments);
+            assert(all(desiredFs == desiredFs(1)), 'All experiments must have the same sampling rate');
+            self.commonFs = desiredFs(1);
+            assert(numel(self.inChannels) == numel(unique(self.inChannels)), 'Overlapping channels!');
+        end
         function update_exper_strings(self)
             if isempty(self.Experiments)
                 self.experimentStrings = {''};
@@ -113,6 +162,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         end
     end
     events (NotifyAccess = private)
+        DetectionChanged
         ExperimentsChanged
         ExperStringsChanged
     end

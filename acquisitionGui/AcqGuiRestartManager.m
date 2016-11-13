@@ -15,6 +15,7 @@ classdef (Sealed) AcqGuiRestartManager < handle
     end
     methods
         function self = AcqGuiReset(ExperimentManager, varargin)
+            %% Parse inputs
             p = inputParser();
             p.KeepUnmatched = true;
             addParameter(p, 'restartDaily', false);
@@ -22,10 +23,14 @@ classdef (Sealed) AcqGuiRestartManager < handle
             addParameter(p, 'stopHour', 23);
             parse(p, varargin{:});
             Params = p.Results;
+            
+            %% Set properties
             self.ExperimentManager = ExperimentManager;
             self.restartDaily = Params.restartDaily;
             self.startHour = Params.startHour;
             self.stopHour = Params.stopHour;
+            
+            %% Setup
             if self.restartDaily
                 self.set_restart();
             end
