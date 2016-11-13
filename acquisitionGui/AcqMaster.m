@@ -1,8 +1,9 @@
-classdef (Sealed) AcqGuiModel < handle
+classdef (Sealed) AcqMaster < handle
     properties (Access = private)
         %% Gui properties
         GuiFig
         GuiData
+        Views
         
         %% Experiment related properties
         ExperimentManager
@@ -12,6 +13,8 @@ classdef (Sealed) AcqGuiModel < handle
         
         
         %% Display data
+        CurrentRecording
+        
         currentExperNdx = 0;
         experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
         displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
@@ -46,6 +49,7 @@ classdef (Sealed) AcqGuiModel < handle
         %% Monitoring related properties
         SongMonitor
         isBuffering
+        daqRunning
         BufferTimer
     end
     methods
@@ -66,17 +70,15 @@ classdef (Sealed) AcqGuiModel < handle
             %% Set properties
             self.GuiFig = GuiFig;
             self.GuiData = guidata(self.GuiFig);
-            self.GuiData.AcqGuiController = self; % insert self reference into gui data
-            self.Experiments = Params.Experiments;
+            self.GuiData.GuiModel = self; % insert self reference into gui data
+            self.ExperimentManager = AcqGuiExperimentManager(self, varargin{:});
             self.daqLogFile = Params.daqLogFile;
             self.updateFreq = Params.updateFreq;
             self.bufferSecs = Params.bufferSecs;
             self.ExperimentManager = AcqGuiExperimentManager();
             self.RestartManager = AcqGuiRestartManager(self.ExperimentManager, varargin{:});
             self.SongMonitor = AcqGuiMonitor(self, varargin{:});
-            
-            %% Set gui into initial, disabled, state
-            self.gui_init();
+            self.Views = AcqGuiViews(self, varargin{:});
             
             %% Add a reference to this object into gui data
             guidata(self.GuiFig, self.GuiData); % Place guidata back into gui figure
@@ -91,9 +93,6 @@ classdef (Sealed) AcqGuiModel < handle
                 self.init_daq();
                 self.start_daq();
             end
-            
-            %% Finish setting up GUI
-            self.gui_exper();
         end
     end
     methods (Access = private)
@@ -160,38 +159,6 @@ classdef (Sealed) AcqGuiModel < handle
             self.default_exper_display(experNo);
             self.update_exper_strings();
         end
-        function remove_experiment(self, experNo)
-            % Must be called when daq is stopped, and init_daq should be
-            % called after all modifications to experiment list are made
-            nExper = numel(self.Experiments);
-            assert(nExper >= experNo, 'Cannot remove experiment as it does not exist');
-            assert(~self.DaqObj.isRunning, 'Cannot remove experiments when DAQ is running');
-            %% Remove data related to this experiment
-            self.Experiments(experNo) = [];
-            self.experDisplayChannels(:, experNo) = [];
-            self.displayRecordingNo(experNo) = [];
-            
-            %% Update current experiment, if necessary
-            if experNo == self.currentExperNdx
-                if nExper > experNo
-                    self.switch_experiment(experNo);
-                elseif nExper > 1
-                    self.switch_experiment(experNo - 1);
-                else
-                    self.no_experiment()
-                end
-            elseif experNo < self.currentExperNdx
-                self.switch_experiment(self.currentExperNdx - 1); % Because the current experiment has moved in the now shortened list
-            end
-        end
-        function no_experiment(self)
-            self.currentExperNdx = 0;
-            self.experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
-            self.displayRecordingNo = zeros(0, 1);% Nx1 matrix of file number to display
-            self.startNdx = 0;
-            self.endNdx = 0;
-            self.update_exper_strings();
-        end
         function default_exper_display(self, experNdxArray)
             nExper = numel(experNdxArray);
             for experNo = 1:nExper
@@ -201,15 +168,6 @@ classdef (Sealed) AcqGuiModel < handle
                 self.experDisplayChannels(1:nCh, experNo) = self.Experiments{experNdx}.nonSongHWChannels;
                 self.displayRecordingNo(experNo) = self.Experiments{experNdx}.lastFileNo;
             end
-        end
-        function update_exper_strings(self)
-            if isempty(self.Experiments)
-                self.experimentStrings = {''};
-            else
-                formatFun = @(E) sprintf('%s: %s', E.birdName, E.experName);
-                self.experimentStrings = cellfun(formatFun, self.Experiments, 'UniformOutput', false);
-            end
-            self.gui_experstrings();
         end
         
         %% Methods to interface with DaqBuffer
@@ -243,11 +201,9 @@ classdef (Sealed) AcqGuiModel < handle
             
             %% Pass daq information to experiments
             cellfun(@(E) E.set_daq_params(self.DaqObj), self.Experiments);
-            MonitorObj = self.SongMonitor; % Needed for the function reference I think?
         end
         function start_daq(self)
             self.DaqObj.start();
-            self.gui_startdaq();
             self.wait_for_buffer();
         end
         function stop_daq(self)
@@ -256,7 +212,7 @@ classdef (Sealed) AcqGuiModel < handle
                 cellfun(@(E) E.force_stop_recording(), self.Experiments(recordingExpers));
             end
             self.DaqObj.stop();
-            self.gui_stopdaq();
+            notify(self, 'DaqChanged');
         end
         
         %% Methods related to state transitions
@@ -270,82 +226,19 @@ classdef (Sealed) AcqGuiModel < handle
             CurrentTime = datetime();
             BufferUntil = CurrentTime + self.SongMonitor.bufferDelay;
             startat(self.BufferTimer, BufferUntil);
+            notify(self, 'DaqChanged');
         end
         
         function buffering_complete(self, ~, ~)
             self.isBuffering = false;
             delete(self.BufferTimer);
             self.SongMonitor.update_song_detection();
-            self.gui_buffering_complete();
+            notify(self, 'DaqChanged');
         end
-        
-        %% GUI and UI code
-        function gui_init(self)
-            %% Initialize GUI
-            set(self.GuiFig, 'HandleVisibility', 'on');
-            self.GuiFig.CloseRequestFcn = @(~, ~) self.delete();
-            
-            %% Initialize properties of UI elements
-            set(self.GuiData.buttonTrigOnSong,'Enable','off');
-            set(self.GuiData.buttonRecord,'Enable','off');
-            fields = fieldnames(handles);
-            for fieldNo = 1:numel(fields)
-                UIControl = self.GuiData.(fields{fieldNo});
-                if isprop(UIControl,'BusyAction')
-                    set(UIControl,'BusyAction','cancel');
-                end
-                if isprop(UIControl,'Interruptible')
-                    set(UIControl,'Interruptible','off');
-                end
-            end
-            
-            %% Set restart timer UI elements
-            set(self.GuiData.editStartTime, 'String', num2str(self.RestartManager.startHour));
-            set(self.GuiData.editStopTime, 'String', num2str(self.RestartManager.stopHour));
-            set(self.GuiData.checkboxAutostart, 'Value', self.RestartManager.restartDaily);
-        end
-        function gui_exper(self)
-        end
-        function gui_stopdaq(self)
-            set(self.GuiData.buttonRecord, 'Enable', 'off');
-            set(self.GuiData.textRecordingStatus, 'String', 'Daq stopped');
-            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
-        end
-        function gui_startdaq(self)
-            set(self.GuiData.buttonRecord,'Enable','on');
-            set(self.GuiData.textRecordingStatus, 'String', 'Buffering for song detection but ready to record...');
-            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
-        end
-        function gui_wait_buffer(self)
-            set(self.GuiData.buttonTrigOnSong,'Enable','off');
-            set(self.GuiData.textRecordingStatus, 'String', 'Buffering for song detection but ready to record...');
-            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
-        end
-        function gui_buffering_complete(self)
-            set(self.GuiData.textRecordingStatus, 'String', 'Ready to record and detect song');
-            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'green');
-            set(self.GuiData.buttonTrigOnSong,'Enable','on');
-        end
-        function gui_experstrings(self)
-            set(self.GuiData.popupExperiments, 'String', self.experimentStrings);
-        end
-        function gui_file_properties(self)
-            nPropName = numel(self.propertyNames);
-            strList = cell(nPropName, 1);
-            for propNo = 1:nPropName
-                strList{propNo} = sprtintf('%s: %s', ...
-                    self.propertyNames{propNo}, self.propertyValues{propNo});
-            end
-            set(self.GuiData.listboxDatafileProperties, 'String', strList);
-        end
-        function gui_spectrogram(self)
-            % Consider replacing displaySpecgramQuick with
-            % updated_specgram_quick
-            if self.autoSpec
-                
-            end
-        end
-        function gui_signals(self)
-        end
+
+    end
+    events (NotifyAccess = private)
+        DaqChanged
+        RecordingChanged
     end
 end

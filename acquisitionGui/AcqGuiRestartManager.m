@@ -118,4 +118,8 @@ classdef (Sealed) AcqGuiRestartManager < handle
             startat(self.RestartTimer, StartTime);
         end
     end
+    events (NotifyAccess = private)
+        Restarted
+        RestartChanged
+    end
 end

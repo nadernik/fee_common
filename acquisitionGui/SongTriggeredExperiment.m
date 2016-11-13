@@ -276,8 +276,6 @@ classdef SongTriggeredExperiment < handle
             end
         end
         
-        
-        
         %% public recording methods (use these to ask for recordings)
         function status = force_recording(self)
             if self.daqFs < 0 || self.DaqObj.isUpdating || self.isRecording
@@ -402,7 +400,9 @@ classdef SongTriggeredExperiment < handle
                 recFileNames = self.get_filenames(self.lastFileNo + 1, self.inChannels);
                 [startedChannels, ~] = self.DaqObj.start_recording(startSamp, recFileNames, self.inChannels);
                 status = all(startedChannels);
-                if ~status
+                if status
+                    notify(self, 'RecordingStarted');
+                else
                     self.isRecording = false;
                     delete(self.DaqRecordingListener);
                 end
@@ -603,6 +603,7 @@ classdef SongTriggeredExperiment < handle
     end
     
     events (NotifyAccess = private)
+        RecordingStarted
         RecordingComplete
         DetectionChanged
     end

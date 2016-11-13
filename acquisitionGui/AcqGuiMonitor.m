@@ -132,4 +132,9 @@ classdef (Sealed) AcqGuiMonitor < handle
             self.detectingSong = false;
         end
     end
+    events (NotifyAccess = private)
+        RecordingStarted
+        RecordingComplete
+        DetectionChanged
+    end
 end

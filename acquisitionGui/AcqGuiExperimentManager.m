@@ -9,17 +9,22 @@ classdef (Sealed) AcqGuiExperimentManager < handle
     end
     methods
         function self = AcqGuiExperimentManager(GuiModel, varargin)
+            p = inputParser();
+            p.keepUnmatched = true;
+            addParameter(p, 'Experiments', {});
+            parse(p, varargin{:});
+            Params = p.Results;
+            
             self.GuiModel = GuiModel;
+            self.Experiments = Params.Experiments;
         end
+        
          %% Methods to add or remove experiments
         function append_experiment(self, Experiment)
             assert(~self.DaqObj.isRunning, 'Cannot add experiment when DAQ is running');
             self.Experiments{end + 1} = Experiment;
-            self.experDisplayChannels(:, end + 1) = -1 * ones(1, 3);
-            self.displayRecordingNo(end + 1) = 0;
-            experNo = numel(self.Experiments);
-            self.default_exper_display(experNo);
             self.update_exper_strings();
+            notify(self, 'ExperimentsChanged');
         end
         function remove_experiment(self, experNo)
             % Must be called when daq is stopped, and init_daq should be
@@ -30,9 +35,8 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             
             %% Remove data related to this experiment
             self.Experiments(experNo) = [];
-            self.experDisplayChannels(:, experNo) = [];
-            self.displayRecordingNo(experNo) = [];
             
+            self.update_exper_strings();
             %% Update current experiment, if necessary
             if experNo == self.currentExperNdx
                 if nExper > experNo
@@ -42,17 +46,14 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 else
                     self.no_experiment()
                 end
+                notify(self, 'ExerimentsChanged');
             elseif experNo < self.currentExperNdx
                 self.switch_experiment(self.currentExperNdx - 1); % Because the current experiment has moved in the now shortened list
+                notify(self, 'ExperimentsChanged');
             end
         end
-        function no_experiment(self)
-            self.currentExperNdx = 0;
-            self.experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
-            self.displayRecordingNo = zeros(0, 1);% Nx1 matrix of file number to display
-            self.startNdx = 0;
-            self.endNdx = 0;
-            self.update_exper_strings();
+        
+        function switch_experiment(self, experNo)
         end
         
         function reset_experiments(self)
@@ -110,5 +111,9 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 self.experimentStrings = cellfun(formatFun, self.Experiments, 'UniformOutput', false);
             end
         end
+    end
+    events (NotifyAccess = private)
+        ExperimentsChanged
+        ExperStringsChanged
     end
 end
