@@ -16,6 +16,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         rememberedDetect
         DaqObj
         DetectionListeners
+        RecordingListeners
     end
     methods
         function self = AcqGuiExperimentManager(varargin)
@@ -55,6 +56,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.songHWChannels(end + 1) = Experiment.songHWChannel;
             self.nonSongHWChannels{end + 1} = Experiment.nonSongHWChannels;
             self.DetectionListeners{end + 1} = addlistener(Experiment, 'DetectionChanged', @self.detection_changed_callback);
+            self.RecordingListeners{end + 1} = addlistener(Experiment, 'RecordingComplete', @self.recording_complete_callback);
             self.update_exper_strings();
             notify(self, 'ExperimentsChanged');
         end
@@ -68,6 +70,9 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.Experiments(experNo) = [];
             self.songHWChannels(experNo) = [];
             self.nonSongHWChannels(experNo) = [];
+            delete(self.RecordingListeners{experNo});
+            self.RecordingListeners(experNo) = [];
+            
             delete(self.DetectionListeners{experNo});
             self.DetectionListeners(experNo) = [];
             self.get_inchannels();
@@ -126,11 +131,13 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 self.rememberedDetect = [];
             end
         end
-        
 
         %% callbacks -- do not use externally
         function detection_changed_callback(self, ~, ~)
             notify(self, 'DetectionChanged');
+        end
+        function recording_complete_callback(self, ~, ~)
+            notify(self, 'RecordingComplete');
         end
         
         %% Dependent getters
@@ -156,6 +163,10 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 @(E) addlistener(E, 'DetectionChanged', @self.detection_changed_callback), ...
                 self.Experiments, ...
                 'UniformOutput', false);
+            self.DetectionListeners = cellfun( ...
+                @(E) addlistener(E, 'RecordingComplete', @self.recording_complete_callback), ...
+                self.Experiments, ...
+                'UniformOutput', false);
         end
         function get_inchannels(self)
             inChannels = cellfun(@(E) E.inChannels, self.Experiments, 'UniformOutput', false); %#ok<PROP>
@@ -177,6 +188,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         end
     end
     events (NotifyAccess = private)
+        RecordingComplete
         DetectionChanged
         ExperimentsChanged
         ExperStringsChanged
