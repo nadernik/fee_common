@@ -44,6 +44,12 @@ classdef (Sealed) AcqGuiMonitor < handle
             self.peekOverlap = Params.peekOverlap;
             self.init_monitor();
         end
+        function delete(self)
+            delete(self.UpdateCompleteListener);
+            delete(self.PeekAvailableListener);
+            delete(self.ExperChangedListener);
+            delete(self.DetectionChangedListener);
+        end
         
         %% public methods
         function update_song_detection(self)

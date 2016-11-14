@@ -438,7 +438,7 @@ classdef SongTriggeredExperiment < handle
         end
         
         function update_triggered_recording(self, isSinging, firstSongSamp, lastPeekSamp)
-            if self.forcedRecording
+            if self.forcedRecording || ~self.isRunning
                 return
             end
             if isSinging

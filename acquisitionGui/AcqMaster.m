@@ -59,6 +59,15 @@ classdef (Sealed) AcqMaster < handle
                 self.start_daq();
             end
         end
+        
+        function append_exper(self, Experiment)
+            modifyFun = @() self.ExperManager.append_experiment(Experiment);
+            self.modify_experiments(modifyFun);
+        end
+        function remove_exper(self, experNo)
+            modifyFun = @() self.ExperManager.remove_experiment(experNo);
+            self.modify_experiments(modifyFun);
+        end
     end
     methods (Access = private)
         %% Methods to interface with DaqBuffer
@@ -88,6 +97,7 @@ classdef (Sealed) AcqMaster < handle
         end
         function start_daq(self)
             self.DaqObj.start();
+            self.daqRunning = true;
             self.wait_for_buffer();
         end
         function stop_daq(self)
@@ -96,9 +106,22 @@ classdef (Sealed) AcqMaster < handle
                 cellfun(@(E) E.force_stop_recording(), self.ExperManager.Experiments(recordingExpers));
             end
             self.DaqObj.stop();
+            self.daqRunning = false;
             notify(self, 'DaqChanged');
         end
         
+        function modify_experiments(self, modifyFun)
+            if wasRunning
+                self.ExperManager.suspend_experiments();
+                self.ExperManager.clear_daq();
+                self.stop_daq();
+            end
+            modifyFun();
+            self.init_daq();
+            if wasRunning
+                self.ExperManager.resume_experiments();
+            end
+        end
         %% Methods related to state transitions
         function wait_for_buffer(self)
             self.isBuffering = true;
@@ -118,13 +141,7 @@ classdef (Sealed) AcqMaster < handle
             self.SongMonitor.update_song_detection();
             notify(self, 'DaqChanged');
         end
-        function append_exper(self, Experiment)
-            wasRunning = self.isRunning;
-            if wasRunning
-                self.stop_daq();
-            end
-            
-        end
+        
     end
     events (NotifyAccess = private)
         DaqChanged

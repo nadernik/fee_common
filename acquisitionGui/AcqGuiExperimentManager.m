@@ -37,15 +37,22 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.DaqObj = DaqObj;
             cellfun(@(E) E.set_daq_params(DaqObj), self.Experiments);
         end
+        function clear_daq(self)
+            cellfun(@(E) E.clear_daq_params(), self.Experiments);
+        end
         
          %% Methods to add or remove experiments
         function append_experiment(self, Experiment)
             assert(self.daqValid && ~self.DaqObj.isRunning, 'Cannot add experiment when DAQ is running');
             self.Experiments{end + 1} = Experiment;
-            nIn = 1 + numel(self.nonSongHWChannels{end}); % Always have one song channel
+            nExper = numel(self.Experiments);
+            if ~isempty(self.rememberedDetect) && nExper > numel(self.rememberedDetect)
+                self.rememberedDetect(end + 1) = false;
+            end
+            nIn = 1 + numel(Experiment.nonSongHWChannels); % Always have one song channel
             self.inChannels((end + 1):(end + nIn)) = Experiment.inChannels;
             self.check_consistency();
-            self.songHWChannels(end + 1) = Experiment.songHWCHannel;
+            self.songHWChannels(end + 1) = Experiment.songHWChannel;
             self.nonSongHWChannels{end + 1} = Experiment.nonSongHWChannels;
             self.DetectionListeners{end + 1} = addlistener(Experiment, 'DetectionChanged', @self.detection_changed_callback);
             self.update_exper_strings();
@@ -55,9 +62,8 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             % Must be called when daq is stopped, and init_daq should be
             % called after all modifications to experiment list are made
             nExper = numel(self.Experiments);
-            assert(nExper >= experNo, 'Cannot remove experiment as it does not exist');
+            assert(nExper >= experNo && experNo >= 1, 'Cannot remove experiment as it does not exist');
             assert(self.daqValid && ~self.DaqObj.isRunning, 'Cannot remove experiments when DAQ is running');
-            
             %% Remove data related to this experiment
             self.Experiments(experNo) = [];
             self.songHWChannels(experNo) = [];
@@ -65,6 +71,9 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             delete(self.DetectionListeners{experNo});
             self.DetectionListeners(experNo) = [];
             self.get_inchannels();
+            if ~isempty(self.rememberedDetect) && nExper > numel(self.rememberedDetect)
+                self.rememberedDetect(experNo) = [];
+            end
             self.update_exper_strings();
             notify(self, 'ExerimentsChanged');
         end
@@ -93,7 +102,6 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                     if ~status
                         error('Could not suspend experiments');
                     end
-                    cellfun(@(E) E.clear_daq_params(), self.Experiments);
                 end
             else
                 warning('Experiments already suspended');
@@ -115,9 +123,11 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                         error('Could not resume experiments');
                     end
                 end
+                self.rememberedDetect = [];
             end
         end
         
+
         %% callbacks -- do not use externally
         function detection_changed_callback(self, ~, ~)
             notify(self, 'DetectionChanged');

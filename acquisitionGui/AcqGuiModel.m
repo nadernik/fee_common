@@ -41,24 +41,11 @@ classdef (Sealed) AcqGuiModel < handle
             end
         end
         
-        function status = append_exper(self, Experiment)
-            self.AcqObj
+        function append_exper(self, Experiment)
+            self.AcqObj.append_exper(Experiment);
         end
-        
         function remove_exper(self)
-        end
-        function status = create_exper(self)
-            if self.AcqObj.ExperManager.anyRecording
-                status = false;
-            else
-                
-            end
-        end
-        
-        function load_exper(self)
-        end
-        
-        function close_exper(self)
+            self.AcqObj.remove_exper(self.currentExperNdx);
         end
     end
     methods (Access = private)
