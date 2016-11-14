@@ -529,7 +529,7 @@ classdef SongTriggeredExperiment < handle
             ClonedExper.write_exper_file();
         end
         
-        function Exper = create_experiment_prompt(varargin)
+        function [status, Exper] = create_experiment_prompt(varargin)
             %Creates a folder for all files related to this experiment.  Also saves a
             %.mat file to this folder containing the experiment description.
             persistent p;
@@ -538,42 +538,63 @@ classdef SongTriggeredExperiment < handle
                 addOptional(p, 'rootDirectory', '');
             end
             parse(p, varargin{:});
-            Params = p.Results; 
+            Params = p.Results;
             if isempty(Params.rootDirectory)
                 rootDir = pwd();
             else
                 rootDir = Params.rootDirectory;
             end
             
-            birdName = input('Enter a bird name: (no spaces or strange characters)', 's');
-            birdDesc = input('Enter a description of the bird:', 's');
-            experName = input('Enter a experiment name (nothing for default):', 's');
-            experDesc = input('Enter a description of the exper:', 's');
-            desiredInSampRate = input('Enter the desired input sampling rate:');
-            audioCh = input('What hw channel will audio be on: (-1 if no audio)');
-            sigCh = input('Enter vector of other hw channels to be recorded: ([] if none)');
-            
-            nCh = numel(sigCh);
-            sigName = cell(nCh, 1);
-            sigDesc = cell(nCh, 1);
-            for chanNo = 1:nCh
-                sigName{chanNo} = input(sprintf('Enter name of signal on channel %d:', sigCh(chanNo)), 's');
-                sigDesc{chanNo} = input(sprintf('Enter description of signal on channel %d:', sigCh(chanNo)), 's');
+            try
+                birdName = input('Enter a bird name: (no spaces or strange characters)', 's');
+                birdDesc = input('Enter a description of the bird:', 's');
+                experName = input('Enter a experiment name (nothing for default):', 's');
+                experDesc = input('Enter a description of the exper:', 's');
+                desiredInSampRate = input('Enter the desired input sampling rate:');
+                audioCh = input('What hw channel will audio be on: (-1 if no audio)');
+                sigCh = input('Enter vector of other hw channels to be recorded: ([] if none)');
+                
+                nCh = numel(sigCh);
+                sigName = cell(nCh, 1);
+                sigDesc = cell(nCh, 1);
+                for chanNo = 1:nCh
+                    sigName{chanNo} = input(sprintf('Enter name of signal on channel %d:', sigCh(chanNo)), 's');
+                    sigDesc{chanNo} = input(sprintf('Enter description of signal on channel %d:', sigCh(chanNo)), 's');
+                end
+                
+                Exper = SongTriggeredExperiment(birdName, rootDir, audioCh, sigCh, ...
+                    desiredInSampRate, ...
+                    'experName', experName, ...
+                    'birdDesc', birdDesc, ...
+                    'experDesc', experDesc, ...
+                    'signalName', sigName, ...
+                    'signalDesc', sigDesc);
+                Exper.make_exper_dir();
+                Exper.write_exper_file();
+                status = true;
+            catch
+                status = false;
+                Exper = [];
             end
-            
-            Exper = SongTriggeredExperiment(birdName, rootDir, audioCh, sigCh, ...
-                desiredInSampRate, ...
-                'experName', experName, ...
-                'birdDesc', birdDesc, ...
-                'experDesc', experDesc, ...
-                'signalName', sigName, ...
-                'signalDesc', sigDesc);
-            Exper.make_exper_dir();
-            Exper.write_exper_file();
         end
         
-        function Exper = load_experiment(fileName)
+        function Exper = load_experiment(fileName, varargin)
+            persistent p;
+            if isempty(p)
+                p = inputParser();
+                addParameter(p, 'currentDir', '');
+            end
+            parse(p, varargin{:});
+            currentDir = p.Results.currentDir;
+            
             S = load(fileName, 'exper');
+            if ~isempty(p.Results.currentDir) && strcmp(which(currentDir), S.exper.dir) % This is a pretty lame way to check that the directories are the same...
+                assert(exist(currentDir, 'dir'), 'New directory not valid');
+                S.exper.rootdir = currentDir;
+                S.exper.birddir = currentDir;
+                S.exper.dir = currentDir;
+            end
+            
             Exper = SongTriggeredExperiment(S.exper.birdname, ...
                 S.exper.rootdir, ...
                 S.exper.audioCh, ...

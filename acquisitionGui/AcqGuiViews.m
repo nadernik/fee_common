@@ -3,18 +3,14 @@ classdef (Sealed) AcqGuiViews < handle
         GuiModel
         GuiFig
         GuiData
+        AcqObj
         ExperimentManager
         SongMonitor
         RestartManager
         CurrentRecording
         
-        experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
-        displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
         startNdx = 0;
         endNdx = 0;
-        autoSpec
-        
-        fileFs
     end
     properties (Access = private)
         DaqListener
@@ -23,21 +19,18 @@ classdef (Sealed) AcqGuiViews < handle
         ExpersChangedListener
     end
     methods
-        function self = AcqGuiViews(GuiModel, varargin)
-            %% Parse inputs
-            p = inputParser();
-            p.keepUnmatched = true;
-            parse(p, varargin{:});
-            Params = p.Results;
+        function self = AcqGuiViews(GuiModel, GuiFig)
+            %% Set properties
             self.GuiModel = GuiModel;
-            self.GuiData = self.GuiModel.GuiData;
-            self.GuiFig = self.GuiModel.GuiFig;
-            self.ExperimentManager = self.GuiModel.ExperimentManager;
-            self.SongMonitor = self.GuiModel.SongMonitor;
-            self.RestartManager = self.GuiModel.RestartManager;
+            self.AcqObj = self.GuiModel.AcqObj;
+            self.GuiFig = GuiFig;
+            self.GuiData = guidata(GuiFig);
+            self.ExperimentManager = self.AcqObj.ExperimentManager;
+            self.SongMonitor = self.AcqObj.SongMonitor;
+            self.RestartManager = self.AcqObj.RestartManager;
             
             
-            self.DaqListener = addlistener(self.GuiModel, 'DaqChanged', @self.daq);
+            self.DaqListener = addlistener(self.AcqObj, 'DaqChanged', @self.daq);
             self.RestartChangedListener = addlistener(self.RestartManager, ...
                 'RestartChanged', @self.restart_changed);
             self.ExpersChangedListener = addlistener(self.ExperimentManager, 'ExperimentsChanged', @self.experiments);
@@ -68,7 +61,7 @@ classdef (Sealed) AcqGuiViews < handle
         
         function daq(self, ~, ~) % Call back for DaqChanged events
             if self.GuiModel.daqRunning
-                if self.GuiModel.isBuffering
+                if self.GuiModel.AcqObj.isBuffering
                     self.daq_buffering();
                 else
                     self.daq_ready();

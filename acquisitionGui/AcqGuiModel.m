@@ -40,15 +40,37 @@ classdef (Sealed) AcqGuiModel < handle
                 self.load_channels(hwChannel);
             end
         end
+        function load_experiment(self)
+            [experFilename, experPath] = uigetfile('exper.mat', 'Choose an experiment file:');
+            if experFilename ~= 0
+                fullPath = fullfile(experPath, experFilename);
+                Exper = SongTriggeredExperiment.load_experiment(fullPath, 'currentDir', experPath);
+                self.append_exper(Exper);
+            end
+        end
+        function create_experiment(self)
+            [status, Exper] = SongTriggeredExperiment.create_experiment_prompt();
+            if status
+                self.append_exper(Exper);
+            end
+        end
+        function close_experiment(self)
+            self.remove_exper();
+        end
         
+    end
+    methods (Access = private)
+        function change_current_exper(self, experNo)
+            
+        end
         function append_exper(self, Experiment)
             self.AcqObj.append_exper(Experiment);
+            % Update display state
         end
         function remove_exper(self)
             self.AcqObj.remove_exper(self.currentExperNdx);
+            % Update display state
         end
-    end
-    methods (Access = private)
         function load_recording(self)
             self.CurrentRecording = AcqGuiRecording(...
                 self.AcqObj.ExperManager.Experiments{self.currentExperNdx}, ...
