@@ -14,6 +14,7 @@ classdef SongTriggeredExperiment < handle
     properties (Access = private, Dependent = true)
         changeDetectionValid
         deletionListenerValid
+        isRunning
     end
     properties (SetAccess = private)
         birdName
@@ -182,7 +183,7 @@ classdef SongTriggeredExperiment < handle
             assert(minFreq < maxFreq, ...
                 'minimum frequency must be strictly less than maximum frequency');
             assert(minFreq >= 0 && maxFreq >= 0, 'frequencies must be postiive');
-            if self.daqFs >= 0 % Daq is set up
+            if self.isRunning % Daq is set up
                 assert(minFreq <= self.nyqFreq && maxFreq <= self.nyqFreq, ...
                     'frequencies must be less than nyquist freqeuncy');
             else
@@ -249,7 +250,7 @@ classdef SongTriggeredExperiment < handle
         
         function [status, isSong, songScore, firstSongSamp] = detect_song(self, audioData, peekStartSamp)
             % Should only be called once daq is set up
-            if  self.daqFs < 0 
+            if  ~self.isRunning
                 status = false;
                 isSong = false;
                 firstSongSamp = nan;
@@ -278,7 +279,7 @@ classdef SongTriggeredExperiment < handle
         
         %% public recording methods (use these to ask for recordings)
         function status = force_recording(self)
-            if self.daqFs < 0 || self.DaqObj.isUpdating || self.isRecording
+            if ~self.isRunning || self.DaqObj.isUpdating || self.isRecording
                 %% Cannot safely start recording
                 status = false;
             else
@@ -356,12 +357,15 @@ classdef SongTriggeredExperiment < handle
             val = ~isempty(self.DeletionListener) && ...
                 isvalid(self.DeletionListener);
         end
+        function val = get.isRunning(self)
+            val = self.daqFs > 0;
+        end
     end
     
     methods (Access = private)
         %% Methods for updating parameters
         function calculate_derived_song_params(self)
-            if self.daqFs >= 0 % DAQ is set up
+            if self.isRunning % DAQ is set up
                 self.windowSampleSize = floor(self.daqFs * self.windowSize);
                 self.windowSampleOverlap = floor(self.windowSampleSize * self.windowOverlap);
                 self.specNfft = 2 ^ nextpow2(self.windowSampleSize);
@@ -381,7 +385,7 @@ classdef SongTriggeredExperiment < handle
         end
         
         function fix_freq_range(self)
-            if self.daqFs >= 0 % Daq is set up
+            if self.isRunning % Daq is set up
                 self.minFreq = self.freqndx_to_hz(self.minNdx);
                 self.maxFreq = self.freqndx_to_hz(self.maxNdx);
             else
@@ -391,7 +395,7 @@ classdef SongTriggeredExperiment < handle
         
         %% Recording methods
         function status = record(self, startSamp)
-            if self.DaqObj.isUpdating || self.isRecording
+            if self.DaqObj.isUpdating || self.isRecording || ~self.isRunning
                 status = false;
             else
                 self.isRecording = true;
@@ -410,7 +414,9 @@ classdef SongTriggeredExperiment < handle
         end
         
         function status = stop_recording(self, stopSamp)
-            if ~self.isRecording || self.DaqObj.isUpdating
+            if ~self.isRunning
+                error('Daq was stopped during a recording!');
+            elseif ~self.isRecording || self.DaqObj.isUpdating
                 status = false;
             else
                 stoppedChannels = self.DaqObj.stop_recording(stopSamp, self.inChannels);
@@ -477,7 +483,7 @@ classdef SongTriggeredExperiment < handle
             exper.audioCh = self.songHWChannel;
             exper.sigCh = self.nonSongHWChannels;
             exper.sigName = self.signalName;
-            exper.sigDesc = self.signalDesc; 
+            exper.sigDesc = self.signalDesc;  %#ok<STRNU>
             save(fullfile(self.experDirectory, 'exper.mat'), 'exper');
         end
         

@@ -118,7 +118,13 @@ classdef (Sealed) AcqMaster < handle
             self.SongMonitor.update_song_detection();
             notify(self, 'DaqChanged');
         end
-
+        function append_exper(self, Experiment)
+            wasRunning = self.isRunning;
+            if wasRunning
+                self.stop_daq();
+            end
+            
+        end
     end
     events (NotifyAccess = private)
         DaqChanged

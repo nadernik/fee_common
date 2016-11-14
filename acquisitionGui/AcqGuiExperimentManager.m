@@ -10,6 +10,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
     properties (SetAccess = private, Dependent = true)
         isEmpty
         daqValid
+        anyRecording
     end
     properties (Access = private)
         rememberedDetect
@@ -92,6 +93,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                     if ~status
                         error('Could not suspend experiments');
                     end
+                    cellfun(@(E) E.clear_daq_params(), self.Experiments);
                 end
             else
                 warning('Experiments already suspended');
@@ -127,6 +129,9 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         end
         function val = get.daqValid(self)
             val = ~isempty(self.DaqObj);
+        end
+        function val = get.anyRecording(self)
+            val = any(cellfun(@(E) E.isRecording, self.Experiments));
         end
     end
     methods (Access = private)
