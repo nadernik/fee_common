@@ -4,7 +4,7 @@ classdef (Sealed) AcqGuiViews < handle
         GuiFig
         GuiData
         AcqObj
-        ExperimentManager
+        ExperManager
         SongMonitor
         RestartManager
         CurrentRecording
@@ -17,23 +17,32 @@ classdef (Sealed) AcqGuiViews < handle
         RestartListener
         RestartChangedListener
         ExpersChangedListener
+        RecordingChangedListener
+        DetectChangedListener
     end
     methods
-        function self = AcqGuiViews(GuiModel, GuiFig)
+        function self = AcqGuiViews(GuiModel, GuiFig, varargin)
+            p = inputParser();
+            parse(p, varargin{:});
+            
             %% Set properties
             self.GuiModel = GuiModel;
             self.AcqObj = self.GuiModel.AcqObj;
             self.GuiFig = GuiFig;
             self.GuiData = guidata(GuiFig);
-            self.ExperimentManager = self.AcqObj.ExperimentManager;
+            
+            self.ExperManager = self.AcqObj.ExperManager;
             self.SongMonitor = self.AcqObj.SongMonitor;
             self.RestartManager = self.AcqObj.RestartManager;
             
-            
+            %% Set up
+            self.GuiFig.CloseRequestFcn = @self.close_request;
             self.DaqListener = addlistener(self.AcqObj, 'DaqChanged', @self.daq);
             self.RestartChangedListener = addlistener(self.RestartManager, ...
                 'RestartChanged', @self.restart_changed);
-            self.ExpersChangedListener = addlistener(self.ExperimentManager, 'ExperimentsChanged', @self.experiments);
+            self.ExpersChangedListener = addlistener(self.ExperManager, 'ExperimentsChanged', @self.experiments);
+            self.RecordingChangedListener = addlistener(self.GuiModel, 'RecordingChanged', @self.recording);
+            self.DetectChangedListener = addlistener(self.GuiModel, 'DetectChanged', @self.detect);
             self.init();
             self.daq();
         end
@@ -56,7 +65,7 @@ classdef (Sealed) AcqGuiViews < handle
                     set(UIControl,'Interruptible','off');
                 end
             end
-             
+            self.restart_changed([], []);
         end
         
         function daq(self, ~, ~) % Call back for DaqChanged events
@@ -94,7 +103,7 @@ classdef (Sealed) AcqGuiViews < handle
         
         
         function exper_strings(self)
-            set(self.GuiData.popupExperiments, 'String', self.GuiData.ExperimentManager.experimentStrings);
+            set(self.GuiData.popupExperiments, 'String', self.GuiData.ExperManager.experimentStrings);
         end
         function file_properties(self)
             nPropName = numel(self.propertyNames);
@@ -114,6 +123,25 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function gui_signals(self)
         end
+        function recording(self, ~, ~)
+            currExper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
+            if currExper.isRecording
+                recNo = currExper.lastFileNo + 1;
+                if currExper.forcedRecording
+                    self.daq_forced(recNo);
+                else
+                    self.daq_triggered(recNo);
+                end
+            else
+                self.daq_ready();
+            end
+        end
+        function detect(self, ~, ~)
+        end
+        function close_request(self, ~, ~)
+            poisonPill = onCleanup(@() closereq());
+            delete(self.GuiModel);
+        end
     end
     methods (Access = private)
         function daq_stopped(self)
@@ -130,6 +158,18 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.textRecordingStatus, 'String', 'Ready to record and detect song');
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'green');
             set(self.GuiData.buttonTrigOnSong,'Enable','on');
+        end
+        function daq_forced(self, fileNo)
+            set(self.GuiData.textRecordingStatus, 'String', sprintf('Started forced recording %d.', fileNo));
+            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'cyan');
+            set(self.GuiData.buttonRecord, 'String', 'Stop Recording');
+        end
+        function daq_triggered(self, fileNo)
+        end
+        
+        function detect_off(self)
+        end
+        function detect_running(self)
         end
         %% Set restart timer UI elements
         

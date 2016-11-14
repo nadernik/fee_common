@@ -1,9 +1,11 @@
 classdef (Sealed) AcqGuiModel < handle
+    properties
+        autoUpdate
+    end
     properties (SetAccess = private)
         AcqObj
         CurrentRecording
         
-        autoUpdate
         maxLoadSize
         displayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
         displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
@@ -12,9 +14,11 @@ classdef (Sealed) AcqGuiModel < handle
         currentExperNdx = 0;
         startNdx = 0;
         endNdx = 0;
-    end
-    properties (SetAccess = private, Dependent = true)
-        recordingListenerValid
+        
+        %% Listeners
+        RecStartedListener
+        RecCompleteListener
+        DetectChangedListener
     end
     methods
         function self = AcqGuiModel(varargin)
@@ -26,26 +30,11 @@ classdef (Sealed) AcqGuiModel < handle
             Params = p.Results;
             
             self.AcqObj = AcqMaster(varargin{:}); % Make acquisition session
+            self.RecStartedListener = addlistener(self.AcqObj.ExperManager, 'RecordingStarted', @self.rec_started_callback);
+            self.RecCompleteListener = addlistener(self.AcqObj.ExperManager, 'RecordingComplete', @self.rec_complete_callback);
+            self.DetectChangedListener = addlistener(self.AcqObj.ExperManager, 'DetectionChanged', @self.detect_changed_callback);
             self.autoUpdate = Params.autoUpdate;
             self.maxLoadSize = Params.maxLoadSize;
-        end
-        
-        function change_autoupdate(self, val)
-            self.autoUpdate = val;
-            if self.autoUpdate
-                if self.recordingListenersValid
-                    error('Forgot to delete recording listener');
-                else
-                    self.RecordingListener = addlistener(...
-                        self.AcqObj.ExperManager, 'RecordingComplete',...
-                        @self.recording_complete_callback);
-                end
-            elseif self.recordingListenersValid
-                delete(self.RecordingListener);
-            else
-                error('No recording listener found');
-                
-            end
         end
         
         function change_recording(self, recordingNo)
@@ -79,18 +68,35 @@ classdef (Sealed) AcqGuiModel < handle
         function close_experiment(self)
             self.remove_exper();
         end
+        function record_button(self)
+            currExper = self.AcqObj.ExperManager.Experiments{self.currentExperNdx};
+            if currExper.isRecording
+                currExper.force_stop_recording();
+            else
+                currExper.force_stop_recording();
+            end
+        end
         
-        function recording_complete_callback(self, ~, ~)
+        function rec_complete_callback(self, ~, ExperEventObj)
+            if ExperEventObj.experNo == self.currentExperNdx
+                    notify(self, 'RecordingChanged');
+            end
             if self.autoUpdate
                 tmpRecNos = cellfun(@(E) E.lastFileNo, ...
                     self.AcqObj.ExperManager.Experiments);
                 self.change_all_recordings(tmpRecNos);
+                
             end
         end
-        
-        function val = get.recordingListenerValid(self)
-            val = ~isempty(self.RecordingListener) && ...
-                isvalid(self.RecordingListener);
+        function rec_started_callback(self, ~, ExperEventObj)
+            if ExperEventObj.experNo == self.currentExperNdx
+                notify(self, 'RecordingChanged');
+            end
+        end
+        function detect_changed_callback(self, ~, ExperEventObj)
+            if ExperEventObj.experNo == self.currentExperNdx
+                notify(self, 'DetectChanged');
+            end
         end
     end
     methods (Access = private)
@@ -128,5 +134,7 @@ classdef (Sealed) AcqGuiModel < handle
     events (NotifyAccess = private)
         CurrentRecordingChanged
         DisplayedChannelsChanged
+        RecordingChanged
+        DetectChanged
     end
 end

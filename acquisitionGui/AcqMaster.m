@@ -145,5 +145,8 @@ classdef (Sealed) AcqMaster < handle
     end
     events (NotifyAccess = private)
         DaqChanged
+        RecordingStarted
+        RecordingComplete
+        DetectionChanged
     end
 end

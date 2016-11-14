@@ -16,7 +16,8 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         rememberedDetect
         DaqObj
         DetectionListeners
-        RecordingListeners
+        RecStartedListeners
+        RecCompleteListeners
     end
     methods
         function self = AcqGuiExperimentManager(varargin)
@@ -56,7 +57,8 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.songHWChannels(end + 1) = Experiment.songHWChannel;
             self.nonSongHWChannels{end + 1} = Experiment.nonSongHWChannels;
             self.DetectionListeners{end + 1} = addlistener(Experiment, 'DetectionChanged', @self.detection_changed_callback);
-            self.RecordingListeners{end + 1} = addlistener(Experiment, 'RecordingComplete', @self.recording_complete_callback);
+            self.RecCompleteListeners{end + 1} = addlistener(Experiment, 'RecordingComplete', @self.recording_complete_callback);
+            self.RecStartedListeners{end + 1} = addlistener(Experiment, 'RecordingStarted', @self.recording_started_callback);
             self.update_exper_strings();
             notify(self, 'ExperimentsChanged');
         end
@@ -70,9 +72,10 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.Experiments(experNo) = [];
             self.songHWChannels(experNo) = [];
             self.nonSongHWChannels(experNo) = [];
-            delete(self.RecordingListeners{experNo});
-            self.RecordingListeners(experNo) = [];
-            
+            delete(self.RecCompleteListeners{experNo});
+            self.RecCompleteListeners(experNo) = [];
+            delete(self.RecStartedListeners{experNo});
+            self.RecStartedListeners(experNo) = [];
             delete(self.DetectionListeners{experNo});
             self.DetectionListeners(experNo) = [];
             self.get_inchannels();
@@ -133,11 +136,17 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         end
 
         %% callbacks -- do not use externally
-        function detection_changed_callback(self, ~, ~)
-            notify(self, 'DetectionChanged');
+        function detection_changed_callback(self, SourceExper, ~)
+            experNo = find_event_exper(self, SourceExper);
+            notify(self, 'DetectionChanged', ExperEvent(experNo));
         end
-        function recording_complete_callback(self, ~, ~)
-            notify(self, 'RecordingComplete');
+        function recording_started_callback(self, SourceExper, ~)
+            experNo = find_event_exper(self, SourceExper);
+            notify(self, 'RecordingStarted', ExperEvent(experNo));
+        end
+        function recording_complete_callback(self, SourceExper, ~)
+            experNo = find_event_exper(self, SourceExper);
+            notify(self, 'RecordingComplete', ExperEvent(experNo));
         end
         
         %% Dependent getters
@@ -163,7 +172,11 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 @(E) addlistener(E, 'DetectionChanged', @self.detection_changed_callback), ...
                 self.Experiments, ...
                 'UniformOutput', false);
-            self.DetectionListeners = cellfun( ...
+            self.RecStartedListeners = cellfun( ...
+                @(E) addlistener(E, 'RecordingStarted', @self.recording_started_callback), ...
+                self.Experiments, ...
+                'UniformOutput', false);
+            self.RecCompleteListeners = cellfun( ...
                 @(E) addlistener(E, 'RecordingComplete', @self.recording_complete_callback), ...
                 self.Experiments, ...
                 'UniformOutput', false);
@@ -186,8 +199,12 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 self.experimentStrings = cellfun(formatFun, self.Experiments, 'UniformOutput', false);
             end
         end
+        function experNo = find_event_exper(self, EventSource)
+            experNo = find(self.Experiments == EventSource, 1, 'first');
+        end
     end
     events (NotifyAccess = private)
+        RecordingStarted
         RecordingComplete
         DetectionChanged
         ExperimentsChanged
