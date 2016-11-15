@@ -7,12 +7,15 @@ Columns = XLS.textdata.Sheet1(1,:);
 % decide where to save stuff
 savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 %% to populate xls...
-DIR1 = dir(fullfile('E:\TempFileTransfer', '2016-10-21', '*chan0.dat'))
-DIR = dir(fullfile('E:\TempFileTransfer', 'HVCgcamp10212016', '*.tif'))
+DIR1 = dir(fullfile('Y:\AcqGui\HVCOpto', '2016-11-01', '*chan0.dat'))
+DIR = dir(fullfile('E:\TempFileTransfer', 'HVCgcamp11012016', '*.tif'))
 DIR = DIR(cellfun(@numel,(regexp( {DIR.name}', 'recording_\d+_\d+.tif')))==1);
 {DIR.name}'
+
 %% process data
-for row = 1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
+% rows = setdiff((1250:-1:1215), [1215 1223 1233 1238 1246 1251 1256 1260 ...
+%         1263 1267 1271])
+for row = 1337:1356;%1433:-1:1337%1319:1336;%[1308:-1:1303 1309:1318]; % 1216:1271 1179:1180] %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
     try
     clearvars -except row XLS Columns savedir
     display(['working on row ' num2str(row)])
@@ -46,6 +49,8 @@ for row = 1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673
         AudBinWhenFrameStarts = AudBinWhenFrameStarts(1:nFrames); 
         AudBinWhenFrameEnds = AudBinWhenFrameEnds(1:nFrames);
     elseif length(AudBinWhenFrameStarts)<nFrames
+        warning(['frame alignment mismatch, nMovFrames = ' num2str(nFrames) ...
+            ', nAudFrames = ' num2str(length(AudBinWhenFrameStarts))]); 
         nFrames = length(AudBinWhenFrameStarts);   
     end
     tSound = ((1:length(SOUND)) - AudBinWhenFrameStarts(1))/SOUNDfs;
@@ -85,27 +90,25 @@ for row = 1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673
     
     % computing delta F over F video
     VIDEOfs = round(SOUNDfs/min(diff(AudBinWhenFrameStarts))); 
-    Y = permute(VIDEO,[2 3 1]); 
-    Y = Y - min(Y(:)); 
-    [Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
-
-%     load('C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Sept26\Singing\TrainSet\cnmfe_results', 'neuron')
-%     neuron.A = [];
-%     neuron.P.sn = [];
-%     Y = reshape(Y,size(VIDEO,2)*size(VIDEO,3),size(Y,3));
-%     Ybg = neuron.localBG(Y); 
-%     Ysignal = reshape(Y-Ybg,size(VIDEO,2),size(VIDEO,3),size(Y,2)); 
     
-    VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
+%     % if want background subtracted version
+%     Y = permute(VIDEO,[2 3 1]); 
+%     Y = Y - min(Y(:)); 
+%     [Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
+% 
+%     
+%     VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
+    
+    % if want old dff
 %     vecVIDEO = reshape(permute(VIDEObs,[2 3 1]),size(VIDEO,2)*size(VIDEO,3), nFrames);
 %     tic; a = DeltaFOF_elm(vecVIDEO-min(vecVIDEO(:)), VIDEOfs); toc
-    
+%     
 %     dffVIDEO = permute(reshape(a,size(VIDEO,2),size(VIDEO,3),nFrames),[3 1 2]); 
 %     display('calculated dff')
     
     % save
     filename = fullfile(savedir, ['CaELM_row' num2str(row)]); 
-    tic; save(filename, 'VIDEObs', 'VIDEOfs', ...
+    tic; save(filename, 'VIDEOfs', ...;%'VIDEObs', ...
         'SOUND', 'VIDEO', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
         'SPEC', 'specTime', 'F',...
@@ -117,13 +120,13 @@ for row = 1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673
 end
 %% display movie from saved data for one row
 % savedir = 'E:\ProcessedCalciumData\AllRows'; %'E:\ProcessedCalciumData\AllRows'; %'C:\Users\emackev\Documents\StuffICanDelete';%'E:\StuffICanDelete'; %
-close all; 
+% close all; shg
 savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 
 % savedir = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'
-row = 1165; %882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
+row = 1287; %882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
 savevid = 0; % see/hear it in real time no iff don't save
-load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEObs', 'VIDEOfs', ...
+load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEO', 'VIDEOfs', ...
         'SOUND', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
         'SPEC', 'specTime', 'F');%,'VIDEO'); 
@@ -135,11 +138,13 @@ params.F = linspace(507.8125, 5976.6, 141);
 params.AudBinWhenFrameStarts = AudBinWhenFrameStarts; 
 params.AudBinWhenFrameEnds =  AudBinWhenFrameEnds; 
 % ShowCaVid(VIDEObs,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\rr15.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-ShowCaVid(VIDEObs,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-% HandpickROIs(VIDEObs,SOUND,SPEC, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+ShowCaVid(VIDEO,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+% HandpickROIs(VIDEO,SOUND,SPEC, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
 title(num2str(row)); 
 %% checking for rotations
-CheckRows = 1046:8:1145
+savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
+
+CheckRows = [1380:2:1433]; %[1181:5:1211 1212:1214]; %1046:8:1145
 COMP = []; 
 COMPT = []; 
 for rowi = 1:numel(CheckRows)
@@ -148,7 +153,7 @@ for rowi = 1:numel(CheckRows)
     COMP = [COMP tmp]; 
     COMPT = [COMPT; tmp]; 
     clf; imagesc(tmp); title(num2str(CheckRows(rowi)));drawnow; shg
-    sound(sin(1:1000))
+%     sound(sin(1:1000))
     CheckRows(rowi)
 end
 tmp = repmat(COMP,numel(CheckRows),1) - ...
