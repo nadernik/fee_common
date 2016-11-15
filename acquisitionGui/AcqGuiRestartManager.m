@@ -14,7 +14,7 @@ classdef (Sealed) AcqGuiRestartManager < handle
         rememberedDetect
     end
     methods
-        function self = AcqGuiReset(ExperimentManager, varargin)
+        function self = AcqGuiRestartManager(ExperimentManager, varargin)
             %% Parse inputs
             p = inputParser();
             p.KeepUnmatched = true;

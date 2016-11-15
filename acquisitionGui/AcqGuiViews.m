@@ -59,7 +59,7 @@ classdef (Sealed) AcqGuiViews < handle
             %% Initialize properties of UI elements
             set(self.GuiData.buttonTrigOnSong,'Enable','off');
             set(self.GuiData.buttonRecord,'Enable','off');
-            fields = fieldnames(handles);
+            fields = fieldnames(self.GuiData);
             for fieldNo = 1:numel(fields)
                 UIControl = self.GuiData.(fields{fieldNo});
                 if isprop(UIControl,'BusyAction')
@@ -73,7 +73,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         
         function daq(self, ~, ~) % Call back for DaqChanged events
-            if self.GuiModel.daqRunning
+            if self.AcqObj.daqRunning
                 if self.GuiModel.AcqObj.isBuffering
                     self.daq_buffering();
                 elseif self.GuiModel.madeRecording(self.GuiModel.currentExperNdx)

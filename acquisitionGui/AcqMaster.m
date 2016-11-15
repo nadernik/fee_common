@@ -1,6 +1,6 @@
 classdef (Sealed) AcqMaster < handle
     %ACQMASTER manages a group of song-triggered experiments
-    properties (Access = private)
+    properties (SetAccess = private)
         %% Experiment related properties
         ExperManager
         
@@ -20,8 +20,6 @@ classdef (Sealed) AcqMaster < handle
         isBuffering
         daqRunning
         BufferTimer
-        
-        startupArgs
     end
     methods
         %% Constructor and destructor
@@ -38,13 +36,12 @@ classdef (Sealed) AcqMaster < handle
             
             %% Parse inputs
             p = inputParser();
-            p.keepUnmatched = true;
+            p.KeepUnmatched = true;
             addParameter(p, 'daqLogFile', '');
             addParameter(p, 'updateFreq', 4);
             addParameter(p, 'bufferSecs', 20);
             parse(p, varargin{:});
             Params = p.Results;
-            self.startupArgs = vararagin;
             
             %% Set properties, create subordinate objects
             self.daqLogFile = Params.daqLogFile;
@@ -52,6 +49,7 @@ classdef (Sealed) AcqMaster < handle
             self.bufferSecs = Params.bufferSecs;
             self.ExperManager = AcqGuiExperimentManager(varargin{:});
             self.RestartManager = AcqGuiRestartManager(self.ExperManager, varargin{:});
+            self.SongMonitor = AcqGuiMonitor(self.ExperManager, varargin{:});
             
             %% Set up DaqBuffer
             if ~self.ExperManager.isEmpty
@@ -90,9 +88,9 @@ classdef (Sealed) AcqMaster < handle
             self.daqFs = self.DaqObj.samplingRate;
             self.bufferSecs = self.DaqObj.bufferSecs;
             self.updateFreq = self.DaqObj.updateFreq;
-            self.SongMonitor = AcqGuiMonitor(self.DaqObj, self.ExperManager, self.startupArgs{:});
             
             %% Pass daq information to experiments
+            self.SongMonitor.start_monitor(self.DaqObj);
             self.ExperManager.set_daq_params(self.DaqObj);
         end
         function start_daq(self)
@@ -112,6 +110,7 @@ classdef (Sealed) AcqMaster < handle
         
         function modify_experiments(self, modifyFun)
             if wasRunning
+                self.SongMonitor.stop_monitor();
                 self.ExperManager.suspend_experiments();
                 self.ExperManager.clear_daq();
                 self.stop_daq();

@@ -24,7 +24,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         function self = AcqGuiExperimentManager(varargin)
             %% Parse inputs
             p = inputParser();
-            p.keepUnmatched = true;
+            p.KeepUnmatched = true;
             addParameter(p, 'Experiments', {});
             parse(p, varargin{:});
             Params = p.Results;
@@ -198,10 +198,12 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.inChannels = vertcat(inChannels{:}); %#ok<PROP>
         end
         function check_consistency(self)
-            desiredFs = cellfun(@(E) E.desiredFs, self.Experiments);
-            assert(all(desiredFs == desiredFs(1)), 'All experiments must have the same sampling rate');
-            self.commonFs = desiredFs(1);
-            assert(numel(self.inChannels) == numel(unique(self.inChannels)), 'Overlapping channels!');
+            if ~isempty(self.Experiments)
+                desiredFs = cellfun(@(E) E.desiredFs, self.Experiments);
+                assert(all(desiredFs == desiredFs(1)), 'All experiments must have the same sampling rate');
+                self.commonFs = desiredFs(1);
+                assert(numel(self.inChannels) == numel(unique(self.inChannels)), 'Overlapping channels!');
+            end
         end
         function update_exper_strings(self)
             if isempty(self.Experiments)

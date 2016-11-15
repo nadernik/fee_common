@@ -22,6 +22,8 @@ classdef (Sealed) AcqGuiModel < handle
         DetectChangedListener
         PeekCompleteListener
         SongParametersListener
+        
+        output = {};% Not sure I need this?
     end
     properties (SetAccess = private, Dependent = true)
         CurrentExper

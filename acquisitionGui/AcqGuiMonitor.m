@@ -2,6 +2,7 @@ classdef (Sealed) AcqGuiMonitor < handle
     properties (SetAccess = private, Dependent = true)
         updateListenerValid
         bufferDelay
+        isRunning
     end
     properties (Access = private)
         %% Experiment related properties
@@ -30,19 +31,21 @@ classdef (Sealed) AcqGuiMonitor < handle
         lastPeekSamp = -1;
     end
     methods
-        function self = AcqGuiMonitor(DaqObj, ExperManager, varargin)
+        function self = AcqGuiMonitor(ExperManager, varargin)
             %% Parse inputs
             p = inputParser();
-            p.KeepUnmatached = true;
+            p.KeepUnmatched = true;
             addParameter(p, 'peekSecs', 1); % in seconds
             addParameter(p, 'peekOverlap', 0.1);
+            parse(p, varargin{:});
+            Params = p.Results;
             
             %% Set properties
-            self.DaqObj = DaqObj;
             self.ExperManager = ExperManager;
             self.peekSecs = Params.peekSecs;
             self.peekOverlap = Params.peekOverlap;
-            self.init_monitor();
+            self.ExperChangedListener = addlistener(self.ExperManager, 'ExperimentsChanged', @self.experiments_changed_callback);
+            self.DetectionChangedListener = addlistener(self.ExperManager, 'DetectionChanged', @self.detection_changed_callback);
         end
         function delete(self)
             delete(self.UpdateCompleteListener);
@@ -52,6 +55,27 @@ classdef (Sealed) AcqGuiMonitor < handle
         end
         
         %% public methods
+        function start_monitor(self, DaqObj)
+            self.DaqObj = DaqObj;
+            self.daqFs = self.DaqObj.samplingRate;
+            self.bufferSecs = self.DaqObj.bufferSecs;
+            self.updateFreq = self.DaqObj.updateFreq;
+            secBetweenReq = (1 + self.peekOverlap) * self.peekSecs - (1 / self.updateFreq); % Amount of time between peek requests
+            self.sampBetweenRequests = ceil(secBetweenReq * self.daqFs);
+            self.peekNSamp = ceil(self.peekSecs * self.daqFs);
+            self.peekOverlapSamp = ceil(self.peekNSamp * self.peekOverlap);
+            self.update_song_detection();
+        end
+        function stop_monitor(self)
+            self.stop_song_detection();
+            self.DaqObj = [];
+            self.daqFs = -1;
+            self.bufferSecs = -1;
+            self.updateFreq = -1;
+            self.sampBetweenRequests = -1;
+            self.peekNSamp = -1;
+            self.peekOverlapSamp = -1;
+        end
         function update_song_detection(self)
             self.songDetectingExpers = cellfun(@(E) E.detectingSong, self.ExperManager.Experiments);
             self.peekHWChannels = self.ExperManager.songHWChannels(self.songDetectingExpers);
@@ -68,7 +92,7 @@ classdef (Sealed) AcqGuiMonitor < handle
         
         %% Callbacks -- do not use externally
         function update_complete_callback(self, ~, ~)
-            if self.detectingSong
+            if self.isRuning && self.detectingSong
                 sampsSincePeek = self.DaqObj.lastSample - self.lastPeekSamp;
                 if sampsSincePeek >= self.sampBetweenRequests
                     self.request_peek();
@@ -89,11 +113,15 @@ classdef (Sealed) AcqGuiMonitor < handle
         end
         
         function experiments_changed_callback(self, ~, ~)
-            self.update_song_detection();
+            if self.isRunning
+                self.update_song_detection();
+            end
         end
         
         function detection_changed_callback(self, ~, ~)
-            self.update_song_detection();
+            if self.isRunning
+                self.update_song_detection();
+            end
         end
         
         %% Dependent property getters
@@ -103,21 +131,11 @@ classdef (Sealed) AcqGuiMonitor < handle
         function val = get.bufferDelay(self)
             val = seconds(self.peekSecs * self.peekOverlap);
         end
+        function val = get.isRunning(self)
+            val = ~isempty(self.DaqObj) && self.DaqObj.isStarted;
+        end
     end
     methods (Access = private)
-        function init_monitor(self)
-            self.daqFs = self.DaqObj.samplingRate;
-            self.bufferSecs = self.DaqObj.bufferSecs;
-            self.updateFreq = self.DaqObj.updateFreq;
-            secBetweenReq = (1 + self.peekOverlap) * self.peekSecs - (1 / self.updateFreq); % Amount of time between peek requests
-            self.sampBetweenRequests = ceil(secBetweenReq * self.daqFs);
-            self.peekNSamp = ceil(self.peekSecs * self.daqFs);
-            self.peekOverlapSamp = ceil(self.peekNSamp * self.peekOverlap);
-            self.update_song_detection();
-            self.ExperChangedListener = addlistener(self.ExperManager, 'ExperimentsChanged', @self.experiments_changed_callback);
-            self.DetectionChangedListener = addlistener(self.ExperManager, 'DetectionChanged', @self.detection_changed_callback);
-        end
-        
         function request_peek(self)
             %REQUEST_PEEK Ask DAQ for peek of data in buffer
             if ~self.DaqObj.isUpdating && ~self.DaqObj.isPeeking % will re-attempt at next update
