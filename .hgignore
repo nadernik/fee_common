@@ -4,3 +4,5 @@ defaults_*.m
 *.mat
 *.pyc
 *.orig
+*~
+*.DS_Store
