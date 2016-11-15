@@ -85,7 +85,7 @@ classdef (Sealed) AcqGuiMonitor < handle
                     detect_song_and_record(PeekEvent.data(:, experNo), peekStartSamp);
                 assert(status, 'Song detetion failed');
             end
-            notify(self, 'PeekComplete');
+            notify(self, 'PeekComplete', ExperEvent(PeekEvent.hwChannels));
         end
         
         function experiments_changed_callback(self, ~, ~)

@@ -17,8 +17,9 @@ classdef (Sealed) AcqGuiViews < handle
         RestartListener
         RestartChangedListener
         ExpersChangedListener
-        RecordingChangedListener
+        RecordingStatusListener
         DetectChangedListener
+        PeekCompleteListener
     end
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
@@ -41,8 +42,9 @@ classdef (Sealed) AcqGuiViews < handle
             self.RestartChangedListener = addlistener(self.RestartManager, ...
                 'RestartChanged', @self.restart_changed);
             self.ExpersChangedListener = addlistener(self.ExperManager, 'ExperimentsChanged', @self.experiments);
-            self.RecordingChangedListener = addlistener(self.GuiModel, 'RecordingChanged', @self.recording);
+            self.RecordingStatusListener = addlistener(self.GuiModel, 'RecordingStatusChanged', @self.recording);
             self.DetectChangedListener = addlistener(self.GuiModel, 'DetectChanged', @self.detect);
+            self.PeekCompleteListener = addlistener(self.GuiModel, 'PeekComplete', @self.peek);
             self.init();
             self.daq();
         end
@@ -98,8 +100,8 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function no_experiment(self)
             self.GuiModel.currentExperNdx = 0;
-            self.experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
-            self.displayRecordingNo = zeros(0, 1);% Nx1 matrix of file number to display
+            self.GuiModel.experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
+            self.GuiModel.displayRecordingNo = zeros(0, 1);% Nx1 matrix of file number to display
             self.startNdx = 0;
             self.endNdx = 0;
         end
@@ -127,7 +129,7 @@ classdef (Sealed) AcqGuiViews < handle
         function gui_signals(self)
         end
         function recording(self, ~, ~)
-            currExper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
+            currExper = self.get_current_exper();
             if currExper.isRecording
                 recNo = currExper.lastFileNo + 1;
                 if currExper.forcedRecording
@@ -140,6 +142,30 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         function detect(self, ~, ~)
+            currExper = self.get_current_exper();
+            if currExper.detectingSong
+                self.detect_running();
+            else
+                self.detect_off();
+            end
+        end
+        function peek(self, ~, ~)
+            currExper = self.get_current_exper();
+            if currExper.detectingSong
+                %% Heart beat
+                if isequal(get(self.GuiData.textSongScore,'BackgroundColor'), [1, 1, 1])
+                    set(self.GuiData.textSongScore,'BackgroundColor', [1, 1, 0.5]);
+                else
+                    set(self.GuiData.textSongScore,'BackgroundColor', [1, 1, 1]);
+                end
+                %% Display score
+                if isnan(currExper.songScore)
+                    scoreStr = '--';
+                else
+                    scoreStr = num2str(currExper.songScore);
+                end
+                set(self.GuiData.textSongScore, 'String', sprintf('Song Score: %s', scoreStr));
+            end
         end
         function close_request(self, ~, ~)
             poisonPill = onCleanup(@() closereq());
@@ -147,6 +173,11 @@ classdef (Sealed) AcqGuiViews < handle
         end
     end
     methods (Access = private)
+        %% private utilities
+        function Exper = get_current_exper(self)
+            Exper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
+        end
+        %% Change display states
         function daq_stopped(self)
             set(self.GuiData.buttonRecord, 'Enable', 'off');
             set(self.GuiData.buttonTrigOnSong, 'Enable', 'off');
@@ -197,8 +228,15 @@ classdef (Sealed) AcqGuiViews < handle
         end
         
         function detect_off(self)
+            set(self.GuiData.buttonTrigOnSong, 'Enable','on');
+            set(self.GuiData.buttonTrigOnSong, 'String', 'Start Triggering on Song');
+            set(self.GuiData.textSongScore, 'BackgroundColor', [1, 1, 0.5]);
+            set(self.GuiData.textSongScore, 'String', 'Not Triggering on Song');
         end
         function detect_running(self)
+            set(self.GuiData.buttonTrigOnSong, 'Enable','on');
+            set(self.GuiData.buttonTrigOnSong, 'String', 'Stop Triggering on Song');
+            set(self.GuiData.textSongScore, 'String', 'Waiting for data...');
         end
         %% Set restart timer UI elements
         

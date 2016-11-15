@@ -1,10 +1,10 @@
 classdef (ConstructOnLoad) ExperEvent < event.EventData
    properties
-      experNo
+      nos
    end
    methods
-      function self = ExperEvent(experNo)
-         self.experNo = experNo;
+      function self = ExperEvent(nos)
+         self.nos = nos;
       end
    end
 end

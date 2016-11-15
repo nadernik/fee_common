@@ -20,6 +20,10 @@ classdef (Sealed) AcqGuiModel < handle
         RecStartedListener
         RecCompleteListener
         DetectChangedListener
+        PeekCompleteListener
+    end
+    properties (SetAccess = private, Dependent = true)
+        CurrentExper
     end
     methods
         function self = AcqGuiModel(varargin)
@@ -34,18 +38,19 @@ classdef (Sealed) AcqGuiModel < handle
             self.RecStartedListener = addlistener(self.AcqObj.ExperManager, 'RecordingStarted', @self.rec_started_callback);
             self.RecCompleteListener = addlistener(self.AcqObj.ExperManager, 'RecordingComplete', @self.rec_complete_callback);
             self.DetectChangedListener = addlistener(self.AcqObj.ExperManager, 'DetectionChanged', @self.detect_changed_callback);
+            self.PeekCompleteListener = addlistener(self.AcqObj.SongMonitor, 'PeekComplete', @self.peek_complete_callback);
             self.autoUpdate = Params.autoUpdate;
             self.maxLoadSize = Params.maxLoadSize;
             self.init_recordings();
         end
         
+        %% Buttons / high level actions
         function change_recording(self, recordingNo)
             if self.displayRecordingNo(self.currentExperNdx) ~= recordingNo
                 self.displayRecordingNo(self.currentExperNdx) = recordingNo;
                 self.load_recording();
             end
         end
-        
         function change_displayed_channel(self, displayNo, hwChannel)
             assert(displayNo >= 1 && displayNo <= 3, 'Not a valid display number');
             if self.displayChannels(displayNo, self.currentExperNdx) ~= hwChannel
@@ -71,7 +76,7 @@ classdef (Sealed) AcqGuiModel < handle
             self.remove_exper();
         end
         function record_button(self)
-            currExper = self.AcqObj.ExperManager.Experiments{self.currentExperNdx};
+            currExper = self.CurrentExper;
             if currExper.isRecording
                 currExper.force_stop_recording();
             else
@@ -79,13 +84,18 @@ classdef (Sealed) AcqGuiModel < handle
             end
         end
         function detect_button(self)
-            currExper = self.AcqObj.ExperManager.Experiments{self.currentExperNdx};
-            if currExper.
+            currExper = self.CurrentExper;
+            if currExper.detectingSong
+                currExper.change_detectingSong(false);
+            else
+                currExper.change_detectingSong(true);
+            end
         end
         
+        %% Callbacks -- do not use externally
         function rec_complete_callback(self, ~, ExperEventObj)
-            if ExperEventObj.experNo == self.currentExperNdx
-                    notify(self, 'RecordingChanged');
+            if ExperEventObj.nos == self.currentExperNdx
+                    notify(self, 'RecordingStatusChanged');
             end
             if self.autoUpdate
                 tmpRecNos = cellfun(@(E) E.lastFileNo, ...
@@ -95,14 +105,24 @@ classdef (Sealed) AcqGuiModel < handle
             end
         end
         function rec_started_callback(self, ~, ExperEventObj)
-            if ExperEventObj.experNo == self.currentExperNdx
-                notify(self, 'RecordingChanged');
+            if ExperEventObj.nos == self.currentExperNdx
+                notify(self, 'RecordingStatusChanged');
             end
         end
         function detect_changed_callback(self, ~, ExperEventObj)
-            if ExperEventObj.experNo == self.currentExperNdx
+            if ExperEventObj.nos == self.currentExperNdx
                 notify(self, 'DetectChanged');
             end
+        end
+        function peek_complete_callback(self, ~, ExperEventObj)
+            if any(ExperEventObj.nos == self.CurrentExper.songHWChannel)
+                notify(self, 'PeekComplete');
+            end
+        end
+        
+        %% Dependent getters
+        function val = get.CurrentExper(self)
+            val = self.AcqObj.Experiments{self.currentExperNdx};
         end
     end
     methods (Access = private)
@@ -128,6 +148,7 @@ classdef (Sealed) AcqGuiModel < handle
         function change_current_exper(self, experNo)
             self.currentExperNdx = experNo;
             self.load_recording();
+            notify(self, 'DetectChanged');
         end
         function append_exper(self, Experiment)
             self.AcqObj.append_exper(Experiment);
@@ -142,7 +163,7 @@ classdef (Sealed) AcqGuiModel < handle
         end
         function load_recording(self)
             self.CurrentRecording = AcqGuiRecording(...
-                self.AcqObj.ExperManager.Experiments{self.currentExperNdx}, ...
+                self.CurrentExper, ...
                 self.displayRecordingNo(self.currentExperNdx), ...
                 'maxLoadSize', self.maxLoadSize);
             notify(self, 'CurrentRecordingChanged');
@@ -156,7 +177,8 @@ classdef (Sealed) AcqGuiModel < handle
     events (NotifyAccess = private)
         CurrentRecordingChanged
         DisplayedChannelsChanged
-        RecordingChanged
+        RecordingStatusChanged
         DetectChanged
+        PeekComplete
     end
 end
