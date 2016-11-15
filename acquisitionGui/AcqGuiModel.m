@@ -21,6 +21,7 @@ classdef (Sealed) AcqGuiModel < handle
         RecCompleteListener
         DetectChangedListener
         PeekCompleteListener
+        SongParametersListener
     end
     properties (SetAccess = private, Dependent = true)
         CurrentExper
@@ -35,16 +36,17 @@ classdef (Sealed) AcqGuiModel < handle
             Params = p.Results;
             
             self.AcqObj = AcqMaster(varargin{:}); % Make acquisition session
-            self.RecStartedListener = addlistener(self.AcqObj.ExperManager, 'RecordingStarted', @self.rec_started_callback);
-            self.RecCompleteListener = addlistener(self.AcqObj.ExperManager, 'RecordingComplete', @self.rec_complete_callback);
-            self.DetectChangedListener = addlistener(self.AcqObj.ExperManager, 'DetectionChanged', @self.detect_changed_callback);
-            self.PeekCompleteListener = addlistener(self.AcqObj.SongMonitor, 'PeekComplete', @self.peek_complete_callback);
+            self.RecStartedListener = addlistener(self.AcqObj.ExperManager, 'RecordingStarted', @self.rec_started_cb);
+            self.RecCompleteListener = addlistener(self.AcqObj.ExperManager, 'RecordingComplete', @self.rec_complete_cb);
+            self.DetectChangedListener = addlistener(self.AcqObj.ExperManager, 'DetectionChanged', @self.detect_changed_cb);
+            self.PeekCompleteListener = addlistener(self.AcqObj.SongMonitor, 'PeekComplete', @self.peek_complete_cb);
+            self.SongParametersListener = addlistener(self.AcqObj.ExperManager, 'SongParametersChanged', @self.song_parameters_cb);
             self.autoUpdate = Params.autoUpdate;
             self.maxLoadSize = Params.maxLoadSize;
             self.init_recordings();
         end
         
-        %% Buttons / high level actions
+        %% Buttons / high level actions -- maybe should be in separate controller
         function change_recording(self, recordingNo)
             if self.displayRecordingNo(self.currentExperNdx) ~= recordingNo
                 self.displayRecordingNo(self.currentExperNdx) = recordingNo;
@@ -91,9 +93,12 @@ classdef (Sealed) AcqGuiModel < handle
                 currExper.change_detectingSong(true);
             end
         end
+        function change_song_parameters(self, paramName, paramValue)
+            self.CurrentExper.update_song_parameters(paramName, paramValue);
+        end
         
         %% Callbacks -- do not use externally
-        function rec_complete_callback(self, ~, ExperEventObj)
+        function rec_complete_cb(self, ~, ExperEventObj)
             if ExperEventObj.nos == self.currentExperNdx
                     notify(self, 'RecordingStatusChanged');
             end
@@ -104,19 +109,24 @@ classdef (Sealed) AcqGuiModel < handle
                 
             end
         end
-        function rec_started_callback(self, ~, ExperEventObj)
+        function rec_started_cb(self, ~, ExperEventObj)
             if ExperEventObj.nos == self.currentExperNdx
                 notify(self, 'RecordingStatusChanged');
             end
         end
-        function detect_changed_callback(self, ~, ExperEventObj)
+        function detect_changed_cb(self, ~, ExperEventObj)
             if ExperEventObj.nos == self.currentExperNdx
                 notify(self, 'DetectChanged');
             end
         end
-        function peek_complete_callback(self, ~, ExperEventObj)
+        function peek_complete_cb(self, ~, ExperEventObj)
             if any(ExperEventObj.nos == self.CurrentExper.songHWChannel)
                 notify(self, 'PeekComplete');
+            end
+        end
+        function song_parameters_cb(self, ~, ExperEventObj)
+            if ExperEventObj.nos == sulf.currentExperNdx
+                notify(self, 'SongParametersChanged');
             end
         end
         
@@ -138,7 +148,7 @@ classdef (Sealed) AcqGuiModel < handle
                     self.displayChannels(1:nFill, expNo) = thisExp.nonSongHWChannels;
                 end
                 self.madeRecordings = false(nExp, 1);
-                self.rec_complete_callback([], ExperEvent(1)); % Refresh last recorded file no's
+                self.rec_complete_cb([], ExperEvent(1)); % Refresh last recorded file no's
             end
         end
         function change_all_recordings(self, recordingsNos)
@@ -180,5 +190,6 @@ classdef (Sealed) AcqGuiModel < handle
         RecordingStatusChanged
         DetectChanged
         PeekComplete
+        SongParametersChanged
     end
 end

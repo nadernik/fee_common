@@ -20,6 +20,7 @@ classdef (Sealed) AcqGuiViews < handle
         RecordingStatusListener
         DetectChangedListener
         PeekCompleteListener
+        SongParamsListener
     end
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
@@ -45,6 +46,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.RecordingStatusListener = addlistener(self.GuiModel, 'RecordingStatusChanged', @self.recording);
             self.DetectChangedListener = addlistener(self.GuiModel, 'DetectChanged', @self.detect);
             self.PeekCompleteListener = addlistener(self.GuiModel, 'PeekComplete', @self.peek);
+            self.SongParamsListener = addlistener(self.GuiModel, 'SongParametersChanged', @self.song_params);
             self.init();
             self.daq();
         end
@@ -167,6 +169,14 @@ classdef (Sealed) AcqGuiViews < handle
                 set(self.GuiData.textSongScore, 'String', sprintf('Song Score: %s', scoreStr));
             end
         end
+        
+        function song_params(self, ~, ~)
+            CurrExper = self.get_current_exper();
+            set(self.GuiData.editPowerThres, 'String', num2str(CurrExper.ratioThreshold));
+            set(self.GuiData.editSongDensity, 'String', num2str(CurrExper.songDensity));
+            set(self.GuiData.editSongLength, 'String', num2str(CurrExper.songDuration));
+        end
+        
         function close_request(self, ~, ~)
             poisonPill = onCleanup(@() closereq());
             delete(self.GuiModel);
@@ -183,6 +193,7 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.buttonTrigOnSong, 'Enable', 'off');
             set(self.GuiData.textRecordingStatus, 'String', 'Daq stopped');
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
+            self.song_params_off();
         end
         function daq_buffering(self)
             set(self.GuiData.buttonTrigOnSong,'Enable', 'off');
@@ -190,6 +201,7 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
             set(self.GuiData.buttonRecord, 'String', 'Start Recording');
             set(self.GuiData.buttonRecord, 'Enable','on');
+            self.song_params_ready();
         end
         function daq_ready(self, varargin)
             persistent p;
@@ -211,6 +223,7 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.buttonRecord, 'String', 'Start Recording');
             set(self.GuiData.buttonTrigOnSong, 'Enable','on');
             set(self.GuiData.buttonRecord, 'Enable','on');
+            self.song_params_ready();
         end
         function daq_forced(self, fileNo)
             set(self.GuiData.textRecordingStatus, 'String', sprintf('Started forced recording %d.', fileNo));
@@ -218,6 +231,7 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.buttonRecord, 'String', 'Stop Recording');
             set(self.GuiData.buttonTrigOnSong, 'Enable','off');
             set(self.GuiData.buttonRecord, 'Enable','on');
+            self.song_params_ready();
         end
         function daq_triggered(self, fileNo)
             set(self.GuiData.textRecordingStatus, 'String', sprintf('Started recording %d.', fileNo));
@@ -225,6 +239,7 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.buttonRecord, 'String', 'Stop Recording');
             set(self.GuiData.buttonTrigOnSong, 'Enable','on');
             set(self.GuiData.buttonRecord, 'Enable','on');
+            self.song_params_ready();
         end
         
         function detect_off(self)
@@ -237,6 +252,17 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.buttonTrigOnSong, 'Enable','on');
             set(self.GuiData.buttonTrigOnSong, 'String', 'Stop Triggering on Song');
             set(self.GuiData.textSongScore, 'String', 'Waiting for data...');
+        end
+        
+        function song_params_ready(self)
+            set(self.GuiData.editPowerThres, 'Enable', 'on');
+            set(self.GuiData.editSongDensity, 'Enable', 'on');
+            set(self.GuiData.editSongLength, 'Enable', 'on');
+        end
+        function song_params_off(self)
+            set(self.GuiData.editPowerThres, 'Enable', 'off');
+            set(self.GuiData.editSongDensity, 'Enable', 'off');
+            set(self.GuiData.editSongLength, 'Enable', 'off');
         end
         %% Set restart timer UI elements
         

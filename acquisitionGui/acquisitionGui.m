@@ -45,19 +45,18 @@ end
 
 
 % --- Executes just before acquisitionGui is made visible.
-function acquisitionGui_OpeningFcn(GuiFig, ~, ~, varargin)
+function acquisitionGui_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % varargin   command line arguments to acquisitionGui (see VARARGIN
-GuiData = guidata(GuiFig);
-GuiData.GuiModel = AcqGuiModel(varargin{:});
-GuiData.Views = AcqGuiViews(GuiData.GuiModel, GuiFig, varargin{:});
-guidata(GuiFig, GuiData);
+handles.GuiModel = AcqGuiModel(varargin{:});
+handles.Views = AcqGuiViews(handles.GuiModel, hObject, varargin{:});
+guidata(hObject, handles);
 
 % --- Outputs from this function are returned to the command line.
-function varargout = acquisitionGui_OutputFcn(hObject, eventdata, handles) 
+function varargout = acquisitionGui_OutputFcn(~, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -68,24 +67,20 @@ varargout{1} = handles.output;
 
 
 % --- Executes on button press in buttonRecord.
-function buttonRecord_Callback(hObject, eventdata, GuiData)
+function buttonRecord_Callback(~, ~, handles)
 % hObject    handle to buttonRecord (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-GuiFig = get(hObject, 'Parent');
-GuiData = guidata(GuiFig);
-GuiData.GuiModel.record_button();
+handles.GuiModel.record_button();
 
 % --- Executes on button press in pushbutton1.
-function buttonTrigOnSong_Callback(hObject, ~, ~)
+function buttonTrigOnSong_Callback(~, ~, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-GuiFig = get(hObject, 'Parent');
-GuiData = guidata(GuiFig);
-GuiData.GuiModel.detect_button();
+handles.GuiModel.detect_button();
 
-function editSongDensity_Callback(hObject, eventdata, handles)
+function editSongDensity_Callback(~, ~, handles)
 % hObject    handle to editSongThreshold (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -98,22 +93,11 @@ function editSongDensity_Callback(hObject, eventdata, handles)
 
 %If currently triggering on song, then we have to update parameters
 %directly.  If not currently triggering then no worries.
-guifig = get(hObject,'Parent');
-[dgd, bDGDStatus] = aa_checkoutAppData(guifig, 'acqguidata');
-if(bDGDStatus) 
-    try
-        dgd.experData(dgd.ce).songDetection.durationThreshold = str2double(get(handles.editSongDensity, 'String'));
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
-    catch
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
-    end
-else
-    dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-    set(handles.editSongDensity, 'String', num2str(dgd.experData(dgd.ce).songDetection.durationThreshold))
-end
+value = str2double(handles.editSongDensity.String);
+handles.GuiModel.change_song_parameters('songDensity', value);
 
 % --- Executes during object creation, after setting all properties.
-function editSongDensity_CreateFcn(hObject, eventdata, handles)
+function editSongDensity_CreateFcn(hObject, ~, ~)
 % hObject    handle to editSongThreshold (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -124,7 +108,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function editPowerThres_Callback(hObject, eventdata, handles)
+function editPowerThres_Callback(~, ~, handles)
 % hObject    handle to editPowerThres (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -134,22 +118,11 @@ function editPowerThres_Callback(hObject, eventdata, handles)
 
 %If currently triggering on song, then we have to update parameters
 %directly.  If not currently triggering then no worries.
-guifig = get(hObject,'Parent');
-[dgd, bDGDStatus] = aa_checkoutAppData(guifig, 'acqguidata');
-if(bDGDStatus) 
-    try
-        dgd.experData(dgd.ce).songDetection.ratioThreshold = str2double(get(handles.editPowerThres, 'String'));
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
-    catch
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
-    end
-else
-    dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-    set(handles.editPowerThres, 'String', num2str(dgd.experData(dgd.ce).songDetection.ratioThreshold))
-end
+value = str2double(handles.editPowerThres.String);
+handles.GuiModel.change_song_parameters('ratioThreshold', value);
 
 % --- Executes during object creation, after setting all properties.
-function editPowerThres_CreateFcn(hObject, eventdata, handles)
+function editPowerThres_CreateFcn(hObject, ~, ~)
 % hObject    handle to editPowerThres (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -160,7 +133,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function editSongLength_Callback(hObject, eventdata, handles)
+function editSongLength_Callback(~, ~, handles)
 % hObject    handle to editSongLength (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -168,22 +141,11 @@ function editSongLength_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of editSongLength as text
 %        str2double(get(hObject,'String')) returns contents of
 %        editSongLength as a double
-guifig = get(hObject,'Parent');
-[dgd, bDGDStatus] = aa_checkoutAppData(guifig, 'acqguidata');
-if(bDGDStatus) 
-    try
-        dgd.experData(dgd.ce).songDetection.songDuration = str2double(get(handles.editSongLength, 'String'));
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
-    catch
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
-    end
-else
-    dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-    set(handles.editSongLength, 'String', num2str(dgd.experData(dgd.ce).songDetection.songDuration))
-end
+value = str2double(handles.editSongLength.String);
+handles.GuiModel.change_song_parameters('songDuration', value);
 
 % --- Executes during object creation, after setting all properties.
-function editSongLength_CreateFcn(hObject, eventdata, handles)
+function editSongLength_CreateFcn(hObject, ~, ~)
 % hObject    handle to editSongLength (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called

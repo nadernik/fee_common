@@ -1,12 +1,5 @@
 classdef SongTriggeredExperiment < handle
     properties
-        %% Song detection parameters
-        ratioThreshold
-        songDensity
-        songDuration
-        windowSize % in seconds
-        windowOverlap % Fracitonal
-        
         preSongSeconds % to record
         postSongSeconds % to record
         maxFileDuration % to record, in seconds
@@ -24,6 +17,13 @@ classdef SongTriggeredExperiment < handle
         signalName
         signalDesc
         timeCreated
+        
+         %% Song detection parameters
+        ratioThreshold
+        songDensity
+        songDuration
+        windowSize % in seconds
+        windowOverlap % Fracitonal
         
         desiredFs
         songScore = nan;
@@ -348,6 +348,33 @@ classdef SongTriggeredExperiment < handle
             self.detectingSong = self.queuedDetectionChange;
         end
         
+        function update_song_parameters(self, varargin)
+            persistent p;
+            if isempty(p)
+                p = inputParser();
+                addParameter(p, 'ratioThreshold', nan);
+                addParameter(p, 'songDensity', nan);
+                addParameter(p, 'songDuration', nan);
+                addParameter(p, 'windowSize', nan); % in seconds
+                addParameter(p, 'windowOverlap', nan); % Fracitonal
+            end
+            parse(p, varargin{:});
+            Params = p.Results;
+            anyChanged = false;
+            for paramNo = 1:numel(Params)
+                paramName = p.Parameters{paramNo};
+                val = Params.(paramName);
+                thisChanged = ~isnan(val);
+                if thisChanged
+                    self.(paramName) = val;
+                end
+                anyChanged = anyChanged || thisChanged;
+            end
+            if anyChanged
+                self.calculate_derived_song_params();
+            end
+        end
+        
         %% Derived getters
         function val = get.changeDetectionValid(self)
             val = ~isempty(self.ChangeDetectionListener) && ...
@@ -379,6 +406,7 @@ classdef SongTriggeredExperiment < handle
                     kernelLength = 1;
                 end
                 self.songConvKernel = ones(1, kernelLength) ./ kernelLength;
+                notify(self, 'SongParametersChanged');
             else
                 warning('Cannot calculate derived song triggering parameters before DAQ is set up');
             end
@@ -633,5 +661,6 @@ classdef SongTriggeredExperiment < handle
         RecordingStarted
         RecordingComplete
         DetectionChanged
+        SongParametersChanged
     end
 end

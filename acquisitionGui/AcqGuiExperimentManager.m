@@ -18,6 +18,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         DetectionListeners
         RecStartedListeners
         RecCompleteListeners
+        SongParametersListeners
     end
     methods
         function self = AcqGuiExperimentManager(varargin)
@@ -56,9 +57,10 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.check_consistency();
             self.songHWChannels(end + 1) = Experiment.songHWChannel;
             self.nonSongHWChannels{end + 1} = Experiment.nonSongHWChannels;
-            self.DetectionListeners{end + 1} = addlistener(Experiment, 'DetectionChanged', @self.detection_changed_callback);
-            self.RecCompleteListeners{end + 1} = addlistener(Experiment, 'RecordingComplete', @self.recording_complete_callback);
-            self.RecStartedListeners{end + 1} = addlistener(Experiment, 'RecordingStarted', @self.recording_started_callback);
+            self.DetectionListeners{end + 1} = addlistener(Experiment, 'DetectionChanged', @self.detection_changed_cb);
+            self.RecCompleteListeners{end + 1} = addlistener(Experiment, 'RecordingComplete', @self.recording_complete_cb);
+            self.RecStartedListeners{end + 1} = addlistener(Experiment, 'RecordingStarted', @self.recording_started_cb);
+            self.SongParametersListeners{end + 1} = addlistener(Experiment, 'SongParametersChanged', @self.parametes_changed_cb);
             self.update_exper_strings();
             notify(self, 'ExperimentsChanged');
         end
@@ -78,6 +80,8 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.RecStartedListeners(experNo) = [];
             delete(self.DetectionListeners{experNo});
             self.DetectionListeners(experNo) = [];
+            delete(self.SongParametersListeners{experNo});
+            self.SongParametersListeners(experNo) = [];
             self.get_inchannels();
             if ~isempty(self.rememberedDetect) && nExper > numel(self.rememberedDetect)
                 self.rememberedDetect(experNo) = [];
@@ -136,17 +140,21 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         end
 
         %% callbacks -- do not use externally
-        function detection_changed_callback(self, SourceExper, ~)
+        function detection_changed_cb(self, SourceExper, ~)
             experNo = find_event_exper(self, SourceExper);
             notify(self, 'DetectionChanged', ExperEvent(experNo));
         end
-        function recording_started_callback(self, SourceExper, ~)
+        function recording_started_cb(self, SourceExper, ~)
             experNo = find_event_exper(self, SourceExper);
             notify(self, 'RecordingStarted', ExperEvent(experNo));
         end
-        function recording_complete_callback(self, SourceExper, ~)
+        function recording_complete_cb(self, SourceExper, ~)
             experNo = find_event_exper(self, SourceExper);
             notify(self, 'RecordingComplete', ExperEvent(experNo));
+        end
+        function parameters_changed_cb(self, SourceExper, ~)
+            experNo = find_event_exper(self, SourceExper);
+            notify(self, 'SongParametersChanged', ExperEvent(experNo));
         end
         
         %% Dependent getters
@@ -169,15 +177,19 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.nonSongHWChannels = cellfun(@(E) E.nonSongHWChannels, self.Experiments, 'UniformOutput', false);
             self.update_exper_strings();
             self.DetectionListeners = cellfun( ...
-                @(E) addlistener(E, 'DetectionChanged', @self.detection_changed_callback), ...
+                @(E) addlistener(E, 'DetectionChanged', @self.detection_changed_cb), ...
                 self.Experiments, ...
                 'UniformOutput', false);
             self.RecStartedListeners = cellfun( ...
-                @(E) addlistener(E, 'RecordingStarted', @self.recording_started_callback), ...
+                @(E) addlistener(E, 'RecordingStarted', @self.recording_started_cb), ...
                 self.Experiments, ...
                 'UniformOutput', false);
             self.RecCompleteListeners = cellfun( ...
-                @(E) addlistener(E, 'RecordingComplete', @self.recording_complete_callback), ...
+                @(E) addlistener(E, 'RecordingComplete', @self.recording_complete_cb), ...
+                self.Experiments, ...
+                'UniformOutput', false);
+            self.SongParametersListeners = cellfun( ...
+                @(E) addlistener(E, 'SongParametersChanged', @self.parameters_changed_cb), ...
                 self.Experiments, ...
                 'UniformOutput', false);
         end
@@ -209,5 +221,6 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         DetectionChanged
         ExperimentsChanged
         ExperStringsChanged
+        SongParametersChanged
     end
 end
