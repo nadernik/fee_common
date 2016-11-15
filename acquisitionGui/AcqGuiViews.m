@@ -72,6 +72,9 @@ classdef (Sealed) AcqGuiViews < handle
             if self.GuiModel.daqRunning
                 if self.GuiModel.AcqObj.isBuffering
                     self.daq_buffering();
+                elseif self.GuiModel.madeRecording(self.GuiModel.currentExperNdx)
+                    currExper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
+                    self.daq_ready(currExper.lastFileNo);
                 else
                     self.daq_ready();
                 end
@@ -133,7 +136,7 @@ classdef (Sealed) AcqGuiViews < handle
                     self.daq_triggered(recNo);
                 end
             else
-                self.daq_ready();
+                self.daq([], []);
             end
         end
         function detect(self, ~, ~)
@@ -146,25 +149,51 @@ classdef (Sealed) AcqGuiViews < handle
     methods (Access = private)
         function daq_stopped(self)
             set(self.GuiData.buttonRecord, 'Enable', 'off');
+            set(self.GuiData.buttonTrigOnSong, 'Enable', 'off');
             set(self.GuiData.textRecordingStatus, 'String', 'Daq stopped');
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
         end
         function daq_buffering(self)
-            set(self.GuiData.buttonTrigOnSong,'Enable','off');
+            set(self.GuiData.buttonTrigOnSong,'Enable', 'off');
             set(self.GuiData.textRecordingStatus, 'String', 'Buffering for song detection but ready to record...');
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'yellow');
+            set(self.GuiData.buttonRecord, 'String', 'Start Recording');
+            set(self.GuiData.buttonRecord, 'Enable','on');
         end
-        function daq_ready(self)
-            set(self.GuiData.textRecordingStatus, 'String', 'Ready to record and detect song');
+        function daq_ready(self, varargin)
+            persistent p;
+            if isempty(p)
+                p = inputParser();
+                addOptional(p, 'fileNo', 0);
+            end
+            parse(p, varargin{:});
+            fileNo = p.Results.fileNo;
+            
+            if fileNo > 0
+                recString = sprtintf('Finished recording %d. ', fileNo);
+            else
+                recString = '';
+            end
+            
+            set(self.GuiData.textRecordingStatus, 'String', sprintf('%sReady to record and detect song', recString));
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'green');
-            set(self.GuiData.buttonTrigOnSong,'Enable','on');
+            set(self.GuiData.buttonRecord, 'String', 'Start Recording');
+            set(self.GuiData.buttonTrigOnSong, 'Enable','on');
+            set(self.GuiData.buttonRecord, 'Enable','on');
         end
         function daq_forced(self, fileNo)
             set(self.GuiData.textRecordingStatus, 'String', sprintf('Started forced recording %d.', fileNo));
             set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'cyan');
             set(self.GuiData.buttonRecord, 'String', 'Stop Recording');
+            set(self.GuiData.buttonTrigOnSong, 'Enable','off');
+            set(self.GuiData.buttonRecord, 'Enable','on');
         end
         function daq_triggered(self, fileNo)
+            set(self.GuiData.textRecordingStatus, 'String', sprintf('Started recording %d.', fileNo));
+            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'red');
+            set(self.GuiData.buttonRecord, 'String', 'Stop Recording');
+            set(self.GuiData.buttonTrigOnSong, 'Enable','on');
+            set(self.GuiData.buttonRecord, 'Enable','on');
         end
         
         function detect_off(self)

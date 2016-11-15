@@ -72,94 +72,20 @@ function buttonRecord_Callback(hObject, eventdata, GuiData)
 % hObject    handle to buttonRecord (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-GuiFig = get(hObject,'Parent');
+GuiFig = get(hObject, 'Parent');
 GuiData = guidata(GuiFig);
 GuiData.GuiModel.record_button();
-dgd = aa_getAppDataReadOnly(GuiFig, 'acqguidata');
-if(dgd.DaqBuffer.isUpdating)
-    return;
-end
-[recInfo, bRecStatus] = aa_checkoutAppData(GuiFig, 'acqrecordinfo');
-if ~bRecStatus 
-    return; 
-end
-
-if ~recInfo(dgd.ce).bSongTrigRecording % no triggered recording
-    if recInfo(dgd.ce).bForcedRecording % Recording already started
-        ListenerHandle = addlistener(dgd.DaqBuffer, 'RecordingComplete', @(~, ~) error('lost the callback race!'));
-        
-        completionClosure = @(~, EventData) stop_forced_recording_callback(...
-            EventData, ListenerHandle, dgd.experData(dgd.ce).inChans, recInfo, GuiFig); % recInfo checked back in by callback!
-        
-        ListenerHandle.Callback = completionClosure;
-        bStatus = dgd.DaqBuffer.stop_recording(dgd.DaqBuffer.lastSample, dgd.experData(dgd.ce).inChans);
-        if ~all(bStatus)
-            aa_checkinAppData(GuiFig, 'acqrecordinfo', recInfo);
-            error('Song stop recording failed.');
-        end
-    else % Recording not started
-        recSampNum = dgd.DaqBuffer.lastSample + 1;
-        [filenamePrefix, recfilenum] = getNewDatafilePrefix(dgd.expers{dgd.ce});
-        recInfo(dgd.ce).recfilenum = recfilenum;
-        
-        %% Make Listener for recording
-        ListenerHandle = addlistener(dgd.DaqBuffer, 'RecordingComplete', @(~, ~) error('lost the callback race!'));
-        completionClosure = @(~, EventData) recording_completion_callback(...
-            EventData, ListenerHandle, dgd.experData(dgd.ce).inChans, GuiFig,...
-            dgd.ce, recInfo(dgd.ce).recfilenum);
-        ListenerHandle.Callback = completionClosure;
-        
-        nChan = numel(dgd.experData(dgd.ce).inChans);
-        datFileNames = cell(nChan, 1);
-        for chanNo = 1:nChan
-            fileName = sprintf('%schan%d.dat', filenamePrefix, dgd.experData(dgd.ce).inChans(chanNo));
-            datFileNames{chanNo} = fullfile(dgd.expers{dgd.ce}.dir, fileName);
-        end
-        [bStatus, ~] = dgd.DaqBuffer.start_recording(recSampNum, datFileNames, dgd.experData(dgd.ce).inChans);
-        if ~all(bStatus)
-            delete(ListenerHandle);
-            aa_checkinAppData(GuiFig, 'acqrecordinfo', recInfo);
-            error('Failed to start forced recording' );
-        else
-            set(GuiData.textRecordingStatus, 'String', ['Started forced recording.', num2str(recInfo(dgd.ce).recfilenum)]);
-            set(GuiData.textRecordingStatus, 'BackgroundColor', 'cyan');
-            set(GuiData.buttonRecord, 'String', 'Stop Recording');
-            recInfo(dgd.ce).recordingListener = ListenerHandle;
-            recInfo(dgd.ce).bForcedRecording = true;
-        end
-        aa_checkinAppData(GuiFig, 'acqrecordinfo', recInfo);
-    end
-else
-    aa_checkinAppData(GuiFig, 'acqrecordinfo', recInfo);
-end
-
-function stop_forced_recording_callback(EventData, ListenerHandle, hwChannels, recInfo, guiFig)
-channelsMatch = compare_channels(hwChannels, EventData.hwChannels);
-if channelsMatch
-    delete(ListenerHandle); %Unsubscribe
-    dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
-    handles = guidata(guiFig);
-    
-    %% Update recInfo
-    recInfo(dgd.ce).filenum = recInfo(dgd.ce).recfilenum;
-    recInfo(dgd.ce).recFileTimes = [recInfo(dgd.ce).recFileTimes, now];
-    recInfo(dgd.ce).bForcedRecording = false;
-    
-    %% Update GUI
-    set(handles.textRecordingStatus, 'String', ['Finished forced recording.', num2str(recInfo(dgd.ce).recfilenum), '.   Ready to record.']);
-    aa_checkinAppData(guiFig, 'acqrecordinfo', recInfo); % Check in acqrecordinfo
-    set(handles.textRecordingStatus, 'BackgroundColor', 'green'); 
-    set(handles.buttonRecord, 'String', 'Start Recording');
-end
 
 % --- Executes on button press in pushbutton1.
 function buttonTrigOnSong_Callback(hObject, ~, ~)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guiFig = get(hObject,'Parent');
-dgd = aa_getAppDataReadOnly(guiFig, 'acqguidata');
-toggleTriggeringOnSong(guiFig, dgd.ce);
+GuiFig = get(hObject, 'Parent');
+GuiData = guidata(GuiFig);
+GuiData.GuiModel.detect_button();
+dgd = aa_getAppDataReadOnly(GuiFig, 'acqguidata');
+toggleTriggeringOnSong(GuiFig, dgd.ce);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function toggleTriggeringOnSong(GuiFig, experNo, checkNow)

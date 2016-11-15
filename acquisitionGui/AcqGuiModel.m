@@ -9,6 +9,7 @@ classdef (Sealed) AcqGuiModel < handle
         maxLoadSize
         displayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
         displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
+        madeRecordings = false(0, 1);
         RecordingListener
         
         currentExperNdx = 0;
@@ -35,6 +36,7 @@ classdef (Sealed) AcqGuiModel < handle
             self.DetectChangedListener = addlistener(self.AcqObj.ExperManager, 'DetectionChanged', @self.detect_changed_callback);
             self.autoUpdate = Params.autoUpdate;
             self.maxLoadSize = Params.maxLoadSize;
+            self.init_recordings();
         end
         
         function change_recording(self, recordingNo)
@@ -73,8 +75,12 @@ classdef (Sealed) AcqGuiModel < handle
             if currExper.isRecording
                 currExper.force_stop_recording();
             else
-                currExper.force_stop_recording();
+                currExper.force_recording();
             end
+        end
+        function detect_button(self)
+            currExper = self.AcqObj.ExperManager.Experiments{self.currentExperNdx};
+            if currExper.
         end
         
         function rec_complete_callback(self, ~, ExperEventObj)
@@ -100,6 +106,21 @@ classdef (Sealed) AcqGuiModel < handle
         end
     end
     methods (Access = private)
+        function init_recordings(self)
+            nExp = numel(self.AcqObj.ExperManager.Experiments);
+            if nExp > 0
+                self.displayChannels = nan(3, nExp);
+                for expNo = 1:nExp
+                    thisExp = self.AcqObj.ExperManager.Experiments{expNo};
+                    self.displayChannels(:, expNo) = thisExp.songHWChannel;
+                    nNonSong = numel(thisExp.nonSongHWChannels);
+                    nFill = min(nNonSong, 3);
+                    self.displayChannels(1:nFill, expNo) = thisExp.nonSongHWChannels;
+                end
+                self.madeRecordings = false(nExp, 1);
+                self.rec_complete_callback([], ExperEvent(1)); % Refresh last recorded file no's
+            end
+        end
         function change_all_recordings(self, recordingsNos)
             self.change_recording(recordingsNos(self.currentExperNdx));
             self.displayRecordingNo = recordingsNos; % This is a weird way of doing this
@@ -112,6 +133,7 @@ classdef (Sealed) AcqGuiModel < handle
             self.AcqObj.append_exper(Experiment);
             self.displayChannels(:, end + 1) = nan(3, 1);
             self.displayRecordingNo(end + 1) = Experiment.lastFileNo;
+            self.madeRecordings(end + 1) = false;
             % Update display state
         end
         function remove_exper(self)
