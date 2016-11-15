@@ -11,7 +11,7 @@ classdef (Sealed) AcqGuiModel < handle
         stimHwChan
         
         maxLoadSize
-        displayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
+        displayChannels = nan(4, 0); % 4xN matrix of HW channels to display for each of N experiments, -1 for nothing. First channel is audio channel.
         displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
         madeRecordings = false(0, 1);
         RecordingListener
@@ -61,7 +61,7 @@ classdef (Sealed) AcqGuiModel < handle
             end
         end
         function change_displayed_channel(self, displayNo, hwChannel)
-            assert(displayNo >= 1 && displayNo <= 3, 'Not a valid display number');
+            assert(displayNo >= 1 && displayNo <= 4, 'Not a valid display number');
             if self.displayChannels(displayNo, self.currentExperNdx) ~= hwChannel
                 self.displayChannels(displayNo, self.currentExperNdx) = hwChannel;
                 self.load_channels(hwChannel);
@@ -107,7 +107,7 @@ classdef (Sealed) AcqGuiModel < handle
             persistent p;
             if isempty(p)
                 p = inputParser();
-                addParameter(p, 'dispChanNo', 1);
+                addParameter(p, 'dispChanNo', 2);
                 addParameter(p, 'preStimMs', 10);
                 addParameter(p, 'postStimMs', 50);
                 addParameter(p, 'maxStimPeakWidthMs', 1);
@@ -175,17 +175,22 @@ classdef (Sealed) AcqGuiModel < handle
         function init_recordings(self)
             nExp = numel(self.AcqObj.ExperManager.Experiments);
             if nExp > 0
-                self.displayChannels = nan(3, nExp);
-                for expNo = 1:nExp
-                    thisExp = self.AcqObj.ExperManager.Experiments{expNo};
-                    self.displayChannels(:, expNo) = thisExp.songHWChannel;
-                    nNonSong = numel(thisExp.nonSongHWChannels);
-                    nFill = min(nNonSong, 3);
-                    self.displayChannels(1:nFill, expNo) = thisExp.nonSongHWChannels;
-                end
+                self.displayChannels = nan(4, nExp);
+                self.displayRecordingNo = nan(nExp, 1);
                 self.madeRecordings = false(nExp, 1);
+                for expNo = 1:nExp
+                    self.init_recording(expNo);
+                end
                 self.rec_complete_cb([], ExperEvent(1)); % Refresh last recorded file no's
             end
+        end
+        function init_recording(self, expNo)
+            ThisExp = self.AcqObj.ExperManager.Experiments{expNo};
+            self.displayChannels(:, expNo) = ThisExp.songHWChannel;
+            self.displayRecordingNo(expNo) = ThisExp.lastFileNo;
+            nNonSong = numel(ThisExp.nonSongHWChannels);
+            nFill = min(nNonSong, 3);
+            self.displayChannels(1 + (1:nFill), expNo) = ThisExp.nonSongHWChannels;
         end
         function change_all_recordings(self, recordingsNos)
             self.change_recording(recordingsNos(self.currentExperNdx));
@@ -194,13 +199,15 @@ classdef (Sealed) AcqGuiModel < handle
         function change_current_exper(self, experNo)
             self.currentExperNdx = experNo;
             self.load_recording();
+            notify(self, 'CurrentExperimentChanged');
             notify(self, 'DetectChanged');
         end
         function append_exper(self, Experiment)
             self.AcqObj.append_exper(Experiment);
-            self.displayChannels(:, end + 1) = nan(3, 1);
-            self.displayRecordingNo(end + 1) = Experiment.lastFileNo;
+            self.displayChannels(:, end + 1) = -1 * ones(4, 1);
+            self.displayRecordingNo(end + 1) = -1;
             self.madeRecordings(end + 1) = false;
+            self.init_recording(numel(self.displayRecordingNo));
             % Update display state
         end
         function remove_exper(self)
@@ -217,10 +224,11 @@ classdef (Sealed) AcqGuiModel < handle
         end
         function load_channels(self, hwChannels)
             self.CurrentRecording.load_channels(hwChannels);
-            notify(self, 'DisplayedChannelsChanged');
+            notify(self, 'DisplayedChannelsChanged', ExperEvent(hwChannels));
         end
     end
     events (NotifyAccess = private)
+        CurrentExperimentChanged
         CurrentRecordingChanged
         DisplayedChannelsChanged
         RecordingStatusChanged

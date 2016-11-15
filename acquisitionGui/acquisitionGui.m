@@ -157,38 +157,24 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 % --- Executes on button press in buttonAntidromic.
-function buttonAntidromic_Callback(hObject, eventdata, handles)
+function buttonAntidromic_Callback(~, ~, handles)
 % hObject    handle to buttonAntidromic (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.Views.request_stim();
 
 % --- Executes on selection change in popupChannel.
-function popupChannel_Callback(hObject, eventdata, handles)
+function popupChannel_Callback(~, ~, handles)
 % hObject    handle to popupChannel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % Hints: contents = get(hObject,'String') returns popupChannel contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from popupChannel
-guifig = get(hObject,'Parent');
-[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
-if(~status)
-    warning('Unable to checkout ddd.');
-    return;
-end
-
-value = get(handles.popupChannel,'Value');
-names = get(handles.popupChannel,'String');
-currName = names{value};
-dash = strfind(currName, '-');
-currChan = str2double(currName(1:dash(1)-1));
-ddd.currChan = currChan;
-
-aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-acqgui_updateDisplay(guifig);
+hwChannel = handles.GuiModel.CurrentExper.inChannels(handles.popupChannel.Value);
+handles.GuiModel.change_displayed_channel(2, hwChannel);
 
 % --- Executes during object creation, after setting all properties.
-function popupChannel_CreateFcn(hObject, eventdata, handles)
+function popupChannel_CreateFcn(hObject, ~, ~)
 % hObject    handle to popupChannel (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -200,7 +186,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 % --- Executes on selection change in popupAudio.
-function popupAudio_Callback(hObject, eventdata, handles)
+function popupAudio_Callback(~, ~, handles)
 % hObject    handle to popupAudio (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -212,25 +198,11 @@ function popupAudio_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % Hints: contents = get(hObject,'String') returns popupChannel contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from popupChannel
-guifig = get(hObject,'Parent');
-[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
-if(~status)
-    warning('Unable to checkout ddd.');
-    return;
-end
-
-value = get(handles.popupAudio,'Value');
-names = get(handles.popupAudio,'String');
-currName = names{value};
-dash = strfind(currName, '-');
-currChan = str2double(currName(1:dash(1)-1));
-ddd.currChanAudio = currChan;
-
-aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-acqgui_updateDisplay(guifig);
+hwChannel = handles.GuiModel.CurrentExper.inChannels(handles.popupAudio.Value);
+handles.GuiModel.change_displayed_channel(1, hwChannel);
 
 % --- Executes during object creation, after setting all properties.
-function popupAudio_CreateFcn(hObject, eventdata, handles)
+function popupAudio_CreateFcn(hObject, ~, ~)
 % hObject    handle to popupAudio (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -243,32 +215,18 @@ end
 
 
 % --- Executes on selection change in popupChannel2.
-function popupChannel2_Callback(hObject, eventdata, handles)
+function popupChannel2_Callback(~, ~, handles)
 % hObject    handle to popupChannel2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: contents = get(hObject,'String') returns popupChannel2 contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from popupChannel2
-guifig = get(hObject,'Parent');
-[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
-if(~status)
-    warning('Unable to checkout ddd.');
-    return;
-end
-
-value = get(handles.popupChannel2,'Value');
-names = get(handles.popupChannel2,'String');
-currName = names{value};
-dash = strfind(currName, '-');
-currChan = str2double(currName(1:dash(1)-1));
-ddd.currChan2 = currChan;
-
-aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-acqgui_updateDisplay(guifig);
+hwChannel = handles.GuiModel.CurrentExper.inChannels(handles.popupChannel2.Value);
+handles.GuiModel.change_displayed_channel(3, hwChannel);
 
 % --- Executes during object creation, after setting all properties.
-function popupChannel2_CreateFcn(hObject, eventdata, handles)
+function popupChannel2_CreateFcn(hObject, ~, ~)
 % hObject    handle to popupChannel2 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -281,32 +239,18 @@ end
 
 
 % --- Executes on selection change in popupChannel3.
-function popupChannel3_Callback(hObject, eventdata, handles)
+function popupChannel3_Callback(~, ~, handles)
 % hObject    handle to popupChannel3 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: contents = get(hObject,'String') returns popupChannel3 contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from popupChannel3
-guifig = get(hObject,'Parent');
-[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
-if(~status)
-    warning('Unable to checkout ddd.');
-    return;
-end
-
-value = get(handles.popupChannel3,'Value');
-names = get(handles.popupChannel3,'String');
-currName = names{value};
-dash = strfind(currName, '-');
-currChan = str2double(currName(1:dash(1)-1));
-ddd.currChan3 = currChan;
-
-aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-acqgui_updateDisplay(guifig);
+hwChannel = handles.GuiModel.CurrentExper.inChannels(handles.popupChannel3.Value);
+handles.GuiModel.change_displayed_channel(4, hwChannel);
 
 % --- Executes during object creation, after setting all properties.
-function popupChannel3_CreateFcn(hObject, eventdata, handles)
+function popupChannel3_CreateFcn(hObject, ~, ~)
 % hObject    handle to popupChannel3 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called

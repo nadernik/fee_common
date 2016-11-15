@@ -13,6 +13,8 @@ classdef (Sealed) AcqGuiViews < handle
         endNdx = 0;
     end
     properties (Access = private)
+        CurrentExperimentListener
+        DisplayedChannelListener
         DaqListener
         RestartListener
         RestartChangedListener
@@ -49,6 +51,8 @@ classdef (Sealed) AcqGuiViews < handle
             self.PeekCompleteListener = addlistener(self.GuiModel, 'PeekComplete', @self.peek);
             self.SongParamsListener = addlistener(self.GuiModel, 'SongParametersChanged', @self.song_params);
             self.StimListener = addlistener(self.GuiModel, 'StimAvailable', @self.stim);
+            self.CurrentExperimentListener = addlistener(self.GuiModel, 'CurrentExperimentChanged', @self.init_exper);
+            self.DisplayedChannelListener = addlistener(self.GuiModel, 'DisplayedChannelsChanged', @self.update_channels);
             self.init();
             self.daq();
         end
@@ -96,11 +100,35 @@ classdef (Sealed) AcqGuiViews < handle
         function experiments(self, ~, ~)
             self.exper_strings();
         end
-        function init_exper_view()
-            self.experDisplayChannels(:, end + 1) = -1 * ones(1, 3);
-            self.displayRecordingNo(end + 1) = 0;
-            experNo = numel(self.Experiments);
-            self.default_exper_display(experNo);
+        function init_exper(self)
+            self.chan_strings();
+            self.chan_string_values();
+        end
+        function chan_strings(self)
+            CurrExper = self.get_current_exper();
+            nChan = numel(CurrExper.inChannels);
+            chanStrings = cell(nChan, 1);
+            chanStrings{1} = sprtintf('%d- audio', CurrExper.songHWChannel);
+            chanStrings(2:end) = cellfun(@(x) sprintf('%d- other', x),...
+                num2cell(CurrExper.nonSongHWChannels), 'UniformOutput', false);
+            set(self.GuiData.popupAudio,'String', chanStrings);
+            set(self.GuiData.popupChannel,'String', chanStrings);
+            set(self.GuiData.popupChannel2,'String', chanStrings);
+            set(self.GuiData.popupChannel3,'String', chanStrings);
+        end
+        function chan_string_values(self)
+            nDisp = 4;
+            expNo = self.GuiModel.currentExperNdx;
+            CurrExper = self.get_current_exper();
+            chanNdxs = ones(nDisp, 1);
+            for dispNo = 1:nDisp
+                chanNdxs(dispNo) = find(CurrExper.inChannels == ...
+                    self.GuiModel.displayChannels(dispNo, expNo), 1, 'first');
+            end
+            set(self.GuiData.popupAudio, 'Value', chanNdxs(1));
+            set(self.GuiData.popupChannel, 'Value', chanNdxs(2));
+            set(self.GuiData.popupChannel2, 'Value', chanNdxs(3));
+            set(self.GuiData.popupChannel3, 'Value', chanNdxs(4));
         end
         function no_experiment(self)
             self.GuiModel.currentExperNdx = 0;
@@ -110,6 +138,9 @@ classdef (Sealed) AcqGuiViews < handle
             self.endNdx = 0;
         end
         
+        function update_channels(self)
+            self.chan_string_values();
+        end
         
         function exper_strings(self)
             set(self.GuiData.popupExperiments, 'String', self.GuiData.ExperManager.experimentStrings);
