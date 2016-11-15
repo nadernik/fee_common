@@ -6,13 +6,13 @@ Columns = XLS.textdata.Sheet1(1,:);
 
 % decide where to save stuff
 savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
-%% to populate xls...
-DIR1 = dir(fullfile('E:\TempFileTransfer', '2016-10-21', '*chan0.dat'))
-DIR = dir(fullfile('E:\TempFileTransfer', 'HVCgcamp10212016', '*.tif'))
-DIR = DIR(cellfun(@numel,(regexp( {DIR.name}', 'recording_\d+_\d+.tif')))==1);
-{DIR.name}'
+% to populate xls... use AlignImSongFiles now...
+% DIR1 = dir(fullfile('E:\TempFileTransfer', '2016-10-21', '*chan0.dat'))
+% DIR = dir(fullfile('E:\TempFileTransfer', 'HVCgcamp10212016', '*.tif'))
+% DIR = DIR(cellfun(@numel,(regexp( {DIR.name}', 'recording_\d+_\d+.tif')))==1);
+% {DIR.name}'
 %% process data
-for row = 1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
+for row = 1434:1470; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
     try
     clearvars -except row XLS Columns savedir
     display(['working on row ' num2str(row)])
@@ -105,7 +105,7 @@ for row = 1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673
     
     % save
     filename = fullfile(savedir, ['CaELM_row' num2str(row)]); 
-    tic; save(filename, 'VIDEObs', 'VIDEOfs', ...
+    tic; save(filename, 'VIDEOfs', ...
         'SOUND', 'VIDEO', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
         'SPEC', 'specTime', 'F',...
