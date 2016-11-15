@@ -163,52 +163,6 @@ function buttonAntidromic_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 handles.Views.request_stim();
 
-% --- Executes on button press in buttonPlayAudioSig.
-function buttonPlayAudioSig_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonPlayAudioSig (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-%get the audio
-axes(handles.axesAudio);
-ud = get(gca,'UserData');
-audio = ud.data;
-fs = ud.fs;
-
-%get the signal
-axes(handles.axesSignal);
-ud = get(gca,'UserData');
-sig = ud.data;
-
-range = max(max(audio), abs(min(audio)));
-audio = audio/(range*3);
-range = max(max(sig), abs(min(sig)));
-sig = sig/(range*3);  
-
-player = audioplayer(audio+sig, fs);
-axes(handles.axesAudio);
-hold on;
-xl = xlim;
-ylimits1 = ylim;
-l1 = line([xl(1),xl(1)],ylimits1,'Color','yellow');
-axes(handles.axesSignal);
-hold on;
-ylimits2 = ylim;
-l2 = line([xl(1),xl(1)],ylimits2,'Color','red');    
-play(player);
-while(isplaying(player))
-    currTime = xl(1) + get(player,'CurrentSample')/fs;
-    set([l1,l2],'XData',[currTime, currTime]);
-    drawnow;        
-end
-delete(l1);
-delete(l2);
-axes(handles.axesAudio);
-hold off;
-axes(handles.axesSignal);
-hold off;    
-
-
 % --- Executes on selection change in popupChannel.
 function popupChannel_Callback(hObject, eventdata, handles)
 % hObject    handle to popupChannel (see GCBO)
