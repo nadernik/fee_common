@@ -161,36 +161,7 @@ function buttonAntidromic_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonAntidromic (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = get(hObject,'Parent');
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-ddd = aa_getAppDataReadOnly(guifig, 'acqdisplaydata');
-dispfilenum = ddd.currFilenum;
-currchan = ddd.currChan;
-exper = dgd.expers{dgd.ce};
-fs = exper.desiredInSampRate;
-if(dispfilenum > 0)
-    [sig] = loadData(exper, dispfilenum, currchan);
-    preStimMs = 10;
-    postStimMs = 50;
-    maxStimPeakWidthMs = 1;
-    minStimSpacingSecs = .7;
-    set(hObject,'String','Click on signal at threshold');
-    set(hObject,'BackgroundColor','red');
-    [junk, stimThreshold] = ginput(1);
-    set(hObject,'String','Show aligned antidromic');
-    set(hObject,'BackgroundColor',[236/255,233/255,216/255]);
-    stimClips = clipStimFromSignal(sig, fs, stimThreshold, preStimMs, postStimMs, maxStimPeakWidthMs, minStimSpacingSecs);
-    axes(handles.axes3);
-    cla;
-    title([int2str(size(stimClips,1)) ' stims on chan ' int2str(currchan)])
-    if(~isempty(stimClips))
-        time = linspace(-preStimMs, postStimMs, size(stimClips,2));
-        plot(time, stimClips');
-        xlim([-preStimMs,postStimMs]);
-        ylim([-0.5,0.5]);
-        set(gca, 'ButtonDownFcn', @zoomboxCallback)
-    end
-end
+handles.Views.request_stim();
 
 % --- Executes on button press in buttonPlayAudioSig.
 function buttonPlayAudioSig_Callback(hObject, eventdata, handles)

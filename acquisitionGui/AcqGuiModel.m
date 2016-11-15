@@ -6,6 +6,10 @@ classdef (Sealed) AcqGuiModel < handle
         AcqObj
         CurrentRecording
         
+        stimClips
+        stimTimes
+        stimHwChan
+        
         maxLoadSize
         displayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, -1 for nothing
         displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
@@ -26,6 +30,7 @@ classdef (Sealed) AcqGuiModel < handle
         output = {};% Not sure I need this?
     end
     properties (SetAccess = private, Dependent = true)
+        recordingDisplayed
         CurrentExper
     end
     methods
@@ -98,6 +103,32 @@ classdef (Sealed) AcqGuiModel < handle
         function change_song_parameters(self, paramName, paramValue)
             self.CurrentExper.update_song_parameters(paramName, paramValue);
         end
+        function antidromic(self, stimThresh, varargin)
+            persistent p;
+            if isempty(p)
+                p = inputParser();
+                addParameter(p, 'dispChanNo', 1);
+                addParameter(p, 'preStimMs', 10);
+                addParameter(p, 'postStimMs', 50);
+                addParameter(p, 'maxStimPeakWidthMs', 1);
+                addParameter(p, 'minStimSpacingSecs', .7);
+            end
+            parse(p, varargin{:});
+            Params = p.Results;
+            self.stimHwChan = self.displayChannels(Params.dispChanNo, self.currentExperNdx);
+            sigNdx = find(self.CurrentRecording.signalChannels == self.stimHwChan, 1, 'first');
+            self.stimClips = clipStimFromSignal(...
+                self.CurrentRecording.signal(sigNdx), ...
+                self.CurrrentRecording.fileFs, ...
+                stimThresh, ...
+                Params.preStimMs, ...
+                Params.postStimMs, ...
+                Params.maxStimPeakWidthMs, ...
+                Params.minStimSpacingSecs);
+            self.stimTimes = linspace(-Params.preStimMs, ...
+                Params.postStimMs, size(self.stimClips, 1))';
+            notify(self, 'StimAvailable');
+        end
         
         %% Callbacks -- do not use externally
         function rec_complete_cb(self, ~, ExperEventObj)
@@ -108,7 +139,6 @@ classdef (Sealed) AcqGuiModel < handle
                 tmpRecNos = cellfun(@(E) E.lastFileNo, ...
                     self.AcqObj.ExperManager.Experiments);
                 self.change_all_recordings(tmpRecNos);
-                
             end
         end
         function rec_started_cb(self, ~, ExperEventObj)
@@ -135,6 +165,10 @@ classdef (Sealed) AcqGuiModel < handle
         %% Dependent getters
         function val = get.CurrentExper(self)
             val = self.AcqObj.Experiments{self.currentExperNdx};
+        end
+        function val = get.recordingDisplayed(self)
+            val = ~isempty(self.AcqObj.Experiments) && ...
+                self.displayRecordingNo(self.currentExperNdx) > 0;
         end
     end
     methods (Access = private)
@@ -193,5 +227,6 @@ classdef (Sealed) AcqGuiModel < handle
         DetectChanged
         PeekComplete
         SongParametersChanged
+        StimAvailable
     end
 end

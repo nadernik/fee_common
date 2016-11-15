@@ -21,6 +21,7 @@ classdef (Sealed) AcqGuiViews < handle
         DetectChangedListener
         PeekCompleteListener
         SongParamsListener
+        StimListener
     end
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
@@ -47,6 +48,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.DetectChangedListener = addlistener(self.GuiModel, 'DetectChanged', @self.detect);
             self.PeekCompleteListener = addlistener(self.GuiModel, 'PeekComplete', @self.peek);
             self.SongParamsListener = addlistener(self.GuiModel, 'SongParametersChanged', @self.song_params);
+            self.StimListener = addlistener(self.GuiModel, 'StimAvailable', @self.stim);
             self.init();
             self.daq();
         end
@@ -167,6 +169,30 @@ classdef (Sealed) AcqGuiViews < handle
                     scoreStr = num2str(currExper.songScore);
                 end
                 set(self.GuiData.textSongScore, 'String', sprintf('Song Score: %s', scoreStr));
+            end
+        end
+        
+        function request_stim(self)
+            if self.GuiModel.recordingDisplayed
+                set(self.GuiData.buttonAntidromic, 'String','Click on signal at threshold');
+                set(self.GuiData.buttonAntidromic, 'BackgroundColor','red');
+                [~, stimThresh] = ginput(1);
+                set(self.GuiData.buttonAntidromic, 'String','Show aligned antidromic');
+                set(self.GuiData.buttonAntidromic, 'BackgroundColor', [236/255, 233/255, 216/255]);
+                self.GuiModel.antidromic(stimThresh);
+            end
+        end
+        function stim(self, ~, ~)
+            cla(self.GuiData.axes3);
+            title(self.GuiData.axes3, ...
+                sprintf('%d stims on chan %d',...
+                size(self.GuiModel.stimClips, 2),...
+                self.GuiModel.stimHwChan));
+            if ~isempty(self.GuiModel.stimClips)
+                plot(self.stimTimes, self.stimClips);
+                xlim([self.stimTimes(1), self.stimTimes(end)]);
+                ylim([-0.5, 0.5]);
+                set(self.GuiData.axes3, 'ButtonDownFcn', @zoomboxCallback)
             end
         end
         
