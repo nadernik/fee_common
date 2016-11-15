@@ -1,5 +1,7 @@
 %% montage awake
-dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'; 
+% dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'; 
+% dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1'; 
+dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6737Oct28'; 
 load(fullfile(dbasepath, 'analysis.mat')); 
 Y = [];
 CompSoundSONG = [];
@@ -43,21 +45,43 @@ for filei = 1:length(dbase.SegmentTimes)
         end
     end
     save(fullfile(dbasepath, 'compiled'), 'Y', 'CompSoundSONG', 'CompSpecSONG', 'FnumBnum', 'segs', 'Labels',...
-       '-v7.3');
+       '-v7.3'); % also saved background subtracted CompVidSONG
 end
+%%
+%% montage video during sleep
+path = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Sleep';
+DIR = dir(fullfile(path, '*.mat')); 
 
+Y = [];
+CompSound = [];
+CompSpec = [];
+
+for filei = 1:length(DIR)
+    load(fullfile(path, DIR(filei).name), 'VIDEO', 'VIDEOfs', ...
+        'SOUND', 'SOUNDfs', 'nFrames', ...
+        'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
+        'SPEC', 'specTime', 'F');%,'VIDEO'); 
+    Y1 = permute(VIDEO,[2 3 1]); 
+    Y = cat(3,Y,Y1); 
+    CompSound = [CompSound; SOUND]; 
+    CompSpec = cat(1,CompSpec,SPEC);
+    save(fullfile(path, 'compiled'), 'Y', 'CompSound', 'CompSpec', '-v7.3');
+    display(['compiled file ' num2str(filei)])
+end
 %% CNMFE to find neurons for singing data
-close all; clear all
-saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1\cnmferesults'; 
+close all; %clear all
+% saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1\cnmferesults'; 
+saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\cnmferesults'; 
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
-    neuron_full Ybg_weights; %#ok<NUSED> % global variables, don't change them manually
+    neuron_full Ybg_weights nam; %#ok<NUSED> % global variables, don't change them manually
+nam = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\compiled.mat'; 
 cnmfe_choose_data;
 % create Source2D class object for storing results and parameters
 Fs = 20;             % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 gSig = 3;           % width of the gaussian kernel, which can approximates the average neuron shape
-gSiz = 15;          % maximum diameter of neurons in the image plane. larger values are preferred.
+gSiz = 25;          % maximum diameter of neurons in the image plane. larger values are preferred.
 neuron_full = Sources2D('d1',d1,'d2',d2, ... % dimensions of datasets
     'ssub', ssub, 'tsub', tsub, ...  % downsampleing
     'gSig', gSig,...
@@ -104,8 +128,8 @@ save_avi = false;
 patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch
 K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
-min_corr = 0.8;     % minimum local correlation for a seeding pixel
-min_pnr = 9;       % minimum peak-to-noise ratio for a seeding pixel
+min_corr = .5; %0.8;     % minimum local correlation for a seeding pixel
+min_pnr = 2;%9;       % minimum peak-to-noise ratio for a seeding pixel
 min_pixel = 4;      % minimum number of nonzero pixels for each neuron
 bd = 1;             % number of rows/columns to be ignored in the boundary (mainly for motion corrected data)
 neuron.updateParams('min_corr', min_corr, 'min_pnr', min_pnr, ...
@@ -206,10 +230,34 @@ while miter <= maxIter
 end
 save(saveherecnmfe, 'neuron', ...
     '-v7.3')
+%%
+%% using old A, find C for new Y!! 
+saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\cnmferesults'; 
+load C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Sleep\compiled
+clearvars -except Y saveherecnmfe
+Ysleep = reshape(Y,120000,size(Y,3)); 
+clearvars -except Ysleep saveherecnmfe
+Csleep = []; 
+for istart = 1:1000:size(Ysleep,2)
+    load(saveherecnmfe,  'neuron')
+    Y = Ysleep(:,istart:min((istart+1000-1),size(Ysleep,2)));
+    Ybg = neuron.localBG(Y); 
+    Ysignal = Y-Ybg; 
+    neuron.downSample(Ysignal);
+    neuron.C = (neuron.A'*neuron.A)\(neuron.A'*Ysignal); 
+    neuron.updateTemporal_endoscope(Ysignal); 
+    Csleep = [Csleep neuron.C]; 
+    clearvars -except Ysleep Csleep istart saveherecnmfe
+    istart
+end
+save('C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\cnmfe_results_sleep', 'Csleep',...
+     '-v7.3')
 %% make motif-aligned plot, choose neuron order
-clear all
-dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'; 
-saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1\cnmferesults'; 
+% clear all
+% dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'; 
+% saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1\cnmferesults'; 
+dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1'; 
+saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\cnmferesults'; 
 
 load(fullfile(dbasepath, 'compiled.mat'));
 load(saveherecnmfe, 'neuron'); 
@@ -219,7 +267,7 @@ clf
 LabelCanon = {'A' 'B' 'C' 'D' 'E' 'F'}; 
 SOUNDfs = 40000; 
 VIDEOfs = 20; 
-moat = .1; 
+moat = .2; 
 mstart = []; 
 msegs = zeros(length(LabelCanon),2,0); 
 params.WantTheseLabels = LabelCanon;
@@ -323,28 +371,28 @@ end
 % clear all; close all; clc
 set(gca, 'ydir', 'reverse')
 axis image; axis off
-%% 
-binned_data = {};
-binned_labels.warpedtime = {}; 
-shifts = -15:15; 
-binned_site_info.binning_parameters.the_bin_start_times = shifts/upFac/VIDEOfs;
-binned_site_info.binning_parameters.bin_width =  1/upFac/VIDEOfs;
-binned_site_info.binning_parameters.sampling_interval =  1/upFac/VIDEOfs;
-for neuroni = 1:size(ByMotif,1)
-    binned_data{neuroni} = []; 
-    for shifti = 1:length(shifts)
-        tind = mod((1:size(ByMotif,3))+shifts(shifti),size(ByMotif,3)); 
-        tind(tind==0)=1;
-        tmp = squeeze(ByMotif(neuroni,:,tind));
-        tmp(1:(-shifts(shifti)+1),:) = 0; 
-        tmp(end:-1:(end-shifts(shifti)),:) = 0; 
-        binned_data{neuroni} = [binned_data{neuroni} tmp(:)]; 
-    end
-    tmp = repmat(tCanon,size(ByMotif,2),1);
-    binned_labels.warpedtime{neuroni} = tmp(:); 
-end
-
-save('C:\Users\emackev\Documents\MATLAB\code\misc_elm\tmp.mat', 'binned_data', 'binned_labels', 'binned_site_info')
+% %% 
+% binned_data = {};
+% binned_labels.warpedtime = {}; 
+% shifts = -15:15; 
+% binned_site_info.binning_parameters.the_bin_start_times = shifts/upFac/VIDEOfs;
+% binned_site_info.binning_parameters.bin_width =  1/upFac/VIDEOfs;
+% binned_site_info.binning_parameters.sampling_interval =  1/upFac/VIDEOfs;
+% for neuroni = 1:size(ByMotif,1)
+%     binned_data{neuroni} = []; 
+%     for shifti = 1:length(shifts)
+%         tind = mod((1:size(ByMotif,3))+shifts(shifti),size(ByMotif,3)); 
+%         tind(tind==0)=1;
+%         tmp = squeeze(ByMotif(neuroni,:,tind));
+%         tmp(1:(-shifts(shifti)+1),:) = 0; 
+%         tmp(end:-1:(end-shifts(shifti)),:) = 0; 
+%         binned_data{neuroni} = [binned_data{neuroni} tmp(:)]; 
+%     end
+%     tmp = repmat(tCanon,size(ByMotif,2),1);
+%     binned_labels.warpedtime{neuroni} = tmp(:); 
+% end
+% 
+% save('C:\Users\emackev\Documents\MATLAB\code\misc_elm\tmp.mat', 'binned_data', 'binned_labels', 'binned_site_info')
 %% decoding
 % use pretty small 'moat' and 'upFac'
 % compile training set using ByMotif
@@ -353,12 +401,14 @@ save('C:\Users\emackev\Documents\MATLAB\code\misc_elm\tmp.mat', 'binned_data', '
 % Tmotif = length(tCanon); 
 % ByMotif = zeros(Nneurons,Nmotifs,Tmotif);
 clf
-NormByMotif = bsxfun(@rdivide, ByMotif, mean(ByMotif,1)); 
+NormByMotif = ByMotif; %bsxfun(@rdivide, ByMotif, mean(ByMotif,1)); 
 % NormByMotif = zscore(ByMotif,1); 
-Canon = squeeze(median(NormByMotif,2)); imagesc(Canon(indSeqSort,:))
+Canon = cdfscore(squeeze(median(NormByMotif,2))); imagesc(Canon(indSeqSort,:))
+% Canon = squeeze(median(NormByMotif,2));
 TimeGuesses = zeros(Nmotifs,Tmotif);
 for mi = 1:Nmotifs
     for ti = 1:Tmotif
+        
         [~,tmp] = max(squeeze(NormByMotif(:,mi,ti))'*Canon);
         TimeGuesses(mi,ti) = tCanon(tmp);
     end
@@ -398,36 +448,51 @@ axis tight
 %% finding broken motifs, plotting in same order
 VIDEOfs = 20; 
 SOUNDfs = 40000; 
-stepdur = 80;
-PlotC = neuron.C; 
+stepdur = 180;
+
+% if doing sleep
+load('C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\cnmfe_results_sleep', 'Csleep')
+PlotC = Csleep;
+
+% if doing awake
+% PlotC = neuron.C; 
+
+
 PlotC(:,(diff([0; FnumBnum(:,1)])~=0)|(diff([0; FnumBnum(:,1)])~=0)) = nan; 
 
 % for decoding
 PlotC = bsxfun(@rdivide, PlotC, mean(PlotC,1)); 
 % NormByMotif = zscore(ByMotif,1); 
-Canon = squeeze(median(NormByMotif,2)); imagesc(Canon(indSeqSort,:))
+Canon = cdfscore(squeeze(mean(NormByMotif,2))); imagesc(Canon(indSeqSort,:))
 TimeGuesses = zeros(Tmotif,size(PlotC,2));
 for ti = 1:size(PlotC,2)
-    [~,tmp] = max(PlotC(:,ti)'*Canon);
+%     [~,tmp] = max(PlotC(:,ti)'*Canon);
+%     TimeGuesses(:,ti) = -sum((repmat(PlotC(:,ti),1,Tmotif) - Canon).^2./...
+%         repmat(squeeze(std(std(ByMotif+randn(Nneurons,Nmotifs,Tmotif),[],2),[],3)),1,Tmotif)); %./squeeze(std(ByMotif+10*randn(Nneurons,Nmotifs,Tmotif),[],2).^2),1);
     TimeGuesses(:,ti) = (PlotC(:,ti)'*Canon)'; %tCanon(tmp);
+    
 end
-
-
 for istart = 1:stepdur/2:size(PlotC,2)
     shg; clf; 
-    sampsong = CompSoundSONG(istart*SOUNDfs/VIDEOfs:(istart+stepdur)*SOUNDfs/VIDEOfs); 
+    
+   
+    
     h(3) = subplot('position', [.1 .7 .8 .15]);
     imagesc(TimeGuesses(:,istart:istart+stepdur-1), 'xdata', (1:stepdur)/VIDEOfs, 'ydata', tCanon); ylim([tCanon(1) tCanon(end)])
     set(gca, 'ydir', 'reverse'); ylabel('decoded time (s)')
-    h(1) = subplot('position', [.1 .85 .8 .05]);
-    spectrogramELM(sampsong, SOUNDfs, .002, 1); title(num2str(istart)); 
-    SegsInFrame = (segs(segs(:,2)>istart*SOUNDfs/VIDEOfs &...
-        segs(:,1)<(istart+stepdur)*SOUNDfs/VIDEOfs,:) - istart*SOUNDfs/VIDEOfs)/SOUNDfs;
-    hold on
-    for syli = 1:size(SegsInFrame,1)
-        patch([SegsInFrame(syli,1) SegsInFrame(syli,2) SegsInFrame(syli,2) SegsInFrame(syli,1)],...
-            [6 6 6.5 6.5], 'k')
-    end
+    
+    % if doing song
+%     sampsong = CompSoundSONG(istart*SOUNDfs/VIDEOfs:(istart+stepdur)*SOUNDfs/VIDEOfs); 
+%     h(1) = subplot('position', [.1 .85 .8 .05]);
+%     spectrogramELM(sampsong, SOUNDfs, .002, 1); title(num2str(istart)); 
+%     SegsInFrame = (segs(segs(:,2)>istart*SOUNDfs/VIDEOfs &...
+%         segs(:,1)<(istart+stepdur)*SOUNDfs/VIDEOfs,:) - istart*SOUNDfs/VIDEOfs)/SOUNDfs;
+%     hold on
+%     for syli = 1:size(SegsInFrame,1)
+%         patch([SegsInFrame(syli,1) SegsInFrame(syli,2) SegsInFrame(syli,2) SegsInFrame(syli,1)],...
+%             [6 6 6.5 6.5], 'k')
+%     end
+%     
     axis off
     h(2) = subplot('position', [.1 .1 .8 .6]);hold on
     tmp = PlotC(indSeqSort,istart:istart+stepdur-1); tmp(tmp>prctile(ByMotif(:),satPrc)) = prctile(ByMotif(:),satPrc);
@@ -445,8 +510,21 @@ for istart = 1:stepdur/2:size(PlotC,2)
 end
 %%
 %% video
-neuron.A = [];
-Ybg = neuron.localBG(Y); 
-Ysignal = Y-reshape(Ybg,300,400,size(Ybg,2)); 
-CompVidSONG = permute(Ysignal,[3 1 2]); % back sub
+
+% neuron.A = [];
+% Ybg = neuron.localBG(Y); 
+% Ysignal = Y-reshape(Ybg,300,400,size(Ybg,2)); 
+% CompVidSONG = permute(Ysignal,[3 1 2]); % back sub
+% ShowCaVid(CompVidSONG,CompSoundSONG,CompSpecSONG, [], [], 0)
+% save(fullfile(dbasepath, 'compiled'), 'Y', 'CompVidSONG', 'CompSoundSONG', 'CompSpecSONG', 'FnumBnum', 'segs', 'Labels',...
+%        '-v7.3');
+
+dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1'; 
+load(fullfile(dbasepath, 'compiled'), 'CompVidSONG', 'CompSoundSONG', 'CompSpecSONG');
 ShowCaVid(CompVidSONG,CompSoundSONG,CompSpecSONG, [], [], 0)
+
+% ShowCaVid(VIDEObs,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+HandpickROIs(CompVidSONG,CompSoundSONG,CompSpecSONG, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+
+
+   
