@@ -266,15 +266,13 @@ function buttonCreateExper_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonCreateExper (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-GuiFig = get(hObject,'Parent');
-[recinfo] = aa_getAppDataReadOnly(GuiFig, 'acqrecordinfo');
-[dgd] = aa_getAppDataReadOnly(GuiFig, 'acqguidata');
-if ~isempty(recinfo) && any([recinfo(:).bForcedRecording] | dgd.bTrigOnSong)
-    warndlg({'In order to alter the loaded experiments','all triggering and recording must be stopped'});
+ExperManager = handles.AcqModel.AcqObject.ExperManager;
+if ~status
+    warndlg({'In order to alter the loaded experiments', 'all triggering and recording must be stopped'});
     uiwait;
     return;
 end
-
+status = handles.GuiModel.create_experiment();
 dirname = uigetdir('', 'Select the root directory?');
 if(dirname == 0)
     error('');

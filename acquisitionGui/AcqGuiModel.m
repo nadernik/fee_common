@@ -75,10 +75,11 @@ classdef (Sealed) AcqGuiModel < handle
                 self.append_exper(Exper);
             end
         end
-        function create_experiment(self)
+        function status = create_experiment(self)
             [status, Exper] = SongTriggeredExperiment.create_experiment_prompt();
             if status
                 self.append_exper(Exper);
+                self.change_current_exper(numel(self.displayRecordingNo)); % most recent one
             end
         end
         function close_experiment(self)
