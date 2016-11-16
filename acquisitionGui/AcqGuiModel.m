@@ -15,6 +15,7 @@ classdef (Sealed) AcqGuiModel < handle
         displayNdx = nan(4, 0);
         displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
         madeRecordings = false(0, 1);
+        cLimits = nan(2, 0);
         RecordingListener
         
         currentExperNdx = 0;
@@ -186,6 +187,7 @@ classdef (Sealed) AcqGuiModel < handle
             if nExp > 0
                 self.displayChannels = nan(4, nExp);
                 self.displayNdx = zeros(4, nExp);
+                self.cLimits = nan(2, nExp);
                 self.displayRecordingNo = nan(nExp, 1);
                 self.madeRecordings = false(nExp, 1);
                 for expNo = 1:nExp
@@ -220,14 +222,20 @@ classdef (Sealed) AcqGuiModel < handle
             self.AcqObj.append_exper(Experiment);
             self.displayChannels(:, end + 1) = -1 * ones(4, 1);
             self.displayNdx(:, end + 1) = zeros(4, 1);
+            self.cLimits(:, end + 1) = nan(2, 1);
             self.displayRecordingNo(end + 1) = -1;
             self.madeRecordings(end + 1) = false;
             self.init_recording(numel(self.displayRecordingNo));
             % Update display state
         end
         function remove_exper(self)
-            self.AcqObj.remove_exper(self.currentExperNdx);
-            % Update display state
+            currExperNo = self.currentExperNdx;
+            self.AcqObj.remove_exper(currExperNo);
+            self.displayChannels(:, currExperNo) = [];
+            self.displayNdx(:, currExperNo) = [];
+            self.cLimits(:, currExperNo) = [];
+            self.displayRecordingNo(currExperNo) = [];
+            self.madeRecordings(currExperNo) = [];
         end
         function load_recording(self)
             self.CurrentRecording = AcqGuiRecording(...

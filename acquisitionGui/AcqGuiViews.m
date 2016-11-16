@@ -304,7 +304,7 @@ classdef (Sealed) AcqGuiViews < handle
                             quarterWindow = round((self.GuiModel.endNdx - self.GuiModel.startNdx) / 4);
                             clickNdx = floor(startTime * fs) + 1;
                             newStartNdx = max(1, clickNdx - quarterWindow);
-                            newEndNdx = min(ddd.lengthFile, clickNdx + quarterWindow);
+                            newEndNdx = min(CurrRecording.numSamples, clickNdx + quarterWindow);
                         else
                             newStartNdx = max(floor(startTime * fs) + 1, 1);
                             newEndNdx = min(floor((startTime + duration) * fs) + 1, CurrRecording.numSamples);
@@ -335,15 +335,24 @@ classdef (Sealed) AcqGuiViews < handle
         end
         %% Change display states
         function display_spec(self, timeAxis)
-            CurrRec = self.GuiModel.CurrentRecording;
             Ax = self.GuiData.axesAudio;
+            delete(Ax.UserData);
+            cla(Ax);
+            CurrRec = self.GuiModel.CurrentRecording;
+            CurrExper = self.GuiModel.CurrentExper;
             rawSig = CurrRec.signal{1};
             normedSig = rawSig - mean(rawSig); % Necessary?
-            displaySpecgramQuick(normedSig, CurrRec.fileFs, [0, 8000], tsd.displayParams(dgd.ce).audioCLim, timeAxis(1));
-            title(Ax, sprintf('%s %s %d %s'[exper.birdname, ' ', exper.expername, ' ', num2str(dispfilenum), ' ', timeCreated]);
-            set(handles.axesAudio,'ButtonDownFcn', @acqguiAxesButtonPress);
-            ud.data = rawSig; ud.fs = info.fs;
-            set(handles.axesAudio,'UserData', ud);
+            cLim = self.GuiModel.cLimits(:, self.GuiModel.currentExperNdx);
+            if any(isnan(cLim))
+                cLim = [];
+            end
+            SpectrogramDisplay(Ax, normedSig, CurrRec.fileFs, 'cLimits', cLim, 'startTime', timeAxis(1));
+            title(Ax, sprintf('%s %s %d %s', CurrExper.birdName,...
+                CurrExper.experName, ...
+                self.GuiModel.displayRecordingNo(self.GuiModel.currentExperNdx), ...
+                datestr(CurrRec.fileCreationTime)));
+            set(Ax, 'ButtonDownFcn', @self.axes_click_cb);
+            set(self.GuiFig, 'SizeChangedFcn', '');
         end
         function daq_stopped(self)
             set(self.GuiData.buttonRecord, 'Enable', 'off');
