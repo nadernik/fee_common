@@ -3,12 +3,14 @@ classdef (Sealed) SpectrogramDisplay < handle
     %   SPECTROGRAMDISPLAY(signal, fs) creates an interactive spectrogram
     %   plot of the signal with sampling rate Fs that is calculated to fit the
     %   resolution of the plot. Left clicking zooms, dragging boxes sets the
-    %   plot limits, double clicking zooms out. Based entirely on
-    %   DISPLAYSPECGRAMQUICK.M by Aaron Andalman. Differences include: named
-    %   optional arguments, correct redisplay of spectrogram when the figure is
-    %   resized, does not destroy other plots in the same axes when resized,
-    %   ability to freeze the colormap so that subsequent changes of the
-    %   figure's colormap do not change the plot colors.
+    %   plot limits, double clicking zooms out. 
+    %
+    %   Based entirely on DISPLAYSPECGRAMQUICK.M by Aaron Andalman.
+    %   Differences include: named optional arguments, correct redisplay of
+    %   spectrogram when the figure is resized, does not destroy other
+    %   plots in the same axes when resized, ability to freeze the colormap
+    %   so that subsequent changes of the figure's colormap do not change
+    %   the plot colors.
     %
     %   SPECTROGRAMDISPLAY(ax, signal, fs) plots in the specified axis
     %
@@ -52,6 +54,10 @@ classdef (Sealed) SpectrogramDisplay < handle
         taper = [];
         nSamp
         freqScaling
+        ownResize
+        ownButtonDown
+        ChangeResizeListener
+        ChangeButtonDownListener
     end
     methods
         function self = SpectrogramDisplay(in1, in2, varargin)
@@ -114,18 +120,49 @@ classdef (Sealed) SpectrogramDisplay < handle
             end
             set(self.AxisHandle, 'UserData', self);
             set(self.AxisHandle, 'ButtonDownFcn', @self.buttondown_updatedspecgram);
-            set(self.HostFigure, 'SizeChangedFcn', @self.display_spec);
-            xlabel(self.AxisHandle, 'Time (s)');
-            ylabel(self.AxisHandle, sprintf('Frequency (%s)', self.frequencyUnits));
+            self.ownButtonDown = true;
+            self.ChangeButtonDownListener = addlistener(self.AxisHandle, 'ButtonDownFcn', 'PostSet', @self.change_buttondown_cb);
+            self.insert_resize_hook();
             self.display_spec();
+        end
+        function delete(self)
+            delete(self.XLimListener);
+            try
+                if self.ownResize
+                    set(self.HostFigure, 'SizeChangedFcn', '');
+                end
+            catch ME
+                if ~strcmp('MATLAB:class:InvalidHandle', ME.identifier)
+                    rethrow(ME);
+                end
+            end
+            try
+                if self.ownButtonDown
+                    self.AxisHandle.ButtonDownFcn = '';
+                end
+            catch ME
+                if ~strcmp('MATLAB:class:InvalidHandle', ME.identifier)
+                    rethrow(ME);
+                end
+            end
+            try
+                if isequal(self.AxisHandle.UserData, self)
+                    self.AxisHandle.UserData = [];
+                end
+            catch ME
+                if ~strcmp('MATLAB:class:InvalidHandle', ME.identifier)
+                    rethrow(ME);
+                end
+            end
         end
         
         function display_spec(self, ~, ~)
             %% Change callbacks to avoid loops?
             delete(self.XLimListener);
-            rszFcn = get(self.HostFigure, 'SizeChangedFcn');
-            set(self.HostFigure, 'SizeChangedFcn', '');%empty resize function to avoid callback loops
-            
+            usedToOwnResize = self.ownResize;
+            if usedToOwnResize
+                set(self.HostFigure, 'SizeChangedFcn', '');%empty resize function to avoid callback loops
+            end
             %% Determine axis pixel size
             oldUnits = get(self.AxisHandle, 'Units');
             set(self.AxisHandle, 'Units', 'pixels')
@@ -194,7 +231,9 @@ classdef (Sealed) SpectrogramDisplay < handle
                 self.AxisHandle.Children = tmpChildren;
             end
             self.XLimListener = addlistener(self.AxisHandle, 'XLim', 'PostSet', @self.xlim);
-            set(self.HostFigure, 'SizeChangedFcn', rszFcn); %Restore resize function now that we're clear of callback loops
+            if usedToOwnResize
+                self.insert_resize_hook();
+            end
         end
         
         function xlim(self, ~, ~)
@@ -249,10 +288,23 @@ classdef (Sealed) SpectrogramDisplay < handle
             end
             self.display_spec([], []);
         end
+        
+        function change_resize_cb(self, ~, ~)
+            self.ownResize = false;
+            delete(self.ChangeResizeListener);
+        end
+        function change_buttondown_cb(self, ~, ~)
+            self.ownButtonDown = false;
+            delete(self.ChangeButtonDownListener);
+        end
     end
     methods (Access = private)
+        function insert_resize_hook(self)
+            set(self.HostFigure, 'SizeChangedFcn', @self.display_spec);
+            self.ownResize = true;
+            self.ChangeResizeListener = addlistener(self.HostFigure, 'SizeChangedFcn', 'PostSet', @self.change_resize_cb);
+        end
         function set_clip(self, startNdx, endNdx)
-            assert(numel(startNdx) == 1 && numel(endNdx) == 1);
             self.startNdx = min(max(startNdx, 1), self.nSamp);
             if endNdx < self.startNdx
                 self.endNdx = startNdx;
