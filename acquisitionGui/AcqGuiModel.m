@@ -12,6 +12,7 @@ classdef (Sealed) AcqGuiModel < handle
         
         maxLoadSize
         displayChannels = nan(4, 0); % 4xN matrix of HW channels to display for each of N experiments, -1 for nothing. First channel is audio channel.
+        displayNdx = nan(4, 0);
         displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
         madeRecordings = false(0, 1);
         RecordingListener
@@ -64,6 +65,8 @@ classdef (Sealed) AcqGuiModel < handle
             assert(displayNo >= 1 && displayNo <= 4, 'Not a valid display number');
             if self.displayChannels(displayNo, self.currentExperNdx) ~= hwChannel
                 self.displayChannels(displayNo, self.currentExperNdx) = hwChannel;
+                self.displayNdx(displayNo, self.currentExperNdx) = ...
+                    find(self.CurrentExper.inChans == hwChannel, 1, 'first');
                 self.load_channels(hwChannel);
             end
         end
@@ -165,7 +168,7 @@ classdef (Sealed) AcqGuiModel < handle
         
         %% Dependent getters
         function val = get.CurrentExper(self)
-            val = self.AcqObj.Experiments{self.currentExperNdx};
+            val = self.AcqObj.ExperManager.Experiments{self.currentExperNdx};
         end
         function val = get.recordingDisplayed(self)
             val = ~isempty(self.AcqObj.Experiments) && ...
@@ -177,6 +180,7 @@ classdef (Sealed) AcqGuiModel < handle
             nExp = numel(self.AcqObj.ExperManager.Experiments);
             if nExp > 0
                 self.displayChannels = nan(4, nExp);
+                self.displayNdx = zeros(4, nExp);
                 self.displayRecordingNo = nan(nExp, 1);
                 self.madeRecordings = false(nExp, 1);
                 for expNo = 1:nExp
@@ -192,6 +196,10 @@ classdef (Sealed) AcqGuiModel < handle
             nNonSong = numel(ThisExp.nonSongHWChannels);
             nFill = min(nNonSong, 3);
             self.displayChannels(1 + (1:nFill), expNo) = ThisExp.nonSongHWChannels;
+            for dispNo = 1:4
+                self.displayNdx(dispNo, expNo) = ...
+                    find(ThisExp.inChans == self.displayRecordingNo(dispNo, expNo), 1, 'first');
+            end
         end
         function change_all_recordings(self, recordingsNos)
             self.change_recording(recordingsNos(self.currentExperNdx));
@@ -206,6 +214,7 @@ classdef (Sealed) AcqGuiModel < handle
         function append_exper(self, Experiment)
             self.AcqObj.append_exper(Experiment);
             self.displayChannels(:, end + 1) = -1 * ones(4, 1);
+            self.displayNdx(:, end + 1) = zeros(4, 1);
             self.displayRecordingNo(end + 1) = -1;
             self.madeRecordings(end + 1) = false;
             self.init_recording(numel(self.displayRecordingNo));
@@ -225,7 +234,14 @@ classdef (Sealed) AcqGuiModel < handle
         end
         function load_channels(self, hwChannels)
             self.CurrentRecording.load_channels(hwChannels);
-            notify(self, 'DisplayedChannelsChanged', ExperEvent(hwChannels));
+            nChan = numel(hwChannels);
+            changedDispChans = nan(nChan, 1);
+            for chanNo = 1:nChan
+                thisDisp = find(self.displayChannels == hwChannels(chanNo), 1, 'first');
+                assert(~isempty(thisDisp), 'HW Channel not part of this experiment');
+                changedDispChans(chanNo) = thisDisp;
+            end
+            notify(self, 'DisplayedChannelsChanged', ExperEvent(changedDispChans));
         end
     end
     events (NotifyAccess = private)

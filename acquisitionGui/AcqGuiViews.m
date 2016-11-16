@@ -7,7 +7,6 @@ classdef (Sealed) AcqGuiViews < handle
         ExperManager
         SongMonitor
         RestartManager
-        CurrentRecording
         
         startNdx = 0;
         endNdx = 0;
@@ -52,7 +51,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.SongParamsListener = addlistener(self.GuiModel, 'SongParametersChanged', @self.song_params);
             self.StimListener = addlistener(self.GuiModel, 'StimAvailable', @self.stim);
             self.CurrentExperimentListener = addlistener(self.GuiModel, 'CurrentExperimentChanged', @self.init_exper);
-            self.DisplayedChannelListener = addlistener(self.GuiModel, 'DisplayedChannelsChanged', @self.update_channels);
+            self.DisplayedChannelListener = addlistener(self.GuiModel, 'DisplayedChannelsChanged', @self.update_displays);
             self.init();
             self.daq();
         end
@@ -100,9 +99,10 @@ classdef (Sealed) AcqGuiViews < handle
         function experiments(self, ~, ~)
             self.exper_strings();
         end
-        function init_exper(self)
+        function init_exper(self, ~, ~)
             self.chan_strings();
-            self.chan_string_values();
+            self.update_displays();
+            self.file_properties();
         end
         function chan_strings(self)
             CurrExper = self.get_current_exper();
@@ -116,20 +116,43 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.popupChannel2,'String', chanStrings);
             set(self.GuiData.popupChannel3,'String', chanStrings);
         end
-        function chan_string_values(self)
-            nDisp = 4;
-            expNo = self.GuiModel.currentExperNdx;
-            CurrExper = self.get_current_exper();
-            chanNdxs = ones(nDisp, 1);
-            for dispNo = 1:nDisp
-                chanNdxs(dispNo) = find(CurrExper.inChannels == ...
-                    self.GuiModel.displayChannels(dispNo, expNo), 1, 'first');
+        
+        function update_displays(self, ~, ExperEventObj)
+            dispNos = ExperEventObj.nos;
+            if self.GuiModel.recordingDisplayed
+                
+            else
+                self.clear_displays();
             end
-            set(self.GuiData.popupAudio, 'Value', chanNdxs(1));
-            set(self.GuiData.popupChannel, 'Value', chanNdxs(2));
-            set(self.GuiData.popupChannel2, 'Value', chanNdxs(3));
-            set(self.GuiData.popupChannel3, 'Value', chanNdxs(4));
+            self.display_popup(dispNos);
         end
+        function clear_displays(self)
+            cla(self.GuiData.axesAudio);
+            cla(self.GuiData.axesSignal);
+            cla(self.GuiData.axesSignal2);
+            cla(self.GuiData.axesSignal3);
+        end
+        function display_chans(self, dispNos)
+            
+        end
+        function display_popup(self, dispNos)
+            for dNo = 1:numel(dispNos)
+                thisDisp = dispNos(dNo);
+                switch thisDisp
+                    case 1
+                        set(self.GuiData.popupAudio, 'Value', chanNdxs(1));
+                    case 2
+                        set(self.GuiData.popupChannel, 'Value', chanNdxs(2));
+                    case 3
+                        set(self.GuiData.popupChannel2, 'Value', chanNdxs(3));
+                    case 4
+                        set(self.GuiData.popupChannel3, 'Value', chanNdxs(4));
+                    otherwise
+                        error('Not a valid display channel');
+                end
+            end
+        end
+        
         function no_experiment(self)
             self.GuiModel.currentExperNdx = 0;
             self.GuiModel.experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
@@ -138,7 +161,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.endNdx = 0;
         end
         
-        function update_channels(self)
+        function update_channels(self, ~, ExperEventObj)
             self.chan_string_values();
         end
         
@@ -146,20 +169,22 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.popupExperiments, 'String', self.GuiData.ExperManager.experimentStrings);
         end
         function file_properties(self)
-            nPropName = numel(self.propertyNames);
-            strList = cell(nPropName, 1);
-            for propNo = 1:nPropName
-                strList{propNo} = sprtintf('%s: %s', ...
-                    self.propertyNames{propNo}, self.propertyValues{propNo});
+            if self.GuiModel.recordingDisplayed
+                propertyNames = self.GuiModel.CurrentRecording.propertyNames;
+                propertyValues = self.GuiModel.CurrentRecording.propertyValues;
+                nPropName = numel(propertyNames);
+                strList = cell(nPropName, 1);
+                for propNo = 1:nPropName
+                    strList{propNo} = sprtintf('%s: %s', ...
+                        propertyNames{propNo}, propertyValues{propNo});
+                end
+                set(self.GuiData.listboxDatafileProperties, 'String', strList);
             end
-            set(self.GuiData.listboxDatafileProperties, 'String', strList);
         end
         function spectrogram(self)
             % Consider replacing displaySpecgramQuick with
             % updated_specgram_quick
-            if self.autoSpec
-                
-            end
+            
         end
         function gui_signals(self)
         end
@@ -203,7 +228,7 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         
-        function request_stim(self)
+        function request_stim(self, ~, ~)
             if self.GuiModel.recordingDisplayed
                 set(self.GuiData.buttonAntidromic, 'String','Click on signal at threshold');
                 set(self.GuiData.buttonAntidromic, 'BackgroundColor','red');
@@ -324,4 +349,86 @@ classdef (Sealed) AcqGuiViews < handle
         %% Set restart timer UI elements
         
     end
+end
+
+function acqguiAxesButtonPress(src, ~)
+%Load the appdata we need...
+guifig = get(src,'Parent');
+handles = guidata(guifig);
+dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
+[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
+if(~status)
+    return;
+end
+
+try
+    %If we successfully got the display data
+    exper = dgd.expers{dgd.ce};
+    dispfilenum = ddd.currFilenum;
+    
+    audio = loadAudio(exper,dispfilenum);
+    if(ddd.startNdx == 0)
+        ddd.startNdx = 1;
+        ddd.endNdx = length(audio);
+        ddd.lengthFile = ddd.endNdx;
+    end
+    fs = exper.desiredInSampRate;
+    startTime = (ddd.startNdx-1)/fs;
+    
+    ax = src;
+    axes(ax);
+    mouseMode = get(gcf, 'SelectionType');
+    clickLocation = get(ax, 'CurrentPoint');
+    
+    if(strcmp(mouseMode, 'alt'))
+        %rect = rbbox;
+        %endPoint = get(ax,'CurrentPoint');
+        %point1 = clickLocation(1,1:2);              % extract x and y
+        %point2 = endPoint(1,1:2);
+        %ylim(sort([point1(2), point2(2)]));
+        %shiftTime = point1(1) - point2(1);
+        %shiftNdx = round((shiftTime * fs) + 1);
+        %shiftNdx = shiftNdx - max(0, ddd.endNdx + shiftNdx - ddd.lengthFile);
+        %shiftNdx = shiftNdx - min(0, ddd.startNdx + shiftNdx -1);
+        %ddd.startNdx = ddd.startNdx + shiftNdx;
+        %ddd.endNdx = ddd.endNdx + shiftNdx;
+        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
+    elseif(strcmp(mouseMode, 'extend'))
+        %shift click to zoom out
+        ddd.startNdx = 1;
+        ddd.endNdx = length(audio);
+        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
+        acqgui_updateDisplay(guifig);
+    elseif(strcmp(mouseMode, 'normal'))
+        %left click to zoom in.
+        rect = rbbox;
+        endPoint = get(gca,'CurrentPoint');
+        point1 = clickLocation(1,1:2);              % extract x and y
+        point2 = endPoint(1,1:2);
+        p1 = min(point1,point2);             % calculate locations
+        offset = abs(point1-point2);         % and dimensions
+        if(offset(1)/diff(xlim) < .001)
+            quarter = round((ddd.endNdx - ddd.startNdx) / 4);
+            midndx = round((p1(1) - startTime)*fs + 1);
+            ddd.startNdx = max(1,midndx - quarter);
+            ddd.endNdx = min(ddd.lengthFile, midndx + quarter);
+        else
+            ddd.startNdx = max(round((p1(1))*fs + 1),1);
+            ddd.endNdx = min(round((p1(1) + offset(1))*fs + 1),ddd.lengthFile);
+        end
+        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
+        acqgui_updateDisplay(guifig);
+    else
+        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
+    end
+catch ME
+    if(dispfilenum > 0)
+        disp(['Error caught in acqguiAxesButtonPress:', ME.message]);
+    end
+    aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
+    cla(handles.axesAudio);
+    cla(handles.axesSignal);
+    cla(handles.axesSignal2);
+    cla(handles.axesSignal3);
+end
 end
