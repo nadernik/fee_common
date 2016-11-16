@@ -196,11 +196,6 @@ classdef (Sealed) AcqGuiViews < handle
                 set(self.GuiData.listboxDatafileProperties, 'String', strList);
             end
         end
-        function spectrogram(self)
-            % Consider replacing displaySpecgramQuick with
-            % updated_specgram_quick
-            
-        end
         function gui_signals(self)
         end
         function recording(self, ~, ~)
