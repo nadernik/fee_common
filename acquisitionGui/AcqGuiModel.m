@@ -134,6 +134,11 @@ classdef (Sealed) AcqGuiModel < handle
             notify(self, 'StimAvailable');
         end
         
+        function change_clip_range(self, startNdx, endNdx)
+            self.clip_ndx(startNdx, endNdx); % Use private version for error checking
+            notify(self, 'ClipRangeChanged');
+        end
+        
         %% Callbacks -- do not use externally
         function rec_complete_cb(self, ~, ExperEventObj)
             if ExperEventObj.nos == self.currentExperNdx
@@ -229,6 +234,7 @@ classdef (Sealed) AcqGuiModel < handle
                 self.CurrentExper, ...
                 self.displayRecordingNo(self.currentExperNdx), ...
                 'maxLoadSize', self.maxLoadSize);
+            self.clip_ndx(1, self.CurrentRecording.numSamples);
             notify(self, 'CurrentRecordingChanged');
             self.load_channels(self.displayChannels(:, self.currentExperNdx));
         end
@@ -243,6 +249,16 @@ classdef (Sealed) AcqGuiModel < handle
             end
             notify(self, 'DisplayedChannelsChanged', ExperEvent(changedDispChans));
         end
+        function clip_ndx(self, startNdx, endNdx)
+            if self.recordingDisplayed
+                assert(startNdx > 0 && ...
+                    startNdx <= endNdx && ...
+                    endNdx <= self.CurrentRecording.numSamples, ...
+                    'Clipping range is not valid');
+                self.startNdx = startNdx;
+                self.endNdx = endNdx;
+            end
+        end
     end
     events (NotifyAccess = private)
         CurrentExperimentChanged
@@ -253,5 +269,6 @@ classdef (Sealed) AcqGuiModel < handle
         PeekComplete
         SongParametersChanged
         StimAvailable
+        ClipRangeChanged
     end
 end

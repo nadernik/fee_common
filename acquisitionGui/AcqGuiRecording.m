@@ -11,6 +11,7 @@ classdef (Sealed) AcqGuiRecording < handle
         propertyValues
         fileFs
         fileCreationTime
+        numSamples
         
         maxLoadSize
         
@@ -63,6 +64,7 @@ classdef (Sealed) AcqGuiRecording < handle
             self.fileCreationTime = datetime(info.absStartTime, 'ConvertFrom', 'datenum');
             self.propertyNames = info.propertyNames;
             self.propertyValues = info.propertyValues;
+            self.numSamples = numel(self.signals{1});
         end
         
         function load_channel(self, hwChans)

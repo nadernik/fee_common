@@ -263,6 +263,41 @@ classdef (Sealed) AcqGuiViews < handle
             poisonPill = onCleanup(@() closereq());
             delete(self.GuiModel);
         end
+        
+        function axes_click_cb(self, src, ~)
+            if self.GuiModel.recordingDisplayed
+                CurrRecording = self.GuiModel.CurrentRecording;
+                %If we successfully got the display data
+                fs = CurrRecording.fileFs;
+                
+                mouseMode = get(self.GuiFig, 'SelectionType');
+                clickLocation = get(src, 'CurrentPoint');
+                
+                switch mouseMode
+                    case 'extend'
+                        %shift click to zoom out
+                        self.GuiModel.change_clip_range(1, CurrRecording.numSamples);
+                    case 'normal'
+                        %left click to zoom in.
+                        rbbox();
+                        endPoint = get(src, 'CurrentPoint');
+                        point1 = clickLocation(1, 1); % extract x
+                        point2 = endPoint(1, 1);
+                        startTime = min(point1, point2); % calculate location
+                        duration = abs(point1 - point2); % and box width
+                        if duration / diff(xlim(src)) < .001 % 0.1 percent of the window -- probably just a 'click'
+                            quarterWindow = round((self.GuiModel.endNdx - self.GuiModel.startNdx) / 4);
+                            clickNdx = floor(startTime * fs) + 1;
+                            newStartNdx = max(1, clickNdx - quarterWindow);
+                            newEndNdx = min(ddd.lengthFile, clickNdx + quarterWindow);
+                        else
+                            newStartNdx = max(floor(startTime * fs) + 1, 1);
+                            newEndNdx = min(floor((startTime + duration) * fs) + 1, CurrRecording.numSamples);
+                        end
+                        self.GuiModel.change_clip_range(newStartNdx, newEndNdx);
+                end
+            end
+        end
     end
     methods (Access = private)
         %% private utilities
@@ -349,86 +384,4 @@ classdef (Sealed) AcqGuiViews < handle
         %% Set restart timer UI elements
         
     end
-end
-
-function acqguiAxesButtonPress(src, ~)
-%Load the appdata we need...
-guifig = get(src,'Parent');
-handles = guidata(guifig);
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
-if(~status)
-    return;
-end
-
-try
-    %If we successfully got the display data
-    exper = dgd.expers{dgd.ce};
-    dispfilenum = ddd.currFilenum;
-    
-    audio = loadAudio(exper,dispfilenum);
-    if(ddd.startNdx == 0)
-        ddd.startNdx = 1;
-        ddd.endNdx = length(audio);
-        ddd.lengthFile = ddd.endNdx;
-    end
-    fs = exper.desiredInSampRate;
-    startTime = (ddd.startNdx-1)/fs;
-    
-    ax = src;
-    axes(ax);
-    mouseMode = get(gcf, 'SelectionType');
-    clickLocation = get(ax, 'CurrentPoint');
-    
-    if(strcmp(mouseMode, 'alt'))
-        %rect = rbbox;
-        %endPoint = get(ax,'CurrentPoint');
-        %point1 = clickLocation(1,1:2);              % extract x and y
-        %point2 = endPoint(1,1:2);
-        %ylim(sort([point1(2), point2(2)]));
-        %shiftTime = point1(1) - point2(1);
-        %shiftNdx = round((shiftTime * fs) + 1);
-        %shiftNdx = shiftNdx - max(0, ddd.endNdx + shiftNdx - ddd.lengthFile);
-        %shiftNdx = shiftNdx - min(0, ddd.startNdx + shiftNdx -1);
-        %ddd.startNdx = ddd.startNdx + shiftNdx;
-        %ddd.endNdx = ddd.endNdx + shiftNdx;
-        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-    elseif(strcmp(mouseMode, 'extend'))
-        %shift click to zoom out
-        ddd.startNdx = 1;
-        ddd.endNdx = length(audio);
-        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-        acqgui_updateDisplay(guifig);
-    elseif(strcmp(mouseMode, 'normal'))
-        %left click to zoom in.
-        rect = rbbox;
-        endPoint = get(gca,'CurrentPoint');
-        point1 = clickLocation(1,1:2);              % extract x and y
-        point2 = endPoint(1,1:2);
-        p1 = min(point1,point2);             % calculate locations
-        offset = abs(point1-point2);         % and dimensions
-        if(offset(1)/diff(xlim) < .001)
-            quarter = round((ddd.endNdx - ddd.startNdx) / 4);
-            midndx = round((p1(1) - startTime)*fs + 1);
-            ddd.startNdx = max(1,midndx - quarter);
-            ddd.endNdx = min(ddd.lengthFile, midndx + quarter);
-        else
-            ddd.startNdx = max(round((p1(1))*fs + 1),1);
-            ddd.endNdx = min(round((p1(1) + offset(1))*fs + 1),ddd.lengthFile);
-        end
-        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-        acqgui_updateDisplay(guifig);
-    else
-        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-    end
-catch ME
-    if(dispfilenum > 0)
-        disp(['Error caught in acqguiAxesButtonPress:', ME.message]);
-    end
-    aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-    cla(handles.axesAudio);
-    cla(handles.axesSignal);
-    cla(handles.axesSignal2);
-    cla(handles.axesSignal3);
-end
 end
