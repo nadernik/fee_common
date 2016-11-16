@@ -335,7 +335,7 @@ classdef (Sealed) AcqGuiViews < handle
             cla(Ax);
             CurrRec = self.GuiModel.CurrentRecording;
             CurrExper = self.GuiModel.CurrentExper;
-            rawSig = CurrRec.signal{1};
+            rawSig = CurrRec.signal{1}(self.GuiModel.startNdx:self.GuiModel.endNdx);
             normedSig = rawSig - mean(rawSig); % Necessary?
             cLim = self.GuiModel.cLimits(:, self.GuiModel.currentExperNdx);
             if any(isnan(cLim))
