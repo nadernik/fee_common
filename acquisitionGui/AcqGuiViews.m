@@ -120,12 +120,12 @@ classdef (Sealed) AcqGuiViews < handle
         end
         
         function clip_range(self, ~, ~)
-            self.update_displays([], ExperEvent(1:4));
+            self.display_chans([], ExperEvent(1:4));
         end
         function update_displays(self, ~, ExperEventObj)
             dispNos = ExperEventObj.nos;
             if self.GuiModel.recordingDisplayed
-                
+                display_chans(dispNos);
             else
                 self.clear_displays();
             end
@@ -138,13 +138,17 @@ classdef (Sealed) AcqGuiViews < handle
             cla(self.GuiData.axesSignal3);
         end
         function display_chans(self, dispNos)
+            CurrRec = self.GuiModel.CurrentRecording;
+            timeCourse = ((self.GuiModel.startNdx - 1):(self.GuiModel.endNdx - 1)) ...
+                ./ CurrRec.fileFs;
             for dNo = 1:numel(dispNos)
                 thisDisp = dispNos(dNo);
-                Ax = self.get_display_axes(thisDisp);
                 if thisDisp == 1
-                    
+                    self.display_spec(timeCourse);
                 elseif thisDisp > 1 && thisDisp <= 4
-                    
+                    Ax = self.get_display_axes(thisDisp);
+                    signal = CurrRec.signals{dispNos};
+                    self.display_signal(Ax, timeCourse, signal);
                 else
                     error('Not a valid display channel');
                 end
