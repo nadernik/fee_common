@@ -332,6 +332,13 @@ classdef SongTriggeredExperiment < handle
             hwChannels = str2double([rawTokens{nonEmptyMask}]);
         end
         
+        %% Append properties
+        function status = append_file_property(self, recordingNo, propertyName, propertyValue)
+            [fileNames, hwChannels] = self.find_files(recordingNo);
+            songFile = fileNames{hwChannels == self.songHWChannel};
+            status = daq_appendProperty(songFile, propertyName, propertyValue);
+        end
+        
         %% Callbacks
         function daq_recording_finished(self, ~, EventData)
             %% See if these are the channels we are looking for
