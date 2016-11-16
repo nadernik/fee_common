@@ -349,6 +349,13 @@ classdef (Sealed) AcqGuiViews < handle
             set(Ax, 'ButtonDownFcn', @self.axes_click_cb);
             set(self.GuiFig, 'SizeChangedFcn', '');
         end
+        function display_signal(self, Ax, timeAxis, signal)
+            cla(Ax);
+            plotTimeSeriesQuick(Ax, timeAxis, signal);
+            axis(Ax, 'tight');
+            set(Ax,'ButtonDownFcn', @self.axes_click_cb);
+            set(Ax, 'XTickLabel', []);
+        end
         function daq_stopped(self)
             set(self.GuiData.buttonRecord, 'Enable', 'off');
             set(self.GuiData.buttonTrigOnSong, 'Enable', 'off');
