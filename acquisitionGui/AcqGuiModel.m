@@ -136,7 +136,7 @@ classdef (Sealed) AcqGuiModel < handle
         
         function change_clip_range(self, startNdx, endNdx)
             self.clip_ndx(startNdx, endNdx); % Use private version for error checking
-            notify(self, 'ClipRangeChanged');
+            notify(self, 'ClipRangeChanged'); % All displays affected
         end
         
         %% Callbacks -- do not use externally

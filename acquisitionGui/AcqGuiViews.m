@@ -23,6 +23,7 @@ classdef (Sealed) AcqGuiViews < handle
         PeekCompleteListener
         SongParamsListener
         StimListener
+        RangeListener
     end
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
@@ -52,6 +53,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.StimListener = addlistener(self.GuiModel, 'StimAvailable', @self.stim);
             self.CurrentExperimentListener = addlistener(self.GuiModel, 'CurrentExperimentChanged', @self.init_exper);
             self.DisplayedChannelListener = addlistener(self.GuiModel, 'DisplayedChannelsChanged', @self.update_displays);
+            self.RangeListener = addlistener(self.GuiModel, 'ClipRangeChanged', @self.clip_range);
             self.init();
             self.daq();
         end
@@ -117,6 +119,9 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.popupChannel3,'String', chanStrings);
         end
         
+        function clip_range(self, ~, ~)
+            self.update_displays([], ExperEvent(1:4));
+        end
         function update_displays(self, ~, ExperEventObj)
             dispNos = ExperEventObj.nos;
             if self.GuiModel.recordingDisplayed
@@ -133,7 +138,17 @@ classdef (Sealed) AcqGuiViews < handle
             cla(self.GuiData.axesSignal3);
         end
         function display_chans(self, dispNos)
-            
+            for dNo = 1:numel(dispNos)
+                thisDisp = dispNos(dNo);
+                Ax = self.get_display_axes(thisDisp);
+                if thisDisp == 1
+                    
+                elseif thisDisp > 1 && thisDisp <= 4
+                    
+                else
+                    error('Not a valid display channel');
+                end
+            end
         end
         function display_popup(self, dispNos)
             for dNo = 1:numel(dispNos)
@@ -301,10 +316,35 @@ classdef (Sealed) AcqGuiViews < handle
     end
     methods (Access = private)
         %% private utilities
+        function Ax = get_display_axes(self, dispNo)
+            switch dispNo
+                case 1
+                    Ax = self.GuiData.axesAudio;
+                case 2
+                    Ax = self.GuiData.axesSignal;
+                case 3
+                    Ax = self.GuiData.axesSignal2;
+                case 4
+                    Ax = self.GuiData.axesSignal3;
+                otherwise
+                    error('Not a valid display channel');
+            end
+        end
         function Exper = get_current_exper(self)
             Exper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
         end
         %% Change display states
+        function display_spec(self, timeAxis)
+            CurrRec = self.GuiModel.CurrentRecording;
+            Ax = self.GuiData.axesAudio;
+            rawSig = CurrRec.signal{1};
+            normedSig = rawSig - mean(rawSig); % Necessary?
+            displaySpecgramQuick(normedSig, CurrRec.fileFs, [0, 8000], tsd.displayParams(dgd.ce).audioCLim, timeAxis(1));
+            title(Ax, sprintf('%s %s %d %s'[exper.birdname, ' ', exper.expername, ' ', num2str(dispfilenum), ' ', timeCreated]);
+            set(handles.axesAudio,'ButtonDownFcn', @acqguiAxesButtonPress);
+            ud.data = rawSig; ud.fs = info.fs;
+            set(handles.axesAudio,'UserData', ud);
+        end
         function daq_stopped(self)
             set(self.GuiData.buttonRecord, 'Enable', 'off');
             set(self.GuiData.buttonTrigOnSong, 'Enable', 'off');
