@@ -4,6 +4,9 @@ classdef (Sealed) AcqGuiMonitor < handle
         bufferDelay
         isRunning
     end
+    properties (SetAccess = private)
+        detectingSong % indicates if ANY experiments are detecting song
+    end
     properties (Access = private)
         %% Experiment related properties
         ExperManager
@@ -17,7 +20,6 @@ classdef (Sealed) AcqGuiMonitor < handle
         updateFreq
         
         %% Monitoring related properties
-        detectingSong % indicates if ANY experiments are detecting song
         songDetectingExpers
         detectingExperNdx
         peekHWChannels

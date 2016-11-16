@@ -267,20 +267,18 @@ function buttonCreateExper_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 ExperManager = handles.AcqModel.AcqObject.ExperManager;
-if ~status
+SongMonitor = handles.AcqModel.AcqObject.SongMonitor;
+if ExperManager.anyRecording || SongMonitor.detectingSong
     warndlg({'In order to alter the loaded experiments', 'all triggering and recording must be stopped'});
     uiwait;
     return;
 end
-status = handles.GuiModel.create_experiment();
 dirname = uigetdir('', 'Select the root directory?');
-if(dirname == 0)
-    error('');
-else
-    exper = createExper(dirname);
-    add_experiment(GuiFig, exper);
-    init_daq(GuiFig);
-    start_daq(GuiFig);
+if dirname ~= 0
+    status = handles.GuiModel.create_experiment();
+    if ~status
+        warning('Could not create experiment!');
+    end
 end
 
 % --- Executes on button press in buttonLoadExperiment.
