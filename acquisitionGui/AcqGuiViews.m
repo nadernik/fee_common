@@ -87,7 +87,7 @@ classdef (Sealed) AcqGuiViews < handle
             if self.AcqObj.daqRunning
                 if self.GuiModel.AcqObj.isBuffering
                     self.daq_buffering();
-                elseif self.GuiModel.madeRecording(self.GuiModel.currentExperNdx)
+                elseif self.GuiModel.madeRecordings(self.GuiModel.currentExperNdx)
                     currExper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
                     self.daq_ready(currExper.lastFileNo);
                 else

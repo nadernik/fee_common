@@ -396,60 +396,29 @@ function buttonShowSongScore_Callback(~, ~, handles)
 handles.Views.running_song_score();
 
 % --- Executes on button press in checkboxAutostart.
-function checkboxAutostart_Callback(hObject, eventdata, handles)
+function checkboxAutostart_Callback(~, ~, handles)
 % hObject    handle to checkboxAutostart (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkboxAutostart
-guifig = get(hObject, 'Parent');
-if(get(hObject,'Value'))
-    setMorningRestartTimer(guifig);
-else
-    clearMorningRestartTimer();
-end
+handles.GuiModel.AcqObj.RestartManager.change_restart();
 
-function setMorningRestartTimer(guifig)
-handles = guidata(guifig);
-%clear restart timer just in case.
-clearMorningRestartTimer();
-%build a timer that calls the restart function.
-t_restart = timer;
-set(t_restart, 'Name', 'acqguiRestartInMorning');
-set(t_restart,'TimerFcn','acqgui_restartGUI(timerfind(''Name'', ''acqguiRestartInMorning''), [], findobj(''Name'', ''acquisitionGui''))');
-set(t_restart,'Period',5);
-set(t_restart,'ExecutionMode','fixedDelay');
-set(t_restart,'BusyMode', 'queue');
-
-strStopHour = get(handles.editStopTime, 'String');
-stopHour = str2double(strStopHour);
-if(isempty(stopHour))
-    uiwarn('Stop hour is invalid, Using 11pm');
-    stopHour = 23;
-end
-stopTime = floor(now) + stopHour/24;
-if(stopTime < now)
-    stopTime = stopTime + 1;
-end
-startat(t_restart, stopTime);   
-
-function clearMorningRestartTimer()  
-%delete restart timer if there is one.
-if(~isempty(timerfind('Name','acqguiRestartInMorning')))
-    stop(timerfind('Name','acqguiRestartInMorning'));
-    delete(timerfind('Name','acqguiRestartInMorning'));
-end
-
-function editStartTime_Callback(hObject, eventdata, handles)
+function editStartTime_Callback(~, ~, handles)
 % hObject    handle to editStartTime (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of editStartTime as text
 %        str2double(get(hObject,'String')) returns contents of editStartTime as a double
+startHour = str2double(get(handles.editStartTime, 'String'));
+stopHour = str2double(get(handles.editStopTime, 'String'));
+if ~isnan(startHour) && ~isnan(stopHour)
+    handles.GuiModel.AcqObj.RestartManager.change_restart_hours(startHour, stopHour);
+end
 
 % --- Executes during object creation, after setting all properties.
-function editStartTime_CreateFcn(hObject, eventdata, handles)
+function editStartTime_CreateFcn(hObject, ~, ~)
 % hObject    handle to editStartTime (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -460,21 +429,21 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function editStopTime_Callback(hObject, eventdata, handles)
+function editStopTime_Callback(~, ~, handles)
 % hObject    handle to editStopTime (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of editStopTime as text
 %        str2double(get(hObject,'String')) returns contents of editStopTime as a double
-guifig = get(hObject, 'Parent');
-handles = guidata(guifig);
-if(get(handles.checkboxAutostart,'Value'))
-    setMorningRestartTimer(guifig);
+startHour = str2double(get(handles.editStartTime, 'String'));
+stopHour = str2double(get(handles.editStopTime, 'String'));
+if ~isnan(startHour) && ~isnan(stopHour)
+    handles.GuiModel.AcqObj.RestartManager.change_restart_hours(startHour, stopHour);
 end
 
 % --- Executes during object creation, after setting all properties.
-function editStopTime_CreateFcn(hObject, eventdata, handles)
+function editStopTime_CreateFcn(hObject, ~, ~)
 % hObject    handle to editStopTime (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -484,9 +453,6 @@ function editStopTime_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-
-
 
 % --- Executes on button press in buttonRecordRegIntervals.
 function buttonRecordRegIntervals_Callback(hObject, eventdata, handles)

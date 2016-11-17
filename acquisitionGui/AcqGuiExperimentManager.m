@@ -88,14 +88,20 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             end
             self.get_inchannels();
             self.update_exper_strings();
-            notify(self, 'ExerimentsChanged');
+            notify(self, 'ExperimentsChanged');
         end
         
         %% Methods used by reset timer
         function reset_experiments(self)
+            CachedDaqObj = self.DaqObj;
+            self.clear_daq();
             ClonedExperiments = cellfun(@SongTriggeredExperiment.clone_experiment, self.Experiments);
             cellfun(@delete, self.Experiments);
             self.Experiments = ClonedExperiments;
+            self.init();
+            self.set_daq_params(CachedDaqObj);
+            notify(self, 'ExperimentsReset');
+            notify(self, 'ExperimentsChanged');
             % Should I check that they're all the same?
         end
         
@@ -230,6 +236,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         RecordingComplete
         DetectionChanged
         ExperimentsChanged
+        ExperimentsReset
         ExperStringsChanged
         SongParametersChanged
     end

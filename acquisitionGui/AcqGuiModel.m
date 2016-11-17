@@ -13,7 +13,7 @@ classdef (Sealed) AcqGuiModel < handle
         maxLoadSize
         displayChannels = nan(4, 0); % 4xN matrix of HW channels to display for each of N experiments, -1 for nothing. First channel is audio channel.
         displayNdx = nan(4, 0);
-        displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
+        displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, 0 for nothing
         madeRecordings = false(0, 1);
         cLimits = nan(2, 0);
         
@@ -27,6 +27,7 @@ classdef (Sealed) AcqGuiModel < handle
         DetectChangedListener
         PeekCompleteListener
         SongParametersListener
+        RestartListener
         
         output = {};% Not sure I need this?
     end
@@ -49,6 +50,7 @@ classdef (Sealed) AcqGuiModel < handle
             self.DetectChangedListener = addlistener(self.AcqObj.ExperManager, 'DetectionChanged', @self.detect_changed_cb);
             self.PeekCompleteListener = addlistener(self.AcqObj.SongMonitor, 'PeekComplete', @self.peek_complete_cb);
             self.SongParametersListener = addlistener(self.AcqObj.ExperManager, 'SongParametersChanged', @self.song_parameters_cb);
+            self.RestartListener = addlistener(self.AcqObj.ExperManager, 'ExperimentsRestarted', @self.restart_cb);
             self.autoUpdate = Params.autoUpdate;
             self.maxLoadSize = Params.maxLoadSize;
             self.init_recordings();
@@ -189,6 +191,7 @@ classdef (Sealed) AcqGuiModel < handle
             if ExperEventObj.nos == self.currentExperNdx
                     notify(self, 'RecordingStatusChanged');
             end
+            self.madeRecordings(ExperEventObj.nos) = true;
             if self.autoUpdate
                 tmpRecNos = cellfun(@(E) E.lastFileNo, ...
                     self.AcqObj.ExperManager.Experiments);
@@ -215,6 +218,13 @@ classdef (Sealed) AcqGuiModel < handle
                 notify(self, 'SongParametersChanged');
             end
         end
+        function restart_cb(self, ~, ~)
+            if ~self.AcqObj.ExperManager.isEmpty
+                self.madeRecordings(:) = false;
+                self.displayRecordingNo(:) = 0;
+                notify(self, 'CurrentRecordingChanged');
+            end
+        end
         
         %% Dependent getters
         function val = get.CurrentExper(self)
@@ -232,7 +242,7 @@ classdef (Sealed) AcqGuiModel < handle
                 self.displayChannels = nan(4, nExp);
                 self.displayNdx = zeros(4, nExp);
                 self.cLimits = nan(2, nExp);
-                self.displayRecordingNo = nan(nExp, 1);
+                self.displayRecordingNo = zeros(nExp, 1);
                 self.madeRecordings = false(nExp, 1);
                 for expNo = 1:nExp
                     self.init_recording(expNo);

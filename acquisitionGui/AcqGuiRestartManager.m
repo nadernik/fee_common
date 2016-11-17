@@ -11,7 +11,6 @@ classdef (Sealed) AcqGuiRestartManager < handle
     properties (Access = private)
         ExperimentManager
         RestartTimer
-        rememberedDetect
     end
     methods
         function self = AcqGuiRestartManager(ExperimentManager, varargin)
@@ -38,19 +37,32 @@ classdef (Sealed) AcqGuiRestartManager < handle
         
         %% Methods to start and stop daily restarts
         function set_restart(self)
-            if self.isDaytime
-                self.queue_night_timer()
-            else
-                self.ExperimentManager.suspend_experiments();
-                self.queue_morning_timer();
-            end
+            self.private_set_restart();
+            notify(self, 'RestartChanged');
         end
         
         function clear_restart(self)
-            if self.restartTimerValid
-                stop(self.RestartTimer);
-                delete(self.RestartTimer);
+            self.private_clear_restart();
+            notify(self, 'RestartChanged');
+        end
+        
+        function change_restart(self)
+            if self.restartDaily
+                self.clear_restart();
+            else
+                self.set_restart();
             end
+        end
+        
+        function change_restart_hours(self, startHour, stopHour)
+            oldRestart = self.restartDaily;
+            self.private_clear_restart();
+            self.startHour = startHour;
+            self.stopHour = stopHour;
+            if oldRestart
+                self.private_set_restart();
+            end
+            notify(self, 'RestartChanged');
         end
         
         %% Methods for callbacks -- do not use externally
@@ -83,6 +95,22 @@ classdef (Sealed) AcqGuiRestartManager < handle
         end
     end
     methods (Access = private)
+        function private_set_restart(self)
+            self.restartDaily = true;
+            if self.isDaytime
+                self.queue_night_timer()
+            else
+                self.ExperimentManager.suspend_experiments();
+                self.queue_morning_timer();
+            end
+        end
+        function private_clear_restart(self)
+            self.restartDaily = false;
+            if self.restartTimerValid
+                stop(self.RestartTimer);
+                delete(self.RestartTimer);
+            end
+        end
         function queue_night_timer(self)
             if self.restartTimerValid
                 error('Restart timer already exists');
@@ -124,7 +152,6 @@ classdef (Sealed) AcqGuiRestartManager < handle
         end
     end
     events (NotifyAccess = private)
-        Restarted
         RestartChanged
     end
 end
