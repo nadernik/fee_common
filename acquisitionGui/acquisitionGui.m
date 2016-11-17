@@ -389,32 +389,11 @@ function checkboxAutoDisplay_Callback(~, ~, handles)
 handles.GuiModel.autoUpdate = ~handles.GuiModel.autoUpdate;
 
 % --- Executes on button press in buttonShowSongScore.
-function buttonShowSongScore_Callback(hObject, eventdata, handles)
+function buttonShowSongScore_Callback(~, ~, handles)
 % hObject    handle to buttonShowSongScore (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = get(hObject,'Parent');
-handles = guidata(guifig);
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-ddd = aa_getAppDataReadOnly(guifig, 'acqdisplaydata');
-
-exper = dgd.expers{dgd.ce};
-dispfilenum = ddd.currFilenum;
-if(dispfilenum > 0)
-    audio = loadAudio(exper,dispfilenum);
-    [bDetect, tElapsed, score, songRatio, songDetect] = songDetector5(audio, exper.desiredInSampRate, dgd.experData(dgd.ce).songDetection.songDuration, dgd.experData(dgd.ce).songDetection.durationThreshold, dgd.experData(dgd.ce).songDetection.ratioThreshold, dgd.experData(dgd.ce).songDetection.minFreq, dgd.experData(dgd.ce).songDetection.maxFreq, false);
-    axes(handles.axes3);
-    cla;
-    plot(songRatio,'r'); 
-    axis tight;
-    ylim([0,10]);
-    hold on;
-    plot(songDetect*10, 'b');
-    legend('powerRatio','score');
-    line(xlim, [dgd.experData(dgd.ce).songDetection.ratioThreshold, dgd.experData(dgd.ce).songDetection.ratioThreshold],'Color','red');
-    line(xlim, [dgd.experData(dgd.ce).songDetection.durationThreshold*10, dgd.experData(dgd.ce).songDetection.durationThreshold*10],'Color','blue');
-    hold off;
-end
+handles.Views.running_song_score();
 
 % --- Executes on button press in checkboxAutostart.
 function checkboxAutostart_Callback(hObject, eventdata, handles)

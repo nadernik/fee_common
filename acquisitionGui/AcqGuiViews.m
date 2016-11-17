@@ -272,6 +272,31 @@ classdef (Sealed) AcqGuiViews < handle
                 set(self.GuiData.axes3, 'ButtonDownFcn', @zoomboxCallback)
             end
         end
+        function running_song_score(self)
+            if self.GuiModel.recordingDisplayed
+                CurrRec = self.GuiModel.CurrentRecording;
+                CurrExper = self.GuiModel.CurrentExper;
+                [~, ~, ~, songRatio, songDetect] = songDetector5(...
+                    CurrRec.signal{1}, CurrRec.fileFs,...
+                    CurrExper.songDuration,...
+                    CurrExper.songDensity,...
+                    CurrExper.ratioThreshold,...
+                    CurrExper.minFreq,...
+                    CurrExper.maxFreq, false);
+                Ax = self.GuiData.axes3;
+                cla(Ax);
+                hold(Ax, 'on');
+                plot(Ax, songRatio, 'r');
+                plot(Ax, songDetect * 10, 'b');
+                axis(Ax, 'tight');
+                ylim(Ax, [0, 10]);
+                xBnds = xlim(Ax);
+                line(Ax, xBnds, CurrExper.ratioThreshold * ones(1, 2), 'Color', 'red');
+                line(Ax, xBnds, 10 * CurrExper.songDensity * ones(1, 2), 'Color', 'blue');
+                legend(Ax, 'powerRatio', 'score');
+                hold(Ax, 'off');
+            end
+        end
         
         function auto_update(self, ~, ~)
             self.GuiData.checkboxAutoDisplay.Value = self.GuiModel.autoUpdate;
