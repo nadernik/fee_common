@@ -266,350 +266,41 @@ function buttonCreateExper_Callback(~, ~, handles)
 % hObject    handle to buttonCreateExper (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-ExperManager = handles.AcqModel.AcqObject.ExperManager;
-SongMonitor = handles.AcqModel.AcqObject.SongMonitor;
-if ExperManager.anyRecording || SongMonitor.detectingSong
-    warndlg({'In order to alter the loaded experiments', 'all triggering and recording must be stopped'});
-    uiwait;
-    return;
+goAhead = handles.Views.ok_to_modify();
+if goAhead
+    status = handles.AcqModel.create_experiment();
+    if ~status
+        warning('Could not create experiment');
+    end
 end
-handles.AcqModel.create_experiment();
 
 % --- Executes on button press in buttonLoadExperiment.
 function buttonLoadExperiment_Callback(~, ~, handles)
 % hObject    handle to buttonLoadExperiment (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-ExperManager = handles.AcqModel.AcqObject.ExperManager;
-SongMonitor = handles.AcqModel.AcqObject.SongMonitor;
-if ExperManager.anyRecording || SongMonitor.detectingSong
-    warndlg({'In order to alter the loaded experiments', 'all triggering and recording must be stopped'});
-    uiwait;
-    return;
-end
-
-[experfilename, experfilepath] = uigetfile('exper.mat', 'Choose an experiment file:');
-if experfilename ~= 0
-    load([experfilepath,filesep,experfilename]);%Loads exper struct into namespace
-    %Code for checking if exper has been moved
-    if ~strcmp(exper.dir, experfilepath) %directory has been moved
-        exper.dir = experfilepath;
+goAhead = handles.Views.ok_to_modify();
+if goAhead
+    status = handles.AcqModel.load_experiment();
+    if ~status
+        warning('Could not load experiment');
     end
-    add_experiment(GuiFig, exper);
-    init_daq(GuiFig);
-    start_daq(GuiFig);
 end
 
 % --- Executes on button press in buttonCloseExper.
-function buttonCloseExper_Callback(hObject, ~, ~)
+function buttonCloseExper_Callback(~, ~, handles)
 % hObject    handle to buttonCloseExper (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = get(hObject,'Parent');
-[recinfo] = aa_getAppDataReadOnly(guifig, 'acqrecordinfo');
-[dgd] = aa_getAppDataReadOnly(guifig, 'acqguidata');
-if ~isempty(recinfo) && any([recinfo(:).bForcedRecording] | dgd.bTrigOnSong)
-    warndlg({'In order to alter the loaded experiments','all triggering and recording must be stopped'});
-    uiwait;
-    return;
-end
-if ~isempty(dgd.expers)
-    closeExperiment(guifig, dgd.ce);
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function add_experiment(guifig, exper, varargin)
-persistent p;
-if isempty(p)
-    p = inputParser();
-    addParameter(p, 'minFreq', 2000);
-    addParameter(p, 'maxFreq', 6000);
-    addParameter(p, 'songDensity', 0.5); % aka durationThreshold
-    addParameter(p, 'ratioThreshold', 2); % aka powerThreshold
-    addParameter(p, 'songLength', 1); % aka songDuration
-end
-parse(p, varargin{:});
-Options = p.Results;
-
-
-%% Verify that this experiment is compatible with existing ones
-desiredInSampRate = exper.desiredInSampRate;
-inChans = [exper.audioCh, exper.sigCh];
-for nExper = 1:length(dgd.expers)
-    %% Check that this experiment has the same sampling rate
-    if(desiredInSampRate ~= dgd.expers{nExper}.desiredInSampRate)
-        warndlg({'The experiment does not have the same sampling rate as those already open.  Experiment was not opened'});
-        uiwait;
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
-        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-        aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
-        aa_checkinAppData(guifig, 'songtrigdata', params);
-        return;
-    end
-    %% Check that this experiment does not use already claimed channels
-    if(~isempty(intersect(inChans, dgd.experData(nExper).inChans)))
-        warndlg({'The channels specified in the experiment are already in use.  Experiment was not opened.'});
-        uiwait;
-        aa_checkinAppData(guifig, 'acqguidata', dgd);
-        aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-        aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
-        aa_checkinAppData(guifig, 'songtrigdata', params);        
-        return;
-    end
-end
-if isempty(dgd.experData)
-    existingChannels = [];
-else
-    existingChannels = [dgd.experData.inChans];
-end
-ndxOfAudioChan = numel(existingChannels) + 1;
-
-%% Add exper to data structures...
-experNdx = numel(dgd.expers) + 1;
-dgd.expers{experNdx} = exper;
-dgd.bTrigOnSong(experNdx) = false;
-dgd.experData(experNdx).ndxOfAudioChan = ndxOfAudioChan;
-dgd.experData(experNdx).inChans = inChans;
-dgd.experData(experNdx).autoUpdate = true;
-
-%% Display Data
-dgd.experData(experNdx).dddbackground.dispfilenum = getLatestDatafileNumber(dgd.expers{experNdx});
-dgd.experData(experNdx).dddbackground.dispchanAudio = inChans(1);
-dgd.experData(experNdx).dddbackground.dispchan = inChans(min(length(inChans),2));
-dgd.experData(experNdx).dddbackground.dispchan2 = inChans(min(length(inChans),3));
-dgd.experData(experNdx).dddbackground.dispchan3 = inChans(min(length(inChans),4));
-dgd.experData(experNdx).dddbackground.startNdx = 0;
-dgd.experData(experNdx).dddbackground.endNdx = 0;
-dgd.experData(experNdx).dddbackground.lengthFile = 0;
-
-%% record info
-recinfo(experNdx).filenum = getLatestDatafileNumber(dgd.expers{experNdx});
-recinfo(experNdx).recfilenum = -1;
-recinfo(experNdx).bForcedRecording = false;
-recinfo(experNdx).bSongTrigRecording = false;
-recinfo(experNdx).recordingListener = [];
-recinfo(experNdx).recFileTimes = [];
-
-%% song trig info
-params(experNdx).nextPeek = 0;
-
-%% Parameters for part 1.  Song Trigger Spectrogram Parameters
-songDetection.windowSize = fix(desiredInSampRate / 20);
-songDetection.windowOverlap = fix(songDetection.windowSize * 0.5);
-
-%% Parameters for Part 2.  Frequency range in which songs typically has power, and power threshold.
-songDetection.minFreq = Options.minFreq; 
-songDetection.maxFreq = Options.maxFreq;
-songDetection.minNdx = floor((songDetection.windowSize / desiredInSampRate) * songDetection.minFreq + 1);
-songDetection.maxNdx = ceil((songDetection.windowSize / desiredInSampRate) * songDetection.maxFreq + 1);
-songDetection.ratioThreshold = Options.ratioThreshold;
-
-%% Parameters for part 3
-songDetection.songDuration = Options.songLength;
-songDetection.windowLength = round((desiredInSampRate * songDetection.songDuration) / (songDetection.windowSize-songDetection.windowOverlap)); 
-if(songDetection.windowLength <= 0 || songDetection.windowLength == Inf)
-    songDetection.windowLength = 1;
-end
-songDetection.windowAvg = repmat(1 / songDetection.windowLength, 1, songDetection.windowLength);
-songDetection.durationThreshold = Options.songDensity;
-dgd.experData(experNdx).songDetection = songDetection;
-
-%% Thread safe data
-tsd.songTrigParams(experNdx).preSecs = 1;
-tsd.songTrigParams(experNdx).postSecs = 0; 
-tsd.songTrigParams(experNdx).maxFileLength = 30;
-tsd.displayParams(experNdx).audioCLim = [];
-
-%% UPDATE THE EXPER POPUP
-if(length(dgd.expers) == 1)
-    experStrings{experNdx} = [exper.birdname, ':' exper.expername];
-    set(handles.popupExperiments, 'String', experStrings);
-    set(handles.popupExperiments, 'Value', 1);
-else
-    experStrings = get(handles.popupExperiments, 'String');
-    experStrings{experNdx} = [exper.birdname, ':' exper.expername];
-    set(handles.popupExperiments, 'String', experStrings);
-end
-
-%% Delete existing trigOnSong timers
-if isempty(timerfind('Name','trigOnSong'))
-    delete(timerfind('Name','trigOnSong'));
-end
-setappdata(guifig,'threadSafeData',tsd);
-aa_checkinAppData(guifig, 'acqguidata', dgd);
-aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
-aa_checkinAppData(guifig, 'songtrigdata', params);
-
-%% call updateExper
-updateCurrentExperiment(guifig, experNdx, false)
-
-%Load serial object
-% s= serial('COM1');
-%s.BaudRate = 9600;
-%s.Parity = 'none';
-%s.Terminator = 'CR'; %equivalent to 13. Line Feed is 10.
-%s.StopBits = 1;
-%s.DataBits = 8;
-%s.OutputBufferSize = 1024;
-%s.InputBufferSize = 1024;
-%fopen(s);
-%fprintf('c\n'); %the command c returns the current position. \n invokes the terminator
-%a = fscanf('%ld%ld%ld
-%set s timerFcn to get the location every second and update the display.
-%modify the data file to include this information
-%modify the data file to include a comment.
-
-function init_daq(GuiFig, varargin)
-p = inputParser();
-addParameter(p, 'buffer', 15); %Seconds
-addParameter(p, 'updateFreq', 4); %Hz
-parse(p, varargin{:});
-Params = p.Results;   
-[dgd,status] = aa_checkoutAppData(GuiFig, 'acqguidata');
-if(~status) 
-    disp('Failed to checkout data necessary to initialize DAQ');
-    return; 
-end
-
-%% Get DAQ object
-DaqBuffer.reset(); % Need to delete the existing DaqBuffer to add channels
-existingChannels = [dgd.experData.inChans];
-desiredInSampRate = dgd.expers{1}.desiredInSampRate; %Assume all the same
-dgd.DaqBuffer = DaqBuffer.get_instance(existingChannels, desiredInSampRate, Params.buffer, Params.updateFreq);
-
-%% Configure logging
- LOGFILE = 'daq_log.txt';
- dgd.DaqBuffer.logFID = fopen(LOGFILE, 'w');
-dgd.logfile = 'daq_log.txt';
-
-%% Make daqSetup struct for record keeping
-daqSetup.actInSampleRate = dgd.DaqBuffer.samplingRate;
-daqSetup.actOutSampleRate = nan;
-daqSetup.buffer = Params.buffer;
-daqSetup.actUpdateFreq = dgd.DaqBuffer.updateFreq;
-
-%% Save daqSetup for all experiments
-for experNo = 1:numel(dgd.expers)
-    save([dgd.expers{experNo}.dir,'daqSetup', datestr(now,30), '.mat'], 'daqSetup');
-end
-
-dgd.actInSampRate = dgd.DaqBuffer.samplingRate;
-[dgd.daqSetup{:}] = deal(daqSetup);
-aa_checkinAppData(GuiFig, 'acqguidata', dgd);
-
-function start_daq(guifig)
-handles = guidata(guifig);
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-%% Start data acquisition
-dgd.DaqBuffer.start();
-
-%% Update GUI
-set(handles.textRecordingStatus, 'String', 'Ready to record');
-set(handles.textRecordingStatus, 'BackgroundColor', 'green');
-set(handles.buttonTrigOnSong,'Enable','on');
-set(handles.buttonRecord,'Enable','on');
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function closeExperiment(guifig, experNdx)
-%check out everything we need.
-handles = guidata(guifig);
-[dgd,status] = aa_checkoutAppData(guifig, 'acqguidata');
-if(~status) 
-    disp('Failed to checkout data necessary to add experiment');
-    return; 
-end
-[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
-if(~status)
-    disp('Failed to checkout data necessary to add experiment');
-    aa_checkinAppData(guifig, 'acqguidata', dgd); return; 
-end
-[recinfo, status] = aa_checkoutAppData(guifig, 'acqrecordinfo');
-if(~status)
-    disp('Failed to checkout data necessary to add experiment');
-    aa_checkinAppData(guifig, 'acqguidata', dgd); aa_checkinAppData(guifig, 'acqdisplaydata', ddd); return; 
-end
-[params, status] = aa_checkoutAppData(guifig, 'songtrigdata');
-if(~status)
-    disp('Failed to checkout data necessary to add experiment');
-    aa_checkinAppData(guifig, 'acqguidata', dgd); aa_checkinAppData(guifig, 'acqdisplaydata', ddd); aa_checkinAppData(guifig, 'acqrecordinfo', recinfo); return; 
-end  
-
-%determine remaining channels
-desiredInSampRate = dgd.expers{experNdx}.desiredInSampRate;
-allChannels = [];
-for nExper = 1:length(dgd.expers)
-    if(nExper ~= experNdx)
-        dgd.experData(nExper).ndxOfAudioChan = length(allChannels) + 1;
-        allChannels = [allChannels, dgd.experData(nExper).inChans]; %#ok<AGROW>
+goAhead = handles.Views.ok_to_modify();
+if goAhead
+    status = self.GuiModel.close_experiment();
+    if ~status
+        warning('Could not close experiment');
     end
 end
 
-%Remove exper from data structures...
-dgd.expers = dgd.expers([1:experNdx-1,experNdx+1:length(dgd.expers)]);
-dgd.bTrigOnSong(experNdx) = [];
-dgd.daqSetup = dgd.daqSetup([1:(experNdx - 1), (experNdx + 1):length(dgd.daqSetup)]);
-dgd.experData(experNdx) = [];
-recinfo(experNdx) = [];
-params(experNdx) = [];
 
-%UPDATE THE EXPER POPUP
-if isempty(dgd.expers)
-    experStrings{experNdx} = '';
-    set(handles.popupExperiments, 'String', experStrings);
-    set(handles.popupExperiments, 'Value', 1);
-    DaqBuffer.reset();
-    dgd.ce = 0;
-    cla(handles.axesAudio);
-    cla(handles.axesSignal);
-    
-    set(handles.buttonTrigOnSong,'Enable','off');
-    set(handles.buttonRecord,'Enable','off');
-    
-    aa_checkinAppData(guifig, 'acqguidata', dgd);
-    aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-    aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
-    aa_checkinAppData(guifig, 'songtrigdata', params);    
-else
-    experStrings = get(handles.popupExperiments, 'String');
-    experStrings = experStrings([1:experNdx-1,experNdx+1:length(experStrings)]);
-    set(handles.popupExperiments, 'String', experStrings);
-    set(handles.popupExperiments, 'Value', 1);
-    dgd.ce = 1;
-    %reset 
-    delete(dgd.DaqBuffer);
-    if(isempty(timerfind('Name','trigOnSong')))
-        delete(timerfind('Name','trigOnSong'));
-    end
-    %parameters
-    buffer= 90; %Seconds %parameterize
-    updateFreq = 4; %Hz %parameterize
-    dgd.DaqBuffer = DaqBuffer.get_instance(allChannels, desiredInSampRate, buffer, updateFreq);
-    daqSetup.actInSampleRate = dgd.DaqBuffer.samplingRate;
-    daqSetup.actOutSampleRate = nan;
-    daqSetup.buffer = buffer;
-    daqSetup.actUpdateFreq = dgd.DaqBuffer.updateFreq;
-    dgd.actInSampRate = dgd.DaqBuffer.samplingRate;
-
-    %Start data acquisition
-    dgd.DaqBuffer.start();
-    set(handles.textRecordingStatus, 'String', 'Buffering');
-    set(handles.textRecordingStatus, 'BackgroundColor', 'yellow');
-    pause(7); %uiwait(guifig,7);
-    set(handles.textRecordingStatus, 'String', 'Ready to record');
-    set(handles.textRecordingStatus, 'BackgroundColor', 'green');
-
-    set(handles.buttonTrigOnSong,'Enable','on');
-    set(handles.buttonRecord,'Enable','on');
-
-    aa_checkinAppData(guifig, 'acqguidata', dgd);
-    aa_checkinAppData(guifig, 'acqdisplaydata', ddd);
-    aa_checkinAppData(guifig, 'acqrecordinfo', recinfo);
-    aa_checkinAppData(guifig, 'songtrigdata', params);
-    
-    %call updateExper
-    updateCurrentExperiment(guifig, 1, true)
-end
 
 % --- Executes on selection change in popupExperiments.
 function popupExperiments_Callback(hObject, eventdata, handles)

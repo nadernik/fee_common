@@ -270,6 +270,16 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         
+        function goAhead = ok_to_modify(self)
+            if self.ExperManager.anyRecording || self.SongMonitor.detectingSong
+                warndlg({'In order to alter the loaded experiments', 'all triggering and recording must be stopped'});
+                uiwait();
+                goAhead = false;
+            else
+                goAhead = true;
+            end
+        end
+        
         function song_params(self, ~, ~)
             CurrExper = self.get_current_exper();
             set(self.GuiData.editPowerThres, 'String', num2str(CurrExper.ratioThreshold));
