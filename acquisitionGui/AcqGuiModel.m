@@ -58,8 +58,16 @@ classdef (Sealed) AcqGuiModel < handle
         function change_recording(self, recordingNo)
             % change the recording for the current experiment
             if self.displayRecordingNo(self.currentExperNdx) ~= recordingNo
-                self.displayRecordingNo(self.currentExperNdx) = recordingNo;
-                self.load_recording();
+                lastRecordingNo = self.displayRecordingNo(self.currentExperNdx);
+                PreviousRecording = self.CurrentRecording;
+                try
+                    self.displayRecordingNo(self.currentExperNdx) = recordingNo;
+                    self.load_recording();
+                catch ME
+                    warning('%s : %s', ME.identifier, ME.message);
+                    self.displayRecordingNo(self.currentExperNdx) = lastRecordingNo;
+                    self.CurrentRecording = PreviousRecording;
+                end
             end
         end
         function change_displayed_channel(self, displayNo, hwChannel)

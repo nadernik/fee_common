@@ -107,6 +107,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.chan_strings();
         end
         function displayed_recording(self, ~, ~)
+            self.recno_string();
             self.update_displays([], ExperEvent(1:4));
             self.file_properties();
         end
@@ -122,7 +123,7 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.popupChannel2,'String', chanStrings);
             set(self.GuiData.popupChannel3,'String', chanStrings);
         end
-        
+
         function clip_range(self, ~, ~)
             self.display_chans([], ExperEvent(1:4));
         end
@@ -449,6 +450,15 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.editPowerThres, 'Enable', 'off');
             set(self.GuiData.editSongDensity, 'Enable', 'off');
             set(self.GuiData.editSongLength, 'Enable', 'off');
+        end
+        function recno_string(self)
+            if self.GuiModel.currentExperNdx > 0
+                thisRecNo = self.GuiModel.displayRecordingNo(self.GuiModel.currentExperNdx);
+                recNoStr = num2str(thisRecNo); 
+            else
+                recNoStr = '--';
+            end
+            set(self.GuiData.editFilenum, 'String', recNoStr); 
         end
         %% Set restart timer UI elements
         

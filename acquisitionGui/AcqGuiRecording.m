@@ -43,6 +43,7 @@ classdef (Sealed) AcqGuiRecording < handle
             
             %% Find data files
             [relFileNames, self.fileHwChans] = self.Experiment.find_files(self.recordingNo);
+            assert(~isempty(relFileNames), 'no files found');
             self.fileNames = fullfile(self.Experiment.experDir, relFileNames);
             songFile = self.fileNames{self.Experiment.songHWChannel == hwChannels};
             

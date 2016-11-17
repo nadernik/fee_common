@@ -329,39 +329,42 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-function editFilenum_Callback(hObject, eventdata, handles)
+function editFilenum_Callback(~, ~, handles)
 % hObject    handle to editFilenum (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'String') returns contents of editFilenum as text
 %        str2double(get(hObject,'String')) returns contents of editFilenum as a double
-guifig = get(hObject,'Parent');
-dispfile = get(handles.editFilenum, 'String');
-[dispfilenum, bOk] = str2double(dispfile);
-if bOk
-    acqgui_updateDisplayFile(guifig, dispfilenum);
+dispFile = get(handles.editFilenum, 'String');
+dispFileNum = str2double(dispFile); % nan if not valid
+if dispFileNum > 0 && round(dispFileNum) == dispFileNum %Check that it's an integer, implicitly check for nan
+    self.GuiModel.change_recording(dispFileNum);
 end
 
 % --- Executes on button press in buttonPrevFile.
-function buttonPrevFile_Callback(hObject, eventdata, handles)
+function buttonPrevFile_Callback(~, ~, handles)
 % hObject    handle to buttonPrevFile (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = get(hObject,'Parent');
-dispfilenum = str2double(get(handles.editFilenum,'String'));
-dispfilenum = dispfilenum - 1;
-acqgui_updateDisplayFile(guifig, dispfilenum);
+dispFile = get(handles.editFilenum, 'String');
+dispFileNum = str2double(dispFile); % nan if not valid
+newFileNum = dispFileNum - 1;
+if newFileNum > 0 && round(newFileNum) == newFileNum %Check that it's an integer, implicitly check for nan
+    self.GuiModel.change_recording(newFileNum);
+end
 
 % --- Executes on button press in buttonNextFile.
-function buttonNextFile_Callback(hObject, ~, handles)
+function buttonNextFile_Callback(~, ~, handles)
 % hObject    handle to buttonNextFile (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = get(hObject,'Parent');
-dispfilenum = str2double(get(handles.editFilenum,'String'));
-dispfilenum = dispfilenum + 1;
-acqgui_updateDisplayFile(guifig, dispfilenum);
+dispFile = get(handles.editFilenum, 'String');
+dispFileNum = str2double(dispFile); % nan if not valid
+newFileNum = dispFileNum + 1;
+if newFileNum > 0 && round(newFileNum) == newFileNum %Check that it's an integer, implicitly check for nan
+    self.GuiModel.change_recording(newFileNum);
+end
 
 
 % --- Executes during object creation, after setting all properties.
@@ -394,7 +397,6 @@ dgd.experData(dgd.ce).autoUpdate = value;
 aa_checkinAppData(guifig, 'acqguidata', dgd);
 if(value)
     recinfo = aa_getAppDataReadOnly(guifig, 'acqrecordinfo');
-    acqgui_updateDisplayFile(guifig, recinfo(dgd.ce).filenum);
 end
 
 % --- Executes on button press in buttonShowSongScore.
