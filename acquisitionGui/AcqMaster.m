@@ -21,6 +21,7 @@ classdef (Sealed) AcqMaster < handle
         daqRunning
         BufferTimer
     end
+    
     methods
         %% Constructor and destructor
         function self = AcqMaster(varargin)

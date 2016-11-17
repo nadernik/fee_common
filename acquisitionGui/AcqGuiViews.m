@@ -25,6 +25,7 @@ classdef (Sealed) AcqGuiViews < handle
         SongParamsListener
         StimListener
         RangeListener
+        AutoUpdateListener
     end
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
@@ -56,6 +57,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.DisplayedChannelListener = addlistener(self.GuiModel, 'DisplayedChannelsChanged', @self.update_displays);
             self.RangeListener = addlistener(self.GuiModel, 'ClipRangeChanged', @self.clip_range);
             self.DisplayedRecordingListener = addlistener(self.GuiModel, 'CurrentRecordingChanged', @self.displayed_recording);
+            self.AutoUpdateListener = addlistener(self.GuiModel, 'autoUpdate', 'PostSet', @self.auto_update);
             self.init();
             self.daq();
         end
@@ -269,6 +271,10 @@ classdef (Sealed) AcqGuiViews < handle
                 ylim([-0.5, 0.5]);
                 set(self.GuiData.axes3, 'ButtonDownFcn', @zoomboxCallback)
             end
+        end
+        
+        function auto_update(self, ~, ~)
+            self.GuiData.checkboxAutoDisplay.Value = self.GuiModel.autoUpdate;
         end
         
         function goAhead = ok_to_modify(self)

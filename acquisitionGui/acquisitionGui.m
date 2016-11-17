@@ -380,24 +380,13 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 % --- Executes on button press in checkboxAutoDisplay.
-function checkboxAutoDisplay_Callback(hObject, eventdata, handles)
+function checkboxAutoDisplay_Callback(~, ~, handles)
 % hObject    handle to checkboxAutoDisplay (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of checkboxAutoDisplay
-guifig = get(hObject,'Parent');
-value = get(hObject,'Value');
-[dgd, status] = aa_checkoutAppData(guifig, 'acqguidata');
-if(~status)
-    set(hObject, 'Value', ~value);
-    return;
-end
-dgd.experData(dgd.ce).autoUpdate = value;
-aa_checkinAppData(guifig, 'acqguidata', dgd);
-if(value)
-    recinfo = aa_getAppDataReadOnly(guifig, 'acqrecordinfo');
-end
+handles.GuiModel.autoUpdate = ~handles.GuiModel.autoUpdate;
 
 % --- Executes on button press in buttonShowSongScore.
 function buttonShowSongScore_Callback(hObject, eventdata, handles)

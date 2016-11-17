@@ -1,5 +1,5 @@
 classdef (Sealed) AcqGuiModel < handle
-    properties
+    properties (SetObservable)
         autoUpdate
     end
     properties (SetAccess = private)
