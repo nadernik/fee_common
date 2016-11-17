@@ -1,7 +1,8 @@
 function ShowCaVid(VIDEO,SOUND,SPEC, filename, params, showcontour)
 slowfac = 1; 
 if slowfac~=1
-    SOUND = pvocnormalized(SOUND,1/slowfac,200);
+%     SOUND = pvocnormalized(SOUND,1/slowfac,200);
+%  sounds funny... just play slower
 end
 if nargin<4
     filename = []; 
@@ -21,8 +22,8 @@ SOUNDfs = params.SOUNDfs;
 specTime = params.specTime; 
 F = params.F; 
 VIDEOfs = params.VIDEOfs; 
-AudBinWhenFrameStarts = params.AudBinWhenFrameStarts*slowfac;
-AudBinWhenFrameEnds = params.AudBinWhenFrameEnds*slowfac;
+AudBinWhenFrameStarts = params.AudBinWhenFrameStarts;
+AudBinWhenFrameEnds = params.AudBinWhenFrameEnds;
 tSound = (0:AudBinWhenFrameEnds(end))/SOUNDfs;
 
 if length(filename) == 0;
@@ -58,9 +59,9 @@ drawnow
 
 if savevid
     obj = vision.VideoFileWriter(filename, 'AudioInputPort', 1);%,  'fps', 20);
-    obj.FrameRate = VIDEOfs; 
+    obj.FrameRate = VIDEOfs/slowfac; 
 else
-    a = audioplayer(SOUND(tSound>1/VIDEOfs & (tSound<(size(VIDEO,1)/VIDEOfs-1/VIDEOfs)*slowfac)),SOUNDfs); 
+    a = audioplayer(SOUND(tSound>1/VIDEOfs & (tSound<(size(VIDEO,1)/VIDEOfs-1/VIDEOfs)*slowfac)),SOUNDfs/slowfac); 
     play(a); tic; 
 end
 
@@ -75,7 +76,7 @@ for framei = 1:size(VIDEO,1)
 %         size(Aud)
         step(obj, Frame.cdata, Aud)
     else
-        while toc<(AudBinWhenFrameEnds(framei)/SOUNDfs - 1/VIDEOfs);
+        while toc<(AudBinWhenFrameEnds(framei)/SOUNDfs - 1/VIDEOfs)*slowfac;
         end
     end
 end

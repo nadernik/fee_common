@@ -1,7 +1,7 @@
 %% montage awake
 % dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'; 
 % dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1'; 
-dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6737Oct28'; 
+dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6701_Nov16'; 
 load(fullfile(dbasepath, 'analysis.mat')); 
 Y = [];
 CompSoundSONG = [];
@@ -71,10 +71,10 @@ end
 %% CNMFE to find neurons for singing data
 close all; %clear all
 % saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1\cnmferesults'; 
-saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\cnmferesults'; 
+saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6701_Nov16\cnmferesults'; 
 global  d1 d2 numFrame ssub tsub sframe num2read Fs neuron neuron_ds ...
     neuron_full Ybg_weights nam; %#ok<NUSED> % global variables, don't change them manually
-nam = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\compiled.mat'; 
+nam = fullfile(dbasepath, 'compiled'); %'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6701_Nov16'; 
 cnmfe_choose_data;
 % create Source2D class object for storing results and parameters
 Fs = 20;             % frame rate
@@ -126,7 +126,7 @@ Y = neuron.reshape(Y, 1);       % convert a 3D video into a 2D matrix
 debug_on = false;
 save_avi = false;
 patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch
-K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
+K = [1000]; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
 min_corr = .5; %0.8;     % minimum local correlation for a seeding pixel
 min_pnr = 2;%9;       % minimum peak-to-noise ratio for a seeding pixel
@@ -256,15 +256,17 @@ save('C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_AN
 % clear all
 % dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'; 
 % saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1\cnmferesults'; 
-dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1'; 
-saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\cnmferesults'; 
+% dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1'; 
+% saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\cnmferesults'; 
+dbasepath = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6701_Nov16'; 
+saveherecnmfe = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6701_Nov16\cnmferesults'; 
 
 load(fullfile(dbasepath, 'compiled.mat'));
 load(saveherecnmfe, 'neuron'); 
 
 clf
 % find full motifs
-LabelCanon = {'A' 'B' 'C' 'D' 'E' 'F'}; 
+LabelCanon = {'A' 'B' 'C' 'D' 'E'}; 
 SOUNDfs = 40000; 
 VIDEOfs = 20; 
 moat = .2; 
@@ -306,7 +308,7 @@ for mi = 1:length(mstart)
     for ni = 1:Nneurons
         ByMotif(ni,mi,:) = spline((tIndUnwarped/VIDEOfs/upFac-segs(mstart(mi),1)/SOUNDfs), Unwarped(ni,:),DesUnwarpedTimes);
     end
-    if mi == 6
+    if mi == 2
         sampsong = CompSoundSONG(tIndUnwarped(1)*SOUNDfs/VIDEOfs/upFac:tIndUnwarped(end)*SOUNDfs/VIDEOfs/upFac); 
     end
 %     clf; subplot(4,1,1); displaySpecgramQuick(CompSoundSONG(tIndUnwarped(1)*SOUNDfs/VIDEOfs/upFac:tIndUnwarped(end)*SOUNDfs/VIDEOfs/upFac), SOUNDfs)
