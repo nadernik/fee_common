@@ -262,7 +262,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 % --- Executes on button press in buttonCreateExper.
-function buttonCreateExper_Callback(hObject, eventdata, handles)
+function buttonCreateExper_Callback(~, ~, handles)
 % hObject    handle to buttonCreateExper (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -273,30 +273,23 @@ if ExperManager.anyRecording || SongMonitor.detectingSong
     uiwait;
     return;
 end
-dirname = uigetdir('', 'Select the root directory?');
-if dirname ~= 0
-    status = handles.GuiModel.create_experiment();
-    if ~status
-        warning('Could not create experiment!');
-    end
-end
+handles.AcqModel.create_experiment();
 
 % --- Executes on button press in buttonLoadExperiment.
-function buttonLoadExperiment_Callback(hObject, ~, ~)
+function buttonLoadExperiment_Callback(~, ~, handles)
 % hObject    handle to buttonLoadExperiment (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-GuiFig = get(hObject,'Parent');
-[recinfo] = aa_getAppDataReadOnly(GuiFig, 'acqrecordinfo');
-[dgd] = aa_getAppDataReadOnly(GuiFig, 'acqguidata');
-if ~isempty(recinfo) && any([recinfo(:).bForcedRecording] | dgd.bTrigOnSong)
-    warndlg({'In order to alter the loaded experiments','all triggering and recording must be stopped'});
+ExperManager = handles.AcqModel.AcqObject.ExperManager;
+SongMonitor = handles.AcqModel.AcqObject.SongMonitor;
+if ExperManager.anyRecording || SongMonitor.detectingSong
+    warndlg({'In order to alter the loaded experiments', 'all triggering and recording must be stopped'});
     uiwait;
     return;
 end
 
 [experfilename, experfilepath] = uigetfile('exper.mat', 'Choose an experiment file:');
-if(~isequal(experfilename, 0))
+if experfilename ~= 0
     load([experfilepath,filesep,experfilename]);%Loads exper struct into namespace
     %Code for checking if exper has been moved
     if ~strcmp(exper.dir, experfilepath) %directory has been moved
@@ -338,29 +331,6 @@ end
 parse(p, varargin{:});
 Options = p.Results;
 
-%check out everything we need.
-handles = guidata(guifig);
-tsd = getappdata(guifig, 'threadSafeData');
-[dgd,status] = aa_checkoutAppData(guifig, 'acqguidata');
-if(~status) 
-    disp('Failed to checkout data necessary to add experiment');
-    return; 
-end
-[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
-if(~status)
-    disp('Failed to checkout data necessary to add experiment');
-    aa_checkinAppData(guifig, 'acqguidata', dgd); return; 
-end
-[recinfo, status] = aa_checkoutAppData(guifig, 'acqrecordinfo');
-if(~status)
-    disp('Failed to checkout data necessary to add experiment');
-    aa_checkinAppData(guifig, 'acqguidata', dgd); aa_checkinAppData(guifig, 'acqdisplaydata', ddd); return; 
-end
-[params, status] = aa_checkoutAppData(guifig, 'songtrigdata');
-if(~status)
-    disp('Failed to checkout data necessary to add experiment');
-    aa_checkinAppData(guifig, 'acqguidata', dgd); aa_checkinAppData(guifig, 'acqdisplaydata', ddd); aa_checkinAppData(guifig, 'acqrecordinfo', recinfo); return; 
-end    
 
 %% Verify that this experiment is compatible with existing ones
 desiredInSampRate = exper.desiredInSampRate;
@@ -667,117 +637,6 @@ function popupExperiments_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function updateCurrentExperiment(guifig, experNdx, bDeleted)
-%check out everything we need.
-handles = guidata(guifig);
-[dgd,status] = aa_checkoutAppData(guifig, 'acqguidata');
-if(~status) 
-    disp('Failed to checkout data necessary to add experiment');
-    return; 
-end
-[ddd, status] = aa_checkoutAppData(guifig, 'acqdisplaydata');
-if(~status)
-    disp('Failed to checkout data necessary to add experiment');
-    aa_checkinAppData(guifig, 'acqguidata'); return; 
-end
-recinfo = aa_getAppDataReadOnly(guifig, 'acqrecordinfo'); 
-
-%% save current display in backround structure
-if(dgd.ce > 0 && ~bDeleted) %In case the experiment is the first one opened...
-    dgd.experData(dgd.ce).dddbackground.dispfilenum = ddd.currFilenum;
-    dgd.experData(dgd.ce).dddbackground.dispchanAudio = ddd.currChanAudio;
-    dgd.experData(dgd.ce).dddbackground.dispchan = ddd.currChan;
-    dgd.experData(dgd.ce).dddbackground.dispchan2 = ddd.currChan2;
-    dgd.experData(dgd.ce).dddbackground.dispchan3 = ddd.currChan3;
-    dgd.experData(dgd.ce).dddbackground.startNdx = ddd.startNdx;
-    dgd.experData(dgd.ce).dddbackground.endNdx = ddd.endNdx;
-    dgd.experData(dgd.ce).dddbackground.lengthFile = ddd.lengthFile;
-end
-
-%% update the experiment
-dgd.ce = experNdx;
-set(handles.popupExperiments, 'Value', dgd.ce); 
-
-%% load new display data
-
-ddd.currFilenum = dgd.experData(dgd.ce).dddbackground.dispfilenum;
-ddd.currChanAudio = dgd.experData(dgd.ce).dddbackground.dispchanAudio;
-ddd.currChan = dgd.experData(dgd.ce).dddbackground.dispchan;
-ddd.currChan2 = dgd.experData(dgd.ce).dddbackground.dispchan2;
-ddd.currChan3 = dgd.experData(dgd.ce).dddbackground.dispchan3;
-ddd.startNdx = dgd.experData(dgd.ce).dddbackground.startNdx;
-ddd.endNdx = dgd.experData(dgd.ce).dddbackground.endNdx;
-ddd.lengthFile = dgd.experData(dgd.ce).dddbackground.lengthFile;
-
-%% set exper text display:
-set(handles.experInfo,'String',[dgd.expers{dgd.ce}.birdname,' ',dgd.expers{dgd.ce}.expername]);
-
-%% Set up channel popups
-chanstrings{1} = [num2str(dgd.expers{dgd.ce}.audioCh), '- audio'];
-for nChan = 0:length(dgd.expers{dgd.ce}.sigCh)
-    if nChan == 0
-        chanstrings{1} = [num2str(dgd.expers{dgd.ce}.audioCh), '- audio'];
-    else
-        chanstrings{nChan+1} = [num2str(dgd.expers{dgd.ce}.sigCh(nChan)),'-hardwareChan']; %#ok<AGROW>
-    end
-    dash = strfind(chanstrings{nChan+1}, '-');
-    chan = str2double(chanstrings{nChan+1}(1:dash(1)-1));
-    if chan == ddd.currChan
-        channdx = nChan+1;
-    end
-    if chan == ddd.currChanAudio
-        channdxAudio = nChan+1;
-    end
-    if chan == ddd.currChan2
-        channdx2 = nChan+1;
-    end   
-    if chan == ddd.currChan3
-        channdx3 = nChan+1;
-    end       
-end
-set(handles.popupAudio,'String', chanstrings);
-set(handles.popupAudio,'Value',channdxAudio);
-set(handles.popupChannel,'String', chanstrings);
-set(handles.popupChannel,'Value',channdx);
-set(handles.popupChannel2,'String', chanstrings);
-set(handles.popupChannel2,'Value',channdx2);
-set(handles.popupChannel3,'String', chanstrings);
-set(handles.popupChannel3,'Value',channdx3);
-
-
-%% Set various stuff
-set(handles.editSongDensity, 'String', num2str(dgd.experData(dgd.ce).songDetection.durationThreshold));
-set(handles.editPowerThres, 'String', num2str(dgd.experData(dgd.ce).songDetection.ratioThreshold));
-set(handles.editSongLength, 'String', num2str(dgd.experData(dgd.ce).songDetection.songDuration));
-set(handles.checkboxAutoDisplay, 'Value', dgd.experData(dgd.ce).autoUpdate);
-set(handles.editFilenum, 'String', num2str(ddd.currFilenum));
-
-%% set recording colors and values...
-if dgd.bTrigOnSong(dgd.ce)
-    set(handles.buttonTrigOnSong, 'String', 'Stop Triggering On Song');
-else
-    set(handles.buttonTrigOnSong, 'String', 'Start Triggering On Song');
-end
-if recinfo(dgd.ce).bForcedRecording
-    set(handles.textRecordingStatus, 'String', ['Started forced recording.', num2str(recinfo(dgd.ce).recfilenum)]);
-    set(handles.textRecordingStatus, 'BackgroundColor', 'cyan');
-    set(handles.buttonRecord, 'String', 'Stop Recording');
-elseif recinfo(dgd.ce).bSongTrigRecording
-    set(handles.textRecordingStatus, 'String', ['Started song recording.', num2str(recinfo(dgd.ce).recfilenum)]);
-    set(handles.textRecordingStatus, 'BackgroundColor', 'red');
-    set(handles.buttonRecord, 'String', 'Stop Recording');    
-else
-    set(handles.textRecordingStatus, 'String', ['Finished recording.', num2str(recinfo(dgd.ce).filenum), '.   Ready to record.']);
-    set(handles.textRecordingStatus, 'BackgroundColor', 'green');     
-    set(handles.buttonRecord, 'String', 'Start Recording')  
-end
-
-%% update specgram
-aa_checkinAppData(guifig, 'acqguidata',dgd);
-aa_checkinAppData(guifig, 'acqdisplaydata',ddd);
-acqgui_updateDisplay(guifig);
 
 function editFilenum_Callback(hObject, eventdata, handles)
 % hObject    handle to editFilenum (see GCBO)

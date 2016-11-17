@@ -58,19 +58,45 @@ classdef (Sealed) AcqMaster < handle
             end
         end
         
-        function append_exper(self, Experiment)
+        function status = append_exper(self, Experiment)
             modifyFun = @() self.ExperManager.append_experiment(Experiment);
-            self.modify_experiments(modifyFun);
+            status = self.modify_experiments(modifyFun);
+            if status && ~self.daqRunning
+                self.start_daq();
+            end
         end
-        function remove_exper(self, experNo)
+        function status = remove_exper(self, experNo)
             modifyFun = @() self.ExperManager.remove_experiment(experNo);
-            self.modify_experiments(modifyFun);
+            status = self.modify_experiments(modifyFun);
+        end
+        function status = suspend(self)
+            if ~self.ExperManager.anyRecording && ~self.ExperManager.suspended && self.daqRunning
+                self.ExperManager.suspend_experiments();
+                self.SongMonitor.stop_monitor();
+                self.ExperManager.clear_daq();
+                self.stop_daq();
+                status = true;
+            else
+                status = false;
+            end
+        end
+        function status = resume(self)
+            if ~self.daqRunning
+                self.init_daq();
+                if self.ExperManager.suspended
+                    self.ExperManager.resume_experiments();
+                end
+                self.start_daq();
+                status = true;
+            else
+                status = false;
+            end
         end
     end
     methods (Access = private)
         %% Methods to interface with DaqBuffer
         function init_daq(self)
-            if isempty(self.ExperManager.Experiments)
+            if self.ExperManager.isEmpty
                 return
             end
             %% Set up DAQ
@@ -108,17 +134,20 @@ classdef (Sealed) AcqMaster < handle
             notify(self, 'DaqChanged');
         end
         
-        function modify_experiments(self, modifyFun)
+        function status = modify_experiments(self, modifyFun)
+            wasRunning = self.daqRunning;
             if wasRunning
-                self.SongMonitor.stop_monitor();
-                self.ExperManager.suspend_experiments();
-                self.ExperManager.clear_daq();
-                self.stop_daq();
+                status = self.suspend();
+            else
+                status = true;
             end
-            modifyFun();
-            self.init_daq();
-            if wasRunning
-                self.ExperManager.resume_experiments();
+            if status
+                modifyFun();
+                if wasRunning && ~self.ExperManager.isEmpty
+                    status = status && self.resume();
+                else
+                    self.init_daq();
+                end
             end
         end
         %% Methods related to state transitions

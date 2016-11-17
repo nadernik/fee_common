@@ -11,6 +11,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         isEmpty
         daqValid
         anyRecording
+        suspended
     end
     properties (Access = private)
         rememberedDetect
@@ -82,10 +83,10 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.DetectionListeners(experNo) = [];
             delete(self.SongParametersListeners{experNo});
             self.SongParametersListeners(experNo) = [];
-            self.get_inchannels();
             if ~isempty(self.rememberedDetect) && nExper > numel(self.rememberedDetect)
                 self.rememberedDetect(experNo) = [];
             end
+            self.get_inchannels();
             self.update_exper_strings();
             notify(self, 'ExerimentsChanged');
         end
@@ -165,7 +166,10 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             val = ~isempty(self.DaqObj);
         end
         function val = get.anyRecording(self)
-            val = any(cellfun(@(E) E.isRecording, self.Experiments));
+            val = ~self.isEmpty && any(cellfun(@(E) E.isRecording, self.Experiments));
+        end
+        function val = suspended(self)
+            val = ~self.isEmpty && ~isempty(self.rememberedDetect);
         end
     end
     methods (Access = private)
@@ -194,8 +198,12 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 'UniformOutput', false);
         end
         function get_inchannels(self)
-            inChannels = cellfun(@(E) E.inChannels, self.Experiments, 'UniformOutput', false); %#ok<PROP>
-            self.inChannels = vertcat(inChannels{:}); %#ok<PROP>
+            if ~self.isEmpty
+                inChannels = cellfun(@(E) E.inChannels, self.Experiments, 'UniformOutput', false); %#ok<PROP>
+                self.inChannels = vertcat(inChannels{:}); %#ok<PROP>
+            else
+                self.inChannels = [];
+            end
         end
         function check_consistency(self)
             if ~isempty(self.Experiments)
@@ -206,7 +214,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             end
         end
         function update_exper_strings(self)
-            if isempty(self.Experiments)
+            if self.isEmpty
                 self.experimentStrings = {''};
             else
                 formatFun = @(E) sprintf('%s: %s', E.birdName, E.experName);

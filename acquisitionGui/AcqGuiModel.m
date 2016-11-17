@@ -57,6 +57,7 @@ classdef (Sealed) AcqGuiModel < handle
         
         %% Buttons / high level actions -- maybe should be in separate controller
         function change_recording(self, recordingNo)
+            % change the recording for the current experiment
             if self.displayRecordingNo(self.currentExperNdx) ~= recordingNo
                 self.displayRecordingNo(self.currentExperNdx) = recordingNo;
                 self.load_recording();
@@ -71,23 +72,50 @@ classdef (Sealed) AcqGuiModel < handle
                 self.load_channels(hwChannel);
             end
         end
-        function load_experiment(self)
-            [experFilename, experPath] = uigetfile('exper.mat', 'Choose an experiment file:');
-            if experFilename ~= 0
-                fullPath = fullfile(experPath, experFilename);
-                Exper = SongTriggeredExperiment.load_experiment(fullPath, 'currentDir', experPath);
-                self.append_exper(Exper);
+        function status = load_experiment(self)
+            status = self.AcqObj.suspend();
+            if status
+                [experFilename, experPath] = uigetfile('exper.mat', 'Choose an experiment file:');
+                status = status && experFilename ~= 0;
+                if status
+                    fullPath = fullfile(experPath, experFilename);
+                    [loadStatus, Exper] = SongTriggeredExperiment.load_experiment(fullPath, 'currentDir', experPath);
+                    status = status && loadStatus;
+                    if status
+                        self.append_exper(Exper);
+                        self.change_current_exper(numel(self.displayRecordingNo)); % most recent one
+                    end
+                end
+                resumed = self.AcqObj.resume();
+                assert(resumed, 'Could not resume the experiment!');
             end
         end
         function status = create_experiment(self)
-            [status, Exper] = SongTriggeredExperiment.create_experiment_prompt();
+            status = self.AcqObj.suspend();
             if status
-                self.append_exper(Exper);
-                self.change_current_exper(numel(self.displayRecordingNo)); % most recent one
+                dirname = uigetdir('', 'Select the root directory');
+                if dirname == 0
+                    status = false;
+                else
+                    [createStatus, Exper] = SongTriggeredExperiment.create_experiment_prompt();
+                    if createStatus
+                        self.append_exper(Exper);
+                        self.change_current_exper(numel(self.displayRecordingNo)); % most recent one
+                    else
+                        status = false;
+                    end
+                end
+                resumed = self.AcqObj.resum();
+                assert(resumed, 'Could not resume the experiment!');
             end
         end
-        function close_experiment(self)
-            self.remove_exper();
+        function status = close_experiment(self)
+            if self.currentExperNdx > 0
+                status = self.AcqObj.suspend();
+                self.remove_exper();
+            else
+                status = false;
+            end
         end
         function record_button(self)
             currExper = self.CurrentExper;
@@ -218,33 +246,42 @@ classdef (Sealed) AcqGuiModel < handle
             notify(self, 'CurrentExperimentChanged');
             notify(self, 'DetectChanged');
         end
-        function append_exper(self, Experiment)
-            self.AcqObj.append_exper(Experiment);
-            self.displayChannels(:, end + 1) = -1 * ones(4, 1);
-            self.displayNdx(:, end + 1) = zeros(4, 1);
-            self.cLimits(:, end + 1) = nan(2, 1);
-            self.displayRecordingNo(end + 1) = -1;
-            self.madeRecordings(end + 1) = false;
-            self.init_recording(numel(self.displayRecordingNo));
-            % Update display state
+        function status = append_exper(self, Experiment)
+            status = self.AcqObj.append_exper(Experiment);
+            if status
+                self.displayChannels(:, end + 1) = -1 * ones(4, 1);
+                self.displayNdx(:, end + 1) = zeros(4, 1);
+                self.cLimits(:, end + 1) = nan(2, 1);
+                self.displayRecordingNo(end + 1) = -1;
+                self.madeRecordings(end + 1) = false;
+                self.init_recording(numel(self.displayRecordingNo));
+            end
         end
-        function remove_exper(self)
+        function status = remove_exper(self)
             currExperNo = self.currentExperNdx;
-            self.AcqObj.remove_exper(currExperNo);
-            self.displayChannels(:, currExperNo) = [];
-            self.displayNdx(:, currExperNo) = [];
-            self.cLimits(:, currExperNo) = [];
-            self.displayRecordingNo(currExperNo) = [];
-            self.madeRecordings(currExperNo) = [];
+            status = self.AcqObj.remove_exper(currExperNo);
+            if status
+                self.displayChannels(:, currExperNo) = [];
+                self.displayNdx(:, currExperNo) = [];
+                self.cLimits(:, currExperNo) = [];
+                self.displayRecordingNo(currExperNo) = [];
+                self.madeRecordings(currExperNo) = [];
+            end
+        end
+        function no_exper(self)
         end
         function load_recording(self)
-            self.CurrentRecording = AcqGuiRecording(...
-                self.CurrentExper, ...
-                self.displayRecordingNo(self.currentExperNdx), ...
-                'maxLoadSize', self.maxLoadSize);
-            self.clip_ndx(1, self.CurrentRecording.numSamples);
+            if self.recordingDisplayed
+                self.CurrentRecording = AcqGuiRecording(...
+                    self.CurrentExper, ...
+                    self.displayRecordingNo(self.currentExperNdx), ...
+                    'maxLoadSize', self.maxLoadSize);
+                self.clip_ndx(1, self.CurrentRecording.numSamples);
+                self.load_channels(self.displayChannels(:, self.currentExperNdx));
+            else
+                self.CurrentRecording = [];
+            end
             notify(self, 'CurrentRecordingChanged');
-            self.load_channels(self.displayChannels(:, self.currentExperNdx));
         end
         function load_channels(self, hwChannels)
             self.CurrentRecording.load_channels(hwChannels);
