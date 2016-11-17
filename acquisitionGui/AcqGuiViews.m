@@ -14,6 +14,7 @@ classdef (Sealed) AcqGuiViews < handle
     properties (Access = private)
         CurrentExperimentListener
         DisplayedChannelListener
+        DisplayedRecordingListener
         DaqListener
         RestartListener
         RestartChangedListener
@@ -46,7 +47,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.RestartChangedListener = addlistener(self.RestartManager, ...
                 'RestartChanged', @self.restart_changed);
             self.ExpersChangedListener = addlistener(self.ExperManager, 'ExperimentsChanged', @self.experiments);
-            self.RecordingStatusListener = addlistener(self.GuiModel, 'RecordingStatusChanged', @self.recording);
+            self.RecordingStatusListener = addlistener(self.GuiModel, 'RecordingStatusChanged', @self.recording_status);
             self.DetectChangedListener = addlistener(self.GuiModel, 'DetectChanged', @self.detect);
             self.PeekCompleteListener = addlistener(self.GuiModel, 'PeekComplete', @self.peek);
             self.SongParamsListener = addlistener(self.GuiModel, 'SongParametersChanged', @self.song_params);
@@ -54,6 +55,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.CurrentExperimentListener = addlistener(self.GuiModel, 'CurrentExperimentChanged', @self.init_exper);
             self.DisplayedChannelListener = addlistener(self.GuiModel, 'DisplayedChannelsChanged', @self.update_displays);
             self.RangeListener = addlistener(self.GuiModel, 'ClipRangeChanged', @self.clip_range);
+            self.DisplayedRecordingListener = addlistener(self.GuiModel, 'CurrentRecordingChanged', @self.displayed_recording);
             self.init();
             self.daq();
         end
@@ -103,7 +105,9 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function init_exper(self, ~, ~)
             self.chan_strings();
-            self.update_displays();
+        end
+        function displayed_recording(self, ~, ~)
+            self.update_displays([], ExperEvent(1:4));
             self.file_properties();
         end
         function chan_strings(self)
@@ -125,7 +129,7 @@ classdef (Sealed) AcqGuiViews < handle
         function update_displays(self, ~, ExperEventObj)
             dispNos = ExperEventObj.nos;
             if self.GuiModel.recordingDisplayed
-                display_chans(dispNos);
+                self.display_chans(dispNos);
             else
                 self.clear_displays();
             end
@@ -202,7 +206,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function gui_signals(self)
         end
-        function recording(self, ~, ~)
+        function recording_status(self, ~, ~)
             currExper = self.get_current_exper();
             if currExper.isRecording
                 recNo = currExper.lastFileNo + 1;

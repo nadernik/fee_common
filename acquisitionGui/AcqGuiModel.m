@@ -16,7 +16,6 @@ classdef (Sealed) AcqGuiModel < handle
         displayRecordingNo = nan(0, 1);% Nx1 matrix of file number to display, -1 for nothing
         madeRecordings = false(0, 1);
         cLimits = nan(2, 0);
-        RecordingListener
         
         currentExperNdx = 0;
         startNdx = 0;
@@ -112,7 +111,16 @@ classdef (Sealed) AcqGuiModel < handle
         function status = close_experiment(self)
             if self.currentExperNdx > 0
                 status = self.AcqObj.suspend();
-                self.remove_exper();
+                removed = self.remove_exper();
+                if removed
+                    nextExperNdx = self.currentExperNdx - 1;
+                    assert(nextExperNdx >= 0, 'invalid experiment'); % Zero indicates no experiment
+                    self.change_current_exper(nextExperNdx);
+                else
+                    status = false;
+                end
+                resumed = self.AcqObj.resume();
+                assert(resumed, 'Could not resume the experiment!');
             else
                 status = false;
             end
@@ -205,7 +213,7 @@ classdef (Sealed) AcqGuiModel < handle
             val = self.AcqObj.ExperManager.Experiments{self.currentExperNdx};
         end
         function val = get.recordingDisplayed(self)
-            val = ~isempty(self.AcqObj.Experiments) && ...
+            val = ~self.AcqObj.ExperManager.isEmpty && ...
                 self.displayRecordingNo(self.currentExperNdx) > 0;
         end
     end
@@ -242,7 +250,7 @@ classdef (Sealed) AcqGuiModel < handle
         end
         function change_current_exper(self, experNo)
             self.currentExperNdx = experNo;
-            self.load_recording();
+            self.load_recording(); % creates a CurrentRecordingChanged event
             notify(self, 'CurrentExperimentChanged');
             notify(self, 'DetectChanged');
         end
@@ -267,8 +275,6 @@ classdef (Sealed) AcqGuiModel < handle
                 self.displayRecordingNo(currExperNo) = [];
                 self.madeRecordings(currExperNo) = [];
             end
-        end
-        function no_exper(self)
         end
         function load_recording(self)
             if self.recordingDisplayed
