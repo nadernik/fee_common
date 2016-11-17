@@ -303,22 +303,18 @@ end
 
 
 % --- Executes on selection change in popupExperiments.
-function popupExperiments_Callback(hObject, eventdata, handles)
+function popupExperiments_Callback(~, ~, handles)
 % hObject    handle to popupExperiments (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: contents = get(hObject,'String') returns popupExperiments contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from popupExperiments
-guifig = get(hObject,'Parent');
-newExper = get(hObject, 'Value');
-updateCurrentExperiment(guifig, newExper, false);
-%Set value of popup according to whether experiment change stuck.
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-set(hObject,'Value',dgd.ce);
+newNdx = handles.popupExperiments.Value;
+handles.GuiModel.change_current_experiment(newNdx);
 
 % --- Executes during object creation, after setting all properties.
-function popupExperiments_CreateFcn(hObject, eventdata, handles)
+function popupExperiments_CreateFcn(hObject, ~, ~)
 % hObject    handle to popupExperiments (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -471,14 +467,6 @@ buttonRecord_Callback(hObject, eventdata, handles)
 pause(15)
 
 end
-
-
-% --------------------------------------------------------------------
-function MenuStartTrigOnSong_Callback(hObject, eventdata, handles)
-% hObject    handle to MenuStartTrigOnSong (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
 
 % --------------------------------------------------------------------
 function dlgRecordingParameters_Callback(hObject, eventdata, handles)

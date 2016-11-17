@@ -107,6 +107,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function init_exper(self, ~, ~)
             self.chan_strings();
+            self.exper_val();
         end
         function displayed_recording(self, ~, ~)
             self.recno_string();
@@ -114,16 +115,25 @@ classdef (Sealed) AcqGuiViews < handle
             self.file_properties();
         end
         function chan_strings(self)
-            CurrExper = self.get_current_exper();
-            nChan = numel(CurrExper.inChannels);
-            chanStrings = cell(nChan, 1);
-            chanStrings{1} = sprtintf('%d- audio', CurrExper.songHWChannel);
-            chanStrings(2:end) = cellfun(@(x) sprintf('%d- other', x),...
-                num2cell(CurrExper.nonSongHWChannels), 'UniformOutput', false);
+            if ~self.ExperManager.isEmpty
+                CurrExper = self.get_current_exper();
+                nChan = numel(CurrExper.inChannels);
+                chanStrings = cell(nChan, 1);
+                chanStrings{1} = sprtintf('%d- audio', CurrExper.songHWChannel);
+                chanStrings(2:end) = cellfun(@(x) sprintf('%d- other', x),...
+                    num2cell(CurrExper.nonSongHWChannels), 'UniformOutput', false);
+            else
+                chanStrings = {''};
+            end
             set(self.GuiData.popupAudio,'String', chanStrings);
             set(self.GuiData.popupChannel,'String', chanStrings);
             set(self.GuiData.popupChannel2,'String', chanStrings);
             set(self.GuiData.popupChannel3,'String', chanStrings);
+        end
+        function exper_val(self)
+            if ~self.ExperManager.isEmpty
+                set(self.GuiData.popupExperiments, 'Value', self.GuiModel.currentExperNdx);
+            end
         end
 
         function clip_range(self, ~, ~)
@@ -192,7 +202,10 @@ classdef (Sealed) AcqGuiViews < handle
         end
         
         function exper_strings(self)
-            set(self.GuiData.popupExperiments, 'String', self.GuiData.ExperManager.experimentStrings);
+            if ~self.ExperManager.isEmpty
+                set(self.GuiData.popupExperiments, 'String', self.ExperManager.experimentStrings);
+            else
+            end
         end
         function file_properties(self)
             if self.GuiModel.recordingDisplayed
