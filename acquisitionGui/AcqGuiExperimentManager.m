@@ -174,7 +174,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         function val = get.anyRecording(self)
             val = ~self.isEmpty && any(cellfun(@(E) E.isRecording, self.Experiments));
         end
-        function val = suspended(self)
+        function val = get.suspended(self)
             val = ~self.isEmpty && ~isempty(self.rememberedDetect);
         end
     end

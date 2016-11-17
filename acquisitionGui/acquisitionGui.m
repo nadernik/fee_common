@@ -455,50 +455,25 @@ function buttonRecordRegIntervals_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonRecordRegIntervals (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 for nrec = 1:50
-
 buttonRecord_Callback(hObject, eventdata, handles)
-
 pause(15)
-
 buttonRecord_Callback(hObject, eventdata, handles)
-
 pause(15)
-
 end
 
-% --------------------------------------------------------------------
+
+function MenuStartTrigOnSong_Callback(hObject, eventdata, handles)
+% hObject    handle to MenuStartTrigOnSong (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
 function dlgRecordingParameters_Callback(hObject, eventdata, handles)
 % hObject    handle to dlgRecordingParameters (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = findobj('Name','acquisitionGui');
-handles = guidata(guifig);
-tsd = getappdata(guifig,'threadSafeData');
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-
-stp = tsd.songTrigParams(dgd.ce);
-prompt = {'Pre Trigger Secs:','Post Trigger Secs:','Max File Length:'};
-dlg_title = 'Input Recording Parameters:';
-num_lines = 1;
-def = {num2str(stp.preSecs),num2str(stp.postSecs),num2str(stp.maxFileLength)};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-if(length(answer) ~= 0) %#ok<ISMT>
-    [stp.preSecs, bStatus1] = str2num(answer{1}); %#ok<ST2NM>
-    [stp.postSecs, bStatus2] = str2num(answer{2}); %#ok<ST2NM>
-    [stp.maxFileLength , bStatus3] = str2num(answer{3}); %#ok<ST2NM>
-    if bStatus1 && bStatus2 && bStatus3
-        tsd.songTrigParams(dgd.ce).preSecs = stp.preSecs;
-        tsd.songTrigParams(dgd.ce).postSecs = stp.postSecs;
-        tsd.songTrigParams(dgd.ce).maxFileLength = stp.maxFileLength;
-    else
-        beep;
-    end
-    setappdata(guifig,'threadSafeData', tsd);
-    acqgui_updateDisplay(guifig);  
-end
+handles.Views.change_recording_params();
 
 % --------------------------------------------------------------------
 function MenuStartRecording_Callback(hObject, eventdata, handles)

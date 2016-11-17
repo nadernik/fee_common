@@ -135,6 +135,32 @@ classdef (Sealed) AcqGuiViews < handle
                 set(self.GuiData.popupExperiments, 'Value', self.GuiModel.currentExperNdx);
             end
         end
+        
+        function change_recording_params(self)
+            if ~self.ExperManager.isEmpty
+                CurrExper = self.GuiModel.CurrentExper;
+                promptStr = {'Pre Trigger Secs:', 'Post Trigger Secs:', 'Max File Length:'};
+                dlgTitle = 'Input Recording Parameters:';
+                num_lines = 1;
+                defaultVals = {num2str(CurrExper.preSongSeconds),...
+                    num2str(CurrExper.postSongSeconds),...
+                    num2str(CurrExper.maxFileDuration)};
+                answerCell = inputdlg(promptStr,dlgTitle,num_lines,defaultVals);
+               
+                if ~isempty(answerCell)
+                    preSecs = str2double(answerCell{1});
+                    postSecs = str2double(answerCell{2});
+                    maxDuration = str2double(answerCell{3});
+                    if ~isnan(preSecs) && ~isnan(preSecs) && ~isnan(maxDuration)
+                        CurrExper.preSongSeconds = preSecs;
+                        CurrExper.postSongSeconds = postSecs;
+                        CurrExper.maxFileDuration = maxDuration;
+                    else
+                        warning('Invalid input');
+                    end
+                end
+            end
+        end
 
         function clip_range(self, ~, ~)
             self.display_chans([], ExperEvent(1:4));
