@@ -17,8 +17,8 @@ classdef (Sealed) AcqMaster < handle
         
         %% Monitoring related properties
         SongMonitor
-        isBuffering
-        daqRunning
+        isBuffering = false
+        daqRunning = false
         BufferTimer
     end
     
@@ -107,6 +107,7 @@ classdef (Sealed) AcqMaster < handle
                 self.ExperManager.commonFs, ...
                 self.bufferSecs, ...
                 self.updateFreq);
+            assert(~isempty(self.DaqObj), 'Did not receive Daq information');
             if ~isempty(self.daqLogFile)
                 self.DaqObj.logFID = fopen(self.daqLogFile, 'w');
             end

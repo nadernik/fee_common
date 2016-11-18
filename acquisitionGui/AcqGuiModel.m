@@ -52,7 +52,7 @@ classdef (Sealed) AcqGuiModel < handle
             self.DetectChangedListener = addlistener(self.AcqObj.ExperManager, 'DetectionChanged', @self.detect_changed_cb);
             self.PeekCompleteListener = addlistener(self.AcqObj.SongMonitor, 'PeekComplete', @self.peek_complete_cb);
             self.SongParametersListener = addlistener(self.AcqObj.ExperManager, 'SongParametersChanged', @self.song_parameters_cb);
-            self.RestartListener = addlistener(self.AcqObj.ExperManager, 'ExperimentsRestarted', @self.restart_cb);
+            self.RestartListener = addlistener(self.AcqObj.ExperManager, 'ExperimentsReset', @self.restart_cb);
             self.FilePropertiesListener = addlistener(self.AcqObj.ExperManager, 'FilePropertiesChanged', @self.file_properties_cb);
             self.autoUpdate = Params.autoUpdate;
             self.maxLoadSize = Params.maxLoadSize;
@@ -103,7 +103,11 @@ classdef (Sealed) AcqGuiModel < handle
             end
         end
         function status = create_experiment(self)
-            status = self.AcqObj.suspend();
+            if self.AcqObj.daqRunning
+                status = self.AcqObj.suspend();
+            else
+                status = true;
+            end
             if status
                 dirname = uigetdir('', 'Select the root directory');
                 if dirname == 0
@@ -117,7 +121,7 @@ classdef (Sealed) AcqGuiModel < handle
                         status = false;
                     end
                 end
-                resumed = self.AcqObj.resum();
+                resumed = self.AcqObj.resume();
                 assert(resumed, 'Could not resume the experiment!');
             end
         end
@@ -356,5 +360,6 @@ classdef (Sealed) AcqGuiModel < handle
         StimAvailable
         ClipRangeChanged
         CLimitsChanged
+        FilePropertiesChanged
     end
 end

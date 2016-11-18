@@ -5,7 +5,7 @@ classdef (Sealed) AcqGuiMonitor < handle
         isRunning
     end
     properties (SetAccess = private)
-        detectingSong % indicates if ANY experiments are detecting song
+        detectingSong = false % indicates if ANY experiments are detecting song
     end
     properties (Access = private)
         %% Experiment related properties

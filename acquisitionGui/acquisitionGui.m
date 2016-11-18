@@ -268,7 +268,7 @@ function buttonCreateExper_Callback(~, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 goAhead = handles.Views.ok_to_modify();
 if goAhead
-    status = handles.AcqModel.create_experiment();
+    status = handles.GuiModel.create_experiment();
     if ~status
         warning('Could not create experiment');
     end
@@ -281,7 +281,7 @@ function buttonLoadExperiment_Callback(~, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 goAhead = handles.Views.ok_to_modify();
 if goAhead
-    status = handles.AcqModel.load_experiment();
+    status = handles.GuiModel.load_experiment();
     if ~status
         warning('Could not load experiment');
     end

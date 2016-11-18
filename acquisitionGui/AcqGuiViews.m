@@ -69,7 +69,6 @@ classdef (Sealed) AcqGuiViews < handle
         function init(self)
             %% Initialize GUI
             set(self.GuiFig, 'HandleVisibility', 'on');
-            self.GuiFig.CloseRequestFcn = @(~, ~) self.delete();
             
             %% Initialize properties of UI elements
             set(self.GuiData.buttonTrigOnSong,'Enable','off');
@@ -442,8 +441,8 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.editSongLength, 'String', num2str(CurrExper.songDuration));
         end
         
-        function close_request(self, ~, ~)
-            poisonPill = onCleanup(@() closereq());
+        function close_request(self, src, callbackdata)
+            poisonPill = onCleanup(@() delete(src));
             delete(self.GuiModel);
         end
         

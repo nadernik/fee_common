@@ -187,7 +187,7 @@ classdef SongTriggeredExperiment < handle
                 assert(minFreq <= self.nyqFreq && maxFreq <= self.nyqFreq, ...
                     'frequencies must be less than nyquist freqeuncy');
             else
-                desiredNyqF = self.desifredFs / 2;
+                desiredNyqF = self.desiredFs / 2;
                 assert(minFreq <= desiredNyqF && maxFreq <= desiredNyqF, ...
                     'frequencies must be less than desired nyquist frequency');
             end
@@ -604,7 +604,7 @@ classdef SongTriggeredExperiment < handle
                 experName = input('Enter a experiment name (nothing for default):', 's');
                 experDesc = input('Enter a description of the exper:', 's');
                 desiredInSampRate = input('Enter the desired input sampling rate:');
-                audioCh = input('What hw channel will audio be on: (-1 if no audio)');
+                audioCh = input('What hw channel will audio be on:');
                 sigCh = input('Enter vector of other hw channels to be recorded: ([] if none)');
                 
                 nCh = numel(sigCh);
