@@ -20,6 +20,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         RecStartedListeners
         RecCompleteListeners
         SongParametersListeners
+        FilePropertyListeners
     end
     methods
         function self = AcqGuiExperimentManager(varargin)
@@ -61,7 +62,8 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.DetectionListeners{end + 1} = addlistener(Experiment, 'DetectionChanged', @self.detection_changed_cb);
             self.RecCompleteListeners{end + 1} = addlistener(Experiment, 'RecordingComplete', @self.recording_complete_cb);
             self.RecStartedListeners{end + 1} = addlistener(Experiment, 'RecordingStarted', @self.recording_started_cb);
-            self.SongParametersListeners{end + 1} = addlistener(Experiment, 'SongParametersChanged', @self.parametes_changed_cb);
+            self.SongParametersListeners{end + 1} = addlistener(Experiment, 'SongParametersChanged', @self.parameters_changed_cb);
+            self.FilePropertyListeners{end + 1} = addlistener(Experiment, 'FilePropertiesChanged', @self.file_parameters_changed_cb);
             self.update_exper_strings();
             notify(self, 'ExperimentsChanged');
         end
@@ -163,6 +165,10 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             experNo = find_event_exper(self, SourceExper);
             notify(self, 'SongParametersChanged', ExperEvent(experNo));
         end
+        function file_parameters_changed_cb(self, SourceExper, ~)
+            experNo = find_event_exper(self, SourceExper);
+            notify(self, 'SongParametersChanged', ExperEvent(experNo));
+        end
         
         %% Dependent getters
         function val = get.isEmpty(self)
@@ -199,7 +205,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 self.Experiments, ...
                 'UniformOutput', false);
             self.SongParametersListeners = cellfun( ...
-                @(E) addlistener(E, 'SongParametersChanged', @self.parameters_changed_cb), ...
+                @(E) addlistener(E, 'FilePropertiesChanged', @self.parameters_changed_cb), ...
                 self.Experiments, ...
                 'UniformOutput', false);
         end
@@ -239,5 +245,6 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         ExperimentsReset
         ExperStringsChanged
         SongParametersChanged
+        FilePropertiesChanged
     end
 end

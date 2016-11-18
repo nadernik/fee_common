@@ -676,5 +676,6 @@ classdef SongTriggeredExperiment < handle
         RecordingComplete
         DetectionChanged
         SongParametersChanged
+        FilePropertiesChanged
     end
 end

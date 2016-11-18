@@ -463,34 +463,34 @@ pause(15)
 end
 
 
-function MenuStartTrigOnSong_Callback(hObject, eventdata, handles)
+function MenuStartTrigOnSong_Callback(~, ~, ~)
 % hObject    handle to MenuStartTrigOnSong (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
-function dlgRecordingParameters_Callback(hObject, eventdata, handles)
+function dlgRecordingParameters_Callback(~, ~, handles)
 % hObject    handle to dlgRecordingParameters (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 handles.Views.change_recording_params();
 
 % --------------------------------------------------------------------
-function MenuStartRecording_Callback(hObject, eventdata, handles)
+function MenuStartRecording_Callback(~, ~, ~)
 % hObject    handle to MenuStartRecording (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 % --------------------------------------------------------------------
-function dlgForcedRecordingProperties_Callback(hObject, eventdata, handles)
+function dlgForcedRecordingProperties_Callback(~, ~, ~)
 % hObject    handle to dlgForcedRecordingProperties (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 % --- Executes on selection change in listboxDatafileProperties.
-function listboxDatafileProperties_Callback(hObject, eventdata, handles)
+function listboxDatafileProperties_Callback(~, ~, ~)
 % hObject    handle to listboxDatafileProperties (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -500,7 +500,7 @@ function listboxDatafileProperties_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function listboxDatafileProperties_CreateFcn(hObject, eventdata, handles)
+function listboxDatafileProperties_CreateFcn(hObject, ~, ~)
 % hObject    handle to listboxDatafileProperties (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -513,7 +513,7 @@ end
 
 
 
-function editDatafileComment_Callback(hObject, eventdata, handles)
+function editDatafileComment_Callback(~, ~, ~)
 % hObject    handle to editDatafileComment (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -523,7 +523,7 @@ function editDatafileComment_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function editDatafileComment_CreateFcn(hObject, eventdata, handles)
+function editDatafileComment_CreateFcn(hObject, ~, ~)
 % hObject    handle to editDatafileComment (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
@@ -560,7 +560,7 @@ if(~all(isspace(commentStr)))
 end
 
 % --------------------------------------------------------------------
-function MenuAudioAxis_Callback(hObject, eventdata, handles)
+function MenuAudioAxis_Callback(~, ~, ~)
 % hObject    handle to MenuAudioAxis (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -600,7 +600,7 @@ hold off;
  
 
 % --------------------------------------------------------------------
-function MenuSignalAxis_Callback(hObject, eventdata, handles)
+function MenuSignalAxis_Callback(~, ~, ~)
 % hObject    handle to MenuSignalAxis (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -673,7 +673,7 @@ if(length(answer) ~= 0) %#ok<ISMT>
 end
 
 % --- Executes on button press in buttonDisplayFilesPerHour.
-function buttonDisplayFilesPerHour_Callback(hObject, eventdata, handles)
+function buttonDisplayFilesPerHour_Callback(~, ~, ~)
 % hObject    handle to buttonDisplayFilesPerHour (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -701,7 +701,7 @@ ylabel('files');
 
 
 % --- Executes on button press in buttonFindCell.
-function buttonFindCell_Callback(hObject, eventdata, handles)
+function buttonFindCell_Callback(~, ~, ~)
 % hObject    handle to buttonFindCell (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -710,27 +710,27 @@ function buttonFindCell_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in buttonReportCellLoss.
-function buttonReportCellLoss_Callback(hObject, eventdata, handles)
+function buttonReportCellLoss_Callback(~, ~, ~)
 % hObject    handle to buttonReportCellLoss (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 % --------------------------------------------------------------------
-function viewSignalIFR_Callback(hObject, eventdata, handles)
+function viewSignalIFR_Callback(~, ~, ~)
 % hObject    handle to viewSignalIFR (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
 % --------------------------------------------------------------------
-function viewSignalRaw_Callback(hObject, eventdata, handles)
+function viewSignalRaw_Callback(~, ~, ~)
 % hObject    handle to viewSignalRaw (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % --- Executes on button press in buttonUp.
-function buttonUp_Callback(hObject, eventdata, handles)
+function buttonUp_Callback(~, ~, ~)
 % hObject    handle to buttonUp (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -738,19 +738,19 @@ function buttonUp_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in buttonDown.
-function buttonDown_Callback(hObject, eventdata, handles)
+function buttonDown_Callback(~, ~, ~)
 % hObject    handle to buttonDown (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % --- Executes on button press in buttonSutterGoTo.
-function buttonSutterGoTo_Callback(hObject, eventdata, handles)
+function buttonSutterGoTo_Callback(~, ~, ~)
 % hObject    handle to buttonSutterGoTo (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % --------------------------------------------------------------------
-function menuSutterMovement_Callback(hObject, eventdata, handles)
+function menuSutterMovement_Callback(~, ~, ~)
 % hObject    handle to menuSutterMovement (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
