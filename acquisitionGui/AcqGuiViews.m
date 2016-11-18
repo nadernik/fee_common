@@ -26,6 +26,7 @@ classdef (Sealed) AcqGuiViews < handle
         StimListener
         RangeListener
         AutoUpdateListener
+        FilePropertiesListener
     end
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
@@ -58,6 +59,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.RangeListener = addlistener(self.GuiModel, 'ClipRangeChanged', @self.clip_range);
             self.DisplayedRecordingListener = addlistener(self.GuiModel, 'CurrentRecordingChanged', @self.displayed_recording);
             self.AutoUpdateListener = addlistener(self.GuiModel, 'autoUpdate', 'PostSet', @self.auto_update);
+            self.FilePropertiesListener = addlistener(self.GuiModel, 'FilePropertiesChanged', @self.file_properties);
             self.init();
             self.daq();
         end
@@ -231,6 +233,17 @@ classdef (Sealed) AcqGuiViews < handle
             if ~self.ExperManager.isEmpty
                 set(self.GuiData.popupExperiments, 'String', self.ExperManager.experimentStrings);
             else
+            end
+        end
+        
+        function make_comment(self)
+            currRecNo = self.GuiModel.currRecNo;
+            commentStr = get(self.GuiData.editDatafileComment, 'String');
+            if ~isempty(commentStr) && any(~isspace(commentStr)) && currRecNo > 0
+                status = self.GuiModel.CurrentExper.append_file_property(currRecNo, 'Comment', commentStr);
+                if status
+                    set(self.GuiData.editDatafileComment, 'String', '');
+                end
             end
         end
         function file_properties(self)
@@ -433,7 +446,7 @@ classdef (Sealed) AcqGuiViews < handle
             SpectrogramDisplay(Ax, normedSig, CurrRec.fileFs, 'cLimits', cLim, 'startTime', timeAxis(1));
             title(Ax, sprintf('%s %s %d %s', CurrExper.birdName,...
                 CurrExper.experName, ...
-                self.GuiModel.displayRecordingNo(self.GuiModel.currentExperNdx), ...
+                self.GuiModel.currRecNo, ...
                 datestr(CurrRec.fileCreationTime)));
             set(Ax, 'ButtonDownFcn', @self.axes_click_cb);
             set(self.GuiFig, 'SizeChangedFcn', '');
@@ -523,7 +536,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function recno_string(self)
             if self.GuiModel.currentExperNdx > 0
-                thisRecNo = self.GuiModel.displayRecordingNo(self.GuiModel.currentExperNdx);
+                thisRecNo = self.GuiModel.currRecNo;
                 recNoStr = num2str(thisRecNo); 
             else
                 recNoStr = '--';

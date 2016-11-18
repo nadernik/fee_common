@@ -28,12 +28,14 @@ classdef (Sealed) AcqGuiModel < handle
         PeekCompleteListener
         SongParametersListener
         RestartListener
+        FilePropertiesListener
         
         output = {};% Not sure I need this?
     end
     properties (SetAccess = private, Dependent = true)
         recordingDisplayed
         CurrentExper
+        currRecNo
     end
     methods
         function self = AcqGuiModel(varargin)
@@ -51,6 +53,7 @@ classdef (Sealed) AcqGuiModel < handle
             self.PeekCompleteListener = addlistener(self.AcqObj.SongMonitor, 'PeekComplete', @self.peek_complete_cb);
             self.SongParametersListener = addlistener(self.AcqObj.ExperManager, 'SongParametersChanged', @self.song_parameters_cb);
             self.RestartListener = addlistener(self.AcqObj.ExperManager, 'ExperimentsRestarted', @self.restart_cb);
+            self.FilePropertiesListener = addlistener(self.AcqObj.ExperManager, 'FilePropertiesChanged', @self.file_properties_cb);
             self.autoUpdate = Params.autoUpdate;
             self.maxLoadSize = Params.maxLoadSize;
             self.init_recordings();
@@ -59,15 +62,15 @@ classdef (Sealed) AcqGuiModel < handle
         %% Buttons / high level actions -- maybe should be in separate controller
         function change_recording(self, recordingNo)
             % change the recording for the current experiment
-            if self.displayRecordingNo(self.currentExperNdx) ~= recordingNo
-                lastRecordingNo = self.displayRecordingNo(self.currentExperNdx);
+            if self.currRecNo ~= recordingNo
+                lastRecordingNo = self.currRecNo;
                 PreviousRecording = self.CurrentRecording;
                 try
-                    self.displayRecordingNo(self.currentExperNdx) = recordingNo;
+                    self.currRecNo = recordingNo;
                     self.load_recording();
                 catch ME
                     warning('%s : %s', ME.identifier, ME.message);
-                    self.displayRecordingNo(self.currentExperNdx) = lastRecordingNo;
+                    self.currRecNo = lastRecordingNo;
                     self.CurrentRecording = PreviousRecording;
                 end
             end
@@ -214,7 +217,7 @@ classdef (Sealed) AcqGuiModel < handle
             end
         end
         function song_parameters_cb(self, ~, ExperEventObj)
-            if ExperEventObj.nos == sulf.currentExperNdx
+            if ExperEventObj.nos == self.currentExperNdx
                 notify(self, 'SongParametersChanged');
             end
         end
@@ -225,6 +228,11 @@ classdef (Sealed) AcqGuiModel < handle
                 notify(self, 'CurrentRecordingChanged');
             end
         end
+        function file_properties_cb(self, ~, ExperEventObj)
+            if ExperEventObj.nos == self.currentExperNdx
+                notify(self, 'FilePropertiesChanged');
+            end
+        end
         
         %% Dependent getters
         function val = get.CurrentExper(self)
@@ -232,7 +240,10 @@ classdef (Sealed) AcqGuiModel < handle
         end
         function val = get.recordingDisplayed(self)
             val = ~self.AcqObj.ExperManager.isEmpty && ...
-                self.displayRecordingNo(self.currentExperNdx) > 0;
+                self.currRecNo > 0;
+        end
+        function val = get.currRecNo(self)
+            val = self.displayRecordingNo(self.currentExperNdx);
         end
     end
     methods (Access = private)
@@ -298,7 +309,7 @@ classdef (Sealed) AcqGuiModel < handle
             if self.recordingDisplayed
                 self.CurrentRecording = AcqGuiRecording(...
                     self.CurrentExper, ...
-                    self.displayRecordingNo(self.currentExperNdx), ...
+                    self.currRecNo, ...
                     'maxLoadSize', self.maxLoadSize);
                 self.clip_ndx(1, self.CurrentRecording.numSamples);
                 self.load_channels(self.displayChannels(:, self.currentExperNdx));

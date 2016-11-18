@@ -337,6 +337,9 @@ classdef SongTriggeredExperiment < handle
             [fileNames, hwChannels] = self.find_files(recordingNo);
             songFile = fileNames{hwChannels == self.songHWChannel};
             status = daq_appendProperty(songFile, propertyName, propertyValue);
+            if status
+                notify(self, 'FilePropertiesChanged');
+            end
         end
         
         %% Callbacks

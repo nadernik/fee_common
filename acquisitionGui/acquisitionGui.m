@@ -536,28 +536,11 @@ end
 
 
 % --- Executes on button press in buttonAddDatafileComment.
-function buttonAddDatafileComment_Callback(hObject, eventdata, handles)
+function buttonAddDatafileComment_Callback(~, ~, handles)
 % hObject    handle to buttonAddDatafileComment (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = findobj('Name','acquisitionGui');
-handles = guidata(guifig); 
-commentStr = get(handles.editDatafileComment, 'String');
-if(~all(isspace(commentStr)))
-    dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-    ddd = aa_getAppDataReadOnly(guifig, 'acqdisplaydata');
-    exper = dgd.expers{dgd.ce};
-    dispfilenum = ddd.currFilenum;
-    filename = getExperDatafile(exper,dispfilenum,exper.audioCh);
-    bStatus = daq_appendProperty([exper.dir,filename], 'Comment', commentStr);
-    if(bStatus)
-        set(handles.editDatafileComment, 'String', '');
-        strList = get(handles.listboxDatafileProperties,'String');
-        ndx = length(strList);
-        strList{ndx+1} = ['Comment: ', commentStr];
-        set(handles.listboxDatafileProperties,'String', strList);
-    end
-end
+handles.Views.make_comment();
 
 % --------------------------------------------------------------------
 function MenuAudioAxis_Callback(~, ~, ~)

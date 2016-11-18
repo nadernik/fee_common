@@ -20,7 +20,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         RecStartedListeners
         RecCompleteListeners
         SongParametersListeners
-        FilePropertyListeners
+        FilePropertiesListeners
     end
     methods
         function self = AcqGuiExperimentManager(varargin)
@@ -63,7 +63,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.RecCompleteListeners{end + 1} = addlistener(Experiment, 'RecordingComplete', @self.recording_complete_cb);
             self.RecStartedListeners{end + 1} = addlistener(Experiment, 'RecordingStarted', @self.recording_started_cb);
             self.SongParametersListeners{end + 1} = addlistener(Experiment, 'SongParametersChanged', @self.parameters_changed_cb);
-            self.FilePropertyListeners{end + 1} = addlistener(Experiment, 'FilePropertiesChanged', @self.file_parameters_changed_cb);
+            self.FilePropertiesListeners{end + 1} = addlistener(Experiment, 'FilePropertiesChanged', @self.file_parameters_changed_cb);
             self.update_exper_strings();
             notify(self, 'ExperimentsChanged');
         end
@@ -85,6 +85,8 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             self.DetectionListeners(experNo) = [];
             delete(self.SongParametersListeners{experNo});
             self.SongParametersListeners(experNo) = [];
+            delete(self.FilePropertiesListeners{experNo});
+            self.FilePropertiesListeners(experNo) = [];
             if ~isempty(self.rememberedDetect) && nExper > numel(self.rememberedDetect)
                 self.rememberedDetect(experNo) = [];
             end
@@ -167,7 +169,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         end
         function file_parameters_changed_cb(self, SourceExper, ~)
             experNo = find_event_exper(self, SourceExper);
-            notify(self, 'SongParametersChanged', ExperEvent(experNo));
+            notify(self, 'FilePropertiesChanged', ExperEvent(experNo));
         end
         
         %% Dependent getters
