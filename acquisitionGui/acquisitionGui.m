@@ -663,49 +663,6 @@ if(status)
     set(handles.buttonDown, 'UserData', stepSize);
 end
 
-% --- Executes on button press in buttonLoadState.
-function buttonLoadState_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonLoadState (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-guifig = get(hObject,'Parent');
-
-[recinfo] = aa_getAppDataReadOnly(guifig, 'acqrecordinfo');
-[dgd] = aa_getAppDataReadOnly(guifig, 'acqguidata');
-if ~isempty(recinfo) && any([recinfo(:).bForcedRecording] | dgd.bTrigOnSong)
-    warndlg({'In order to load a previously saved state ','all triggering and recording must be stopped'});
-    uiwait;
-    return;
-end
-
-[f,p] = uigetfile('acqgui_state_*','Load acquisition gui state:');
-load([p,filesep,f]);
-
-button = questdlg('Would you like update experiment names to the current day?','','Yes','No','Yes'); 
-bUpdate = strcmp(button,'Yes'); 
-
-if(bUpdate)
-    for(nExper = 1:length(expers))
-        rootndx = strfind(expers(nExper).dir,expers(nExper).birdname);
-        rootdir = expers(nExper).dir(1:rootndx-2);
-        expers(nExper) = createExperAuto(rootdir, expers(nExper).birdname, datestr(now,29), expers(nExper).desiredInSampRate, expers(nExper).audioCh, expers(nExper).sigCh);
-    end
-end
-
-acquisitionGui_OpeningFcn(guifig, eventdata, handles, ...
-                          'bTrigOnSong', bTrigOnSong, ...
-                          'logfile', logfile, ...
-                          'expers', expers, ...
-                          'dispchanAudio', dispchanAudio, ...
-                          'dispchan', dispchan, ...
-                          'dispchan2', dispchan2, ...
-                          'dispchan3', dispchan3, ...
-                          'songDetection', songDetection, ...
-                          'bRestartInMorning', logical(bRestartInMorning), ...
-                          'startHour', startHour, ...
-                          'stopHour', stopHour, ...
-                          'threadSafeData', tsd);
-
 % --- Executes on button press in buttonRestart.
 function buttonRestart_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonRestart (see GCBO)
