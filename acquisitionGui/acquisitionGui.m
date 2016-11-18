@@ -599,19 +599,6 @@ bar(edges*24,count,'histc');
 xlabel('hours');
 ylabel('files');
 
-% --- Executes on button press in buttonFindCell.
-function buttonFindCell_Callback(~, ~, ~)
-% hObject    handle to buttonFindCell (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% --- Executes on button press in buttonReportCellLoss.
-function buttonReportCellLoss_Callback(~, ~, ~)
-% hObject    handle to buttonReportCellLoss (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
 % --------------------------------------------------------------------
 function viewSignalIFR_Callback(~, ~, ~)
 % hObject    handle to viewSignalIFR (see GCBO)
@@ -624,64 +611,3 @@ function viewSignalRaw_Callback(~, ~, ~)
 % hObject    handle to viewSignalRaw (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-% --- Executes on button press in buttonUp.
-function buttonUp_Callback(~, ~, ~)
-% hObject    handle to buttonUp (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-%[microsteps, micronsApprox, Status] = sutterGetCurrentPosition(dgd.sutterConnection);
-
-
-% --- Executes on button press in buttonDown.
-function buttonDown_Callback(~, ~, ~)
-% hObject    handle to buttonDown (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% --- Executes on button press in buttonSutterGoTo.
-function buttonSutterGoTo_Callback(~, ~, ~)
-% hObject    handle to buttonSutterGoTo (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% --------------------------------------------------------------------
-function menuSutterMovement_Callback(~, ~, ~)
-% hObject    handle to menuSutterMovement (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% --------------------------------------------------------------------
-function setSutterStepSize_Callback(hObject, eventdata, handles)
-% hObject    handle to setSutterStepSize (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-stepSize = get(handles.buttonDown, 'UserData');
-answer = inputdlg('Enter size of each movement (sutter units):','Set Step Size', 1, num2str(stepSize));
-[stepSize, status] = str2num(answer{1}); %#ok<ST2NM>
-if(status)
-    set(handles.buttonDown, 'UserData', stepSize);
-end
-
-% --- Executes on button press in buttonRestart.
-function buttonRestart_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonRestart (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-guifig = get(hObject,'Parent');
-button = questdlg('Would you like to run the overnight batch?','','Yes','No','No'); 
-bBatch = strcmp(button,'Yes'); 
-for(nAttempt = 1:100)
-    status = acqgui_restartGUI([], [], guifig, now+(0.5/(60*24)), bBatch);
-    if(status)
-        disp('acquisitionGui will restart in 30 seconds.');
-        break;
-    else
-        pause(2);
-    end
-end
-if(nAttempt == 100)
-    disp('Forced acquistion restart failed.  Are you currently recording a file?');
-end
-
-
