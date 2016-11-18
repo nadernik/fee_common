@@ -189,6 +189,11 @@ classdef (Sealed) AcqGuiModel < handle
             notify(self, 'ClipRangeChanged'); % All displays affected
         end
         
+        function change_climits(self, cLimits)
+            self.cLimits(:, self.currentExperNdx) = cLimits;
+            notify(self, 'CLimitsChanged');
+        end
+        
         %% Callbacks -- do not use externally
         function rec_complete_cb(self, ~, ExperEventObj)
             if ExperEventObj.nos == self.currentExperNdx
@@ -350,5 +355,6 @@ classdef (Sealed) AcqGuiModel < handle
         SongParametersChanged
         StimAvailable
         ClipRangeChanged
+        CLimitsChanged
     end
 end

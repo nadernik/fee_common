@@ -27,6 +27,7 @@ classdef (Sealed) AcqGuiViews < handle
         RangeListener
         AutoUpdateListener
         FilePropertiesListener
+        CLimitsListener
     end
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
@@ -60,6 +61,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.DisplayedRecordingListener = addlistener(self.GuiModel, 'CurrentRecordingChanged', @self.displayed_recording);
             self.AutoUpdateListener = addlistener(self.GuiModel, 'autoUpdate', 'PostSet', @self.auto_update);
             self.FilePropertiesListener = addlistener(self.GuiModel, 'FilePropertiesChanged', @self.file_properties);
+            self.CLimitsListener = addlistener(self.GuiModel, 'CLimitsChanged', @self.clim);
             self.init();
             self.daq();
         end
@@ -165,7 +167,9 @@ classdef (Sealed) AcqGuiViews < handle
         end
 
         function clip_range(self, ~, ~)
-            self.display_chans([], ExperEvent(1:4));
+            if self.GuiModel.recordingDisplayed
+                self.display_chans([], ExperEvent(1:4));
+            end
         end
         function update_displays(self, ~, ExperEventObj)
             dispNos = ExperEventObj.nos;
@@ -184,8 +188,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function display_chans(self, dispNos)
             CurrRec = self.GuiModel.CurrentRecording;
-            timeCourse = ((self.GuiModel.startNdx - 1):(self.GuiModel.endNdx - 1)) ...
-                ./ CurrRec.fileFs;
+            timeCourse = self.get_timecourse();
             for dNo = 1:numel(dispNos)
                 thisDisp = dispNos(dNo);
                 if thisDisp == 1
@@ -198,6 +201,10 @@ classdef (Sealed) AcqGuiViews < handle
                     error('Not a valid display channel');
                 end
             end
+        end
+        function timeCourse = get_timecourse(self)
+            timeCourse = ((self.GuiModel.startNdx - 1):(self.GuiModel.endNdx - 1)) ...
+                ./ self.GuiModel.CurrentRecording.fileFs;
         end
         function display_popup(self, dispNos)
             for dNo = 1:numel(dispNos)
@@ -362,6 +369,30 @@ classdef (Sealed) AcqGuiViews < handle
             else
                 goAhead = true;
             end
+        end
+        
+        function set_spectrogram_clim(self)
+            cLim = self.GuiModel.cLimits(:, self.GuiModel.currentExperNdx);
+            prompt = {'Enter floor:', 'Enter ceiling:'};
+            dlg_title = 'Input audio axis color range';
+            num_lines = 1;
+            if any(isnan(cLim))
+                defaults = {'', ''};
+            else
+                defaults = {num2str(cLim(1)), num2str(cLim(2))};
+            end
+            answer = inputdlg(prompt, dlg_title, num_lines, defaults);
+            if ~isempty(answer) && all(~cellfun(@isempty, answer))
+                newCLim = cellfun(@str2double, answer); 
+                if all(~isnan(newCLim))
+                    self.GuiModel.change_climits(newCLim);
+                end
+            end
+        end
+        
+        function clim(self, ~, ~)
+            timeCourse = self.get_timecourse();
+            self.display_spec(timeCourse);
         end
         
         function play_audio(self, dispNo)

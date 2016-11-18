@@ -570,37 +570,11 @@ function playSignal_Callback(~, ~, handles)
 handles.Views.play_audio(2);
 
 % --------------------------------------------------------------------
-function setAudioColorRange_Callback(hObject, eventdata, handles)
+function setAudioColorRange_Callback(~, ~, handles)
 % hObject    handle to setAudioColorRange (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = findobj('Name','acquisitionGui');
-handles = guidata(guifig);
-tsd = getappdata(guifig,'threadSafeData');
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-
-if(isempty(tsd.displayParams(dgd.ce).audioCLim))
-    cRange = get(handles.axesAudio, 'CLim');
-else
-    cRange = tsd.displayParams(dgd.ce).audioCLim;
-end
-
-prompt = {'Enter floor:','Enter ceiling:'};
-dlg_title = 'Input audio axis color range';
-num_lines = 1;
-def = {num2str(cRange(1)),num2str(cRange(2))};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
-if(length(answer) ~= 0) %#ok<ISMT>
-    [cRange(1), bStatus1] = str2num(answer{1}); %#ok<ST2NM>
-    [cRange(2), bStatus2] = str2num(answer{2}); %#ok<ST2NM>
-    if bStatus1 && bStatus2
-        tsd.displayParams(dgd.ce).audioCLim = cRange;
-    else
-        tsd.displayParams(dgd.ce).audioCLim = [];
-    end
-    setappdata(guifig,'threadSafeData', tsd);
-    acqgui_updateDisplay(guifig);  
-end
+handles.GuiModel.set_spectrogram_clim();
 
 % --- Executes on button press in buttonDisplayFilesPerHour.
 function buttonDisplayFilesPerHour_Callback(~, ~, ~)
