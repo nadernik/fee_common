@@ -663,45 +663,6 @@ if(status)
     set(handles.buttonDown, 'UserData', stepSize);
 end
 
-% --- Executes on button press in buttonSaveState.
-function buttonSaveState_Callback(hObject, eventdata, handles)
-% hObject    handle to buttonSaveState (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-try
-    guifig = get(hObject,'Parent');
-    tsd = getappdata(guifig,'threadSafeData');
-    dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-
-    for nExper = 1:length(dgd.expers)
-        songDetection(nExper).songDensity = dgd.experData(nExper).songDetection.durationThreshold; %#ok<AGROW>
-        songDetection(nExper).powerThres = dgd.experData(nExper).songDetection.ratioThreshold; %#ok<AGROW>
-        songDetection(nExper).songLength = dgd.experData(nExper).songDetection.songDuration; %#ok<AGROW>
-        songDetection(nExper).minFreq = dgd.experData(nExper).songDetection.minFreq; %#ok<AGROW>
-        songDetection(nExper).maxFreq = dgd.experData(nExper).songDetection.maxFreq; %#ok<AGROW>
-        dispchanAudio(nExper) = dgd.experData(nExper).dddbackground.dispchanAudio;
-        dispchan(nExper) = dgd.experData(nExper).dddbackground.dispchan;
-        dispchan2(nExper) = dgd.experData(nExper).dddbackground.dispchan2;
-        dispchan3(nExper) = dgd.experData(nExper).dddbackground.dispchan3;       
-        if(isfield(dgd.expers{nExper},'sigName'))
-            expers(nExper) = dgd.expers{nExper};
-        else
-            temp = dgd.expers{nExper};
-            temp.sigName = {};
-            temp.sigDesc = {};
-            expers(nExper) = temp;
-        end            
-    end
-    bTrigOnSong = dgd.bTrigOnSong;
-    logfile = dgd.logfile;
-    bRestartInMorning = get(handles.checkboxAutostart, 'Value');
-    startHour = str2double(get(handles.editStartTime, 'String'));
-    stopHour = str2double(get(handles.editStopTime, 'String'));
-    [f,p] = uiputfile(['acqgui_state_',datestr(now,30),'.mat'],'Select file for acquistion gui state:');
-    save([p,filesep,f], 'tsd','songDetection','dispchanAudio','dispchan','dispchan2',...
-                        'dispchan3', 'bTrigOnSong', 'logfile', 'expers', 'bRestartInMorning', 'startHour', 'stopHour');   
-end
-
 % --- Executes on button press in buttonLoadState.
 function buttonLoadState_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonLoadState (see GCBO)
