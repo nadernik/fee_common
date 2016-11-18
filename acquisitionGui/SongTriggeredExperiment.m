@@ -332,6 +332,21 @@ classdef SongTriggeredExperiment < handle
             hwChannels = str2double([rawTokens{nonEmptyMask}]);
         end
         
+        function [fileNames, fileNumbers, chanNumbers, creationTimes] = find_all_files(self)
+            REGSTR = sprintf('^%s_d(?<number>\\d{6})_(?<datestr>\\d{8}T\\d{6})chan(?<channel>\\d+)\\.dat$', self.birdName); %slashes escaped
+            experDir = self.experDirectory;
+            listing = dir(experDir);
+            candidateNames = {listing.name};
+            candidateFiles = candidateNames(~[listing.isdir]);
+            [rawMatch, rawNames] = regexp(candidateFiles, REGSTR, 'match', 'names', 'once');
+            nonEmptyMask = ~cellfun(@isempty, rawMatch);
+            fileNames = rawMatch(nonEmptyMask);
+            nameStruct = [rawNames{nonEmptyMask}];
+            fileNumbers = str2double({nameStruct.number});
+            creationTimes = datetime({nameStruct.datestr});
+            chanNumbers = str2double({nameStruct.channel});
+        end
+        
         %% Append properties
         function status = append_file_property(self, recordingNo, propertyName, propertyValue)
             [fileNames, hwChannels] = self.find_files(recordingNo);

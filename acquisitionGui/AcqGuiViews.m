@@ -371,6 +371,19 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         
+        function display_filesperhour(self)
+            CurrExper = self.GuiModel.CurrentExper;
+            [~, ~, chanNumbers, creationTimes] = CurrExper.find_all_files();
+            audMask = chanNumbers == CurrExper.songHWChannel;
+            audCreationTimes = creationTimes(audMask);
+            hours = [audCreationTimes.Hour] + [audCreationTimes.Minute] ./ 60;
+            Ax = handles.GuiData.axes3;
+            cla(Ax)
+            histogram(Ax, hours);
+            xlabel(Ax, 'hours');
+            ylabel(Ax, 'files');
+        end
+        
         function set_spectrogram_clim(self)
             cLim = self.GuiModel.cLimits(:, self.GuiModel.currentExperNdx);
             prompt = {'Enter floor:', 'Enter ceiling:'};

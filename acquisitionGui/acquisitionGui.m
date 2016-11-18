@@ -581,23 +581,7 @@ function buttonDisplayFilesPerHour_Callback(~, ~, ~)
 % hObject    handle to buttonDisplayFilesPerHour (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-guifig = findobj('Name','acquisitionGui');
-handles = guidata(guifig);
-dgd = aa_getAppDataReadOnly(guifig, 'acqguidata');
-exper = dgd.expers{dgd.ce};
-chan = exper.audioCh;
-d = dir([exper.dir,exper.birdname,'_d*chan',num2str(chan),'.dat']);
-times = [d(:).datenum];
-firstDay = floor(min(times));
-lastDay = ceil(max(times));
-times = times - firstDay;
-edges = linspace(0,lastDay-firstDay,96*(lastDay-firstDay));
-count = histc(times,edges);
-axes(handles.axes3);
-cla;
-bar(edges*24,count,'histc');
-xlabel('hours');
-ylabel('files');
+self.Views.display_filesperhour();
 
 % --------------------------------------------------------------------
 function viewSignalIFR_Callback(~, ~, ~)
