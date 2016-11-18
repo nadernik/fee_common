@@ -169,7 +169,7 @@ classdef (Sealed) AcqGuiViews < handle
 
         function clip_range(self, ~, ~)
             if self.GuiModel.recordingDisplayed
-                self.display_chans([], ExperEvent(1:4));
+                self.display_chans(1:4);
             end
         end
         function update_displays(self, ~, ExperEventObj)
@@ -199,7 +199,7 @@ classdef (Sealed) AcqGuiViews < handle
                     signal = CurrRec.signals{dispNos};
                     self.display_signal(Ax, timeCourse, signal);
                 else
-                    error('Not a valid display channel');
+                    error('%d is not a valid display channel', thisDisp);
                 end
             end
         end

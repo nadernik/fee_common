@@ -49,12 +49,6 @@ classdef (Sealed) AcqGuiMonitor < handle
             self.ExperChangedListener = addlistener(self.ExperManager, 'ExperimentsChanged', @self.experiments_changed_callback);
             self.DetectionChangedListener = addlistener(self.ExperManager, 'DetectionChanged', @self.detection_changed_callback);
         end
-        function delete(self)
-            delete(self.UpdateCompleteListener);
-            delete(self.PeekAvailableListener);
-            delete(self.ExperChangedListener);
-            delete(self.DetectionChangedListener);
-        end
         
         %% public methods
         function start_monitor(self, DaqObj)
@@ -109,7 +103,7 @@ classdef (Sealed) AcqGuiMonitor < handle
             peekStartSamp = PeekEvent.startDaqSample;
             for experNo = 1:nDetect
                 experNdx = self.detectingExperNdx(experNo);
-                status = self.Experiments{experNdx}. ...
+                status = self.ExperManager.Experiments{experNdx}. ...
                     detect_song_and_record(PeekEvent.data(:, experNo), peekStartSamp);
                 assert(status, 'Song detetion failed');
             end
