@@ -574,7 +574,7 @@ function setAudioColorRange_Callback(~, ~, handles)
 % hObject    handle to setAudioColorRange (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-handles.GuiModel.set_spectrogram_clim();
+handles.Views.set_spectrogram_clim();
 
 % --- Executes on button press in buttonDisplayFilesPerHour.
 function buttonDisplayFilesPerHour_Callback(~, ~, ~)
