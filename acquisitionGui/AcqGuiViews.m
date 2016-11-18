@@ -391,8 +391,10 @@ classdef (Sealed) AcqGuiViews < handle
         end
         
         function clim(self, ~, ~)
-            timeCourse = self.get_timecourse();
-            self.display_spec(timeCourse);
+            if self.GuiModel.recordingDisplayed
+                timeCourse = self.get_timecourse();
+                self.display_spec(timeCourse);
+            end
         end
         
         function play_audio(self, dispNo)
