@@ -549,37 +549,11 @@ function MenuAudioAxis_Callback(~, ~, ~)
 % handles    structure with handles and user data (see GUIDATA)
 
 % --------------------------------------------------------------------
-function playAudio_Callback(hObject, eventdata, handles)
+function playAudio_Callback(~, ~, handles)
 % hObject    handle to playAudio (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-%get the audio
-axes(handles.axesAudio);
-ud = get(gca,'UserData');
-audio = ud.data;
-fs = ud.fs;
-
-range = max(max(audio), abs(min(audio)));
-audio = audio/(range*3);
- 
-player = audioplayer(audio, fs);
-axes(handles.axesAudio);
-hold on;
-xl= xlim;
-ylimits1 = ylim;
-l1 = line([xl(1),xl(1)],ylimits1,'Color','yellow');
-
-play(player);
-while(isplaying(player))
-    currTime = xl(1) + get(player,'CurrentSample')/fs;
-    set([l1],'XData',[currTime, currTime]);
-    drawnow;        
-end
-delete(l1);
-
-axes(handles.axesAudio);
-hold off;
+handles.Views.play_audio(1);
  
 
 % --------------------------------------------------------------------
@@ -589,38 +563,11 @@ function MenuSignalAxis_Callback(~, ~, ~)
 % handles    structure with handles and user data (see GUIDATA)
 
 % --------------------------------------------------------------------
-function playSignal_Callback(hObject, eventdata, handles)
+function playSignal_Callback(~, ~, handles)
 % hObject    handle to playSignal (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-%get the signal
-axes(handles.axesSignal);
-ud = get(gca,'UserData');
-sig = ud.data;
-fs = ud.fs;
-
-range = max(max(sig), abs(min(sig)));
-sig = sig/(range*3);  
-
-player = audioplayer(sig, fs);
-
-axes(handles.axesSignal);
-hold on;
-xl = xlim;
-ylimits2 = ylim;
-l2 = line([xl(1),xl(1)],ylimits2,'Color','red');    
-
-play(player);
-while(isplaying(player))
-    currTime = xl(1) + get(player,'CurrentSample')/fs;
-    set([l2],'XData',[currTime, currTime]);
-    drawnow;        
-end
-
-delete(l2);
-axes(handles.axesSignal);
-hold off;    
+handles.Views.play_audio(2);
 
 % --------------------------------------------------------------------
 function setAudioColorRange_Callback(hObject, eventdata, handles)
@@ -678,19 +625,11 @@ bar(edges*24,count,'histc');
 xlabel('hours');
 ylabel('files');
 
-
-
-
-
-
 % --- Executes on button press in buttonFindCell.
 function buttonFindCell_Callback(~, ~, ~)
 % hObject    handle to buttonFindCell (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
-
-
 
 % --- Executes on button press in buttonReportCellLoss.
 function buttonReportCellLoss_Callback(~, ~, ~)

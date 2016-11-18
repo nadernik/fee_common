@@ -364,6 +364,31 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         
+        function play_audio(self, dispNo)
+            if self.GuiModel.recordingDisplayed
+                Ax = get_display_axes(self, dispNo);
+                CurrRec = self.GuiModel.CurrentRecording;
+                signal = CurrRec.signal{self.GuiModel.dislayNdx(dispNo)};
+                range = max(max(signal), abs(min(signal)));
+                normedSig = signal / (range * 3);
+                
+                player = audioplayer(normedSig, CurrRec.fileFs);
+                hold(Ax, 'on');
+                xBnds= xlim(Ax);
+                yBnds = ylim(Ax);
+                LHandle = line(xBnds(1) * ones(2, 1), yBnds, 'Color', 'yellow');
+                
+                play(player);
+                while isplaying(player)
+                    currTime = xBnds(1) + get(player, 'CurrentSample') / CurrRec.fileFs;
+                    set(LHandle, 'XData', currTime * ones(2, 1));
+                    drawnow();
+                end
+                delete(LHandle);
+                hold(Ax, 'off');
+            end
+        end
+        
         function song_params(self, ~, ~)
             CurrExper = self.get_current_exper();
             set(self.GuiData.editPowerThres, 'String', num2str(CurrExper.ratioThreshold));
