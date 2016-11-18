@@ -122,6 +122,9 @@ classdef (Sealed) AcqMaster < handle
             self.ExperManager.set_daq_params(self.DaqObj);
         end
         function start_daq(self)
+            if self.ExperManager.isEmpty
+                return
+            end
             self.DaqObj.start();
             self.daqRunning = true;
             self.wait_for_buffer();
@@ -167,6 +170,7 @@ classdef (Sealed) AcqMaster < handle
         
         function buffering_complete(self, ~, ~)
             self.isBuffering = false;
+            stop(self.BufferTimer);
             delete(self.BufferTimer);
             self.SongMonitor.update_song_detection();
             notify(self, 'DaqChanged');

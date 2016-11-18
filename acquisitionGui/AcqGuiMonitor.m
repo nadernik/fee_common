@@ -69,7 +69,9 @@ classdef (Sealed) AcqGuiMonitor < handle
             self.update_song_detection();
         end
         function stop_monitor(self)
-            self.stop_song_detection();
+            if self.detectingSong
+                self.stop_song_detection();
+            end
             self.DaqObj = [];
             self.daqFs = -1;
             self.bufferSecs = -1;
@@ -83,7 +85,7 @@ classdef (Sealed) AcqGuiMonitor < handle
             self.peekHWChannels = self.ExperManager.songHWChannels(self.songDetectingExpers);
             self.detectingExperNdx = find(self.songDetectingExpers);
             nowDetectingSong = any(self.songDetectingExpers);
-            if nowDetectiongSong ~= self.detectingSong % State changed
+            if nowDetectingSong ~= self.detectingSong % State changed
                 if nowDetectingSong % start detecting song
                     self.start_song_detection();
                 else % turn off song detection
@@ -94,7 +96,7 @@ classdef (Sealed) AcqGuiMonitor < handle
         
         %% Callbacks -- do not use externally
         function update_complete_callback(self, ~, ~)
-            if self.isRuning && self.detectingSong
+            if self.isRunning && self.detectingSong
                 sampsSincePeek = self.DaqObj.lastSample - self.lastPeekSamp;
                 if sampsSincePeek >= self.sampBetweenRequests
                     self.request_peek();

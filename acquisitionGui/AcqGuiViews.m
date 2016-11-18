@@ -90,7 +90,7 @@ classdef (Sealed) AcqGuiViews < handle
             if self.AcqObj.daqRunning
                 if self.GuiModel.AcqObj.isBuffering
                     self.daq_buffering();
-                elseif self.GuiModel.madeRecordings(self.GuiModel.currentExperNdx)
+                elseif self.GuiModel.currentExperNdx > 0 && self.GuiModel.madeRecordings(self.GuiModel.currentExperNdx)
                     currExper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
                     self.daq_ready(currExper.lastFileNo);
                 else
@@ -122,7 +122,7 @@ classdef (Sealed) AcqGuiViews < handle
                 CurrExper = self.get_current_exper();
                 nChan = numel(CurrExper.inChannels);
                 chanStrings = cell(nChan, 1);
-                chanStrings{1} = sprtintf('%d- audio', CurrExper.songHWChannel);
+                chanStrings{1} = sprintf('%d- audio', CurrExper.songHWChannel);
                 chanStrings(2:end) = cellfun(@(x) sprintf('%d- other', x),...
                     num2cell(CurrExper.nonSongHWChannels), 'UniformOutput', false);
             else
@@ -136,6 +136,8 @@ classdef (Sealed) AcqGuiViews < handle
         function exper_val(self)
             if ~self.ExperManager.isEmpty
                 set(self.GuiData.popupExperiments, 'Value', self.GuiModel.currentExperNdx);
+            else
+                set(self.GuiData.popupExperiments, 'Value', 1);
             end
         end
         
@@ -206,20 +208,27 @@ classdef (Sealed) AcqGuiViews < handle
                 ./ self.GuiModel.CurrentRecording.fileFs;
         end
         function display_popup(self, dispNos)
+            haveExper = self.GuiModel.currentExperNdx > 0;
             for dNo = 1:numel(dispNos)
                 thisDisp = dispNos(dNo);
-                switch thisDisp
-                    case 1
-                        set(self.GuiData.popupAudio, 'Value', chanNdxs(1));
-                    case 2
-                        set(self.GuiData.popupChannel, 'Value', chanNdxs(2));
-                    case 3
-                        set(self.GuiData.popupChannel2, 'Value', chanNdxs(3));
-                    case 4
-                        set(self.GuiData.popupChannel3, 'Value', chanNdxs(4));
-                    otherwise
-                        error('Not a valid display channel');
+                PopupHandle = self.get_popup_handle(thisDisp);
+                if haveExper
+                    PopupHandle.Value = self.GuiModel.displayNdx(thisDisp);
+                else
+                    PopupHandle.Value = 1;
                 end
+            end
+        end
+        function val = get_popup_handle(self, dispNo)
+            switch dispNo
+                case 1
+                    val = self.GuiData.popupAudio;
+                case 2
+                    val = self.GuiData.popupChannel;
+                case 3
+                    val = self.GuiData.popupChannel2;
+                case 4
+                    val = self.GuiData.popupChannel3;
             end
         end
         
@@ -236,10 +245,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         
         function exper_strings(self)
-            if ~self.ExperManager.isEmpty
-                set(self.GuiData.popupExperiments, 'String', self.ExperManager.experimentStrings);
-            else
-            end
+            set(self.GuiData.popupExperiments, 'String', self.ExperManager.experimentStrings);
         end
         
         function make_comment(self)
@@ -265,8 +271,6 @@ classdef (Sealed) AcqGuiViews < handle
                 set(self.GuiData.listboxDatafileProperties, 'String', strList);
             end
         end
-        function gui_signals(self)
-        end
         function recording_status(self, ~, ~)
             currExper = self.get_current_exper();
             if currExper.isRecording
@@ -282,7 +286,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function detect(self, ~, ~)
             currExper = self.get_current_exper();
-            if currExper.detectingSong
+            if ~isempty(currExper) && currExper.detectingSong
                 self.detect_running();
             else
                 self.detect_off();
@@ -498,7 +502,12 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         function Exper = get_current_exper(self)
-            Exper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
+            currExperNo = self.GuiModel.currentExperNdx;
+            if currExperNo > 0
+                Exper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
+            else
+                Exper = [];
+            end
         end
         %% Change display states
         function display_spec(self, timeAxis)
@@ -507,7 +516,7 @@ classdef (Sealed) AcqGuiViews < handle
             cla(Ax);
             CurrRec = self.GuiModel.CurrentRecording;
             CurrExper = self.GuiModel.CurrentExper;
-            rawSig = CurrRec.signal{1}(self.GuiModel.startNdx:self.GuiModel.endNdx);
+            rawSig = CurrRec.signals{1}(self.GuiModel.startNdx:self.GuiModel.endNdx);
             normedSig = rawSig - mean(rawSig); % Necessary?
             cLim = self.GuiModel.cLimits(:, self.GuiModel.currentExperNdx);
             if any(isnan(cLim))
@@ -553,7 +562,7 @@ classdef (Sealed) AcqGuiViews < handle
             fileNo = p.Results.fileNo;
             
             if fileNo > 0
-                recString = sprtintf('Finished recording %d. ', fileNo);
+                recString = sprintf('Finished recording %d. ', fileNo);
             else
                 recString = '';
             end

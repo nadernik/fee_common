@@ -50,6 +50,7 @@ classdef SongTriggeredExperiment < handle
     properties (Access = private)
         fileNameFormat
         DeletionListener
+        mutexLocked = false
         
         %% DAQ parameters
         DaqObj
@@ -130,7 +131,8 @@ classdef SongTriggeredExperiment < handle
             self.experDesc = Params.experDesc;
             self.signalName = Params.signalName;
             self.signalDesc = Params.signalDesc;
-            if isnan(Params.timeCreated)
+            self.fileNameFormat = Params.fileNameFormat;
+            if ~isdatetime(Params.timeCreated) && isnan(Params.timeCreated)
                 self.timeCreated = datetime();
             else
                 self.timeCreated = Params.timeCreated;
@@ -149,7 +151,7 @@ classdef SongTriggeredExperiment < handle
             else
                 self.experDirectory = Params.experDirectory;
             end
-            if any(strcmp(p.UsingDefault, 'lastFileNo')) && exist(self.experDirectory, 'dir')
+            if any(strcmp(p.UsingDefaults, 'lastFileNo')) && exist(self.experDirectory, 'dir')
                 self.lastFileNo = SongTriggeredExperiment.last_fileno(self.experDirectory, self.birdName);
             end
         end
@@ -448,28 +450,30 @@ classdef SongTriggeredExperiment < handle
         
         %% Recording methods
         function status = record(self, startSamp)
-            if self.DaqObj.isUpdating || self.isRecording || ~self.isRunning
+            if self.DaqObj.isUpdating || self.isRecording || ~self.isRunning || self.mutexLocked
                 status = false;
             else
-                self.isRecording = true;
-                
+                self.mutexLocked = true;
                 self.DaqRecordingListener = addlistener(self.DaqObj, 'RecordingComplete', @self.daq_recording_finished);
                 recFileNames = self.get_filenames(self.lastFileNo + 1, self.inChannels);
                 [startedChannels, ~] = self.DaqObj.start_recording(startSamp, recFileNames, self.inChannels);
+                self.isRecording = true;
                 status = all(startedChannels);
+                self.isRecording = true;
                 if status
                     notify(self, 'RecordingStarted');
                 else
                     self.isRecording = false;
                     delete(self.DaqRecordingListener);
                 end
+                self.mutexLocked = false;
             end
         end
         
         function status = stop_recording(self, stopSamp)
             if ~self.isRunning
                 error('Daq was stopped during a recording!');
-            elseif ~self.isRecording || self.DaqObj.isUpdating
+            elseif ~self.isRecording || self.DaqObj.isUpdating || self.mutexLocked
                 status = false;
             else
                 stoppedChannels = self.DaqObj.stop_recording(stopSamp, self.inChannels);
@@ -599,13 +603,13 @@ classdef SongTriggeredExperiment < handle
             end
             
             try
-                birdName = input('Enter a bird name: (no spaces or strange characters)', 's');
-                birdDesc = input('Enter a description of the bird:', 's');
-                experName = input('Enter a experiment name (nothing for default):', 's');
-                experDesc = input('Enter a description of the exper:', 's');
-                desiredInSampRate = input('Enter the desired input sampling rate:');
-                audioCh = input('What hw channel will audio be on:');
-                sigCh = input('Enter vector of other hw channels to be recorded: ([] if none)');
+                birdName = input('Enter a bird name: ', 's');
+                birdDesc = input('Enter a description of the bird: ', 's');
+                experName = input('Enter a experiment name (nothing for default): ', 's');
+                experDesc = input('Enter a description of the exper: ', 's');
+                desiredInSampRate = input('Enter the desired input sampling rate: ');
+                audioCh = input('What hw channel will audio be on: ');
+                sigCh = input('Enter vector of other hw channels to be recorded ([] if none): ');
                 
                 nCh = numel(sigCh);
                 sigName = cell(nCh, 1);
@@ -626,7 +630,7 @@ classdef SongTriggeredExperiment < handle
                 Exper.write_exper_file();
                 status = true;
             catch ME
-                warning(ME.message);
+                rethrow(ME); % FOR NOW
                 status = false;
                 Exper = [];
             end
@@ -675,7 +679,7 @@ classdef SongTriggeredExperiment < handle
                 fileNo = 0;
             else
                 name = dirstat(end).name;
-                fileNo = extract_datafile_number(name);
+                fileNo = SongTriggeredExperiment.extract_datafile_number(name);
             end
         end
         

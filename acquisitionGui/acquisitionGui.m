@@ -294,7 +294,7 @@ function buttonCloseExper_Callback(~, ~, handles)
 % handles    structure with handles and user data (see GUIDATA)
 goAhead = handles.Views.ok_to_modify();
 if goAhead
-    status = self.GuiModel.close_experiment();
+    status = handles.GuiModel.close_experiment();
     if ~status
         warning('Could not close experiment');
     end
@@ -335,7 +335,7 @@ function editFilenum_Callback(~, ~, handles)
 dispFile = get(handles.editFilenum, 'String');
 dispFileNum = str2double(dispFile); % nan if not valid
 if dispFileNum > 0 && round(dispFileNum) == dispFileNum %Check that it's an integer, implicitly check for nan
-    self.GuiModel.change_recording(dispFileNum);
+    handles.GuiModel.change_recording(dispFileNum);
 end
 
 % --- Executes on button press in buttonPrevFile.
@@ -347,7 +347,7 @@ dispFile = get(handles.editFilenum, 'String');
 dispFileNum = str2double(dispFile); % nan if not valid
 newFileNum = dispFileNum - 1;
 if newFileNum > 0 && round(newFileNum) == newFileNum %Check that it's an integer, implicitly check for nan
-    self.GuiModel.change_recording(newFileNum);
+    handles.GuiModel.change_recording(newFileNum);
 end
 
 % --- Executes on button press in buttonNextFile.
@@ -359,7 +359,7 @@ dispFile = get(handles.editFilenum, 'String');
 dispFileNum = str2double(dispFile); % nan if not valid
 newFileNum = dispFileNum + 1;
 if newFileNum > 0 && round(newFileNum) == newFileNum %Check that it's an integer, implicitly check for nan
-    self.GuiModel.change_recording(newFileNum);
+    handles.GuiModel.change_recording(newFileNum);
 end
 
 
@@ -577,11 +577,11 @@ function setAudioColorRange_Callback(~, ~, handles)
 handles.Views.set_spectrogram_clim();
 
 % --- Executes on button press in buttonDisplayFilesPerHour.
-function buttonDisplayFilesPerHour_Callback(~, ~, ~)
+function buttonDisplayFilesPerHour_Callback(~, ~, handles)
 % hObject    handle to buttonDisplayFilesPerHour (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-self.Views.display_filesperhour();
+handles.Views.display_filesperhour();
 
 % --------------------------------------------------------------------
 function viewSignalIFR_Callback(~, ~, ~)

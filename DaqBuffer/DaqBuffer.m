@@ -46,6 +46,7 @@ classdef (Sealed) DaqBuffer < handle
         trigStopSamples % Absolute sample number to stop recording at, -2 if open-ended recording
         trigFileNames
         trigFIDs
+        triggerTime
         
         %% Peek properties
         peekSample = 0; % Starting index in the buffer to peek from

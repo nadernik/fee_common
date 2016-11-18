@@ -60,19 +60,19 @@ classdef (Sealed) AcqGuiModel < handle
         end
         
         %% Buttons / high level actions -- maybe should be in separate controller
-        function change_recording(self, recordingNo)
+        function status = change_recording(self, recordingNo)
             % change the recording for the current experiment
             if self.currRecNo ~= recordingNo
                 lastRecordingNo = self.currRecNo;
-                PreviousRecording = self.CurrentRecording;
-                try
-                    self.currRecNo = recordingNo;
-                    self.load_recording();
-                catch ME
-                    warning('%s : %s', ME.identifier, ME.message);
-                    self.currRecNo = lastRecordingNo;
-                    self.CurrentRecording = PreviousRecording;
+                self.displayRecordingNo(self.currentExperNdx) = ...
+                    recordingNo;
+                status = self.load_recording();
+                if ~status
+                    self.displayRecordingNo(self.currentExperNdx) = ...
+                        lastRecordingNo;
                 end
+            else
+                status = true;
             end
         end
         function change_displayed_channel(self, displayNo, hwChannel)
@@ -85,10 +85,15 @@ classdef (Sealed) AcqGuiModel < handle
             end
         end
         function status = load_experiment(self)
-            status = self.AcqObj.suspend();
+            wasRunning = self.AcqObj.daqRunning;
+            if wasRunning
+                status = self.AcqObj.suspend();
+            else
+                status = true;
+            end
             if status
                 [experFilename, experPath] = uigetfile('exper.mat', 'Choose an experiment file:');
-                status = status && experFilename ~= 0;
+                status = status && ~isequal(experFilename, 0);
                 if status
                     fullPath = fullfile(experPath, experFilename);
                     [loadStatus, Exper] = SongTriggeredExperiment.load_experiment(fullPath, 'currentDir', experPath);
@@ -98,12 +103,15 @@ classdef (Sealed) AcqGuiModel < handle
                         self.change_current_exper(numel(self.displayRecordingNo)); % most recent one
                     end
                 end
-                resumed = self.AcqObj.resume();
-                assert(resumed, 'Could not resume the experiment!');
+                if wasRunning
+                    resumed = self.AcqObj.resume();
+                    assert(resumed, 'Could not resume the experiment!');
+                end
             end
         end
         function status = create_experiment(self)
-            if self.AcqObj.daqRunning
+            wasRunning = self.AcqObj.daqRunning;
+            if wasRunning
                 status = self.AcqObj.suspend();
             else
                 status = true;
@@ -121,8 +129,10 @@ classdef (Sealed) AcqGuiModel < handle
                         status = false;
                     end
                 end
-                resumed = self.AcqObj.resume();
-                assert(resumed, 'Could not resume the experiment!');
+                if wasRunning
+                    resumed = self.AcqObj.resume();
+                    assert(resumed, 'Could not resume the experiment!');
+                end
             end
         end
         function status = close_experiment(self)
@@ -279,16 +289,18 @@ classdef (Sealed) AcqGuiModel < handle
             self.displayChannels(1 + (1:nFill), expNo) = ThisExp.nonSongHWChannels;
             for dispNo = 1:4
                 self.displayNdx(dispNo, expNo) = ...
-                    find(ThisExp.inChans == self.displayRecordingNo(dispNo, expNo), 1, 'first');
+                    find(ThisExp.inChannels == self.displayChannels(dispNo, expNo), 1, 'first');
             end
         end
         function change_all_recordings(self, recordingsNos)
-            self.change_recording(recordingsNos(self.currentExperNdx));
+            status = self.change_recording(recordingsNos(self.currentExperNdx));
+            assert(status, 'Files do not exist');
             self.displayRecordingNo = recordingsNos; % This is a weird way of doing this
         end
         function change_current_exper(self, experNo)
             self.currentExperNdx = experNo;
-            self.load_recording(); % creates a CurrentRecordingChanged event
+            status = self.load_recording(); % creates a CurrentRecordingChanged event
+            assert(status, 'files do not exist');
             notify(self, 'CurrentExperimentChanged');
             notify(self, 'DetectChanged');
         end
@@ -314,18 +326,27 @@ classdef (Sealed) AcqGuiModel < handle
                 self.madeRecordings(currExperNo) = [];
             end
         end
-        function load_recording(self)
+        function status = load_recording(self)
             if self.recordingDisplayed
-                self.CurrentRecording = AcqGuiRecording(...
+                NewRecording = AcqGuiRecording(...
                     self.CurrentExper, ...
                     self.currRecNo, ...
                     'maxLoadSize', self.maxLoadSize);
-                self.clip_ndx(1, self.CurrentRecording.numSamples);
-                self.load_channels(self.displayChannels(:, self.currentExperNdx));
+                if NewRecording.filesExist
+                    status = true;
+                    self.CurrentRecording = NewRecording;
+                    self.clip_ndx(1, self.CurrentRecording.numSamples);
+                    self.load_channels(self.displayChannels(:, self.currentExperNdx));
+                else
+                    status = false;
+                end
             else
+                status = true;
                 self.CurrentRecording = [];
             end
-            notify(self, 'CurrentRecordingChanged');
+            if status
+                notify(self, 'CurrentRecordingChanged');
+            end
         end
         function load_channels(self, hwChannels)
             self.CurrentRecording.load_channels(hwChannels);

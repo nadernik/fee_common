@@ -10,6 +10,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
     properties (SetAccess = private, Dependent = true)
         isEmpty
         daqValid
+        daqRunning
         anyRecording
         suspended
     end
@@ -48,7 +49,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         
          %% Methods to add or remove experiments
         function append_experiment(self, Experiment)
-            assert(self.daqValid && ~self.DaqObj.isRunning, 'Cannot add experiment when DAQ is running');
+            assert(~self.daqRunning, 'Cannot add experiment when DAQ is running');
             self.Experiments{end + 1} = Experiment;
             nExper = numel(self.Experiments);
             if ~isempty(self.rememberedDetect) && nExper > numel(self.rememberedDetect)
@@ -72,7 +73,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             % called after all modifications to experiment list are made
             nExper = numel(self.Experiments);
             assert(nExper >= experNo && experNo >= 1, 'Cannot remove experiment as it does not exist');
-            assert(self.daqValid && ~self.DaqObj.isRunning, 'Cannot remove experiments when DAQ is running');
+            assert(~self.daqRunning, 'Cannot remove experiments when DAQ is running');
             %% Remove data related to this experiment
             self.Experiments(experNo) = [];
             self.songHWChannels(experNo) = [];
@@ -176,6 +177,9 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         function val = get.isEmpty(self)
             val = isempty(self.Experiments);
         end
+        function val = get.daqRunning(self)
+            val = self.daqValid && self.DaqObj.isStarted;
+        end
         function val = get.daqValid(self)
             val = ~isempty(self.DaqObj);
         end
@@ -236,7 +240,8 @@ classdef (Sealed) AcqGuiExperimentManager < handle
             end
         end
         function experNo = find_event_exper(self, EventSource)
-            experNo = find(self.Experiments == EventSource, 1, 'first');
+            experNo = find(cellfun(@(E) isequal(E, EventSource), self.Experiments), 1, 'first');
+            assert(~isempty(experNo), 'didn''find exper');
         end
     end
     events (NotifyAccess = private)
