@@ -107,6 +107,7 @@ classdef (Sealed) AcqGuiMonitor < handle
                     detect_song_and_record(PeekEvent.data(:, experNo), peekStartSamp);
                 assert(status, 'Song detetion failed');
             end
+            self.lastPeekSamp = self.DaqObj.lastSample;
             notify(self, 'PeekComplete', ExperEvent(PeekEvent.hwChannels));
         end
         
@@ -137,8 +138,8 @@ classdef (Sealed) AcqGuiMonitor < handle
         function request_peek(self)
             %REQUEST_PEEK Ask DAQ for peek of data in buffer
             if ~self.DaqObj.isUpdating && ~self.DaqObj.isPeeking % will re-attempt at next update
-                peekSample = self.lastPeekSamp - self.peekOverlapSamp;
-                self.DaqObj.request_peek(self.peekHWChannels, peekSample);
+                peekFromSample = self.lastPeekSamp - self.peekOverlapSamp;
+                self.DaqObj.request_peek(self.peekHWChannels, peekFromSample);
             end
         end
         
@@ -164,6 +165,7 @@ classdef (Sealed) AcqGuiMonitor < handle
                 warning('Song detection not happening');
                 return
             end
+            self.lastPeekSamp = -1;
             delete(self.UpdateCompleteListener);
             delete(self.PeekAvailableListener);
             self.detectingSong = false;
