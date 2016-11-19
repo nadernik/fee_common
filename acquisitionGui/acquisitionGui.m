@@ -311,7 +311,7 @@ function popupExperiments_Callback(~, ~, handles)
 % Hints: contents = get(hObject,'String') returns popupExperiments contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from popupExperiments
 newNdx = handles.popupExperiments.Value;
-handles.GuiModel.change_current_experiment(newNdx);
+handles.GuiModel.change_current_exper(newNdx);
 
 % --- Executes during object creation, after setting all properties.
 function popupExperiments_CreateFcn(hObject, ~, ~)
