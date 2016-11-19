@@ -1,9 +1,9 @@
-classdef (Sealed) SpectrogramDisplay < handle
+classdef (Sealed) SpectrogramDisplay < ResizableDisplay
     %SPECTROGRAMDISPLAY create interactive spectrogram display
     %   SPECTROGRAMDISPLAY(signal, fs) creates an interactive spectrogram
     %   plot of the signal with sampling rate Fs that is calculated to fit the
     %   resolution of the plot. Left clicking zooms, dragging boxes sets the
-    %   plot limits, double clicking zooms out. 
+    %   plot limits, double clicking zooms out.
     %
     %   Based entirely on DISPLAYSPECGRAMQUICK.M by Aaron Andalman.
     %   Differences include: named optional arguments, correct redisplay of
@@ -32,7 +32,6 @@ classdef (Sealed) SpectrogramDisplay < handle
     properties (SetAccess = private)
         signal
         fs
-        AxisHandle
         
         freqRange
         startTime
@@ -42,22 +41,12 @@ classdef (Sealed) SpectrogramDisplay < handle
         NFFT
         backgroundColor
         frequencyUnits
-        
-        startNdx
-        endNdx
     end
     properties (Access = private)
         cMap
-        HostFigure
         ImageHandle
-        XLimListener
         taper = [];
-        nSamp
         freqScaling
-        ownResize
-        ownButtonDown
-        ChangeResizeListener
-        ChangeButtonDownListener
     end
     methods
         function self = SpectrogramDisplay(in1, in2, varargin)
@@ -82,21 +71,24 @@ classdef (Sealed) SpectrogramDisplay < handle
             parse(p, varargin{:});
             Params = p.Results;
             if isgraphics(in1)
-                self.AxisHandle = in1;
-                self.signal = in2;
-                self.fs = Params.fs;
+                superArgs = {in1};
+                signal = in2;
+                fs = Params.fs;
             elseif isnumeric(in1)
-                self.AxisHandle = gca();
-                self.signal = in1;
-                self.fs = in2;
-                assert(isnumeric(self.fs), 'fs must be numeric');
+                superArgs = {gca()};
+                signal = in1;
+                fs = in2;
+                assert(isnumeric(fs), 'fs must be numeric');
             else
                 error('Input parsing failed');
             end
-            assert(isnumeric(self.signal) && numel(self.signal) > 0, 'Signal invalid');
-            assert(self.fs > 0, 'fs must be specified');
-            
+            assert(isnumeric(signal) && numel(signal) > 0, 'Signal invalid');
+            assert(fs > 0, 'fs must be specified');
+            self@ResizableDisplay(superArgs{:});
+            self.signal = signal;
             self.nSamp = numel(self.signal);
+            self.endNdx = self.nSamp;
+            self.fs = fs;
             self.freqRange = Params.freqRange;
             self.startTime = Params.startTime;
             self.nCourse = Params.nCourse;
@@ -106,10 +98,8 @@ classdef (Sealed) SpectrogramDisplay < handle
             self.cMap = Params.colorMap;
             self.backgroundColor = Params.backgroundColor;
             self.cMap(1,:) = self.backgroundColor; %set background to black
-            self.HostFigure = get_parent_figure(self.AxisHandle);
             self.ImageHandle = gobjects(1);
-            self.startNdx = 1;
-            self.endNdx = self.nSamp;
+            
             self.frequencyUnits = Params.frequencyUnits;
             if strcmpi(self.frequencyUnits, 'Hz')
                 self.freqScaling = 1;
@@ -118,57 +108,12 @@ classdef (Sealed) SpectrogramDisplay < handle
             else
                 error('Unrecognized frequency units');
             end
-            set(self.AxisHandle, 'UserData', self);
-            set(self.AxisHandle, 'ButtonDownFcn', @self.buttondown_updatedspecgram);
-            self.ownButtonDown = true;
-            self.ChangeButtonDownListener = addlistener(self.AxisHandle, 'ButtonDownFcn', 'PostSet', @self.change_buttondown_cb);
-            self.insert_resize_hook();
-            self.display_spec();
-        end
-        function delete(self)
-            delete(self.XLimListener);
-            try
-                if self.ownResize
-                    set(self.HostFigure, 'SizeChangedFcn', '');
-                end
-            catch ME
-                if ~strcmp('MATLAB:class:InvalidHandle', ME.identifier)
-                    rethrow(ME);
-                end
-            end
-            try
-                if self.ownButtonDown
-                    self.AxisHandle.ButtonDownFcn = '';
-                end
-            catch ME
-                if ~strcmp('MATLAB:class:InvalidHandle', ME.identifier)
-                    rethrow(ME);
-                end
-            end
-            try
-                if isequal(self.AxisHandle.UserData, self)
-                    self.AxisHandle.UserData = [];
-                end
-            catch ME
-                if ~strcmp('MATLAB:class:InvalidHandle', ME.identifier)
-                    rethrow(ME);
-                end
-            end
+            self.update_display();
         end
         
-        function display_spec(self, ~, ~)
-            %% Change callbacks to avoid loops?
-            delete(self.XLimListener);
-            usedToOwnResize = self.ownResize;
-            if usedToOwnResize
-                set(self.HostFigure, 'SizeChangedFcn', '');%empty resize function to avoid callback loops
-            end
+        function update_display(self, ~, ~)
             %% Determine axis pixel size
-            oldUnits = get(self.AxisHandle, 'Units');
-            set(self.AxisHandle, 'Units', 'pixels')
-            pixelSize = get(self.AxisHandle, 'Position');
-            set(self.AxisHandle, 'Units', oldUnits);
-            pixelWidth = pixelSize(3) / self.nCourse; % X extent of spectrogram, in pixels
+            pixelWidth = self.pixel_width(); % X extent of spectrogram, in pixels
             
             %% Determine how many fft windows we can display
             thisWindowSize = min(self.windowSize, self.endNdx - self.startNdx);%must be at least as long as the signal
@@ -230,87 +175,10 @@ classdef (Sealed) SpectrogramDisplay < handle
                 tmpChildren(newImgIndx) = oldImg;
                 self.AxisHandle.Children = tmpChildren;
             end
-            self.XLimListener = addlistener(self.AxisHandle, 'XLim', 'PostSet', @self.xlim);
-            if usedToOwnResize
-                self.insert_resize_hook();
-            end
         end
         
-        function xlim(self, ~, ~)
-            xbnds = xlim(self.AxisHandle);
-            p1 = xbnds(1);              % extract x and y
-            p2 = xbnds(2);
-            p1 = min(p1, p2);             % calculate locations
-            tryStartNdx = max(floor((p1 - self.startTime) * self.fs) + 1, 1);
-            tryEndNdx = min(floor((p2 - self.startTime) * self.fs) + 1, self.nSamp);
-            self.set_clip(tryStartNdx, tryEndNdx);
-            self.display_spec();
-        end
-        
-        function buttondown_updatedspecgram(self, ~, ~)
-            mouseMode = get(self.HostFigure, 'SelectionType');
-            clickLocation = get(self.AxisHandle, 'CurrentPoint');
-            switch mouseMode
-                case 'alt'
-                    %% Control click to pan
-                    rbbox();
-                    endPoint = get(self.AxisHandle, 'CurrentPoint');
-                    point1 = clickLocation(1, 1);              % extract x and y
-                    point2 = endPoint(1, 1);
-                    shiftByTime = point1(1) - point2(1);
-                    shiftSamples = floor(shiftByTime * self.fs) + 1;
-                    self.set_clip(self.startNdx + shiftSamples, ...
-                        self.endNdx + shiftSamples);
-                case 'open'
-                    %% Double click to zoom out
-                    self.startNdx = 1;
-                    self.endNdx = self.nSamp;
-                case 'extend'
-                    %% Shift click to zoom out
-                    self.startNdx = 1;
-                    self.endNdx = self.nSamp;
-                case 'normal'
-                    %% Left click to zoom in.
-                    rbbox();
-                    endPoint = get(gca,'CurrentPoint');
-                    point1 = clickLocation(1, 1);              % extract x and y
-                    point2 = endPoint(1, 1);
-                    p1 = min(point1, point2);             % calculate locations
-                    offset = abs(point1 - point2);         % and dimensions
-                    clickNdx = floor((p1 - self.startTime) * self.fs) + 1;
-                    if offset / diff(xlim(self.AxisHandle)) < .001 %Very small selection
-                        quarterWindow = round((self.endNdx - self.startNdx) / 4);
-                        self.set_clip(clickNdx - quarterWindow, clickNdx + quarterWindow);
-                    else
-                        boxSampLen = floor(offset * self.fs);
-                        self.set_clip(clickNdx, clickNdx + boxSampLen);
-                    end
-            end
-            self.display_spec([], []);
-        end
-        
-        function change_resize_cb(self, ~, ~)
-            self.ownResize = false;
-            delete(self.ChangeResizeListener);
-        end
-        function change_buttondown_cb(self, ~, ~)
-            self.ownButtonDown = false;
-            delete(self.ChangeButtonDownListener);
-        end
-    end
-    methods (Access = private)
-        function insert_resize_hook(self)
-            set(self.HostFigure, 'SizeChangedFcn', @self.display_spec);
-            self.ownResize = true;
-            self.ChangeResizeListener = addlistener(self.HostFigure, 'SizeChangedFcn', 'PostSet', @self.change_resize_cb);
-        end
-        function set_clip(self, startNdx, endNdx)
-            self.startNdx = min(max(startNdx, 1), self.nSamp);
-            if endNdx < self.startNdx
-                self.endNdx = startNdx;
-            else
-                self.endNdx = min(max(endNdx, 1), self.nSamp);
-            end
+        function ndx = x_to_ndx(self, x)
+            ndx = floor((x - self.startTime) * self.fs) + 1;
         end
     end
 end
