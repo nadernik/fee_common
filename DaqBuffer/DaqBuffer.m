@@ -91,6 +91,7 @@ classdef (Sealed) DaqBuffer < handle
             end
             self.stop()
             delete(self.Session);
+            daq.reset();
         end
         
         function val = get.isLogging(self)
