@@ -211,6 +211,16 @@ classdef (Sealed) AcqGuiModel < handle
             notify(self, 'CLimitsChanged');
         end
         
+        function goAhead = ok_to_modify(self)
+            if self.AcqObj.ExperManager.anyRecording || self.AcqObj.SongMonitor.detectingSong
+                warndlg({'In order to alter the loaded experiments', 'all triggering and recording must be stopped'});
+                uiwait();
+                goAhead = false;
+            else
+                goAhead = true;
+            end
+        end
+        
         %% Callbacks -- do not use externally
         function rec_complete_cb(self, ~, ExperEventObj)
             if ExperEventObj.nos == self.currentExperNdx

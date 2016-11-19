@@ -266,7 +266,7 @@ function buttonCreateExper_Callback(~, ~, handles)
 % hObject    handle to buttonCreateExper (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-goAhead = handles.Views.ok_to_modify();
+goAhead = handles.GuiModel.ok_to_modify();
 if goAhead
     status = handles.GuiModel.create_experiment();
     if ~status
@@ -279,7 +279,7 @@ function buttonLoadExperiment_Callback(~, ~, handles)
 % hObject    handle to buttonLoadExperiment (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-goAhead = handles.Views.ok_to_modify();
+goAhead = handles.GuiModel.ok_to_modify();
 if goAhead
     status = handles.GuiModel.load_experiment();
     if ~status
@@ -292,7 +292,7 @@ function buttonCloseExper_Callback(~, ~, handles)
 % hObject    handle to buttonCloseExper (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-goAhead = handles.Views.ok_to_modify();
+goAhead = handles.GuiModel.ok_to_modify();
 if goAhead
     status = handles.GuiModel.close_experiment();
     if ~status

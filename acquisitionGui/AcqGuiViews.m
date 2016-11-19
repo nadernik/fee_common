@@ -49,14 +49,14 @@ classdef (Sealed) AcqGuiViews < handle
             self.DaqListener = addlistener(self.AcqObj, 'DaqChanged', @self.daq);
             self.RestartChangedListener = addlistener(self.RestartManager, ...
                 'RestartChanged', @self.restart_changed);
-            self.ExpersChangedListener = addlistener(self.ExperManager, 'ExperimentsChanged', @self.experiments);
+            self.ExpersChangedListener = addlistener(self.ExperManager, 'ExperimentsChanged', @self.experiments_changed);
             self.RecordingStatusListener = addlistener(self.GuiModel, 'RecordingStatusChanged', @self.recording_status);
-            self.DetectChangedListener = addlistener(self.GuiModel, 'DetectChanged', @self.detect);
+            self.DetectChangedListener = addlistener(self.GuiModel, 'DetectChanged', @self.detect_changed);
             self.PeekCompleteListener = addlistener(self.GuiModel, 'PeekComplete', @self.peek);
             self.SongParamsListener = addlistener(self.GuiModel, 'SongParametersChanged', @self.song_params);
             self.StimListener = addlistener(self.GuiModel, 'StimAvailable', @self.stim);
             self.CurrentExperimentListener = addlistener(self.GuiModel, 'CurrentExperimentChanged', @self.init_exper);
-            self.DisplayedChannelListener = addlistener(self.GuiModel, 'DisplayedChannelsChanged', @self.update_displays);
+            self.DisplayedChannelListener = addlistener(self.GuiModel, 'DisplayedChannelsChanged', @self.displayed_channel_changed);
             self.RangeListener = addlistener(self.GuiModel, 'ClipRangeChanged', @self.clip_range);
             self.DisplayedRecordingListener = addlistener(self.GuiModel, 'CurrentRecordingChanged', @self.displayed_recording);
             self.AutoUpdateListener = addlistener(self.GuiModel, 'autoUpdate', 'PostSet', @self.auto_update);
@@ -83,255 +83,44 @@ classdef (Sealed) AcqGuiViews < handle
                     set(UIControl,'Interruptible','off');
                 end
             end
-            self.restart_changed([], []);
+            self.restart_changed();
         end
         
-        function daq(self, ~, ~) % Call back for DaqChanged events
-            if self.AcqObj.daqRunning
-                if self.GuiModel.AcqObj.isBuffering
-                    self.daq_buffering();
-                elseif self.GuiModel.currentExperNdx > 0 && self.GuiModel.madeRecordings(self.GuiModel.currentExperNdx)
-                    currExper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
-                    self.daq_ready(currExper.lastFileNo);
-                else
-                    self.daq_ready();
-                end
-            else
-                self.daq_stopped();
-            end
+        %% Button click views
+        function display_filesperhour(self)
+            CurrExper = self.GuiModel.CurrentExper;
+            [~, ~, chanNumbers, creationTimes] = CurrExper.find_all_files();
+            audMask = chanNumbers == CurrExper.songHWChannel;
+            audCreationTimes = creationTimes(audMask);
+            hours = [audCreationTimes.Hour] + [audCreationTimes.Minute] ./ 60;
+            Ax = handles.GuiData.axes3;
+            cla(Ax)
+            histogram(Ax, hours);
+            xlabel(Ax, 'hours');
+            ylabel(Ax, 'files');
         end
-        function restart_changed(self, ~, ~)
-            set(self.GuiData.editStartTime, 'String', num2str(self.RestartManager.startHour));
-            set(self.GuiData.editStopTime, 'String', num2str(self.RestartManager.stopHour));
-            set(self.GuiData.checkboxAutostart, 'Value', self.RestartManager.restartDaily);
-        end
-        function experiments(self, ~, ~)
-            self.exper_strings();
-        end
-        function init_exper(self, ~, ~)
-            self.chan_strings();
-            self.exper_val();
-        end
-        function displayed_recording(self, ~, ~)
-            self.recno_string();
-            self.update_displays([], ExperEvent(1:4));
-            self.file_properties();
-        end
-        function chan_strings(self)
-            if ~self.ExperManager.isEmpty
-                CurrExper = self.get_current_exper();
-                nChan = numel(CurrExper.inChannels);
-                chanStrings = cell(nChan, 1);
-                chanStrings{1} = sprintf('%d- audio', CurrExper.songHWChannel);
-                chanStrings(2:end) = cellfun(@(x) sprintf('%d- other', x),...
-                    num2cell(CurrExper.nonSongHWChannels), 'UniformOutput', false);
-            else
-                chanStrings = {''};
-            end
-            set(self.GuiData.popupAudio,'String', chanStrings);
-            set(self.GuiData.popupChannel,'String', chanStrings);
-            set(self.GuiData.popupChannel2,'String', chanStrings);
-            set(self.GuiData.popupChannel3,'String', chanStrings);
-        end
-        function exper_val(self)
-            if ~self.ExperManager.isEmpty
-                set(self.GuiData.popupExperiments, 'Value', self.GuiModel.currentExperNdx);
-            else
-                set(self.GuiData.popupExperiments, 'Value', 1);
-            end
-        end
-        
-        function change_recording_params(self)
-            if ~self.ExperManager.isEmpty
-                CurrExper = self.GuiModel.CurrentExper;
-                promptStr = {'Pre Trigger Secs:', 'Post Trigger Secs:', 'Max File Length:'};
-                dlgTitle = 'Input Recording Parameters:';
-                num_lines = 1;
-                defaultVals = {num2str(CurrExper.preSongSeconds),...
-                    num2str(CurrExper.postSongSeconds),...
-                    num2str(CurrExper.maxFileDuration)};
-                answerCell = inputdlg(promptStr,dlgTitle,num_lines,defaultVals);
-               
-                if ~isempty(answerCell)
-                    preSecs = str2double(answerCell{1});
-                    postSecs = str2double(answerCell{2});
-                    maxDuration = str2double(answerCell{3});
-                    if ~isnan(preSecs) && ~isnan(preSecs) && ~isnan(maxDuration)
-                        CurrExper.preSongSeconds = preSecs;
-                        CurrExper.postSongSeconds = postSecs;
-                        CurrExper.maxFileDuration = maxDuration;
-                    else
-                        warning('Invalid input');
-                    end
-                end
-            end
-        end
-
-        function clip_range(self, ~, ~)
+        function play_audio(self, dispNo)
             if self.GuiModel.recordingDisplayed
-                self.display_chans(1:4);
-            end
-        end
-        function update_displays(self, ~, ExperEventObj)
-            dispNos = ExperEventObj.nos;
-            if self.GuiModel.recordingDisplayed
-                self.display_chans(dispNos);
-            else
-                self.clear_displays();
-            end
-            self.display_popup(dispNos);
-        end
-        function clear_displays(self)
-            cla(self.GuiData.axesAudio);
-            cla(self.GuiData.axesSignal);
-            cla(self.GuiData.axesSignal2);
-            cla(self.GuiData.axesSignal3);
-        end
-        function display_chans(self, dispNos)
-            CurrRec = self.GuiModel.CurrentRecording;
-            startTime = self.get_rec_starttime();
-            for dNo = 1:numel(dispNos)
-                thisDisp = dispNos(dNo);
-                if thisDisp == 1
-                    self.display_spec(startTime);
-                elseif thisDisp > 1 && thisDisp <= 4
-                    Ax = self.get_display_axes(thisDisp);
-                    signal = CurrRec.signals{dispNos};
-                    self.display_signal(Ax, signal, startTime);
-                else
-                    error('%d is not a valid display channel', thisDisp);
+                Ax = get_display_axes(self, dispNo);
+                CurrRec = self.GuiModel.CurrentRecording;
+                signal = CurrRec.signal{self.GuiModel.dislayNdx(dispNo)};
+                range = max(max(signal), abs(min(signal)));
+                normedSig = signal / (range * 3);
+                
+                player = audioplayer(normedSig, CurrRec.fileFs);
+                hold(Ax, 'on');
+                xBnds= xlim(Ax);
+                yBnds = ylim(Ax);
+                LHandle = line(xBnds(1) * ones(2, 1), yBnds, 'Color', 'yellow');
+                
+                play(player);
+                while isplaying(player)
+                    currTime = xBnds(1) + get(player, 'CurrentSample') / CurrRec.fileFs;
+                    set(LHandle, 'XData', currTime * ones(2, 1));
+                    drawnow();
                 end
-            end
-        end
-        function startTime = get_rec_starttime(self)
-            startTime = (self.GuiModel.startNdx - 1) ...
-                ./ self.GuiModel.CurrentRecording.fileFs;
-        end
-        function display_popup(self, dispNos)
-            haveExper = self.GuiModel.currentExperNdx > 0;
-            for dNo = 1:numel(dispNos)
-                thisDisp = dispNos(dNo);
-                PopupHandle = self.get_popup_handle(thisDisp);
-                if haveExper
-                    PopupHandle.Value = self.GuiModel.displayNdx(thisDisp);
-                else
-                    PopupHandle.Value = 1;
-                end
-            end
-        end
-        function val = get_popup_handle(self, dispNo)
-            switch dispNo
-                case 1
-                    val = self.GuiData.popupAudio;
-                case 2
-                    val = self.GuiData.popupChannel;
-                case 3
-                    val = self.GuiData.popupChannel2;
-                case 4
-                    val = self.GuiData.popupChannel3;
-            end
-        end
-        
-        function no_experiment(self)
-            self.GuiModel.currentExperNdx = 0;
-            self.GuiModel.experDisplayChannels = nan(3, 0); % 3xN matrix of HW channels to display for each of N experiments, nan for nothing
-            self.GuiModel.displayRecordingNo = zeros(0, 1);% Nx1 matrix of file number to display
-            self.startNdx = 0;
-            self.endNdx = 0;
-        end
-        
-        function update_channels(self, ~, ExperEventObj)
-            self.chan_string_values();
-        end
-        
-        function exper_strings(self)
-            set(self.GuiData.popupExperiments, 'String', self.ExperManager.experimentStrings);
-        end
-        
-        function make_comment(self)
-            currRecNo = self.GuiModel.currRecNo;
-            commentStr = get(self.GuiData.editDatafileComment, 'String');
-            if ~isempty(commentStr) && any(~isspace(commentStr)) && currRecNo > 0
-                status = self.GuiModel.CurrentExper.append_file_property(currRecNo, 'Comment', commentStr);
-                if status
-                    set(self.GuiData.editDatafileComment, 'String', '');
-                end
-            end
-        end
-        function file_properties(self)
-            if self.GuiModel.recordingDisplayed
-                propertyNames = self.GuiModel.CurrentRecording.propertyNames;
-                propertyValues = self.GuiModel.CurrentRecording.propertyValues;
-                nPropName = numel(propertyNames);
-                strList = cell(nPropName, 1);
-                for propNo = 1:nPropName
-                    strList{propNo} = sprtintf('%s: %s', ...
-                        propertyNames{propNo}, propertyValues{propNo});
-                end
-                set(self.GuiData.listboxDatafileProperties, 'String', strList);
-            end
-        end
-        function recording_status(self, ~, ~)
-            currExper = self.get_current_exper();
-            if currExper.isRecording
-                recNo = currExper.lastFileNo + 1;
-                if currExper.forcedRecording
-                    self.daq_forced(recNo);
-                else
-                    self.daq_triggered(recNo);
-                end
-            else
-                self.daq([], []);
-            end
-        end
-        function detect(self, ~, ~)
-            currExper = self.get_current_exper();
-            if ~isempty(currExper) && currExper.detectingSong
-                self.detect_running();
-            else
-                self.detect_off();
-            end
-        end
-        function peek(self, ~, ~)
-            currExper = self.get_current_exper();
-            if currExper.detectingSong
-                %% Heart beat
-                if isequal(get(self.GuiData.textSongScore,'BackgroundColor'), [1, 1, 1])
-                    set(self.GuiData.textSongScore,'BackgroundColor', [1, 1, 0.5]);
-                else
-                    set(self.GuiData.textSongScore,'BackgroundColor', [1, 1, 1]);
-                end
-                %% Display score
-                if isnan(currExper.songScore)
-                    scoreStr = '--';
-                else
-                    scoreStr = num2str(currExper.songScore);
-                end
-                set(self.GuiData.textSongScore, 'String', sprintf('Song Score: %s', scoreStr));
-            end
-        end
-        
-        function request_stim(self, ~, ~)
-            if self.GuiModel.recordingDisplayed
-                set(self.GuiData.buttonAntidromic, 'String','Click on signal at threshold');
-                set(self.GuiData.buttonAntidromic, 'BackgroundColor','red');
-                [~, stimThresh] = ginput(1);
-                set(self.GuiData.buttonAntidromic, 'String','Show aligned antidromic');
-                set(self.GuiData.buttonAntidromic, 'BackgroundColor', [236/255, 233/255, 216/255]);
-                self.GuiModel.antidromic(stimThresh);
-            end
-        end
-        function stim(self, ~, ~)
-            cla(self.GuiData.axes3);
-            title(self.GuiData.axes3, ...
-                sprintf('%d stims on chan %d',...
-                size(self.GuiModel.stimClips, 2),...
-                self.GuiModel.stimHwChan));
-            if ~isempty(self.GuiModel.stimClips)
-                plot(self.stimTimes, self.stimClips);
-                xlim([self.stimTimes(1), self.stimTimes(end)]);
-                ylim([-0.5, 0.5]);
-                set(self.GuiData.axes3, 'ButtonDownFcn', @zoomboxCallback)
+                delete(LHandle);
+                hold(Ax, 'off');
             end
         end
         function running_song_score(self)
@@ -360,33 +149,17 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         
-        function auto_update(self, ~, ~)
-            self.GuiData.checkboxAutoDisplay.Value = self.GuiModel.autoUpdate;
-        end
-        
-        function goAhead = ok_to_modify(self)
-            if self.ExperManager.anyRecording || self.SongMonitor.detectingSong
-                warndlg({'In order to alter the loaded experiments', 'all triggering and recording must be stopped'});
-                uiwait();
-                goAhead = false;
-            else
-                goAhead = true;
+        %% Input dialogs / functions
+        function make_comment(self)
+            currRecNo = self.GuiModel.currRecNo;
+            commentStr = get(self.GuiData.editDatafileComment, 'String');
+            if ~isempty(commentStr) && any(~isspace(commentStr)) && currRecNo > 0
+                status = self.GuiModel.CurrentExper.append_file_property(currRecNo, 'Comment', commentStr);
+                if status
+                    set(self.GuiData.editDatafileComment, 'String', '');
+                end
             end
         end
-        
-        function display_filesperhour(self)
-            CurrExper = self.GuiModel.CurrentExper;
-            [~, ~, chanNumbers, creationTimes] = CurrExper.find_all_files();
-            audMask = chanNumbers == CurrExper.songHWChannel;
-            audCreationTimes = creationTimes(audMask);
-            hours = [audCreationTimes.Hour] + [audCreationTimes.Minute] ./ 60;
-            Ax = handles.GuiData.axes3;
-            cla(Ax)
-            histogram(Ax, hours);
-            xlabel(Ax, 'hours');
-            ylabel(Ax, 'files');
-        end
-        
         function set_spectrogram_clim(self)
             cLim = self.GuiModel.cLimits(:, self.GuiModel.currentExperNdx);
             prompt = {'Enter floor:', 'Enter ceiling:'};
@@ -405,51 +178,171 @@ classdef (Sealed) AcqGuiViews < handle
                 end
             end
         end
+        function change_recording_params(self)
+            if ~self.ExperManager.isEmpty
+                CurrExper = self.GuiModel.CurrentExper;
+                promptStr = {'Pre Trigger Secs:', 'Post Trigger Secs:', 'Max File Length:'};
+                dlgTitle = 'Input Recording Parameters:';
+                num_lines = 1;
+                defaultVals = {num2str(CurrExper.preSongSeconds),...
+                    num2str(CurrExper.postSongSeconds),...
+                    num2str(CurrExper.maxFileDuration)};
+                answerCell = inputdlg(promptStr,dlgTitle,num_lines,defaultVals);
+               
+                if ~isempty(answerCell)
+                    preSecs = str2double(answerCell{1});
+                    postSecs = str2double(answerCell{2});
+                    maxDuration = str2double(answerCell{3});
+                    if ~isnan(preSecs) && ~isnan(preSecs) && ~isnan(maxDuration)
+                        CurrExper.preSongSeconds = preSecs;
+                        CurrExper.postSongSeconds = postSecs;
+                        CurrExper.maxFileDuration = maxDuration;
+                    else
+                        warning('Invalid input');
+                    end
+                end
+            end
+        end
+        function request_stim(self, ~, ~)
+            if self.GuiModel.recordingDisplayed
+                set(self.GuiData.buttonAntidromic, 'String','Click on signal at threshold');
+                set(self.GuiData.buttonAntidromic, 'BackgroundColor','red');
+                [~, stimThresh] = ginput(1);
+                set(self.GuiData.buttonAntidromic, 'String','Show aligned antidromic');
+                set(self.GuiData.buttonAntidromic, 'BackgroundColor', [236/255, 233/255, 216/255]);
+                self.GuiModel.antidromic(stimThresh);
+            end
+        end
         
+        %% Model event callbacks
+        function detect_changed(self, ~, ~)
+            currExper = self.get_current_exper();
+            if ~isempty(currExper) && currExper.detectingSong
+                self.detect_running();
+            else
+                self.detect_off();
+            end
+        end
+        function peek(self, ~, ~)
+            currExper = self.get_current_exper();
+            if currExper.detectingSong
+                %% Heart beat
+                if isequal(get(self.GuiData.textSongScore,'BackgroundColor'), [1, 1, 1])
+                    set(self.GuiData.textSongScore,'BackgroundColor', [1, 1, 0.5]);
+                else
+                    set(self.GuiData.textSongScore,'BackgroundColor', [1, 1, 1]);
+                end
+                %% Display score
+                if isnan(currExper.songScore)
+                    scoreStr = '--';
+                else
+                    scoreStr = num2str(currExper.songScore);
+                end
+                set(self.GuiData.textSongScore, 'String', sprintf('Song Score: %s', scoreStr));
+            end
+        end
+        function recording_status(self, ~, ~)
+            currExper = self.get_current_exper();
+            if currExper.isRecording
+                recNo = currExper.lastFileNo + 1;
+                if currExper.forcedRecording
+                    self.daq_forced(recNo);
+                else
+                    self.daq_triggered(recNo);
+                end
+            else
+                self.daq();
+            end
+        end
+        function daq(self, ~, ~) % Call back for DaqChanged events
+            if self.AcqObj.daqRunning
+                if self.GuiModel.AcqObj.isBuffering
+                    self.daq_buffering();
+                elseif self.GuiModel.currentExperNdx > 0 && self.GuiModel.madeRecordings(self.GuiModel.currentExperNdx)
+                    currExper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
+                    self.daq_ready(currExper.lastFileNo);
+                else
+                    self.daq_ready();
+                end
+            else
+                self.daq_stopped();
+            end
+        end
+        function restart_changed(self, ~, ~)
+            set(self.GuiData.editStartTime, 'String', num2str(self.RestartManager.startHour));
+            set(self.GuiData.editStopTime, 'String', num2str(self.RestartManager.stopHour));
+            set(self.GuiData.checkboxAutostart, 'Value', self.RestartManager.restartDaily);
+        end
+        function experiments_changed(self, ~, ~)
+            self.exper_strings();
+        end
+        function init_exper(self, ~, ~)
+            self.chan_strings();
+            self.exper_val();
+            self.daq();
+            self.detect_changed();
+            self.displayed_recording();
+        end
+        function displayed_recording(self, ~, ~)
+            fprintf('View caught change in recording\n');
+            self.recno_string();
+            self.update_displays(1:4);
+            self.file_properties();
+        end
+        function displayed_channel_changed(self, ~, ExperEventObj)
+            fprintf('View caught change in channels displayed\n');
+            dispNos = ExperEventObj.nos;
+            self.update_displays(dispNos);
+        end
         function clim(self, ~, ~)
             if self.GuiModel.recordingDisplayed
                 startTime = self.get_rec_starttime();
                 self.display_spec(startTime);
             end
         end
-        
-        function play_audio(self, dispNo)
-            if self.GuiModel.recordingDisplayed
-                Ax = get_display_axes(self, dispNo);
-                CurrRec = self.GuiModel.CurrentRecording;
-                signal = CurrRec.signal{self.GuiModel.dislayNdx(dispNo)};
-                range = max(max(signal), abs(min(signal)));
-                normedSig = signal / (range * 3);
-                
-                player = audioplayer(normedSig, CurrRec.fileFs);
-                hold(Ax, 'on');
-                xBnds= xlim(Ax);
-                yBnds = ylim(Ax);
-                LHandle = line(xBnds(1) * ones(2, 1), yBnds, 'Color', 'yellow');
-                
-                play(player);
-                while isplaying(player)
-                    currTime = xBnds(1) + get(player, 'CurrentSample') / CurrRec.fileFs;
-                    set(LHandle, 'XData', currTime * ones(2, 1));
-                    drawnow();
-                end
-                delete(LHandle);
-                hold(Ax, 'off');
-            end
-        end
-        
         function song_params(self, ~, ~)
             CurrExper = self.get_current_exper();
             set(self.GuiData.editPowerThres, 'String', num2str(CurrExper.ratioThreshold));
             set(self.GuiData.editSongDensity, 'String', num2str(CurrExper.songDensity));
             set(self.GuiData.editSongLength, 'String', num2str(CurrExper.songDuration));
         end
-        
-        function close_request(self, src, callbackdata)
-            poisonPill = onCleanup(@() delete(src));
-            delete(self.GuiModel);
+        function auto_update(self, ~, ~)
+            self.GuiData.checkboxAutoDisplay.Value = self.GuiModel.autoUpdate;
+        end
+        function clip_range(self, ~, ~)
+            fprintf('View caught clip event\n');
+            if self.GuiModel.recordingDisplayed
+                self.display_chans(1:4);
+            end
+        end
+        function file_properties(self)
+            if self.GuiModel.recordingDisplayed
+                propertyNames = self.GuiModel.CurrentRecording.propertyNames;
+                propertyValues = self.GuiModel.CurrentRecording.propertyValues;
+                nPropName = numel(propertyNames);
+                strList = cell(nPropName, 1);
+                for propNo = 1:nPropName
+                    strList{propNo} = sprtintf('%s: %s', ...
+                        propertyNames{propNo}, propertyValues{propNo});
+                end
+                set(self.GuiData.listboxDatafileProperties, 'String', strList);
+            end
+        end
+        function stim(self, ~, ~)
+            cla(self.GuiData.axes3);
+            title(self.GuiData.axes3, ...
+                sprintf('%d stims on chan %d',...
+                size(self.GuiModel.stimClips, 2),...
+                self.GuiModel.stimHwChan));
+            if ~isempty(self.GuiModel.stimClips)
+                plot(self.stimTimes, self.stimClips);
+                xlim([self.stimTimes(1), self.stimTimes(end)]);
+                ylim([-0.5, 0.5]);
+                set(self.GuiData.axes3, 'ButtonDownFcn', @zoomboxCallback)
+            end
         end
         
+        %% View callbacks
         function axes_click_cb(self, src, ~)
             if self.GuiModel.recordingDisplayed
                 CurrRecording = self.GuiModel.CurrentRecording;
@@ -484,6 +377,10 @@ classdef (Sealed) AcqGuiViews < handle
                 end
             end
         end
+        function close_request(self, src, ~)
+            poisonPill = onCleanup(@() delete(src));
+            delete(self.GuiModel);
+        end
     end
     methods (Access = private)
         %% private utilities
@@ -509,7 +406,76 @@ classdef (Sealed) AcqGuiViews < handle
                 Exper = [];
             end
         end
+        function startTime = get_rec_starttime(self)
+            startTime = (self.GuiModel.startNdx - 1) ...
+                ./ self.GuiModel.CurrentRecording.fileFs;
+        end
+        function val = get_popup_handle(self, dispNo)
+            switch dispNo
+                case 1
+                    val = self.GuiData.popupAudio;
+                case 2
+                    val = self.GuiData.popupChannel;
+                case 3
+                    val = self.GuiData.popupChannel2;
+                case 4
+                    val = self.GuiData.popupChannel3;
+            end
+        end
         %% Change display states
+        function exper_strings(self)
+            set(self.GuiData.popupExperiments, 'String', self.ExperManager.experimentStrings);
+        end
+        function exper_val(self)
+            if ~self.ExperManager.isEmpty
+                set(self.GuiData.popupExperiments, 'Value', self.GuiModel.currentExperNdx);
+            else
+                set(self.GuiData.popupExperiments, 'Value', 1);
+            end
+        end
+        function update_displays(self, dispNos)
+            if self.GuiModel.recordingDisplayed
+                self.display_chans(dispNos);
+            else
+                self.clear_displays();
+            end
+            self.selected_channels(dispNos);
+        end
+        function display_chans(self, dispNos)
+            fprintf('View asked to show displays %s\n', mat2str(dispNos));
+            CurrRec = self.GuiModel.CurrentRecording;
+            startTime = self.get_rec_starttime();
+            for dNo = 1:numel(dispNos)
+                thisDisp = dispNos(dNo);
+                if thisDisp == 1
+                    self.display_spec(startTime);
+                elseif thisDisp > 1 && thisDisp <= 4
+                    Ax = self.get_display_axes(thisDisp);
+                    signal = CurrRec.signals{dispNos};
+                    self.display_signal(Ax, signal, startTime);
+                else
+                    error('%d is not a valid display channel', thisDisp);
+                end
+            end
+        end
+        function clear_displays(self)
+            cla(self.GuiData.axesAudio);
+            cla(self.GuiData.axesSignal);
+            cla(self.GuiData.axesSignal2);
+            cla(self.GuiData.axesSignal3);
+        end
+        function selected_channels(self, dispNos)
+            haveExper = self.GuiModel.currentExperNdx > 0;
+            for dNo = 1:numel(dispNos)
+                thisDisp = dispNos(dNo);
+                PopupHandle = self.get_popup_handle(thisDisp);
+                if haveExper
+                    PopupHandle.Value = self.GuiModel.displayChanNdx(thisDisp);
+                else
+                    PopupHandle.Value = 1;
+                end
+            end
+        end
         function display_spec(self, startTime)
             Ax = self.GuiData.axesAudio;
             delete(Ax.UserData);
@@ -537,6 +503,22 @@ classdef (Sealed) AcqGuiViews < handle
             axis(Ax, 'tight');
             set(Ax,'ButtonDownFcn', @self.axes_click_cb);
             set(Ax, 'XTickLabel', []);
+        end
+        function chan_strings(self)
+            if ~self.ExperManager.isEmpty
+                CurrExper = self.get_current_exper();
+                nChan = numel(CurrExper.inChannels);
+                chanStrings = cell(nChan, 1);
+                chanStrings{1} = sprintf('%d- audio', CurrExper.songHWChannel);
+                chanStrings(2:end) = cellfun(@(x) sprintf('%d- other', x),...
+                    num2cell(CurrExper.nonSongHWChannels), 'UniformOutput', false);
+            else
+                chanStrings = {''};
+            end
+            set(self.GuiData.popupAudio,'String', chanStrings);
+            set(self.GuiData.popupChannel,'String', chanStrings);
+            set(self.GuiData.popupChannel2,'String', chanStrings);
+            set(self.GuiData.popupChannel3,'String', chanStrings);
         end
         function daq_stopped(self)
             set(self.GuiData.buttonRecord, 'Enable', 'off');
@@ -623,7 +605,5 @@ classdef (Sealed) AcqGuiViews < handle
             end
             set(self.GuiData.editFilenum, 'String', recNoStr); 
         end
-        %% Set restart timer UI elements
-        
     end
 end
