@@ -20,7 +20,7 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
             Params = p.Results;
             if isgraphics(in1)
                 superArgs = {in1};
-                signal = in2;
+                signal = in2; %#ok<*PROP>
                 fs = Params.fs;
             elseif isnumeric(in1)
                 superArgs = {gca()};
@@ -39,7 +39,7 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
                 self.signal = signal;
             end
             self.fs = fs;
-            self.startTime = params.startTime;
+            self.startTime = Params.startTime;
             self.nSamp = numel(self.signal);
             self.endNdx = self.nSamp;
             self.update_display();
@@ -67,18 +67,19 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
                 paddedSig = vertcat(displayedSig, nan(nPad, 1));
                 binnedSig = reshape(paddedSig, pointsPerBin, nBins);
                 binCenterSamp = (pointsPerBin - 1) / 2;
-                firstBinX = self.startTime + (self.startNdx + binCenterSamp - 1) / self.fs;
-                binX = firstBinX  + pointsPerBin * (0:(nBins - 1)) / self.fs;
-                minY = nanmin(binnedSig);
-                maxY = nanmax(binnedSig);
+                firstBinTime = self.startTime + (self.startNdx + binCenterSamp - 1) / self.fs;
+                binTime = firstBinTime  + pointsPerBin * (0:(nBins - 1)) / self.fs;
+                minSig = nanmin(binnedSig);
+                maxSig = nanmax(binnedSig);
                 
                 %% Plotting
-                hold(self.AxisHandle, 'on');
-                MinPlot = plot(self.AxisHandle, binX, minY);
-                MaxPlot = plot(self.AxisHandle, binX, maxY);
+                hold(self.AxisHandle, 'all');
+                MinPlot = plot(self.AxisHandle, binTime, minSig);
+                MaxPlot = plot(self.AxisHandle, binTime, maxSig, 'Color', MinPlot.Color);
                 MinPlot.HitTest = 'Off';
                 MaxPlot.HitTest = 'Off';
                 hold(self.AxisHandle, 'off');
+                xlim(self.AxisHandle, [binTime(1), binTime(end)]);
             end
         end
         
