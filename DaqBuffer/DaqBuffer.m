@@ -460,7 +460,7 @@ classdef (Sealed) DaqBuffer < handle
                     
                     %% Notify listeners
                     readyToNotify = true;
-                    peekEvent = PeekEvent(self.peekHwChannels, self.peekData, self.peekTimeStamps, self.triggerTime, self.peekSample);
+                    peekEvent = PeekEvent(self.peekHwChans, self.peekData, self.peekTimeStamps, self.triggerTime, self.peekSample);
                 end
             end
             if ~readyToNotify
