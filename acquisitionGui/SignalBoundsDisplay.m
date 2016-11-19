@@ -4,6 +4,9 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
         startTime
         fs
     end
+    properties (Access = private)
+        timeCourse
+    end
     methods
         function self = SignalBoundsDisplay(in1, in2, varargin)
             %SignalBoundsDisplay make display object
@@ -42,6 +45,7 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
             self.startTime = Params.startTime;
             self.nSamp = numel(self.signal);
             self.endNdx = self.nSamp;
+            self.timeCourse = self.startTime + (0:(self.nSamp - 1)) ./ self.fs;
             self.update_display();
         end
         
@@ -56,8 +60,8 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
             cla(self.AxisHandle);
             if pointsPerPixel < 4
                 %% Plot without down sampling
-                displayedX = self.startTime + ((self.startNdx - 1):(self.endNdx -1)) ./ self.fs;
-                PlotHandle = plot(self.AxisHandle, displayedX, displayedSig);
+                PlotHandle = plot(self.AxisHandle, ...
+                    self.timeCourse(self.startNdx:self.endNdx), displayedSig);
                 PlotHandle.HitTest = 'Off';
             else
                 %% Calculate maximum and minimum
@@ -67,7 +71,7 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
                 paddedSig = vertcat(displayedSig, nan(nPad, 1));
                 binnedSig = reshape(paddedSig, pointsPerBin, nBins);
                 binCenterSamp = (pointsPerBin - 1) / 2;
-                firstBinTime = self.startTime + (self.startNdx + binCenterSamp - 1) / self.fs;
+                firstBinTime = self.timeCourse(1) + binCenterSamp / self.fs;
                 binTime = firstBinTime  + pointsPerBin * (0:(nBins - 1)) / self.fs;
                 minSig = nanmin(binnedSig);
                 maxSig = nanmax(binnedSig);
