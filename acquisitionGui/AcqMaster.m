@@ -162,9 +162,16 @@ classdef (Sealed) AcqMaster < handle
                 'TimerFcn', @self.buffering_complete, ...
                 'ExecutionMode', 'singleShot', ...
                 'BusyMode', 'queue');
-            CurrentTime = datetime();
-            BufferUntil = CurrentTime + self.SongMonitor.bufferDelay;
-            startat(self.BufferTimer, BufferUntil);
+            BufferUntil = datetime() + self.SongMonitor.bufferDelay;
+            try
+                startat(self.BufferTimer, BufferUntil);
+            catch ME
+                if strcmp(ME.identifier, 'MATLAB:timer:startdelaynegative')
+                    self.buffering_complete();
+                else
+                    rethrow(ME);
+                end
+            end
             notify(self, 'DaqChanged');
         end
         
