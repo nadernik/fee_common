@@ -215,6 +215,16 @@ classdef (Sealed) AcqGuiViews < handle
         end
         
         %% Model event callbacks
+        function experiments_changed(self, ~, ~)
+            self.exper_strings();
+        end
+        function init_exper(self, ~, ~)
+            self.exper_val();
+            self.chan_strings();
+            self.daq();
+            self.detect_changed();
+            self.displayed_recording();
+        end
         function detect_changed(self, ~, ~)
             currExper = self.get_current_exper();
             if ~isempty(currExper) && currExper.detectingSong
@@ -273,24 +283,12 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.editStopTime, 'String', num2str(self.RestartManager.stopHour));
             set(self.GuiData.checkboxAutostart, 'Value', self.RestartManager.restartDaily);
         end
-        function experiments_changed(self, ~, ~)
-            self.exper_strings();
-        end
-        function init_exper(self, ~, ~)
-            self.chan_strings();
-            self.exper_val();
-            self.daq();
-            self.detect_changed();
-            self.displayed_recording();
-        end
         function displayed_recording(self, ~, ~)
-            fprintf('View caught change in recording\n');
             self.recno_string();
             self.update_displays(1:4);
             self.file_properties();
         end
         function displayed_channel_changed(self, ~, ExperEventObj)
-            fprintf('View caught change in channels displayed\n');
             dispNos = ExperEventObj.nos;
             self.update_displays(dispNos);
         end
@@ -310,7 +308,6 @@ classdef (Sealed) AcqGuiViews < handle
             self.GuiData.checkboxAutoDisplay.Value = self.GuiModel.autoUpdate;
         end
         function clip_range(self, ~, ~)
-            fprintf('View caught clip event\n');
             if self.GuiModel.recordingDisplayed
                 self.display_chans(1:4);
             end
@@ -433,6 +430,15 @@ classdef (Sealed) AcqGuiViews < handle
                 set(self.GuiData.popupExperiments, 'Value', 1);
             end
         end
+        function recno_string(self)
+            if self.GuiModel.currentExperNdx > 0
+                thisRecNo = self.GuiModel.currRecNo;
+                recNoStr = num2str(thisRecNo); 
+            else
+                recNoStr = '--';
+            end
+            set(self.GuiData.editFilenum, 'String', recNoStr); 
+        end
         function update_displays(self, dispNos)
             if self.GuiModel.recordingDisplayed
                 self.display_chans(dispNos);
@@ -442,7 +448,6 @@ classdef (Sealed) AcqGuiViews < handle
             self.selected_channels(dispNos);
         end
         function display_chans(self, dispNos)
-            fprintf('View asked to show displays %s\n', mat2str(dispNos));
             CurrRec = self.GuiModel.CurrentRecording;
             startTime = self.get_rec_starttime();
             for dNo = 1:numel(dispNos)
@@ -596,14 +601,6 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.editSongDensity, 'Enable', 'off');
             set(self.GuiData.editSongLength, 'Enable', 'off');
         end
-        function recno_string(self)
-            if self.GuiModel.currentExperNdx > 0
-                thisRecNo = self.GuiModel.currRecNo;
-                recNoStr = num2str(thisRecNo); 
-            else
-                recNoStr = '--';
-            end
-            set(self.GuiData.editFilenum, 'String', recNoStr); 
-        end
+        
     end
 end
