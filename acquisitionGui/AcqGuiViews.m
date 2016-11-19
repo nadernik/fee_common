@@ -189,22 +189,22 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function display_chans(self, dispNos)
             CurrRec = self.GuiModel.CurrentRecording;
-            timeCourse = self.get_timecourse();
+            startTime = self.get_rec_starttime();
             for dNo = 1:numel(dispNos)
                 thisDisp = dispNos(dNo);
                 if thisDisp == 1
-                    self.display_spec(timeCourse);
+                    self.display_spec(startTime);
                 elseif thisDisp > 1 && thisDisp <= 4
                     Ax = self.get_display_axes(thisDisp);
                     signal = CurrRec.signals{dispNos};
-                    self.display_signal(Ax, timeCourse, signal);
+                    self.display_signal(Ax, signal, startTime);
                 else
                     error('%d is not a valid display channel', thisDisp);
                 end
             end
         end
-        function timeCourse = get_timecourse(self)
-            timeCourse = ((self.GuiModel.startNdx - 1):(self.GuiModel.endNdx - 1)) ...
+        function startTime = get_rec_starttime(self)
+            startTime = (self.GuiModel.startNdx - 1) ...
                 ./ self.GuiModel.CurrentRecording.fileFs;
         end
         function display_popup(self, dispNos)
@@ -408,8 +408,8 @@ classdef (Sealed) AcqGuiViews < handle
         
         function clim(self, ~, ~)
             if self.GuiModel.recordingDisplayed
-                timeCourse = self.get_timecourse();
-                self.display_spec(timeCourse);
+                startTime = self.get_rec_starttime();
+                self.display_spec(startTime);
             end
         end
         
@@ -510,7 +510,7 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         %% Change display states
-        function display_spec(self, timeAxis)
+        function display_spec(self, startTime)
             Ax = self.GuiData.axesAudio;
             delete(Ax.UserData);
             cla(Ax);
@@ -522,7 +522,7 @@ classdef (Sealed) AcqGuiViews < handle
             if any(isnan(cLim))
                 cLim = [];
             end
-            SpectrogramDisplay(Ax, normedSig, CurrRec.fileFs, 'cLimits', cLim, 'startTime', timeAxis(1));
+            SpectrogramDisplay(Ax, normedSig, CurrRec.fileFs, 'cLimits', cLim, 'startTime', startTime);
             title(Ax, sprintf('%s %s %d %s', CurrExper.birdName,...
                 CurrExper.experName, ...
                 self.GuiModel.currRecNo, ...
@@ -530,9 +530,10 @@ classdef (Sealed) AcqGuiViews < handle
             set(Ax, 'ButtonDownFcn', @self.axes_click_cb);
             set(self.GuiFig, 'SizeChangedFcn', '');
         end
-        function display_signal(self, Ax, timeAxis, signal)
+        function display_signal(self, Ax, signal, startTime)
             cla(Ax);
-            plotTimeSeriesQuick(Ax, timeAxis, signal);
+            fileFs = self.GuiModel.CurrentRecording.fileFs;
+            SignalBoundsDisplay(Ax, signal, fileFs, 'startTime', startTime);
             axis(Ax, 'tight');
             set(Ax,'ButtonDownFcn', @self.axes_click_cb);
             set(Ax, 'XTickLabel', []);
