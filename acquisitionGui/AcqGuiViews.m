@@ -103,7 +103,7 @@ classdef (Sealed) AcqGuiViews < handle
             if self.GuiModel.recordingDisplayed
                 Ax = get_display_axes(self, dispNo);
                 CurrRec = self.GuiModel.CurrentRecording;
-                signal = CurrRec.signals{self.GuiModel.displayChanNdx(dispNo)};
+                signal = CurrRec.signals{self.GuiModel.displayChanNdx(dispNo, self.currentExperNdx)};
                 range = max(max(signal), abs(min(signal)));
                 normedSig = signal / (range * 3);
                 
@@ -217,6 +217,9 @@ classdef (Sealed) AcqGuiViews < handle
         %% Model event callbacks
         function experiments_changed(self, ~, ~)
             self.exper_strings();
+            if self.GuiModel.nExper == 0
+                self.clear_displays();
+            end
         end
         function init_exper(self, ~, ~)
             self.exper_val();
@@ -253,7 +256,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function recording_status(self, ~, ~)
             currExper = self.get_current_exper();
-            if currExper.isRecording
+            if ~isempty(currExper) && currExper.isRecording
                 recNo = currExper.lastFileNo + 1;
                 if currExper.forcedRecording
                     self.daq_forced(recNo);
@@ -421,7 +424,13 @@ classdef (Sealed) AcqGuiViews < handle
         end
         %% Change display states
         function exper_strings(self)
-            set(self.GuiData.popupExperiments, 'String', self.ExperManager.experimentStrings);
+            currVal = self.GuiData.popupExperiments.Value;
+            experStr = self.ExperManager.experimentStrings;
+            nExperStr = numel(experStr);
+            if currVal > nExperStr
+                self.GuiData.popupExperiments.Value = nExperStr;
+            end
+            self.GuiData.popupExperiments.String = experStr;
         end
         function exper_val(self)
             if ~self.ExperManager.isEmpty
@@ -440,12 +449,12 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.editFilenum, 'String', recNoStr); 
         end
         function update_displays(self, dispNos)
+            self.selected_channels(dispNos);
             if self.GuiModel.recordingDisplayed
                 self.display_chans(dispNos);
             else
                 self.clear_displays();
             end
-            self.selected_channels(dispNos);
         end
         function display_chans(self, dispNos)
             CurrRec = self.GuiModel.CurrentRecording;
@@ -456,7 +465,7 @@ classdef (Sealed) AcqGuiViews < handle
                     self.display_spec(startTime);
                 elseif thisDisp > 1 && thisDisp <= 4
                     Ax = self.get_display_axes(thisDisp);
-                    sigNo = self.GuiModel.displayChanNdx(thisDisp);
+                    sigNo = self.GuiModel.displayChanNdx(thisDisp, self.GuiModel.currentExperNdx);
                     signal = CurrRec.signals{sigNo}(self.GuiModel.startNdx:self.GuiModel.endNdx);
                     self.display_signal(Ax, signal, startTime);
                 else
@@ -471,12 +480,13 @@ classdef (Sealed) AcqGuiViews < handle
             cla(self.GuiData.axesSignal3);
         end
         function selected_channels(self, dispNos)
-            haveExper = self.GuiModel.currentExperNdx > 0;
+            experNo = self.GuiModel.currentExperNdx;
+            haveExper = experNo > 0;
             for dNo = 1:numel(dispNos)
                 thisDisp = dispNos(dNo);
                 PopupHandle = self.get_popup_handle(thisDisp);
                 if haveExper
-                    PopupHandle.Value = self.GuiModel.displayChanNdx(thisDisp);
+                    PopupHandle.Value = self.GuiModel.displayChanNdx(thisDisp, experNo);
                 else
                     PopupHandle.Value = 1;
                 end
@@ -488,10 +498,11 @@ classdef (Sealed) AcqGuiViews < handle
             cla(Ax);
             CurrRec = self.GuiModel.CurrentRecording;
             CurrExper = self.GuiModel.CurrentExper;
-            sigNo = self.GuiModel.displayChanNdx(1);
+            CurrExperNo = self.GuiModel.currentExperNdx;
+            sigNo = self.GuiModel.displayChanNdx(1, CurrExperNo);
             rawSig = CurrRec.signals{sigNo}(self.GuiModel.startNdx:self.GuiModel.endNdx);
             normedSig = rawSig - mean(rawSig); % Necessary?
-            cLim = self.GuiModel.cLimits(:, self.GuiModel.currentExperNdx);
+            cLim = self.GuiModel.cLimits(:, CurrExperNo);
             if any(isnan(cLim))
                 cLim = [];
             end

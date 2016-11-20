@@ -148,11 +148,7 @@ classdef (Sealed) AcqGuiModel < handle
             if self.currentExperNdx > 0
                 status = self.AcqObj.suspend();
                 removed = self.remove_exper();
-                if removed
-                    nextExperNdx = self.currentExperNdx - 1;
-                    assert(nextExperNdx >= 0, 'invalid experiment'); % Zero indicates no experiment
-                    self.change_current_exper(nextExperNdx);
-                else
+                if ~removed
                     status = false;
                 end
                 resumed = self.AcqObj.resume();
@@ -336,6 +332,11 @@ classdef (Sealed) AcqGuiModel < handle
         end
         function status = remove_exper(self)
             currExperNo = self.currentExperNdx;
+            if currExperNo == self.nExper
+                nextExper = currExperNo - 1;
+            else
+                nextExper = currExperNo;
+            end
             status = self.AcqObj.remove_exper(currExperNo);
             if status
                 self.displayHwChannels(:, currExperNo) = [];
@@ -343,6 +344,7 @@ classdef (Sealed) AcqGuiModel < handle
                 self.cLimits(:, currExperNo) = [];
                 self.displayRecordingNo(currExperNo) = [];
                 self.madeRecordings(currExperNo) = [];
+                self.change_current_exper(nextExper);
             end
         end
         function status = load_recording(self)
@@ -367,14 +369,15 @@ classdef (Sealed) AcqGuiModel < handle
         function set_displayed_channels(self, displayNos, hwChannels)
             assert(all(displayNos >= 1) && all(displayNos <= 4), 'Not a valid display number');
             nDisp = numel(displayNos);
-            inChans = self.CurrentExper.inChans;
+            inChans = self.CurrentExper.inChannels;
             for dispInNo = 1:nDisp
                 thisDisp = displayNos(dispInNo);
-                if self.displayHwChannels(thisDisp, self.currentExperNdx) ~= hwChannel
-                    hwNdx = find(inChans == hwChannels(dispInNo), 1, 'first');
+                thisHwChan = hwChannels(dispInNo);
+                if self.displayHwChannels(thisDisp, self.currentExperNdx) ~= thisHwChan
+                    hwNdx = find(inChans == thisHwChan, 1, 'first');
                     assert(~isempty(hwNdx), 'Specified HW channel is not in experiment');
                     self.displayChanNdx(thisDisp, self.currentExperNdx) = hwNdx;
-                    self.displayHwChannels(thisDisp, self.currentExperNdx) = hwChannels(dispInNo);
+                    self.displayHwChannels(thisDisp, self.currentExperNdx) = thisHwChan;
                 end
             end
         end
