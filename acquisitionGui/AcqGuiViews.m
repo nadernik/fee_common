@@ -294,7 +294,7 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function clim(self, ~, ~)
             if self.GuiModel.recordingDisplayed
-                startTime = self.get_rec_starttime();
+                startTime = self.get_current_starttime();
                 self.display_spec(startTime);
             end
         end
@@ -403,7 +403,7 @@ classdef (Sealed) AcqGuiViews < handle
                 Exper = [];
             end
         end
-        function startTime = get_rec_starttime(self)
+        function startTime = get_current_starttime(self)
             startTime = (self.GuiModel.startNdx - 1) ...
                 ./ self.GuiModel.CurrentRecording.fileFs;
         end
@@ -449,14 +449,15 @@ classdef (Sealed) AcqGuiViews < handle
         end
         function display_chans(self, dispNos)
             CurrRec = self.GuiModel.CurrentRecording;
-            startTime = self.get_rec_starttime();
+            startTime = self.get_current_starttime();
             for dNo = 1:numel(dispNos)
                 thisDisp = dispNos(dNo);
                 if thisDisp == 1
                     self.display_spec(startTime);
                 elseif thisDisp > 1 && thisDisp <= 4
                     Ax = self.get_display_axes(thisDisp);
-                    signal = CurrRec.signals{dispNos};
+                    sigNo = self.GuiModel.displayChanNdx(thisDisp);
+                    signal = CurrRec.signals{sigNo}(self.GuiModel.startNdx:self.GuiModel.endNdx);
                     self.display_signal(Ax, signal, startTime);
                 else
                     error('%d is not a valid display channel', thisDisp);
@@ -487,7 +488,8 @@ classdef (Sealed) AcqGuiViews < handle
             cla(Ax);
             CurrRec = self.GuiModel.CurrentRecording;
             CurrExper = self.GuiModel.CurrentExper;
-            rawSig = CurrRec.signals{1}(self.GuiModel.startNdx:self.GuiModel.endNdx);
+            sigNo = self.GuiModel.displayChanNdx(1);
+            rawSig = CurrRec.signals{sigNo}(self.GuiModel.startNdx:self.GuiModel.endNdx);
             normedSig = rawSig - mean(rawSig); % Necessary?
             cLim = self.GuiModel.cLimits(:, self.GuiModel.currentExperNdx);
             if any(isnan(cLim))
