@@ -646,6 +646,7 @@ classdef SongTriggeredExperiment < handle
             currentDir = p.Results.currentDir;
             try
                 S = load(fileName, 'exper');
+                %% Handle case when current dir is specified
                 if ~isempty(p.Results.currentDir) && strcmp(which(currentDir), S.exper.dir) % This is a pretty lame way to check that the directories are the same...
                     assert(exist(currentDir, 'dir'), 'New directory not valid');
                     S.exper.rootdir = currentDir;
@@ -653,6 +654,13 @@ classdef SongTriggeredExperiment < handle
                     S.exper.dir = currentDir;
                 end
                 
+                %% Handle previous versions of exper files
+                if ~isfield(S.exper, 'rootdir')
+                    S.exper.rootdir = s.exper.dir;
+                    S.exper.birddir = S.exper.dir;
+                end
+                
+                %% Create experiment from data in file
                 Exper = SongTriggeredExperiment(S.exper.birdname, ...
                     S.exper.rootdir, ...
                     S.exper.audioCh, ...
@@ -665,7 +673,7 @@ classdef SongTriggeredExperiment < handle
                     'timeCreated', datetime(S.exper.datecreated), ...
                     'signalName', S.exper.sigName, ...
                     'signalDesc', S.exper.sigDesc);
-                status = true;
+                status = true; % Made it to the end!
             catch ME
                 warning(ME.message);
                 status = false;
