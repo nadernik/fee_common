@@ -62,7 +62,7 @@ classdef (Sealed) AcqMaster < handle
         function status = append_exper(self, Experiment)
             modifyFun = @() self.ExperManager.append_experiment(Experiment);
             status = self.modify_experiments(modifyFun);
-            if status && ~self.daqRunning
+            if status && ~self.daqRunning && ~self.ExperManager.suspended
                 self.start_daq();
             end
         end
