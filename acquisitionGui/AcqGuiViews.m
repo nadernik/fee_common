@@ -103,7 +103,7 @@ classdef (Sealed) AcqGuiViews < handle
             if self.GuiModel.recordingDisplayed
                 Ax = get_display_axes(self, dispNo);
                 CurrRec = self.GuiModel.CurrentRecording;
-                signal = CurrRec.signal{self.GuiModel.dislayNdx(dispNo)};
+                signal = CurrRec.signals{self.GuiModel.displayChanNdx(dispNo)};
                 range = max(max(signal), abs(min(signal)));
                 normedSig = signal / (range * 3);
                 

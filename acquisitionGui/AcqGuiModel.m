@@ -86,6 +86,12 @@ classdef (Sealed) AcqGuiModel < handle
                 notify(self, 'DisplayedChannelsChanged', ExperEvent(displayNo));
             end
         end
+        function change_current_exper(self, experNo)
+            self.currentExperNdx = experNo;
+            status = self.load_recording();
+            assert(status, 'files do not exist');
+            notify(self, 'CurrentExperimentChanged');
+        end
         function allOk = load_experiment(self)
             wasRunning = self.AcqObj.daqRunning;
             if wasRunning
@@ -316,12 +322,6 @@ classdef (Sealed) AcqGuiModel < handle
             status = self.change_recording(recordingsNos(self.currentExperNdx));
             assert(status, 'Files do not exist');
             self.displayRecordingNo = recordingsNos; % This is a weird way of doing this
-        end
-        function change_current_exper(self, experNo)
-            self.currentExperNdx = experNo;
-            status = self.load_recording();
-            assert(status, 'files do not exist');
-            notify(self, 'CurrentExperimentChanged');
         end
         function status = append_exper(self, Experiment)
             status = self.AcqObj.append_exper(Experiment);

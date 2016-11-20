@@ -656,7 +656,7 @@ classdef SongTriggeredExperiment < handle
                 
                 %% Handle previous versions of exper files
                 if ~isfield(S.exper, 'rootdir')
-                    S.exper.rootdir = s.exper.dir;
+                    S.exper.rootdir = S.exper.dir;
                     S.exper.birddir = S.exper.dir;
                 end
                 
