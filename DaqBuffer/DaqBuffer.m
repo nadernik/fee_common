@@ -215,7 +215,7 @@ classdef (Sealed) DaqBuffer < handle
                         self.trigStartSamples(chanIdx) = startSample;
                         self.trigStopSamples(chanIdx) = stopSample;
                         self.log(sprintf('\tStart Sample: %d Stop Sample: %d', startSample, stopSample));
-                        self.trigFileNames{chanNo} = datFileNames{chanNo};
+                        self.trigFileNames{chanIdx} = datFileNames{chanNo};
                         self.log(sprintf('\tDerived file name: %s', datFileNames{chanNo}));
                         status(chanNo) = true;
                     end
@@ -232,6 +232,7 @@ classdef (Sealed) DaqBuffer < handle
         
         function [status, datFileNames] = start_recording(self, startSample, datFileNames, channels)
             self.log('Received request for open ended recordings');
+            assert(~isempty(startSample), 'Bad start sample');
             [status, datFileNames] = self.record(startSample, DaqBuffer.openEnded, datFileNames, channels);
         end
         
@@ -319,7 +320,7 @@ classdef (Sealed) DaqBuffer < handle
                 if self.chanIsTriggered(chanNo) % channel is ready to record
                     self.log(sprintf('Channel %d is triggered', self.inChannels(chanNo)));
                     pastStartSample = self.trigStartSamples(chanNo) == DaqBuffer.trigStarted || ...
-                    self.lastSample >= self.trigStartSamples(chanNo);
+                        self.lastSample >= self.trigStartSamples(chanNo);
                     if pastStartSample
                         %% Check to see if file must be opened
                         if self.trigStartSamples(chanNo) == DaqBuffer.trigStarted
@@ -455,13 +456,13 @@ classdef (Sealed) DaqBuffer < handle
                     self.peekData = self.daqData(bufferIdxs, self.peekChans);
                     self.peekTimeStamps = self.daqTimeStamps(bufferIdxs);
                     
+                    %% Create event
+                    readyToNotify = true;
+                    peekEvent = PeekEvent(self.peekHwChans, self.peekData, self.peekTimeStamps, self.triggerTime, self.peekSample);
+                    
                     %% Reset state
                     self.peekSample = 0;
                     self.isPeeking = false;
-                    
-                    %% Notify listeners
-                    readyToNotify = true;
-                    peekEvent = PeekEvent(self.peekHwChans, self.peekData, self.peekTimeStamps, self.triggerTime, self.peekSample);
                 end
             end
             if ~readyToNotify

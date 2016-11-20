@@ -221,7 +221,7 @@ classdef (Sealed) AcqGuiViews < handle
         function init_exper(self, ~, ~)
             self.exper_val();
             self.chan_strings();
-            self.daq();
+            self.recording_status();
             self.detect_changed();
             self.displayed_recording();
         end

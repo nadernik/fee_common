@@ -74,6 +74,8 @@ classdef SongTriggeredExperiment < handle
         queuedDetectionChange
         lastDetectingSong
         songStartSamp
+        preSongSamples
+        postSongSamples
     end
     
     methods
@@ -371,7 +373,7 @@ classdef SongTriggeredExperiment < handle
         end
         
         function change_detectingSong_callback(self, ~, ~)
-            delete(self.DisableDetectionListener);
+            delete(self.ChangeDetectionListener);
             self.detectingSong = self.queuedDetectionChange;
         end
         
@@ -433,6 +435,8 @@ classdef SongTriggeredExperiment < handle
                     kernelLength = 1;
                 end
                 self.songConvKernel = ones(1, kernelLength) ./ kernelLength;
+                self.postSongSamples = floor(self.postSongSeconds * self.daqFs) + 1;
+                self.preSongSamples = floor(self.preSongSeconds * self.daqFs) + 1;
                 notify(self, 'SongParametersChanged');
             else
                 warning('Cannot calculate derived song triggering parameters before DAQ is set up');
@@ -500,19 +504,17 @@ classdef SongTriggeredExperiment < handle
             end
             if isSinging
                 if ~self.isRecording % Start to write file
-                    startSamp = firstSongSamp - round(self.daqFs * self.preSongSeconds);
-                    self.record(startSamp)
+                    startSamp = max(1, firstSongSamp - self.preSongSamples);
+                    self.record(startSamp);
                 end
                 self.lastSingingSample = lastPeekSamp;
-            else
+            elseif self.isRecording
                 sampsSinceLastSong = lastPeekSamp - self.lastSingingSample;
-                postSongSamples = ceil(self.daqFs * self.postSongSeconds);
-                if sampsSinceLastSong > postSongSamples
+                if sampsSinceLastSong > self.postSongSamples
                     %% End recording
-                    stopSamp = self.lastSingingSample + postSongSamples;
+                    stopSamp = self.lastSingingSample + self.postSongSamples;
                     self.stop_recording(stopSamp);
-                else
-                    self.lastSingingSample = lastPeekSamp;
+                    self.lastSingingSample = -1;
                 end
             end
         end
