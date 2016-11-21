@@ -1,8 +1,8 @@
 classdef (Sealed) AcqGuiRestartManager < handle
     properties
         restartDaily
-        startHour
-        stopHour
+        StartTime % DateTime
+        StopTime % DateTime
     end
     properties (SetAccess = private, Dependent = true)
         isDaytime
@@ -18,16 +18,16 @@ classdef (Sealed) AcqGuiRestartManager < handle
             p = inputParser();
             p.KeepUnmatched = true;
             addParameter(p, 'restartDaily', false);
-            addParameter(p, 'startHour', 7);
-            addParameter(p, 'stopHour', 23);
+            addParameter(p, 'StartTime', datetime('today') + hours(7));
+            addParameter(p, 'StopTime', datetime('today') + hours(23));
             parse(p, varargin{:});
             Params = p.Results;
             
             %% Set properties
             self.ExperimentManager = ExperimentManager;
             self.restartDaily = Params.restartDaily;
-            self.startHour = Params.startHour;
-            self.stopHour = Params.stopHour;
+            self.StartTime = Params.StartTime;
+            self.StopTime = Params.StopTime;
             
             %% Setup
             if self.restartDaily
@@ -55,10 +55,16 @@ classdef (Sealed) AcqGuiRestartManager < handle
         end
         
         function change_restart_hours(self, startHour, stopHour)
+            NewStartTime = datetime('today') + hours(startHour);
+            NewStopTime = datetime('today') + hours(stopHour);
+            self.change_restart_time(NewStartTime, NewStopTime);
+        end
+        
+        function change_restart_time(self, StartTime, StopTime)
             oldRestart = self.restartDaily;
             self.private_clear_restart();
-            self.startHour = startHour;
-            self.stopHour = stopHour;
+            self.StartTime = StartTime;
+            self.StopTime = StopTime;
             if oldRestart
                 self.private_set_restart();
             end
@@ -88,10 +94,10 @@ classdef (Sealed) AcqGuiRestartManager < handle
         function restartTimerValid = get.restartTimerValid(self)
             restartTimerValid = ~isempty(self.RestartTimer) && isvalid(self.RestartTimer);
         end
-        function isDaytime = get.isDaytime(self)
-            currentTime = datetime();
-            isDaytime = currentTime.Hour >= self.startHour && ...
-                currentTime.Hour <= self.stopHour;
+        function val = get.isDaytime(self)
+            CurrentTime = datetime('now');
+            val = CurrentTime >= self.StartTime && ...
+                CurrentTime <= self.StopTime;
         end
     end
     methods (Access = private)
@@ -118,16 +124,15 @@ classdef (Sealed) AcqGuiRestartManager < handle
             if ~self.isDaytime
                 error('Should be queueing morning timer instead');
             end
-            CurrentTime = datetime();
-            StopTime = CurrentTime;
-            StopTime.Hour = self.stopHour;
-            StopTime.Minute = 0;
-            StopTime.Second = 0;
+            NewStopTime = datetime('today');
+            NewStopTime.Hour = self.StopTime.Hour;
+            NewStopTime.Minute = self.StopTime.Minute;
+            NewStopTime.Second = self.StopTime.Second;
             self.RestartTimer = timer('Name', 'acqguiNightRestart', ...
                 'TimerFcn', @self.restart_morning_callback, ...
                 'ExecutionMode', 'singleShot', ...
                 'BusyMode', 'queue');
-            startat(self.RestartTimer, StopTime);
+            startat(self.RestartTimer, NewStopTime);
         end
         function queue_morning_timer(self)
             if self.restartTimerValid
@@ -136,19 +141,19 @@ classdef (Sealed) AcqGuiRestartManager < handle
             if self.isDaytime
                 error('Should be queueing night timer instead');
             end
-            CurrentTime = datetime();
-            StartTime = CurrentTime;
-            if CurrentTime.Hour >= self.startHour % restart happens tomorrow
-                StartTime = StartTime + days(1);
+            if datetime('now') >= self.StartTime % restart happens tomorrow
+                NewStartTime = datetime('tomorrow');
+            else
+                NewStartTime = datetime('today');
             end
-            StartTime.Hour = self.startHour;
-            StartTime.Minute = 0;
-            StartTime.Second = 0;
+            NewStartTime.Hour = self.StartTime.Hour;
+            NewStartTime.Minute = self.StartTime.Minute;
+            NewStartTime.Second = self.StartTime.Second;
             self.RestartTimer = timer('Name', 'acqguiMorningRestart', ...
                 'TimerFcn', @self.restart_morning_callback, ...
                 'ExecutionMode', 'singleShot', ...
                 'BusyMode', 'queue');
-            startat(self.RestartTimer, StartTime);
+            startat(self.RestartTimer, NewStartTime);
         end
     end
     events (NotifyAccess = private)
