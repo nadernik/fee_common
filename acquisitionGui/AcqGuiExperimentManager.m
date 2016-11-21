@@ -100,7 +100,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         function reset_experiments(self)
             CachedDaqObj = self.DaqObj;
             self.clear_daq();
-            ClonedExperiments = cellfun(@SongTriggeredExperiment.clone_experiment, self.Experiments);
+            ClonedExperiments = cellfun(@SongTriggeredExperiment.clone_experiment, self.Experiments, 'UniformOutput', false);
             cellfun(@delete, self.Experiments);
             self.Experiments = ClonedExperiments;
             self.init();
@@ -127,6 +127,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                         error('Could not suspend experiments');
                     end
                 end
+                notify(self, 'SuspenseChanged');
             else
                 warning('Experiments already suspended');
             end
@@ -148,6 +149,7 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                     end
                 end
                 self.rememberedDetect = [];
+                notify(self, 'SuspenseChanged');
             end
         end
 
@@ -253,5 +255,6 @@ classdef (Sealed) AcqGuiExperimentManager < handle
         ExperStringsChanged
         SongParametersChanged
         FilePropertiesChanged
+        SuspenseChanged
     end
 end

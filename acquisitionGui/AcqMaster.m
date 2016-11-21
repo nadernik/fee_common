@@ -49,7 +49,7 @@ classdef (Sealed) AcqMaster < handle
             self.updateFreq = Params.updateFreq;
             self.bufferSecs = Params.bufferSecs;
             self.ExperManager = AcqGuiExperimentManager(varargin{:});
-            self.RestartManager = AcqGuiRestartManager(self.ExperManager, varargin{:});
+            self.RestartManager = AcqGuiRestartManager(self, varargin{:});
             self.SongMonitor = AcqGuiMonitor(self.ExperManager, varargin{:});
             
             %% Set up DaqBuffer

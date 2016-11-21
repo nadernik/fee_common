@@ -28,6 +28,7 @@ classdef (Sealed) AcqGuiViews < handle
         AutoUpdateListener
         FilePropertiesListener
         CLimitsListener
+        SuspenseListener
     end
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
@@ -62,6 +63,7 @@ classdef (Sealed) AcqGuiViews < handle
             self.AutoUpdateListener = addlistener(self.GuiModel, 'autoUpdate', 'PostSet', @self.auto_update);
             self.FilePropertiesListener = addlistener(self.GuiModel, 'FilePropertiesChanged', @self.file_properties);
             self.CLimitsListener = addlistener(self.GuiModel, 'CLimitsChanged', @self.clim);
+            self.SuspenseListener = addlistener(self.ExperManager, 'SuspenseChanged', @self.suspense_changed);
             self.init();
             self.daq();
         end
@@ -215,6 +217,13 @@ classdef (Sealed) AcqGuiViews < handle
         end
         
         %% Model event callbacks
+        function suspense_changed(self, ~, ~)
+            if self.ExperManager.suspended
+                self.acquisition_suspended();
+            else
+                self.recording_status();
+            end
+        end
         function experiments_changed(self, ~, ~)
             self.exper_strings();
             if self.GuiModel.nExper == 0
@@ -271,6 +280,8 @@ classdef (Sealed) AcqGuiViews < handle
             if self.AcqObj.daqRunning
                 if self.GuiModel.AcqObj.isBuffering
                     self.daq_buffering();
+                elseif self.ExperManager.suspended
+                    self.acquisition_suspended();
                 elseif self.GuiModel.currentExperNdx > 0 && self.GuiModel.madeRecordings(self.GuiModel.currentExperNdx)
                     currExper = self.ExperManager.Experiments{self.GuiModel.currentExperNdx};
                     self.daq_ready(currExper.lastFileNo);
@@ -591,7 +602,12 @@ classdef (Sealed) AcqGuiViews < handle
             set(self.GuiData.buttonRecord, 'Enable','on');
             self.song_params_ready();
         end
-        
+        function acquisition_suspended(self)
+            set(self.GuiData.textRecordingStatus, 'String', 'Acquisition Suspended');
+            set(self.GuiData.textRecordingStatus, 'BackgroundColor', 'magenta');
+            set(self.GuiData.buttonTrigOnSong, 'Enable','off');
+            set(self.GuiData.buttonRecord, 'Enable','off');
+        end
         function detect_off(self)
             set(self.GuiData.buttonTrigOnSong, 'Enable','on');
             set(self.GuiData.buttonTrigOnSong, 'String', 'Start Triggering on Song');

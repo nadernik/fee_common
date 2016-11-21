@@ -7,13 +7,16 @@ classdef (Sealed) AcqGuiRestartManager < handle
     properties (SetAccess = private, Dependent = true)
         isDaytime
         restartTimerValid
+        queueTimerValid
     end
     properties (Access = private)
         ExperimentManager
+        AcqMaster % Probably don't need this... just using it to tell when experiments were suspended by the restart manager
         RestartTimer
+        QueueTimer
     end
     methods
-        function self = AcqGuiRestartManager(ExperimentManager, varargin)
+        function self = AcqGuiRestartManager(AcqMaster, varargin)
             %% Parse inputs
             p = inputParser();
             p.KeepUnmatched = true;
@@ -24,7 +27,8 @@ classdef (Sealed) AcqGuiRestartManager < handle
             Params = p.Results;
             
             %% Set properties
-            self.ExperimentManager = ExperimentManager;
+            self.AcqMaster = AcqMaster;
+            self.ExperimentManager = AcqMaster.ExperManager;
             self.restartDaily = Params.restartDaily;
             self.StartTime = Params.StartTime;
             self.StopTime = Params.StopTime;
@@ -37,6 +41,7 @@ classdef (Sealed) AcqGuiRestartManager < handle
         
         %% Methods to start and stop daily restarts
         function set_restart(self)
+            fprintf('Set restart\n');
             self.private_set_restart();
             notify(self, 'RestartChanged');
         end
@@ -47,9 +52,10 @@ classdef (Sealed) AcqGuiRestartManager < handle
         end
         
         function change_restart(self)
-            if self.restartDaily
+            fprintf('Enetered change restart\n');
+            if self.restartDaily % turn off
                 self.clear_restart();
-            else
+            else % turn on
                 self.set_restart();
             end
         end
@@ -61,6 +67,7 @@ classdef (Sealed) AcqGuiRestartManager < handle
         end
         
         function change_restart_time(self, StartTime, StopTime)
+            fprintf('Enetered change restart time\n');
             oldRestart = self.restartDaily;
             self.private_clear_restart();
             self.StartTime = StartTime;
@@ -73,26 +80,53 @@ classdef (Sealed) AcqGuiRestartManager < handle
         
         %% Methods for callbacks -- do not use externally
         function restart_night_callback(self, ~, ~)
+            fprintf('Enetered night timer callback\n');
             if ~self.restartTimerValid
                 error('Error with night restart timer');
             end
-            delete(self.RestartTimer);
             self.ExperimentManager.suspend_experiments();
+            self.QueueTimer = timer('Name', 'acqguiNightRestart', ...
+                'TimerFcn', @self.night_queue_cb, ...
+                'ExecutionMode', 'singleShot', ...
+                'BusyMode', 'queue');
+            fprintf('Created new queue timer!\n');
+            stop(self.RestartTimer);
+            delete(self.RestartTimer);
+            startat(self.QueueTimer, datetime('now') + seconds(1));
+        end
+        function night_queue_cb(self, ~, ~)
+            fprintf('\tTimer validity is %d\n', self.restartTimerValid);
             self.queue_morning_timer();
+            stop(self.QueueTimer);
+            delete(self.QueueTimer);
         end
         function restart_morning_callback(self, ~, ~)
+            fprintf('Enetered morning timer callback\n');
             if ~self.restartTimerValid
                 error('Error with morning restart timer');
             end
-            delete(self.RestartTimer);
             self.ExperimentManager.reset_experiments(); % Creates new experiments for the new day
             self.ExperimentManager.resume_experiments(); % Restores whatever triggering state they had before the night timer
+            self.QueueTimer = timer('Name', 'acqguiNightRestart', ...
+                'TimerFcn', @self.morning_queue_cb, ...
+                'ExecutionMode', 'singleShot', ...
+                'BusyMode', 'queue');
+            stop(self.RestartTimer);
+            delete(self.RestartTimer);
+            startat(self.QueueTimer, datetime('now') + seconds(1));
+        end
+        function morning_queue_cb(self, ~, ~)
             self.queue_night_timer(); % Start the night timer for later in the day
+            stop(self.QueueTimer);
+            delete(self.QueueTimer);
         end
         
         %% Dependent property getters
         function restartTimerValid = get.restartTimerValid(self)
             restartTimerValid = ~isempty(self.RestartTimer) && isvalid(self.RestartTimer);
+        end
+        function val = get.queueTimerValid(self)
+            val = ~isempty(self.QueueTimer) && isvalid(self.QueueTimer);
         end
         function val = get.isDaytime(self)
             CurrentTime = datetime('now');
@@ -102,6 +136,7 @@ classdef (Sealed) AcqGuiRestartManager < handle
     end
     methods (Access = private)
         function private_set_restart(self)
+            fprintf('Enetered private set restart\n');
             self.restartDaily = true;
             if self.isDaytime
                 self.queue_night_timer()
@@ -111,13 +146,23 @@ classdef (Sealed) AcqGuiRestartManager < handle
             end
         end
         function private_clear_restart(self)
+            fprintf('Enetered private clear restart\n');
             self.restartDaily = false;
+            if self.ExperimentManager.suspended && self.AcqMaster.daqRunning
+                self.ExperimentManager.resume_experiments();
+            end
             if self.restartTimerValid
+                fprintf('\tDeleting restart timer\n');
                 stop(self.RestartTimer);
                 delete(self.RestartTimer);
             end
+            if self.queueTimerValid
+                stop(self.QueueTimer);
+                delete(self.QueueTimer);
+            end
         end
         function queue_night_timer(self)
+            fprintf('Enetered queue night timer\n');
             if self.restartTimerValid
                 error('Restart timer already exists');
             end
@@ -129,12 +174,15 @@ classdef (Sealed) AcqGuiRestartManager < handle
             NewStopTime.Minute = self.StopTime.Minute;
             NewStopTime.Second = self.StopTime.Second;
             self.RestartTimer = timer('Name', 'acqguiNightRestart', ...
-                'TimerFcn', @self.restart_morning_callback, ...
+                'TimerFcn', @self.restart_night_callback, ...
                 'ExecutionMode', 'singleShot', ...
                 'BusyMode', 'queue');
+            fprintf('Created new night timer!\n');
             startat(self.RestartTimer, NewStopTime);
         end
         function queue_morning_timer(self)
+            fprintf('Enetered queue morning timer\n');
+            fprintf('\tTimer validity is %d\n', self.restartTimerValid);
             if self.restartTimerValid
                 error('Restart timer already exists');
             end
@@ -153,6 +201,7 @@ classdef (Sealed) AcqGuiRestartManager < handle
                 'TimerFcn', @self.restart_morning_callback, ...
                 'ExecutionMode', 'singleShot', ...
                 'BusyMode', 'queue');
+            fprintf('Created new morning timer!\n');
             startat(self.RestartTimer, NewStartTime);
         end
     end
