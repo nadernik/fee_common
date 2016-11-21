@@ -501,7 +501,7 @@ function buttonCreate_Callback(~, ~, handles)
 Experiments = cell(8, 1);
 for ch = 0:7
     if is_valid(ch, handles)
-        Experiments{ch} = create_exper_by_ch(ch, handles);
+        Experiments{ch + 1} = create_exper_by_ch(ch, handles);
     end
 end
 Experiments = Experiments(~cellfun(@isempty, Experiments));
@@ -552,11 +552,14 @@ function Experiment = create_exper_by_ch(audioCh, handles)
 birdname = handles.val.(sprintf('editBirdname%g', audioCh));
 rootdir = handles.val.editRootdir;
 sigCh = str2double(handles.val.(sprintf('editSigchan%g', audioCh)));
+if isnan(sigCh)
+    sigCh = [];
+end
 desiredInSampRate = str2double(handles.val.(sprintf('editSamprate%g', audioCh)));
 songDetection = handles.songDetection_default;
 Experiment = SongTriggeredExperiment(birdname, rootdir, audioCh, sigCh, desiredInSampRate, ...
     'minFreq', songDetection.minFreq, ...
-    'maxFreq', songDetection.minFreq, ...
+    'maxFreq', songDetection.maxFreq, ...
     'songDuration', songDetection.songLength, ...
     'songDensity', songDetection.songDensity, ...
     'ratioThreshold', songDetection.powerThres, ...

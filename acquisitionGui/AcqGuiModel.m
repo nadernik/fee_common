@@ -41,6 +41,7 @@ classdef (Sealed) AcqGuiModel < handle
     methods
         function self = AcqGuiModel(varargin)
             p = inputParser();
+            p.KeepUnmatched = true;
             addParameter(p, 'autoUpdate', true); % determines if the spectrogram is automatically calculated for new recordings
             addParameter(p, 'maxLoadSize', 2000000); % maximum number of samples to load of a recording
             addParameter(p, 'displayHwChannels', {});

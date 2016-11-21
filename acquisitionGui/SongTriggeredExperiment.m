@@ -154,10 +154,14 @@ classdef SongTriggeredExperiment < handle
             else
                 self.experDirectory = Params.experDirectory;
             end
+            if ~exist(self.experDirectory, 'dir')
+                self.make_exper_dir();
+                self.write_exper_file();
+            end
             if any(strcmp(p.UsingDefaults, 'lastFileNo')) && exist(self.experDirectory, 'dir')
                 self.lastFileNo = SongTriggeredExperiment.last_fileno(self.experDirectory, self.birdName);
             end
-            self.detectingSong = Params.detecingSong;
+            self.detectingSong = Params.detectingSong;
         end
         
         function delete(self)

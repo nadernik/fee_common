@@ -216,6 +216,9 @@ classdef (Sealed) AcqGuiExperimentManager < handle
                 @(E) addlistener(E, 'FilePropertiesChanged', @self.parameters_changed_cb), ...
                 self.Experiments, ...
                 'UniformOutput', false);
+            if numel(self.Experiments) > 0
+                notify(self, 'ExperimentsChanged');
+            end
         end
         function get_inchannels(self)
             if ~self.isEmpty

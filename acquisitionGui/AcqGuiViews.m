@@ -33,6 +33,7 @@ classdef (Sealed) AcqGuiViews < handle
     methods
         function self = AcqGuiViews(GuiModel, GuiFig, varargin)
             p = inputParser();
+            p.KeepUnmatched = true;
             parse(p, varargin{:});
             
             %% Set properties
@@ -86,6 +87,7 @@ classdef (Sealed) AcqGuiViews < handle
                 end
             end
             self.restart_changed();
+            self.experiments_changed();
         end
         
         %% Button click views
