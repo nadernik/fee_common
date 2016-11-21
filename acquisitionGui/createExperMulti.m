@@ -486,23 +486,27 @@ end
 
 
 % --- Executes on button press in buttonCreate.
-function buttonCreate_Callback(hObject, eventdata, handles)
+function buttonCreate_Callback(~, ~, handles)
 % hObject    handle to buttonCreate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% handles.songDetection_default.songDensity = 0.5;
+% handles.songDetection_default.powerThres = 2;
+% handles.songDetection_default.songLength = 1;
+% handles.songDetection_default.minFreq = 2000;
+% handles.songDetection_default.maxFreq = 6000;
+
+Experiments = cell(8, 1);
 for ch = 0:7
     if is_valid(ch, handles)
-        if exist('expers','var')
-            expers(end+1) = create_exper_by_ch(ch, handles);
-            songDetection(end+1) = handles.songDetection_default;
-        else
-            expers = create_exper_by_ch(ch, handles);
-            songDetection = handles.songDetection_default;
-        end
+        Experiments{ch} = create_exper_by_ch(ch, handles);
     end
 end
-save_values('createExperMulti_defaults.mat', handles)
-acquisitionGui('expers', expers, 'songDetection', songDetection, 'bTrigOnSong', ones(size(expers)))
+Experiments = Experiments(~cellfun(@isempty, Experiments));
+acquisitionGui('Experiments', Experiments);
+save_values('createExperMulti_defaults.mat', handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ok = is_valid(ch, handles)
@@ -544,14 +548,19 @@ if ~isscalar(val)
     debugdisp([int2str(ch) ' samprate must be a scalar number']);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function exper = create_exper_by_ch(ch, handles)
-exper = createExperAuto( ... 
-    handles.val.editRootdir, ...
-    handles.val.(sprintf('editBirdname%g', ch)), ...
-    handles.val.(sprintf('editExpername%g', ch)), ...
-    str2num(handles.val.(sprintf('editSamprate%g', ch))), ...
-    ch, ...
-    str2num(handles.val.(sprintf('editSigchan%g', ch))));
+function Experiment = create_exper_by_ch(audioCh, handles)
+birdname = handles.val.(sprintf('editBirdname%g', audioCh));
+rootdir = handles.val.editRootdir;
+sigCh = str2double(handles.val.(sprintf('editSigchan%g', audioCh)));
+desiredInSampRate = str2double(handles.val.(sprintf('editSamprate%g', audioCh)));
+songDetection = handles.songDetection_default;
+Experiment = SongTriggeredExperiment(birdname, rootdir, audioCh, sigCh, desiredInSampRate, ...
+    'minFreq', songDetection.minFreq, ...
+    'maxFreq', songDetection.minFreq, ...
+    'songDuration', songDetection.songLength, ...
+    'songDensity', songDetection.songDensity, ...
+    'ratioThreshold', songDetection.powerThres, ...
+    'detectingSong', true);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 

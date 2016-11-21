@@ -106,6 +106,7 @@ classdef SongTriggeredExperiment < handle
                 addParameter(p, 'signalName', {});
                 addParameter(p, 'signalDesc', {});
                 addParameter(p, 'timeCreated', nan);
+                addParameter(p, 'detectingSong', false);
             end
             parse(p, varargin{:});
             Params = p.Results;
@@ -114,7 +115,7 @@ classdef SongTriggeredExperiment < handle
             self.birdName = birdName;
             self.songScore = nan;
             self.rootDirectory = rootDirectory;
-            self.detectingSong = false;
+            
             self.isRecording = false;
             self.songHWChannel = songHWChannel;
             self.nonSongHWChannels = nonSongHWChannels;
@@ -156,6 +157,7 @@ classdef SongTriggeredExperiment < handle
             if any(strcmp(p.UsingDefaults, 'lastFileNo')) && exist(self.experDirectory, 'dir')
                 self.lastFileNo = SongTriggeredExperiment.last_fileno(self.experDirectory, self.birdName);
             end
+            self.detectingSong = Params.detecingSong;
         end
         
         function delete(self)
