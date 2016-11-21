@@ -149,9 +149,17 @@ classdef (Sealed) SpectrogramDisplay < ResizableDisplay
             freqs = self.freqScaling .* F(freqMask);
             powers = 10 * log10(abs(S(freqMask, :)) + 0.02);
             if isempty(self.cLimits)
-                self.ImageHandle = imagesc(self.AxisHandle, times, freqs, powers);
+                if verLessThan('matlab', '9.0')
+                    self.ImageHandle = imagesc(times, freqs, powers, 'Parent', self.AxisHandle);
+                else
+                    self.ImageHandle = imagesc(self.AxisHandle, times, freqs, powers);
+                end
             else
-                self.ImageHandle = imagesc(self.AxisHandle, times, freqs, powers, self.cLimits);
+                if verLessThan('matlab', '9.0')
+                    self.ImageHandle = imagesc(times, freqs, powers, self.cLimits, 'Parent', self.AxisHandle);
+                else
+                    self.ImageHandle = imagesc(self.AxisHandle, times, freqs, powers, self.cLimits);
+                end
             end
             if ~holdState %Restore hold state at call
                 hold(self.AxisHandle, 'off');
