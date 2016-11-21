@@ -257,6 +257,7 @@ classdef SongTriggeredExperiment < handle
             if  ~self.isRunning
                 status = false;
                 isSong = false;
+                songScore = nan;
                 firstSongSamp = nan;
             else
                 status = true;
