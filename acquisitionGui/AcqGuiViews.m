@@ -282,8 +282,8 @@ classdef (Sealed) AcqGuiViews < handle
             end
         end
         function restart_changed(self, ~, ~)
-            set(self.GuiData.editStartTime, 'String', num2str(self.RestartManager.startTime.Hour));
-            set(self.GuiData.editStopTime, 'String', num2str(self.RestartManager.stopTime.Hour));
+            set(self.GuiData.editStartTime, 'String', num2str(self.RestartManager.StartTime.Hour));
+            set(self.GuiData.editStopTime, 'String', num2str(self.RestartManager.StopTime.Hour));
             set(self.GuiData.checkboxAutostart, 'Value', self.RestartManager.restartDaily);
         end
         function displayed_recording(self, ~, ~)
