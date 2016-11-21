@@ -99,12 +99,12 @@ classdef (Sealed) AcqGuiMonitor < handle
         end
         
         function analyze_peek(self, ~, PeekEvent)
-            nDetect = numel(self.detectingExperNdx);
+            nChan = numel(PeekEvent.hwChannels);
             peekStartSamp = PeekEvent.startDaqSample;
-            for experNo = 1:nDetect
-                experNdx = self.detectingExperNdx(experNo);
+            for chanNo = 1:nChan
+                experNdx = find(self.ExperManager.songHWChannels == PeekEvent.hwChannels(chanNo), 1, 'first');
                 status = self.ExperManager.Experiments{experNdx}. ...
-                    detect_song_and_record(PeekEvent.data(:, experNo), peekStartSamp);
+                    detect_song_and_record(PeekEvent.data(:, chanNo), peekStartSamp);
                 assert(status, 'Song detetion failed');
             end
             self.lastPeekSamp = self.DaqObj.lastSample;
