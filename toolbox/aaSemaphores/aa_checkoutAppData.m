@@ -5,7 +5,7 @@ st = dbstack;
 for i=2:length(st)
     if strcmp(st(i).name,'aa_checkoutAppData')
         value = [];
-        status = 0;
+        status = false;
         return;
     end
 end
@@ -30,10 +30,8 @@ end
 if AA_APPDATASEMAPHORE(theSem).status == 0
     AA_APPDATASEMAPHORE(theSem).status = st(2).name;
     value = getappdata(h, name);
-    status = 1;
+    status = true;
 else
     value = [];
-    status = 0;
+    status = false;
 end
-
-

@@ -5,6 +5,7 @@ classdef (Sealed) DaqBuffer < handle
     end
     properties (Dependent = true)
         isLogging
+        bufferSecs
     end
     properties (SetAccess = private)
         %% DAQ properties
@@ -45,6 +46,7 @@ classdef (Sealed) DaqBuffer < handle
         trigStopSamples % Absolute sample number to stop recording at, -2 if open-ended recording
         trigFileNames
         trigFIDs
+        triggerTime
         
         %% Peek properties
         peekSample = 0; % Starting index in the buffer to peek from
@@ -89,6 +91,7 @@ classdef (Sealed) DaqBuffer < handle
             end
             self.stop()
             delete(self.Session);
+            daq.reset();
         end
         
         function val = get.isLogging(self)
@@ -97,6 +100,10 @@ classdef (Sealed) DaqBuffer < handle
             else
                 val = false;
             end
+        end
+        
+        function val = get.bufferSecs(self)
+            val = self.buffSize ./ self.samplingRate;
         end
         
         function set.logFID(self, fID)
@@ -117,6 +124,7 @@ classdef (Sealed) DaqBuffer < handle
             else
                 startBackground(self.Session);
                 self.isStarted = true;
+                
             end
         end
         
@@ -149,6 +157,7 @@ classdef (Sealed) DaqBuffer < handle
             %% Place event data into buffer
             self.daqData(updateStartIdx:updateStopIdx, :) = EventData.Data;
             self.daqTimeStamps(updateStartIdx:updateStopIdx) = EventData.TimeStamps;
+            self.triggerTime = EventData.TriggerTime;
             
             %% Update DaqBuffer State
             self.buffUpdateCnt = self.buffUpdateCnt + 1;
@@ -161,18 +170,18 @@ classdef (Sealed) DaqBuffer < handle
             end
             
             %% Process peek and triggers
-            [recReady, recCompleteEvent] = self.process_triggers(EventData.TriggerTime, updateStartIdx, updateStopIdx);
+            [recReady, recCompleteEvent] = self.process_triggers(updateStartIdx, updateStopIdx);
             [peekReady, peekEvent] = self.process_peek(updateStopIdx);
             
             %% Delayed until end to avoid concurrency problems
             self.isUpdating = false;
-            notify(self, 'UpdateComplete');
             if recReady
                 notify(self, 'RecordingComplete', recCompleteEvent);
             end
             if peekReady
                 notify(self, 'PeekAvailable', peekEvent);
             end
+            notify(self, 'UpdateComplete'); % Put this at the end if peeks are schedule on UpdateComplete events
             
         end % bufferUpdate
         
@@ -192,12 +201,11 @@ classdef (Sealed) DaqBuffer < handle
             end
         end
         
-        function [status, datFileNames] = record(self, startSample, stopSample, baseFileName, channels)
+        function [status, datFileNames] = record(self, startSample, stopSample, datFileNames, channels)
             self.log('Received recording request');
             nChans = numel(channels);
             chanIdxs = self.hwChans_2_idx(channels);
             status = false(nChans, 1);
-            datFileNames = cell(nChans, 1);
             if ~any(self.chanIsTriggered(chanIdxs)) % only attempt to record if all are free
                 for chanNo = 1:nChans
                     chanIdx = chanIdxs(chanNo);
@@ -207,8 +215,7 @@ classdef (Sealed) DaqBuffer < handle
                         self.trigStartSamples(chanIdx) = startSample;
                         self.trigStopSamples(chanIdx) = stopSample;
                         self.log(sprintf('\tStart Sample: %d Stop Sample: %d', startSample, stopSample));
-                        datFileNames{chanNo} = [baseFileName, 'chan', num2str(self.inChannels(chanIdx)), '.dat'];
-                        self.trigFileNames{chanNo} = datFileNames{chanNo};
+                        self.trigFileNames{chanIdx} = datFileNames{chanNo};
                         self.log(sprintf('\tDerived file name: %s', datFileNames{chanNo}));
                         status(chanNo) = true;
                     end
@@ -223,9 +230,10 @@ classdef (Sealed) DaqBuffer < handle
             isRecording = self.chanIsTriggered(chanIdx);
         end
         
-        function [status, datFileNames] = start_recording(self, startSample, baseFileName, channels)
+        function [status, datFileNames] = start_recording(self, startSample, datFileNames, channels)
             self.log('Received request for open ended recordings');
-            [status, datFileNames] = self.record(startSample, DaqBuffer.openEnded, baseFileName, channels);
+            assert(~isempty(startSample), 'Bad start sample');
+            [status, datFileNames] = self.record(startSample, DaqBuffer.openEnded, datFileNames, channels);
         end
         
         function status = stop_recording(self, endSample, channels)
@@ -303,16 +311,16 @@ classdef (Sealed) DaqBuffer < handle
             %% Set up peeks
         end % constructor
         
-        function [readyToNotify, recCompleteEvent] = process_triggers(self, TriggerTime, updateStartIdx, updateStopIdx)
+        function [readyToNotify, recCompleteEvent] = process_triggers(self, updateStartIdx, updateStopIdx)
         %PROCESSTRIGGERS checks if channels should be saved to disk
             self.log('Entering process_triggers');
-            absTime = datevec(TriggerTime);
+            absTime = datevec(self.triggerTime);
             completedRecordings = false(self.numInCh, 1);
             for chanNo = 1:self.numInCh
                 if self.chanIsTriggered(chanNo) % channel is ready to record
                     self.log(sprintf('Channel %d is triggered', self.inChannels(chanNo)));
                     pastStartSample = self.trigStartSamples(chanNo) == DaqBuffer.trigStarted || ...
-                    self.lastSample >= self.trigStartSamples(chanNo);
+                        self.lastSample >= self.trigStartSamples(chanNo);
                     if pastStartSample
                         %% Check to see if file must be opened
                         if self.trigStartSamples(chanNo) == DaqBuffer.trigStarted
@@ -448,17 +456,17 @@ classdef (Sealed) DaqBuffer < handle
                     self.peekData = self.daqData(bufferIdxs, self.peekChans);
                     self.peekTimeStamps = self.daqTimeStamps(bufferIdxs);
                     
+                    %% Create event
+                    readyToNotify = true;
+                    peekEvent = PeekEvent(self.peekHwChans, self.peekData, self.peekTimeStamps, self.triggerTime, self.peekSample);
+                    
                     %% Reset state
                     self.peekSample = 0;
                     self.isPeeking = false;
-                    
-                    %% Notify listeners
-                    readyToNotify = true;
-                    peekEvent = PeekEvent(self.peekData, self.peekTimeStamps);
                 end
             end
             if ~readyToNotify
-                peekEvent = PeekEvent([], []);
+                peekEvent = PeekEvent([], [], [], [], -1);
             end
         end % process_peek
         

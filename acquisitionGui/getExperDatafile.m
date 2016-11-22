@@ -35,7 +35,7 @@ filename = ''; %#ok<NASGU>
 
 if isempty(dirStruct)
     if(~bSilent)
-        fprintf('getExperDatafile failed:  No file number %d for channel ''%s'' in %s.', num, chanstr, exper.dir);           
+        fprintf('No file number %d for channel ''%s'' in %s.\n', num, chanstr, exper.dir);           
     end
     filename = '';
     return;  
@@ -68,7 +68,7 @@ if num ~= currNum
         
         if lf > rt
             if ~bSilent
-                warning(['getExperDatafile failed:  No filenum ', num2str(num) , 'found on channel ''', chanstr, ''' in ', exper.dir,'.']);           
+                fprintf('No file number %d for channel ''%s'' in %s.\n', num, chanstr, exper.dir);          
             end
             filename = '';
             return;  
