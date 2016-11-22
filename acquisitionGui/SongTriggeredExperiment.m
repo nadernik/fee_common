@@ -148,6 +148,7 @@ classdef SongTriggeredExperiment < handle
             if isempty(Params.birdDirectory)
                 self.birdDirectory = fullfile(self.rootDirectory, self.birdName);
             else
+                self.birdDirectory = Params.birdDirectory;
             end
             if isempty(Params.experDirectory)
                 self.experDirectory = fullfile(self.birdDirectory, self.experName);
