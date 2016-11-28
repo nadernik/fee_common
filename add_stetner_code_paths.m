@@ -16,7 +16,19 @@ end
 ffn = mfilename('fullpath');
 [code_dir, junk1, junk2] = fileparts(ffn);
     
-subdirs = {'acquisitionGui', 'annotation', 'caf', 'CAFGUI', 'daq', 'daqAcquire', 'electro_gui', 'lman', 'subsong', 'toolbox', 'VectorClust', 'xmodel'};
+subdirs = {
+    'acquisitionGui_tools'
+    'annotation'
+    'caf'
+    'CAFGUI'
+    'daq'
+    'electro_gui'
+    'lman'
+    'subsong'
+    'toolbox'
+    'VectorClust'
+    'xmodel'
+    };
 
 for ii = 1:length(subdirs)
     paths_to_add = genpath(fullfile(code_dir, subdirs{ii}));
