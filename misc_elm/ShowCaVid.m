@@ -1,4 +1,5 @@
 function ShowCaVid(VIDEO,SOUND,SPEC, filename, params, showcontour)
+
 slowfac = 1; 
 if slowfac~=1
 %     SOUND = pvocnormalized(SOUND,1/slowfac,200);
@@ -11,9 +12,9 @@ if nargin<5 || length(params)==0
     params.SOUNDfs = 40000;
     params.specTime = -.5:(1/params.SOUNDfs):.5;
     params.F = linspace(507.8125, 5976.6, 141);
-    params.VIDEOfs = 20;
-    params.AudBinWhenFrameStarts = 0:2000:ceil(size(VIDEO,1)/params.VIDEOfs*params.SOUNDfs); 
-    params.AudBinWhenFrameEnds =  params.AudBinWhenFrameStarts + 2000; 
+    params.VIDEOfs = 30;
+    params.AudBinWhenFrameStarts = 0:(params.SOUNDfs/params.VIDEOfs):ceil(size(VIDEO,1)/params.VIDEOfs*params.SOUNDfs); 
+    params.AudBinWhenFrameEnds =  params.AudBinWhenFrameStarts + floor(params.SOUNDfs/params.VIDEOfs); 
 end
 if nargin<6
     showcontour = 0; 
@@ -25,6 +26,14 @@ VIDEOfs = params.VIDEOfs;
 AudBinWhenFrameStarts = params.AudBinWhenFrameStarts;
 AudBinWhenFrameEnds = params.AudBinWhenFrameEnds;
 tSound = (0:AudBinWhenFrameEnds(end))/SOUNDfs;
+if AudBinWhenFrameEnds(end)>length(SOUND)
+    induse = AudBinWhenFrameEnds<=length(SOUND);
+    VIDEO = VIDEO(induse,:,:); 
+    AudBinWhenFrameStarts = AudBinWhenFrameStarts(induse);
+    AudBinWhenFrameEnds = AudBinWhenFrameEnds(induse);
+    warning(['video longer by ' num2str(sum(~induse)) ' frames'])
+end
+
 
 if length(filename) == 0;
     savevid = 0;

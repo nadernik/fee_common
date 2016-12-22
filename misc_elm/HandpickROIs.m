@@ -1,4 +1,4 @@
-function HandpickROIs(VIDEO,SOUND,SPEC, filename, params, showcontour)
+function neuron = HandpickROIs(VIDEO,SOUND,SPEC, filename, params, showcontour)
 
 if nargin<4
     filename = []; 
@@ -77,8 +77,10 @@ roicolors = lines(length(ROIx));
 [X1,X2] = meshgrid(1:x,1:y);
 % PlaceBlob = zeros(y,x,length(ROIx));
 vecV = reshape(VIDEO,size(VIDEO,1),y*x); 
+neuron.A = zeros(x*y, length(ROIx)); 
 for roi = 1:length(ROIx)
     indROI = find(sqrt((X1(:)-ROIx(roi)).^2 + (X2(:)-ROIy(roi)).^2)<10/umPerPixel);
+    neuron.A(indROI,:,:) = 1; 
     tr(:,roi) = sum(vecV(:,indROI),2)/numel(indROI); 
 %     PlaceBlob(:,:,roi) = reshape(mvnpdf([X1(:) X2(:)], [ROIx(roi) ROIy(roi)], ...
 %         20/umPerPixel*eye(2)),y,x); 
@@ -87,6 +89,7 @@ for roi = 1:length(ROIx)
     tmp = zeros(1,y*x); tmp(indROI) = 1; contour(reshape(tmp,y,x), 'color',roicolors(roi,:));
     text(ROIx(roi),ROIy(roi),num2str(roi),'color', 'm', 'horizontalalignment', 'center'); 
 end
+neuron.C = tr'; 
 % stROI = permute(repmat(PlaceBlob, 1,1,1,size(VIDEO,1)),[4,1,2,3]); 
 % stVid = repmat(VIDEO,1,1,1,length(ROIx));
 % tr = squeeze(sum(sum(stROI.*stVid,2),3));

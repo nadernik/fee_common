@@ -13,7 +13,7 @@ savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\e
 % {DIR.name}'
 
 %% process data
-for row = [1548 1549 1503:1547]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
+for row = [1568:1588]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
     try
     clearvars -except row XLS Columns savedir
     display(['working on row ' num2str(row)])
@@ -149,7 +149,7 @@ title(num2str(row));
 %% checking for rotations
 savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 
-CheckRows = [1380:2:1433]; %[1181:5:1211 1212:1214]; %1046:8:1145
+CheckRows = [1551:1559 1569:1573 1589:1593 1596:1600 1607:1611]; %[1181:5:1211 1212:1214]; %1046:8:1145
 COMP = []; 
 COMPT = []; 
 for rowi = 1:numel(CheckRows)
