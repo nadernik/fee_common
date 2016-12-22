@@ -1,6 +1,6 @@
 
 %% making new songs
-%clear all; close all
+%clear all; %close all
 %syllable library
 path = 'C:\Users\emackev\Documents\MATLAB\OferSongs';
 [bells,fs] = wavread(fullfile(path, 'bells')); 
@@ -42,4 +42,4 @@ for i = 1:nSyl
 end
 
 sound(Song,fs)
-displaySpecgramQuick(Song,fs)
+%displaySpecgramQuick(Song,fs)
