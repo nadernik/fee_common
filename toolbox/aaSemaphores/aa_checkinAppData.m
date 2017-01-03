@@ -12,7 +12,7 @@ end
 
 if theSem == 0
     warning('aa_checkInAppData did not find semaphore.');
-    status = 0;
+    status = false;
     return;
 end
 
@@ -20,5 +20,5 @@ end
 %dbstack and AA_APPDATASEMAPHORE.status, that the checker-in was the
 %checker-out.  
 setappdata(h, name, value);
-status = 1;
+status = true;
 AA_APPDATASEMAPHORE(theSem).status = 0;

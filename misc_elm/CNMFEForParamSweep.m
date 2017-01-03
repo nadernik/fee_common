@@ -1,8 +1,9 @@
 function neuron = CNMFEForParamSweep(params)
-nam = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct21\Undirected1\compiled.mat'; 
+nam = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Nov18\compiled.mat'; 
+
 cnmfe_choose_data;
 % create Source2D class object for storing results and parameters
-Fs = 20;             % frame rate
+Fs = 30;             % frame rate
 ssub = 1;           % spatial downsampling factor
 tsub = 1;           % temporal downsampling factor
 gSig = params.gSig;           % width of the gaussian kernel, which can approximates the average neuron shape
@@ -46,7 +47,7 @@ Y = neuron.reshape(Y, 1);       % convert a 3D video into a 2D matrix
 debug_on = false;
 save_avi = false;
 patch_par = [1,1]*1; %1;  % divide the optical field into m X n patches and do initialization patch by patch
-K = []; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
+K = [1000]; % maximum number of neurons to search within each patch. you can use [] to search the number automatically
 
 min_corr = params.min_corr;     % minimum local correlation for a seeding pixel
 min_pnr = params.min_pnr;       % minimum peak-to-noise ratio for a seeding pixel

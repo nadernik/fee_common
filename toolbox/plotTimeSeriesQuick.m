@@ -10,21 +10,21 @@ function ls = plotTimeSeriesQuick(varargin)
 
 %determine if first   element in varargin in the axis...
 v1 = varargin{1};
-if(ishandle(v1))
+if ishandle(v1)
     ax = varargin{1};
     varargin = varargin(2:end);
 else
-    ax = gca;
+    ax = gca();
 end
 
 %find x and y in varargin
-if((length(varargin)>1) && length(varargin{2}) == length(varargin{1}))
+if (length(varargin) > 1) && length(varargin{2}) == length(varargin{1})
     ud.x = varargin{1};
     ud.y = varargin{2};
     ud.varargin = varargin(3:end);
 else
     ud.y = varargin{1};
-    ud.x = [1:length(ud.y)];
+    ud.x = 1:length(ud.y);
     ud.varargin = varargin(2:end);
 end
 ud.startndx = 1;
@@ -40,8 +40,8 @@ ls = helper_plotquick(ud);
 
 function ls = helper_plotquick(ud)
 %determine size of axis relative to size of x.
-set(ud.ax,'Units','pixels')
-pixSize = get(ud.ax,'Position');
+set(ud.ax, 'Units', 'pixels')
+pixSize = get(ud.ax, 'Position');
 ratio = (ud.endndx - ud.startndx) / pixSize(3);
 
 if(ratio < 4)
@@ -52,25 +52,21 @@ if(ratio < 4)
     set(ls, 'HitTest', 'off');
 else
     %otherwise decimate signal before plotting...
-    ratio = floor(ratio/4);
-    
-    %Old way was to simply down sample...
-    %ssx = downsample(ud.x(ud.startndx:ud.endndx),ratio);
-    %ssy = downsample(ud.y(ud.startndx:ud.endndx),ratio); 
+    ratio = floor(ratio / 4);
     
     %Now do peak detect... truncates the remainder... would be better to append NaN
     x = ud.x(ud.startndx:ud.endndx);
-    boxx = reshape(x(1:end-mod(length(x),ratio)), ratio, []);
-    minx = min(boxx,[],1);
-    maxx = max(boxx,[],1);
+    boxx = reshape(x(1:(end - mod(length(x), ratio))), ratio, []);
+    minx = min(boxx, [], 1);
+    maxx = max(boxx, [], 1);
     y = ud.y(ud.startndx:ud.endndx);
-    boxy = reshape(y(1:end-mod(length(y),ratio)), ratio, []);
-    miny = min(boxy,[],1);
-    maxy = max(boxy,[],1);
+    boxy = reshape(y(1:(end - mod(length(y), ratio))), ratio, []);
+    miny = min(boxy, [], 1);
+    maxy = max(boxy, [], 1);
      
     axes(ud.ax);
     colorOrder = get(ud.ax, 'ColorOrder');
-    lineColor = colorOrder(1,:);
+    lineColor = colorOrder(1, :);
     ls(1) = plot(minx, miny, 'Color', lineColor, ud.varargin{:}); hold on;
     ls(2) = plot(maxx, maxy, 'Color', lineColor, ud.varargin{:}); hold off;
     axis tight;
@@ -82,7 +78,7 @@ set(ud.ax, 'ButtonDownFcn', @buttondown_plotquick);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function buttondown_plotquick(src, evnt)
+function buttondown_plotquick(src, ~)
 ud = get(src, 'UserData');
 axes(ud.ax);
 mouseMode = get(gcf, 'SelectionType');
@@ -97,7 +93,7 @@ elseif(strcmp(mouseMode, 'open'))
     ud.endndx = length(ud.x);
 elseif(strcmp(mouseMode, 'normal'))
     %left click to zoom in.
-    rect = rbbox;
+    rbbox();
     endPoint = get(gca,'CurrentPoint'); 
     point1 = clickLocation(1,1:2);              % extract x and y
     point2 = endPoint(1,1:2);
@@ -108,8 +104,8 @@ elseif(strcmp(mouseMode, 'normal'))
         ud.startndx = max(1,floor(p1(1) - quarter));
         ud.endndx = min(length(ud.x),ceil(p1(1) + quarter));
     else
-        ud.startndx = min(find(ud.x >= p1(1)))
-        ud.endndx = max(find(ud.x <= p1(1) + offset(1)));
+        ud.startndx = min(find(ud.x >= p1(1)), 1, 'first');
+        ud.endndx = max(find(ud.x <= p1(1) + offset(1)), 1, 'last');
     end
 end
 set(ud.ax,'UserData',ud);
