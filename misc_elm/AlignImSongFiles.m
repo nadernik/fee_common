@@ -1,11 +1,13 @@
 %% choose audio and imaging folders to align
-audfolder = fullfile('E:\TempFileTransfer\2016-11-16'); 
+audfolder = fullfile('F:\TempFileTransfer\2017-01-02'); 
 load(fullfile(audfolder, 'AcqGui_timestamps.mat'));
 audDir = dir(fullfile(audfolder,'*chan0*'));
-imfolder = fullfile('C:\Users\emackev\inscopix\HVCgcamp11162016');
+imfolder = fullfile('C:\Users\emackev\inscopix\HVCgcamp01022017');
 imDir = dir(fullfile(imfolder, '\*.tif')); % tif if recording uncompressed.
 imDir = imDir(cellfun(@numel,(regexp( {imDir.name}', 'recording_\d+_\d+.tif')))==1);
 imTimes = cellfun(@datenum,{imDir.date});
+
+[~,ia,ic] = unique(fnums); fnums = fnums(ia); dnums = dnums(ia); nAudFrames = nAudFrames(ia);
 
 % compile nImFrames
 nImFrames = [];
@@ -17,6 +19,9 @@ for imi = 1:length(imDir)
     try % xml format when 1 .tif file
         nImFrames(imi) = str2num(xmlstruct.recording.decompressed.file.Attributes.frames); 
     catch
+        try
+            nImFrames(imi) = str2num(xmlstruct.Children(4).Children(2).Attributes.Value); 
+        end
         try % xml format when >1 .tif file
             nImFrames(imi) = str2num(xmlstruct.recording.decompressed.file{1}.Attributes.frames) ...
                 + str2num(xmlstruct.recording.decompressed.file{2}.Attributes.frames);
@@ -46,7 +51,7 @@ plot(nAudFrames,nImFrames(imnum),'.')
 % generate list of file names for CalciumData.xls
 I = {imDir(imnum).name}'; I = cellfun(@(X) [X(1:end-4) '.tif'], I, 'uniformoutput', 0);
 A = {audDir.name}';
-[I A];
+[A I];
 %% transfer nonsongfiles to temporary folder to delete
 trashdir = 'C:\Users\emackev\Downloads\Temp_To_Delete'; 
 for fi = 1:length(imDir); %length(imnum)

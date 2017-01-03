@@ -5,7 +5,7 @@ XLS.data.Sheet1 = [NaN*ones(1, size(XLS.data.Sheet1,2)); XLS.data.Sheet1]; % add
 Columns = XLS.textdata.Sheet1(1,:);
 
 % decide where to save stuff
-savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
+savedir = 'F:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 % to populate xls... use AlignImSongFiles now...
 % DIR1 = dir(fullfile('E:\TempFileTransfer', '2016-10-21', '*chan0.dat'))
 % DIR = dir(fullfile('E:\TempFileTransfer', 'HVCgcamp10212016', '*.tif'))
@@ -13,7 +13,11 @@ savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\e
 % {DIR.name}'
 
 %% process data
-for row = [1548 1549 1503:1547]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
+%     [1732 1660 1661 1666 1680 1686 1709 1719 1781 1794:1796 1769 1774 ...
+%         1809 1810 1833:1835 1890 1891 1919 1922 1857 1894 ...
+%         1928 1935 1939 1940 1948 1957 1965 1967 1962]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
+
+for row = [1660 1661 1666 1680 1686 1709 1719];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2014]
     try
     clearvars -except row XLS Columns savedir
     display(['working on row ' num2str(row)])
@@ -89,13 +93,13 @@ for row = [1548 1549 1503:1547]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804
     % computing delta F over F video
     VIDEOfs = round(SOUNDfs/min(diff(AudBinWhenFrameStarts))); 
     
-%     % if want background subtracted version
-%     Y = permute(VIDEO,[2 3 1]); 
-%     Y = Y - min(Y(:)); 
-%     [Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
-% 
-%     
-%     VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
+    % if want background subtracted version
+    Y = permute(VIDEO,[2 3 1]); 
+    Y = Y - min(Y(:)); 
+    [Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
+
+    
+    VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
     
     % if want old dff
 %     vecVIDEO = reshape(permute(VIDEObs,[2 3 1]),size(VIDEO,2)*size(VIDEO,3), nFrames);
@@ -106,7 +110,7 @@ for row = [1548 1549 1503:1547]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804
     
     % save
     filename = fullfile(savedir, ['CaELM_row' num2str(row)]); 
-    tic; save(filename, 'VIDEOfs', ...;%'VIDEObs', ...
+    tic; save(filename, 'VIDEOfs', 'VIDEObs', ...
         'SOUND', 'VIDEO', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
         'SPEC', 'specTime', 'F',...
@@ -119,12 +123,12 @@ end
 %% display movie from saved data for one row
 % savedir = 'E:\ProcessedCalciumData\AllRows'; %'E:\ProcessedCalciumData\AllRows'; %'C:\Users\emackev\Documents\StuffICanDelete';%'E:\StuffICanDelete'; %
 % close all; shg
-savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
+savedir = 'F:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 
 % savedir = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'
-row = 1549; %882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
+row = 1731; %882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
 savevid = 0; % see/hear it in real time no iff don't save
-load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEO', 'VIDEOfs', ...
+load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEObs', 'VIDEOfs', ...
         'SOUND', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
         'SPEC', 'specTime', 'F');%,'VIDEO'); 
@@ -137,13 +141,13 @@ params.AudBinWhenFrameStarts = AudBinWhenFrameStarts;
 params.AudBinWhenFrameEnds =  AudBinWhenFrameEnds; 
 % ShowCaVid(VIDEObs,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\rr15.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
 
-Y = permute(VIDEO,[2 3 1]); 
-Y = Y - min(Y(:)); 
-[Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
-VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
-    
-ShowCaVid(VIDEO,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\6701raw.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-ShowCaVid(VIDEO,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+% Y = permute(VIDEO,[2 3 1]); 
+% Y = Y - min(Y(:)); 
+% [Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
+% VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
+%     
+% ShowCaVid(VIDEO,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\6701raw.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+ShowCaVid(VIDEObs,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
 % HandpickROIs(VIDEO,SOUND,SPEC, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
 title(num2str(row)); 
 %% checking for rotations
