@@ -13,7 +13,7 @@ savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\e
 % {DIR.name}'
 
 %% process data
-for row = [1568:1588]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
+for row = [2039:2045]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
     try
     clearvars -except row XLS Columns savedir
     display(['working on row ' num2str(row)])
@@ -120,11 +120,11 @@ end
 % savedir = 'E:\ProcessedCalciumData\AllRows'; %'E:\ProcessedCalciumData\AllRows'; %'C:\Users\emackev\Documents\StuffICanDelete';%'E:\StuffICanDelete'; %
 % close all; shg
 savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
-
+%2268 2273 1281 1318 1301
 % savedir = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'
-row = 1549; %882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
+row = 1301; %882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
 savevid = 0; % see/hear it in real time no iff don't save
-load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEO', 'VIDEOfs', ...
+load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEObs', 'VIDEOfs', ...
         'SOUND', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
         'SPEC', 'specTime', 'F');%,'VIDEO'); 
@@ -134,18 +134,41 @@ params.SOUNDfs = SOUNDfs;
 params.specTime = -.5:(1/params.SOUNDfs):.5;
 params.F = linspace(507.8125, 5976.6, 141);
 params.AudBinWhenFrameStarts = AudBinWhenFrameStarts; 
-params.AudBinWhenFrameEnds =  AudBinWhenFrameEnds; 
-% ShowCaVid(VIDEObs,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\rr15.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+params.AudBinWhenFrameEnds = AudBinWhenFrameEnds; 
+% ShowCaVid(VIDEO,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+% 
+% Y = permute(VIDEO,[2 3 1]); 
+% Y = Y - min(Y(:)); 
+% [Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
+% VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
+% ShowCaVid(VIDEObs,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+%     
+%
+VIDEObs_smooth = 0*VIDEObs; 
+for fi = 1:size(VIDEObs,1)
+    tmp = squeeze(VIDEObs(fi,:,:));
+    tmp = imgaussfilt(tmp, 3, 'Padding', 'symmetric'); % low pass filter
+%     tmp = tmp - imgaussfilt(tmp,bpass(1), 'Padding', 'symmetric'); % high pass filter
+    VIDEObs_smooth(fi,:,:) = tmp; 
+%     imagesc(tmp); axis image; drawnow
+end
+% VIDEObs = bsxfun(@minus, VIDEObsold, mean(VIDEObsold,1)); 
+ShowCaVid(VIDEObs_smooth,SOUND,SPEC,...
+    'C:\Users\emackev\Dropbox (MIT)\Imaging\ForCuba\row1301singingexample.avi' ,params,0)%, fullfile(savedir, 'tmp.avi'))
+% ShowCaVid(VIDEObs,SOUND,SPEC,[] ,params,0)%, fullfile(savedir, 'tmp.avi'))
 
-Y = permute(VIDEO,[2 3 1]); 
-Y = Y - min(Y(:)); 
-[Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
-VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
-    
-ShowCaVid(VIDEO,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\6701raw.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-ShowCaVid(VIDEO,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-% HandpickROIs(VIDEO,SOUND,SPEC, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+% VIDEObs = VIDEObs-min(VIDEObs(:)); 
+
+% ShowCaVid(VIDEObs,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\6865song1.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+% HandpickROIs(VIDEObs,SOUND,SPEC, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
 title(num2str(row)); 
+%%
+for i = 1:20
+    
+    imagesc(squeeze(max(VIDEObs,[],1)), [5 30]); axis image;drawnow; pause(.5); 
+    imagesc(squeeze(max(A,[],1))*3, [15 50]); axis image;drawnow; pause(.5); axis image
+end
+
 %% checking for rotations
 savedir = 'E:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 
