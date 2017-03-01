@@ -10,10 +10,10 @@ function RastersFromDbase()
 % RunAnalyses('HASH&SINGLEUNIT&TUTORING', 'elecpos', 'tutor')
 % RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor');
 % RunAnalyses('TUTORING&PUTPROJ', 'latency', 'tutor')
-RunAnalyses('SINGING&HASH&SINGLEUNIT&~PUTPROJ', 'latency', 'song')
+RunAnalyses('SINGING&HASH&SINGLEUNIT&PUTPROJ', 'latency', 'song')
 
 % SEE LATER, AGE RESTRICTED TOO: 
-% rows = find(eval([ThisDataset '&(Age<=55)']));
+% rows = find(eval([ThisDataset '&(Age<=70)']));
 
 %% To get 4 rasters for just one row
 % [XLS, Columns] = loadNIfSpreadsheet_elm(); 
@@ -141,10 +141,10 @@ DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Shee
 
 %% Setting parameters
 figure(1)
-SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\code\RasterPlots\'; 
+SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\RasterPlots\'; 
 mkdir(SaveFigPath, ThisDataset); 
 SaveFigPath = fullfile(SaveFigPath, ThisDataset); 
-rows = find(eval([ThisDataset '&(Age<=70)']));
+rows = find(eval([ThisDataset '&(Age>60)']));
 % SortBy = 'latency'; % 'age' or 'elecpos' or 'latency'
 p.sylType = sylType; % 'tutor' 'song' 'artificialsubsong' or 'specified'
 % p.sylName = {'C'}; % specify syllable to align to, Only used when p.sylType = 'specified'
@@ -288,6 +288,23 @@ relInd = find(reliable); %find(relDKL<p.relThres);
 display([num2str(numel(relInd)) ' reliable of ' num2str(length(rows)) ' total units'])
 rows = rows(relInd); 
 latency = latency(relInd); 
+% histogram of latencies
+figure(5); clf
+[n,x] = hist(latency,[-.1:.02:.2]); 
+bar(x, n/sum(n), 'hist');
+set(get(gca,'child'),'FaceColor',.8*ones(1,3),'EdgeColor','k');
+set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
+set(gcf, 'papersize', [1.5 1.25],'paperposition', [0 0 1.5 1.25])
+ylim([0 .65]); xlim([-.1 .2])
+set(gca, 'ytick', [0 .3], 'xtick', [0 .1 .2])
+hold on
+plot(median(latency), .04, 'kv', 'markerfacecolor', 'k')
+plot([0 0], [0 .65], 'k:')
+% xlabel('Time from syll. onset (s)')
+% ylabel('Fraction')
+box off
+% bar(1:4,2:5
+
 %% make figs for each neuron, each syllable
 genfigs = 0; % generate 4raster figures for each neuron?
 genSylSelFigs = 0; % generate syl sel figures for each neuron?

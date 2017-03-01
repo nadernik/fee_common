@@ -1,7 +1,10 @@
-function [indSeqSort, nColors, baselines] = cnmfe2raster(DataFolder, cnmfeFilePath, LabelCanon, moat)
+function [indSeqSort, nColors, baselines] = cnmfe2raster(DataFolder, cnmfeFilePath, LabelCanon, moat, indSeqSort)
 %%
+if nargin<5
+    indSeqSort = []; 
+end
     load(cnmfeFilePath, 'neuron'); 
-    load(fullfile(DataFolder, 'compiled.mat'), 'Labels', 'segs', 'VIDEOfs', 'SOUNDfs', 'CompSoundSONG');
+    load(fullfile(DataFolder, 'compiled.mat'), 'Labels', 'segs', 'VIDEOfs', 'SOUNDfs', 'CompSoundSONG', 'FnumBnum');
     if ~exist('SOUNDfs')
         SOUNDfs = 40000; 
     end
@@ -28,7 +31,9 @@ function [indSeqSort, nColors, baselines] = cnmfe2raster(DataFolder, cnmfeFilePa
     tCanon = (-moat*VIDEOfs*upFac:(sum(DurSylCanon)+sum(DurGapCanon)+moat)*VIDEOfs*upFac)/VIDEOfs/upFac; 
     % make a new matrix Nneurons X Nmotifs X Tmotif
     [Nneurons,TotalDur] = size(neuron.C);
-%     mstart = mstart(1:10); %FOR DEBUGGING
+%     mstart = mstart(1:3); %FOR DEBUGGINGs
+%     tmp = find(FnumBnum(ceil(segs(:,1)*VIDEOfs/SOUNDfs),1)<=5); % FOR DEBUGGING
+%     mstart(mstart>tmp(end)) = []; % FOR DEBUGGING
     Nmotifs = length(mstart); 
     Tmotif = length(tCanon); 
     ByMotif = zeros(Nneurons,Nmotifs,Tmotif);
@@ -45,8 +50,9 @@ function [indSeqSort, nColors, baselines] = cnmfe2raster(DataFolder, cnmfeFilePa
                 ByMotif(ni,mi,:) = spline((tIndUnwarped/VIDEOfs/upFac-segs(mstart(mi),1)/SOUNDfs), Unwarped(ni,:),DesUnwarpedTimes);
             end
         end
-        if mi == 2
+        if mi == 1
             sampsong = CompSoundSONG(floor(tIndUnwarped(1)*SOUNDfs/VIDEOfs/upFac:tIndUnwarped(end)*SOUNDfs/VIDEOfs/upFac)); 
+%             sampsong = 0*floor(tIndUnwarped(1)*SOUNDfs/VIDEOfs/upFac:tIndUnwarped(end)*SOUNDfs/VIDEOfs/upFac); 
         end
     end
 
@@ -68,12 +74,14 @@ function [indSeqSort, nColors, baselines] = cnmfe2raster(DataFolder, cnmfeFilePa
     % % save(fullfile(dbasepath, 'selectedneurons'), 'I');
 
     
-    
-    [~,tmax] = max(squeeze(median(ByMotif(:,:,tCanon>-.05&tCanon<(tCanon(end)-moat)),2)),[],2);
-    [~,indSeqSort] = sort(tmax); 
+    if length(indSeqSort)==0
+        [~,tmax] = max(squeeze(median(ByMotif(:,:,tCanon>-.05&tCanon<(tCanon(end)-moat)),2)),[],2);
+        [~,indSeqSort] = sort(tmax); 
+    end
     % indSeqSort(I<.5) = []; Nneurons = length(indSeqSort);
     neuron.C = neuron.C(indSeqSort,:); 
     neuron.A = neuron.A(:,indSeqSort); 
+    Nneurons = size(neuron.C,1);
     clims = [0 10]; 
     h(1) = subplot('position', [.1 .8 .8 .1]);
     spectrogramELM(sampsong, SOUNDfs, .002, 1);
@@ -95,6 +103,14 @@ function [indSeqSort, nColors, baselines] = cnmfe2raster(DataFolder, cnmfeFilePa
         repmat(reshape(repmat(nColors(:,2)',Nmotifs,1),Nneurons*Nmotifs,1),1,Tmotif).*AllMotifs,...
         repmat(reshape(repmat(nColors(:,3)',Nmotifs,1),Nneurons*Nmotifs,1),1,Tmotif).*AllMotifs);
     image(1-ColoredAllMotifs/max(ColoredAllMotifs(:)),'xdata', tCanon+moat, 'ydata', .5+(0:Nneurons))
+    cmap = flipud(bone); flipud(gray); 
+    cmap(1,:) = ones(1,3); colormap(cmap); shg
+    
+    % jet coloring
+%     imagesc(AllMotifs, 'xdata', tCanon+moat, 'ydata', .5+(0:Nneurons),...
+%         [prctile(AllMotifs(:),50) prctile(AllMotifs(:),100)])
+%     colormap jet
+    
     xlabel('Time (s, warped)')
     ylabel('Neuron #')
     hold on
@@ -106,10 +122,9 @@ function [indSeqSort, nColors, baselines] = cnmfe2raster(DataFolder, cnmfeFilePa
 
     shg
     linkaxes(h,'x')
-    cmap = flipud(bone); flipud(gray); 
-    cmap(1,:) = ones(1,3); colormap(cmap); shg
     set(gca,'color','none','tickdir','out','ticklength', [0.01, 0.01])
-    set(gcf, 'papersize', [8.5 11], 'paperposition', [0 0 8.5 11])
+    papersize = [4 5]
+    set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
     tmp = sum(AllMotifs,1); tmp = tmp-min(tmp); tmp = tmp/max(tmp)*6; 
 %     subplot(h(1)); hold on; plot(tCanon+moat,tmp, 'r')
 

@@ -1,4 +1,4 @@
-function coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, baselines)
+function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, baselines)
 %%
     load(cnmfeFilePath, 'neuron'); 
     load(fullfile(DataFolder, 'compiled.mat'), 'Labels', 'segs', 'VIDEOfs',...
@@ -9,7 +9,7 @@ function coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, baselines
     
     % go through raw data
     figure(1); clf; shg
-    stepdur = 90; %180;
+    stepdur = 180; %180;
 
     PlotC = neuron.C;
 
@@ -41,8 +41,8 @@ function coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, baselines
 
         baselines = min(tmp1,[],2); % overwriting given baselines
         tmp = bsxfun(@minus, tmp, baselines); 
-        tmp(tmp<clims(1)) = clims(1); 
-        tmp(tmp>clims(2)) = clims(2); 
+%         tmp(tmp<clims(1)) = clims(1); 
+%         tmp(tmp>clims(2)) = clims(2); 
         tmp = (tmp-clims(1))/diff(clims); 
         %%
 %         N = tmp(18,110:(173)); 
@@ -72,19 +72,21 @@ function coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, baselines
 %             PlotC(indSeqSort,istart:istart+stepdur-1).*repmat(nColors(:,3),1,stepdur));
 
         % colored neurons
-        ColoredC = cat(3,...
-            tmp.*repmat(nColors(:,1),1,stepdur),...
-            tmp.*repmat(nColors(:,2),1,stepdur),...
-            tmp.*repmat(nColors(:,3),1,stepdur));
-        image(1-ColoredC, 'xdata', (1:stepdur)/VIDEOfs); 
-        colormap(flipud(gray))
+%         ColoredC = cat(3,...
+%             tmp.*repmat(nColors(:,1),1,stepdur),...
+%             tmp.*repmat(nColors(:,2),1,stepdur),...
+%             tmp.*repmat(nColors(:,3),1,stepdur));
+%         image(1-ColoredC, 'xdata', (1:stepdur)/VIDEOfs); 
+%         colormap(flipud(gray))
+        set(gca, 'colororder', 1-nColors)
+        plot((1:stepdur)/VIDEOfs, bsxfun(@plus, tmp/2, (1:size(tmp,1))')')
         
         % jet coloring
 %         imagesc(tmp, 'xdata',(1:stepdur)/VIDEOfs,...
 %             [prctile(tmp(:),50) prctile(tmp(:),100)])
 %         colormap jet
         
-        set(gca, 'ydir', 'reverse'); ylabel('neuron')
+        ylabel('neuron'); set(gca, 'ytick', 1:size(PlotC,1))
         xlabel('Time (s)')
         linkaxes(h,'x'); 
         axis tight

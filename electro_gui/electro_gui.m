@@ -5500,7 +5500,8 @@ elseif get(handles.radio_Files,'value')==1
             end
             handles.DefaultDirectory = path;
             warning off
-            wavwrite(wav,fs,16,[path file]);
+%             wavwrite(wav,fs,16,[path file]);
+            audiowrite([path file],wav,round(fs));
             warning on
 
     end
