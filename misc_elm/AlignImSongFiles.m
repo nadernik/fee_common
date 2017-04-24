@@ -1,14 +1,19 @@
 %% choose audio and imaging folders to align
-audfolder = fullfile('F:\TempFileTransfer\2017-01-02'); 
+audfolder = fullfile('V:\AcqGui\HVCOpto\2017-04-18'); 
 load(fullfile(audfolder, 'AcqGui_timestamps.mat'));
-audDir = dir(fullfile(audfolder,'*chan0*'));
-imfolder = fullfile('C:\Users\emackev\inscopix\HVCgcamp01022017');
+audDir = dir('initializingemptydirstruct');
+imfolder = fullfile('C:\Users\emackev\inscopix\041817');
 imDir = dir(fullfile(imfolder, '\*.tif')); % tif if recording uncompressed.
 imDir = imDir(cellfun(@numel,(regexp( {imDir.name}', 'recording_\d+_\d+.tif')))==1);
 imTimes = cellfun(@datenum,{imDir.date});
 
 [~,ia,ic] = unique(fnums); fnums = fnums(ia); dnums = dnums(ia); nAudFrames = nAudFrames(ia);
 
+% make sure audDir is right (only relevant files)
+for fnumi = 1:length(fnums)
+    fnum = fnums(fnumi);
+    audDir(fnumi) = dir(fullfile(audfolder,strcat('*', sprintf('%06d',fnum), '*chan0*')));
+end
 % compile nImFrames
 nImFrames = [];
 for imi = 1:length(imDir)
@@ -51,7 +56,7 @@ plot(nAudFrames,nImFrames(imnum),'.')
 % generate list of file names for CalciumData.xls
 I = {imDir(imnum).name}'; I = cellfun(@(X) [X(1:end-4) '.tif'], I, 'uniformoutput', 0);
 A = {audDir.name}';
-[A I];
+[A I]; shg
 %% transfer nonsongfiles to temporary folder to delete
 trashdir = 'C:\Users\emackev\Downloads\Temp_To_Delete'; 
 for fi = 1:length(imDir); %length(imnum)
