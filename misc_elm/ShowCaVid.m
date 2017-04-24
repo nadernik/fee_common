@@ -10,9 +10,14 @@ if nargin<4
 end
 if nargin<5 || length(params)==0
     params.SOUNDfs = 40000;
+    params.VIDEOfs = 30; 
+    display(['using default framerate ' num2str(params.VIDEOfs) ' Hz'])
+end
+if ~isfield(params, 'specTime')
     params.specTime = -.5:(1/params.SOUNDfs):.5;
     params.F = linspace(507.8125, 5976.6, 141);
-    params.VIDEOfs = 30;
+end
+if ~isfield(params, 'AudBinWhenFrameStarts')
     params.AudBinWhenFrameStarts = 0:(params.SOUNDfs/params.VIDEOfs):ceil(size(VIDEO,1)/params.VIDEOfs*params.SOUNDfs); 
     params.AudBinWhenFrameEnds =  params.AudBinWhenFrameStarts + floor(params.SOUNDfs/params.VIDEOfs); 
 end

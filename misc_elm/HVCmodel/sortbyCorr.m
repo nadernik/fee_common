@@ -1,7 +1,7 @@
-function perm = sortbyCorr(W)
-    DisMatrix = W*W' + W'; %W*W'+W'*W+10*W'; %W*W' + W' sometimes works pretty well
-    me = 1; 
-    togo = 2:size(DisMatrix,1); 
+function perm = sortbyCorrCA(W)
+    DisMatrix = W; %W*W' + W'; %W*W'+W'*W+10*W'; %W*W' + W' sometimes works pretty well
+    me = find(max(max(W))); 
+    togo = [(1:(me-1)) ((me+1):size(DisMatrix,1))]; 
     for i = 1:length(W)-1
         %indPlot(i) = i;
         %[~,indPlot(i)] = max(EW(:,indPlot(i-1))); 

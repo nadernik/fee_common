@@ -37,7 +37,7 @@ hold on
 
 answer = inputdlg({'FileName',...
     '0:load; 1:overwrite'},'',1,...
-    {'E:\ProcessedCalciumData\ROIs\ROIsSep21b6719.mat','0'}); % input dialog box
+    {'G:\ProcessedCalciumData\ROIs\ROIsSep21b6719.mat','0'}); % input dialog box
 if isempty(answer)
     return
 end
@@ -96,15 +96,17 @@ neuron.C = tr';
 figure; 
 h = subplot(4,1,1)
 spectrogramELM(SOUND,SOUNDfs, .005, 1);
+axis off
 g = subplot(4,1,2:4)
-% toplot = bsxfun(@plus, tr, (1:size(tr,2))/1); 
-% plot((1:length(tr))/VIDEOfs, toplot)
-imagesc(tr','xdata', (1:length(tr))/VIDEOfs)
-colormap(flipud(gray))
+toplot = bsxfun(@plus, tr, (1:size(tr,2))/.02); 
+plot((1:length(tr))/VIDEOfs, toplot)
+% imagesc(tr','xdata', (1:length(tr))/VIDEOfs)
+% colormap(flipud(gray))
 % set(gca, 'clim', [0 .5]); 
 linkaxes([h g],'x')
 xlabel('Time (s)')
-ylabel('Neuron #')
+set(gca, 'ytick', [], 'fontsize', 14, 'xtick', [6:10], 'xticklabel', arrayfun(@num2str, 0:4, 'uniformoutput', 0))
+% ylabel('Neuron #')
 % %% example events for each roi
 % % TimesToAlign = [21 21.86 22.76 24.12 25.01 26.15 27.66]'
 % % plot(tSound,SOUND); % pick syl boundaries

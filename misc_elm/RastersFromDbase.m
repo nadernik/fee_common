@@ -10,10 +10,10 @@ function RastersFromDbase()
 % RunAnalyses('HASH&SINGLEUNIT&TUTORING', 'elecpos', 'tutor')
 % RunAnalyses('PUTPROJ&TUTORING', 'elecpos', 'tutor');
 % RunAnalyses('TUTORING&PUTPROJ', 'latency', 'tutor')
-RunAnalyses('SINGING&HASH&SINGLEUNIT&~PUTPROJ', 'latency', 'song')
+RunAnalyses('SINGING&HASH&SINGLEUNIT&PUTPROJ', 'latency', 'song')
 
 % SEE LATER, AGE RESTRICTED TOO: 
-% rows = find(eval([ThisDataset '&(Age<=55)']));
+% rows = find(eval([ThisDataset '&(Age<=70)']));
 
 %% To get 4 rasters for just one row
 % [XLS, Columns] = loadNIfSpreadsheet_elm(); 
@@ -141,7 +141,7 @@ DIFF = zeros(size(XLS.data.Sheet1,1),1); DIFF(strmatch('diff', XLS.textdata.Shee
 
 %% Setting parameters
 figure(1)
-SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\code\RasterPlots\'; 
+SaveFigPath = 'C:\Users\emackev\Documents\MATLAB\RasterPlots\'; 
 mkdir(SaveFigPath, ThisDataset); 
 SaveFigPath = fullfile(SaveFigPath, ThisDataset); 
 rows = find(eval([ThisDataset '&(Age<=70)']));
@@ -288,6 +288,23 @@ relInd = find(reliable); %find(relDKL<p.relThres);
 display([num2str(numel(relInd)) ' reliable of ' num2str(length(rows)) ' total units'])
 rows = rows(relInd); 
 latency = latency(relInd); 
+% histogram of latencies
+figure(5); clf
+[n,x] = hist(latency,[-.1:.02:.2]); 
+bar(x, n/sum(n), 'hist');
+set(get(gca,'child'),'FaceColor',.8*ones(1,3),'EdgeColor','k');
+set(gca,'color','none','tickdir','out','ticklength',[0.025 0.025], 'fontsize', p.fontsize)
+set(gcf, 'papersize', [1.5 1.25],'paperposition', [0 0 1.5 1.25])
+ylim([0 .65]); xlim([-.1 .2])
+set(gca, 'ytick', [0 .3], 'xtick', [0 .1 .2])
+hold on
+plot(median(latency), .04, 'kv', 'markerfacecolor', 'k')
+plot([0 0], [0 .65], 'k:')
+% xlabel('Time from syll. onset (s)')
+% ylabel('Fraction')
+box off
+% bar(1:4,2:5
+
 %% make figs for each neuron, each syllable
 genfigs = 0; % generate 4raster figures for each neuron?
 genSylSelFigs = 0; % generate syl sel figures for each neuron?
@@ -466,11 +483,29 @@ switch SortBy
         saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ElecPos_' p.sylType '.fig'])); 
         saveas(gcf, fullfile(SaveFigPath, [ThisDataset, 'ElecPos_' p.sylType '.jpg'])); 
     case 'latency'
-        [~,latPerm] = sort(latency, 'ascend'); 
+        [~,latPerm] = sort(latency, 'descend'); 
         rows = rows(latPerm); 
         latency = latency(latPerm); 
 end
 %%
+% population syll aligned raster
+% figure(11); clf
+% color_palet = [[1 0 0]; [1 .6 0]; [.7 .6 .4]; [.6 .8 .3]; [0 .6 .3]; [0 0 1]; [0 .6 1]; [0 .7 .7]; [.7 0 .7];  [.7 .4 1]]; 
+% color_palet = color_palet([1:2:end 2:2:end],:); % scramble slightly
+% Colors = color_palet(mod(1:max(rows),size(color_palet,1))+1,:); 
+% 
+% for rowi = 1:length(rows)
+%     row = rows(rowi); 
+%     p.MaxToPlot = 10; 
+%     Result = analyzeRow(row,p, 'raster'); 
+%     indplot = find(Result.plotY(1,:)<=10); 
+%     plotX = Result.plotX(:,indplot);
+%     plotY = Result.plotY(:,indplot);
+%     plot(plotX,plotY + 10*(rowi-1), 'Color', Colors(row,:)); hold on
+%     drawnow
+% end
+
+
 % calculating psth for each row
 comboPSTH = zeros(length(rows),length(bins)); 
 for rowi = 1:length(rows)
@@ -481,13 +516,13 @@ end
 % normalize rows
 
 %alternative method, where normalize by baseline sigma and mu
-% indBaseline = find(bins<-.1|bins>.1); 
-% for rowi = 1:size(comboPSTH,1)
-%     zscorePSTHs(rowi,:) = (comboPSTH(rowi,:) ...
-%         - mean(comboPSTH(rowi,indBaseline))) ...
-%         ./std(comboPSTH(rowi,indBaseline)); 
-% end
-zscorePSTHs = comboPSTH; %zscore(comboPSTH')'; % consider changing back to zscore... also change ylabel
+indBaseline = find(bins<-.1|bins>.1); 
+for rowi = 1:size(comboPSTH,1)
+    zscorePSTHs(rowi,:) = (comboPSTH(rowi,:) ...
+        - mean(comboPSTH(rowi,indBaseline))) ...
+        ./std(comboPSTH(rowi,indBaseline)); 
+end
+% zscorePSTHs = zscore(comboPSTH')'; % consider changing back to zscore... also change ylabel
 
 % just plot the middle window, specified by p.plotRange
 indplot = bins>p.plotRange(1) & bins<p.plotRange(end); 
@@ -500,8 +535,8 @@ figure(4); clf;
 % population average zscore rate
 g = subplot(4,1,1);
 plot(bins*1000,sum(zscorePSTHs)/size(zscorePSTHs,1), 'k', 'linewidth', 2); 
-% ylabel('Rate (\sigma above \mu)', 'interpreter', 'tex')
-ylabel('Rate (Hz)')
+ylabel('Rate (\sigma above \mu)', 'interpreter', 'tex')
+% ylabel('Rate (Hz)')
 axis tight; box off
 set(gca,'color','none','tickdir','out','ticklength',[0.01 0.01], 'fontsize',p.fontsize)
 set(gca, 'xtick', [])
@@ -516,13 +551,14 @@ imagesc(zscorePSTHs, 'xdata', bins*1000)
 
 % for double-ended colormap
 % set colormap and clims (mean = black)
-% clims = max(abs(zscorePSTHs(:)))*[-1 1]; set(gca, 'clim', clims); 
-% cvec = [zeros(128,1);(1:128)'/128];
-% CMAP = [(1:64)'/64  (1:64)'/64 ones(64,1); ...
-%     ones(64,1) (64:-1:1)'/64 (64:-1:1)'/64 ];
+clims = max(abs(zscorePSTHs(:)))*[-1 1]; set(gca, 'clim', clims); 
+cvec = [zeros(128,1);(1:128)'/128];
+CMAP = [(1:64)'/64  (1:64)'/64 ones(64,1); ...
+    ones(64,1) (64:-1:1)'/64 (64:-1:1)'/64 ];
 
 
-colormap(parula)
+colormap(CMAP)
+% colormap parula
 
 xlabel(['Time relative to syllable ' p.alignTo, ' (ms)'])
 

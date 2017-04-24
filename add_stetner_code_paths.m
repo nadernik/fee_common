@@ -15,6 +15,7 @@ end
 
 ffn = mfilename('fullpath');
 [code_dir, junk1, junk2] = fileparts(ffn);
+clear ffn junk1 junk2
     
 subdirs = {
     'acquisitionGui_tools'
@@ -42,12 +43,13 @@ for ii = 1:length(subdirs)
     end
     addpath(paths_to_add)
 end
+clear ii subdirs paths_to_add
 
 % Remove Chronux
 rmpath(genpath(fullfile(code_dir, 'toolbox\chronux')))
+clear code_dir 
 
 if verbosity > 0
     fprintf(' Done! \n')
 end
-
-clear all
+clear verbosity

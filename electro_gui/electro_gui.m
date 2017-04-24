@@ -91,24 +91,19 @@ user = user(f);
 handles.userfile = egfile(['defaults_' user '.m']);
 mt = dir(handles.userfile);
 if isempty(mt)
-    fid1 = fopen(egfile('eg_Get_Defaults.m'),'r');
-    fid2 = fopen(handles.userfile,'w');
-    fgetl(fid1);
-    str = ['function handles = ' handles.userfile(1:end-2) '(handles)'];
-    while isstr(str)
-        f = findstr(str,filesep);
-        for d = length(f):-1:1
-            str = [str(1:f(d)-1) '\\' str(f(d)+1:end)];
-        end
-        f = findstr(str,'%');
-        for d = length(f):-1:1
-            str = [str(1:f(d)-1) '%%' str(f(d)+1:end)];
-        end
-        fprintf(fid2,[str '\n']);
-        str = fgetl(fid1);
+    %% Copy contents of eg_Get_Defaults.m into new defaults file
+    fidTemplate = fopen(egfile('eg_Get_Defaults.m'),'r');
+    fidOut = fopen(handles.userfile,'w');
+    fgetl(fidTemplate);
+    pathParts = regexp(handles.userfile(1:end-2), filesep(), 'split'); % separate directories
+    funcName = pathParts{end}; % Get the file name, not the path leading to it
+    str = sprintf('function handles = %s(handles)', funcName);
+    while ischar(str)
+        fprintf(fidOut, '%s\n', str); % characters do not need escaping
+        str = fgetl(fidTemplate);
     end
-    fclose(fid1);
-    fclose(fid2);
+    fclose(fidTemplate);
+    fclose(fidOut);
     isnewuser = 1;
 else
     isnewuser = 0;
@@ -5505,7 +5500,7 @@ elseif get(handles.radio_Files,'value')==1
             end
             handles.DefaultDirectory = path;
             warning off
-            wavwrite(wav,fs,16,[path file]);
+            audiowrite([path file],wav,round(fs));
             warning on
 
     end
