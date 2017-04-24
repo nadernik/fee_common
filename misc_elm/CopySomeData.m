@@ -1,9 +1,10 @@
-foldername = '2016-11-12'
+foldername = '2017-04-18'
 OldDir = fullfile('C:\Users\Emily\Documents\MATLAB\AcqGui3\HVCOpto',foldername); 
-NewDir = fullfile('E:\TempFileTransfer',foldername); 
-fnums = [1 5 6 8:11 14 15 17:24 26:29 31:36 38:41 64 65 68 71 72 74]; 
-% fnums = [165 169 170:172 217 218 221:226 230:242 244:258 261:266 268:269 271 273:286]; % array of files to be analyzed, convert from string to number
+NewDir = fullfile('Z:\AcqGui\HVCOpto',foldername); 
+fnums = [17 18 20 21 25 28 34 397:405 407:409 661 663:666];
 
+fnums = sort(fnums, 'ascend');
+fnums = unique(fnums);
 mkdir(NewDir); % make new folder
 for fnumi = 1:length(fnums)
     fnum = fnums(fnumi);
@@ -32,3 +33,4 @@ for fnumi = 1:length(fnums)
     nAudFrames(fnumi) = length(AudBinWhenFrameStarts); 
 end
 save(fullfile(NewDir,'AcqGui_timestamps.mat'), 'fnums', 'dnums', 'nAudFrames');
+display('done!')
