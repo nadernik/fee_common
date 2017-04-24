@@ -1,14 +1,18 @@
 function handles = egm_pageofspectrograms(handles)
 %%
-birthday = '10/26/2016';
+birthday = '02/06/2017';
 FilesPerPage = 15; 
 SecondsPerFile = 4; 
 age = [];
 dbase = handles.dbase;
 for fi = 1:length(dbase.SoundFiles)
-    age(fi) = datenum(dbase.SoundFiles(fi).name(regexp(dbase.SoundFiles(fi).name, 'chan')+(-15:-8)), ...
-        'yyyymmdd') - ...
-        datenum(birthday); 
+    try
+        age(fi) = datenum(dbase.SoundFiles(fi).name(regexp(dbase.SoundFiles(fi).name, 'chan')+(-15:-8)), ...
+            'yyyymmdd') - ...
+            datenum(birthday); 
+    catch 
+        age(fi) = 0; 
+    end
 end
 [age,sortbyage] = sort(age, 'ascend'); 
 dbase.SoundFiles = dbase.SoundFiles(sortbyage);
@@ -23,6 +27,7 @@ for fi = 1:length(dbase.SoundFiles)
 %             (num2str(birdnum(row))), 'OnePerDay', ...
 %             dbase.SoundFiles(fi).name)); 
 %     else
+    if sum(dbase.SegmentIsSelected{sortbyage(fi)})>0
     [sndOrig fsOrig dt label props] = ...
         eval(['egl_AA_daq' ...
         '([''' fullfile(dbase.PathName, ...
@@ -33,7 +38,8 @@ for fi = 1:length(dbase.SoundFiles)
         'Position',[.1 c*.8/FilesPerPage+.1 .8 .8/FilesPerPage]);
 %     subplot('position', [.1 c*.8/10+.1 .8 .09]);
     sndOrig = [sndOrig; max(sndOrig(:))*ones(round(fsOrig*SecondsPerFile),1)]; 
-    sndOrig = sndOrig(1:round(fsOrig*SecondsPerFile)); 
+    istart = dbase.SegmentTimes{sortbyage(fi)}(min(find(dbase.SegmentIsSelected{sortbyage(fi)})),1); 
+    sndOrig = sndOrig(istart:istart+round(fsOrig*SecondsPerFile)); 
     [S,Time,F] = spectrogramELM(sndOrig,fsOrig,.005, 1); 
     
     if c~=1; 
@@ -61,6 +67,7 @@ for fi = 1:length(dbase.SoundFiles)
         set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
         d = d+1; 
         c = 1;
+    end
     end
 end
 

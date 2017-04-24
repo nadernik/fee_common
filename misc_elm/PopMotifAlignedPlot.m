@@ -24,26 +24,28 @@ clear all; clc
 
 %%
 %%% FOR 4202
-% Title = 'NIfMotif4202';
-% xlsname = 'C:/Users/emackev/Dropbox (MIT)/MackeviciusLabPresentations/NIfMotif4202.xlsx'; 
-% 
-% AlignSyl = 'L'; 
-% OtherSyls = [-2:0]; % rel indices of all syls in bout
-% AllSylNames = {'Y' 'G' 'L'}; % names of other syls in bout
-% NextSylBlank = 0; 
-% NextGapMin = 0; 
-% 
-% twindow = [-.4 .3]; % for raster
-% tswindow = [-.4 .3]; % for spectrograms
-% 
-% MeanSegTimes = zeros(length(OtherSyls)+2,2); 
-% oldMeanSegTimes = [-0.2028   -0.1516; % run it once to determine these, or insert desired time warp times for each syl
-%    -0.1102   -0.0182;
-%          0    0.1315];
-% 
-% % choose whether to time-warp
-% TimeWarp = 0; 
-% MaxToPlot = 10; 
+Title = 'NIfMotif4202';
+xlsname = 'C:/Users/emackev/Dropbox (MIT)/MackeviciusLabPresentations/NIfMotif4202.xlsx'; 
+
+AlignSyl = 'L'; 
+OtherSyls = [-2:0]; % rel indices of all syls in bout
+AllSylNames = {'Y' 'G' 'L'}; % names of other syls in bout
+NextSylBlank = 0; 
+NextGapMin = 0; 
+PrevSylBlank = 0; 
+NextGapMin = 0; 
+
+twindow = [-.4 .3]; % for raster
+tswindow = [-.4 .3]; % for spectrograms
+
+MeanSegTimes = zeros(length(OtherSyls)+2,2); 
+oldMeanSegTimes = [-0.2028   -0.1516; % run it once to determine these, or insert desired time warp times for each syl
+   -0.1102   -0.0182;
+         0    0.1315];
+
+% choose whether to time-warp
+TimeWarp = 0; 
+MaxToPlot = 10; 
 
 %%
 
@@ -73,29 +75,29 @@ clear all; clc
 %%
 
 %%% FOR 6230, DEAFENED BIRD motif
-Title = 'NIfDeaf6230';
-xlsname = 'C:/Users/emackev/Dropbox (MIT)/MackeviciusLabPresentations/NIfDeaf6230.xlsx'; 
-
-AlignSyl = 'D'; 
-AllSylNames = {'A' 'B' 'C' 'D' 'F'}; % names of other syls in bout
-NextSylBlank = 1; 
-PrevSylBlank = 0; 
-NextGapMin = 0; 
-
-twindow = [-.8 .8] -.25; % for raster
-tswindow = [-.3 .8] -.25; % for spectrograms
-
-OtherSyls = (1:length(AllSylNames)) - strmatch(AlignSyl,AllSylNames); % rel indices of other syls in bout
-MeanSegTimes = zeros(length(OtherSyls)+2,2); 
-oldMeanSegTimes = [-0.4292   -0.3686; % run it once to determine these, or insert desired time warp times for each syl
-   -0.3235   -0.2736;
-   -0.2419   -0.0766;
-         0    0.0648;
-    0.1051    0.4408];
-
-% choose whether to time-warp
-TimeWarp = 0; 
-MaxToPlot = 10; 
+% Title = 'NIfDeaf6230';
+% xlsname = 'C:/Users/emackev/Dropbox (MIT)/MackeviciusLabPresentations/NIfDeaf6230.xlsx'; 
+% 
+% AlignSyl = 'D'; 
+% AllSylNames = {'A' 'B' 'C' 'D' 'F'}; % names of other syls in bout
+% NextSylBlank = 1; 
+% PrevSylBlank = 0; 
+% NextGapMin = 0; 
+% 
+% twindow = [-.8 .8] -.25; % for raster
+% tswindow = [-.3 .8] -.25; % for spectrograms
+% 
+% OtherSyls = (1:length(AllSylNames)) - strmatch(AlignSyl,AllSylNames); % rel indices of other syls in bout
+% MeanSegTimes = zeros(length(OtherSyls)+2,2); 
+% oldMeanSegTimes = [-0.4292   -0.3686; % run it once to determine these, or insert desired time warp times for each syl
+%    -0.3235   -0.2736;
+%    -0.2419   -0.0766;
+%          0    0.0648;
+%     0.1051    0.4408];
+% 
+% % choose whether to time-warp
+% TimeWarp = 0; 
+% MaxToPlot = 10; 
 
 %%
 

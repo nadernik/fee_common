@@ -37,7 +37,7 @@ hold on
 
 answer = inputdlg({'FileName',...
     '0:load; 1:overwrite'},'',1,...
-    {'E:\ProcessedCalciumData\ROIs\ROIsSep21b6719.mat','0'}); % input dialog box
+    {'G:\ProcessedCalciumData\ROIs\ROIsSep21b6719.mat','0'}); % input dialog box
 if isempty(answer)
     return
 end

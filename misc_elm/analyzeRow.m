@@ -41,6 +41,11 @@ switch task
     case 'PSTH' % doesn't need rasterMatrix
         [PSTH plotX plotY allDur]  = PSTH_elm(dbase, p);
         Result = PSTH; 
+    case 'raster'
+        [PSTH plotX plotY allDur]  = PSTH_elm(dbase, p);
+        Result.plotX = plotX; 
+        Result.plotY = plotY; 
+        Result.allDur = allDur; 
     case 'relDKL' % this just calculates DKL.  'relLat' also calculates DKL
         [PSTH plotX plotY allDur]  = PSTH_elm(dbase, p);
         bins = p.rasterRange(1):p.psthdt:p.rasterRange(2); 

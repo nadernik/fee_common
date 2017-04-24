@@ -3,13 +3,14 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, baseline
     load(cnmfeFilePath, 'neuron'); 
     load(fullfile(DataFolder, 'compiled.mat'), 'Labels', 'segs', 'VIDEOfs',...
         'SOUNDfs', 'CompSoundSONG', 'FnumBnum');
+
     if ~exist('SOUNDfs')
         SOUNDfs = 40000; 
     end
     
     % go through raw data
     figure(1); clf; shg
-    stepdur = 180; %180;
+    stepdur = 200; %180; %180;
 
     PlotC = neuron.C;
 

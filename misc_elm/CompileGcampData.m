@@ -122,7 +122,7 @@ end
 savedir = 'G:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 %2268 2273 1281 1318 1301
 % savedir = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'
-for row = [2689:2693]%882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
+for row = [3289 3290 3297 3300 3301 3302 3309 3311 3316 3317]%882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
 savevid = 0; % see/hear it in real time no iff don't save
 load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEO', 'VIDEOfs', ...
         'SOUND', 'SOUNDfs', 'nFrames', ...
@@ -166,8 +166,10 @@ end
 %         'SPEC', 'specTime', 'F')
 
 ShowCaVid(VIDEObs_smooth,SOUND,SPEC,...
-    ['C:\Users\emackev\Downloads\Row' num2str(row) '.avi'] ,params,0)%, fullfile(savedir, 'tmp.avi'))
-ShowCaVid(VIDEObs_smooth,SOUND,SPEC,[] ,params,0)%, fullfile(savedir, 'tmp.avi'))
+    ['G:\TempFileTransfer\TmpProcVids\Row' num2str(row) '.avi'] ,params,0)%, fullfile(savedir, 'tmp.avi'))
+
+row
+% ShowCaVid(VIDEObs_smooth,SOUND,SPEC,[] ,params,0)%, fullfile(savedir, 'tmp.avi'))
 end
 % VIDEObs = VIDEObs-min(VIDEObs(:)); 
 
@@ -184,9 +186,9 @@ for i = 1:20
 end
 
 %% checking for rotations
-savedir = 'G:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
+savedir = '\\feevault\data0\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 
-CheckRows = [2651:2:2688]; %[1181:5:1211 1212:1214]; %1046:8:1145
+CheckRows = [3528 3529 3546 3547 3551 3552 3603 3604]; %[1181:5:1211 1212:1214]; %1046:8:1145
 COMP = []; 
 COMPT = []; 
 for rowi = 1:numel(CheckRows)
