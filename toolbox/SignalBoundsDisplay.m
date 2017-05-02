@@ -21,17 +21,15 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
             end
             parse(p, varargin{:});
             Params = p.Results;
-            if isgraphics(in1)
-                superArgs = {in1};
-                signal = in2; %#ok<*PROP>
-                fs = Params.fs;
-            elseif isnumeric(in1)
+            if isnumeric(in1)
                 superArgs = {gca()};
                 signal = in1;
                 fs = in2;
                 assert(isnumeric(fs), 'fs must be numeric');
             else
-                error('Input parsing failed');
+                superArgs = {in1};
+                signal = in2; %#ok<*PROP>
+                fs = Params.fs;
             end
             assert(isnumeric(signal) && ~isempty(signal), 'Signal invalid');
             assert(isnumeric(fs) && fs > 0, 'fs invalid');
