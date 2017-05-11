@@ -123,66 +123,57 @@ end
 %% display movie from saved data for one row
 % savedir = 'E:\ProcessedCalciumData\AllRows'; %'E:\ProcessedCalciumData\AllRows'; %'C:\Users\emackev\Documents\StuffICanDelete';%'E:\StuffICanDelete'; %
 % close all; shg
-savedir = 'F:\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
+savedir = '\\feevault\data0\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 %2268 2273 1281 1318 1301
 % savedir = 'C:\Users\emackev\Documents\MATLAB\TEMPORARILY_DATA_STORAGE_FOR_SPEEDIER_ANALYSIS\6719_Oct18\Undirected1'
-row = 2614; %882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
+% row = 2614; %882; 882; 947; %808; %895; %882; %895%sleep; 678; %182; %197; %678; %770;  %930; %758; %678; %744 
 savevid = 0; % see/hear it in real time no iff don't save
-load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEO', 'VIDEOfs', ...
-        'SOUND', 'SOUNDfs', 'nFrames', ...
-        'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
-        'SPEC', 'specTime', 'F');%,'VIDEO'); 
-    
-showcontour = 0; 
-params.VIDEOfs = VIDEOfs;
-params.SOUNDfs = SOUNDfs;
-params.specTime = -.5:(1/params.SOUNDfs):.5;
-params.F = linspace(507.8125, 5976.6, 141);
-params.AudBinWhenFrameStarts = AudBinWhenFrameStarts; 
-params.AudBinWhenFrameEnds = AudBinWhenFrameEnds; 
+
 % ShowCaVid(VIDEO,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
 % ShowCaVid(VIDEO,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\Imaging\ForCuba\row1301singingexampleRAW.avi', ...
 %     params,showcontour)%, fullfile(savedir, 'tmp.avi'))
 
 
-% Y = permute(VIDEO,[2 3 1]); 
-% Y = Y - min(Y(:)); 
+for row = [3717 3710 3626 3671]; 
+    load(fullfile(savedir, ['CaELM_row' num2str(row)]), 'VIDEO', 'VIDEOfs', ...
+        'SOUND', 'SOUNDfs', 'nFrames', ...
+        'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
+        'SPEC', 'specTime', 'F');%,'VIDEO');
+    showcontour = 0; 
+    params.VIDEOfs = VIDEOfs;
+    params.SOUNDfs = SOUNDfs;
+    params.specTime = -.5:(1/params.SOUNDfs):.5;
+    params.F = linspace(507.8125, 5976.6, 141);
+    params.AudBinWhenFrameStarts = AudBinWhenFrameStarts; 
+    params.AudBinWhenFrameEnds = AudBinWhenFrameEnds; 
+    Y = permute(VIDEO,[2 3 1]); 
+    Y = Y - min(Y(:)); 
+    % subtract the background
+    [Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
+    VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
 
-% subtract the background
-% [Yest, results] = local_background(Y, [], 15); %, ssub, rr, ACTIVE_PX, sn, thresh)
-% VIDEObs = permute(Y-Yest,[3 1 2]); % subtract background
-%     
-% ShowCaVid(VIDEO,SOUND,SPEC,'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\6701raw.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-% ShowCaVid(VIDEObs,SOUND,SPEC,[] ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
+    % smooth it
+    VIDEObs_smooth = 0*VIDEObs; 
+    for fi = 1:size(VIDEObs,1)
+        tmp = squeeze(VIDEObs(fi,:,:));
+        tmp = imgaussfilt(tmp, 3, 'Padding', 'symmetric'); % low pass filter
+    %     tmp = tmp - imgaussfilt(tmp,bpass(1), 'Padding', 'symmetric'); % high pass filter
+        VIDEObs_smooth(fi,:,:) = tmp; 
+    %     imagesc(tmp); axis image; drawnow
+    end
+    % ShowCaVid(VIDEObs_smooth,SOUND,SPEC,[],params,0)%, fullfile(savedir, 'tmp.avi'))
+    % filename = fullfile(savedir, ['bsCaELM_row' num2str(row)])
+    % save(filename, 'VIDEOfs', 'VIDEObs_smooth', ...
+    %         'SOUND', 'SOUNDfs', 'nFrames', ...
+    %         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
+    %         'SPEC', 'specTime', 'F')
 
-% smooth it
-VIDEObs_smooth = 0*VIDEObs; 
-for fi = 1:size(VIDEObs,1)
-    tmp = squeeze(VIDEObs(fi,:,:));
-    tmp = imgaussfilt(tmp, 3, 'Padding', 'symmetric'); % low pass filter
-%     tmp = tmp - imgaussfilt(tmp,bpass(1), 'Padding', 'symmetric'); % high pass filter
-    VIDEObs_smooth(fi,:,:) = tmp; 
-%     imagesc(tmp); axis image; drawnow
+    ShowCaVid(VIDEObs_smooth,SOUND,SPEC,...
+        ['G:\TempFileTransfer\TmpProcVids\Row' num2str(row) '.avi'] ,params,0)%, fullfile(savedir, 'tmp.avi'))
+
+    row
 end
-% ShowCaVid(VIDEObs_smooth,SOUND,SPEC,[],params,0)%, fullfile(savedir, 'tmp.avi'))
-% filename = fullfile(savedir, ['bsCaELM_row' num2str(row)])
-% save(filename, 'VIDEOfs', 'VIDEObs_smooth', ...
-%         'SOUND', 'SOUNDfs', 'nFrames', ...
-%         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
-%         'SPEC', 'specTime', 'F')
 
-ShowCaVid(VIDEObs_smooth,SOUND,SPEC,...
-    ['G:\TempFileTransfer\TmpProcVids\Row' num2str(row) '.avi'] ,params,0)%, fullfile(savedir, 'tmp.avi'))
-
-row
-% ShowCaVid(VIDEObs_smooth,SOUND,SPEC,[] ,params,0)%, fullfile(savedir, 'tmp.avi'))
-end
-% VIDEObs = VIDEObs-min(VIDEObs(:)); 
-
-% ShowCaVid(VIDEObs_smooth,SOUND,SPEC,[], params,0); %'C:\Users\emackev\Dropbox (MIT)\TempFileTransfer\6865song1.avi' ,params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-% imagesc(squeeze(max(VIDEObs_smooth,[],1)), [0 prctile(VIDEObs_smooth(:),99.99)])
-% % HandpickROIs(VIDEObs_smooth,SOUND,SPEC, [] , params,showcontour)%, fullfile(savedir, 'tmp.avi'))
-% title(num2str(row)); 
 
 %%
 for i = 1:20

@@ -1,106 +1,196 @@
-function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, baselines)
+function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMatrixToPlot, ExtraMatY, ExtraPlotYLabel)
 %%
-    load(cnmfeFilePath, 'neuron'); 
+    
+    if nargin<5; ExtraMatrixToPlot = []; end
+    if nargin<6; ExtraMatY = 1:size(ExtraMatrixToPlot,1); end
+    if nargin<7; ExtraPlotYLabel = ''; end
+    
+    % to make it faster, consider make song spectrogram ahead of time
+    variableInfo = who('-file', fullfile(DataFolder, 'compiled.mat'));
+    if ~ismember('SongSpec', variableInfo) 
+        display('need to compute song spectrogram... only need to do this once... could take about a minute')
+        load(fullfile(DataFolder, 'compiled.mat'), 'CompSoundSONG', 'SOUNDfs')
+        display('loaded song')
+        tic; [SongSpec,SpecTime,SpecF] = spectrogramELM(CompSoundSONG,SOUNDfs,.005, 0); toc
+        SongSpec = 10*log10(SongSpec); 
+        display('computed spectrogram')
+        save(fullfile(DataFolder, 'compiled.mat'), 'SongSpec', 'SpecTime', 'SpecF', ...
+            '-append');
+        display('saved spectrogram')
+    end
+    
+    % load song data
     load(fullfile(DataFolder, 'compiled.mat'), 'Labels', 'segs', 'VIDEOfs',...
-        'SOUNDfs', 'CompSoundSONG', 'FnumBnum');
-
+            'SOUNDfs', 'SongSpec','SpecTime','SpecF', 'FnumBnum');
+    SongSpec = SongSpec + eps; 
+    SongSpec(SongSpec(:)<prctile(SongSpec(:),75)) = prctile(SongSpec(:),75);   
+    display('loaded data')
+    
+    % load extracted neurons from path, or take variable from function
+    % input
+    if ischar(cnmfeFilePath)
+        load(cnmfeFilePath, 'neuron'); 
+        PlotC = neuron.C;
+    else
+        PlotC = cnmfeFilePath;
+    end
+    
     if ~exist('SOUNDfs')
         SOUNDfs = 40000; 
     end
     
-    % go through raw data
-    figure(1); clf; shg
-    stepdur = 200; %180; %180;
-
-    PlotC = neuron.C;
-
     % for stripes between files
     borders = find((diff([0; FnumBnum(:,1)])~=0)|(diff([0; FnumBnum(:,1)])~=0))-1; 
     PlotC(:,borders(borders>0)) = nan; 
     
-    
-    clims = [0 prctile(neuron.C(:),99)]; %[3 25]; 
+    clims = [0 prctile(PlotC(:),99)]; %[3 25]; 
 
+    global istart w pressed patches h SpecIm ExtraIm Tit npat slines1 slines2; 
+    patches = {};
     istart = 1; 
-    while istart<size(PlotC,2)
-        sampsong = CompSoundSONG(ceil(istart*SOUNDfs/VIDEOfs:(istart+stepdur)*SOUNDfs/VIDEOfs)); 
-        h(1) = subplot('position', [.1 .85 .8 .05]);cla
-        spectrogramELM(sampsong, SOUNDfs, .002, 1); title([num2str(istart) '; file ' num2str(FnumBnum(istart,1))]); 
+    stepdur = 200; 
+    npat = {}; 
+    slines1 = {}; 
+    slines2 = {}; 
+    
+    figure(1); clf; shg; 
+    set(gcf, 'color', [1 1 1])
+    InitializePlot();
+    
+    fpos = get(gcf, 'Position');
+    set(gcf, 'WindowKeyPressFcn', @ButtonWasPressed, 'busyaction', 'cancel', 'interruptible', 'off')
+    mTextBox = uicontrol('style','edit', 'callback', @TextboxCallback, 'Position', [fpos(3)-80 fpos(4)-40 60 20]);
+    set(mTextBox,'String',num2str(istart));
+    
+    function ButtonWasPressed(hObject, eventdata, handles)
+        KeyPressed = eventdata.Key; 
+        switch KeyPressed
+            case 'rightarrow'
+                istart = min(istart+stepdur/2, size(PlotC,2));
+                set(mTextBox,'String',num2str(istart));
+                UpdatePlot()
+            case 'leftarrow'
+                istart = max(istart-stepdur/2,1);
+                set(mTextBox,'String',num2str(istart));
+                UpdatePlot()
+        end
+    end
+
+    function TextboxCallback(source,callbackdata)
+        istart = str2num(callbackdata.Source.String);
+        UpdatePlot()
+    end
+
+    function InitializePlot
+        % spectrogram plot
+        h(1) = subplot('position', [.1 .85 .8 .05]); cla
+        indSpec = find(SpecTime>=(istart/VIDEOfs) & SpecTime<((istart+stepdur)/VIDEOfs));
+        Plot = SongSpec(:,indSpec);
+        Time = (1:length(indSpec))*(SpecTime(2)-SpecTime(1)); 
+        SpecIm = imagesc(Time,SpecF/1000,Plot); axis tight; 
+        cmap = jet; %flipud(gray); 
+        % to make black background, set everything below threshold to threshold, then cmap(1,:) = zeros(1,3); % background = black
+        cmap(1,:) = zeros(1,3);
+        colormap(cmap);
+        set(gca, 'ydir', 'normal')
+        [~,nam,~] = fileparts(DataFolder);      
+        Tit = title([nam '; ' num2str(istart) '/' num2str(size(PlotC,2)) '; file ' num2str(FnumBnum(istart,1))], 'interpreter', 'none'); 
         SegsInFrame = (segs(segs(:,2)>istart*SOUNDfs/VIDEOfs &...
             segs(:,1)<(istart+stepdur)*SOUNDfs/VIDEOfs,:) - istart*SOUNDfs/VIDEOfs)/SOUNDfs;
+        SegsInFrame(SegsInFrame<0) = 0;
+        SegsInFrame(SegsInFrame>stepdur/VIDEOfs) = stepdur/VIDEOfs;
         hold on
         for syli = 1:size(SegsInFrame,1)
-            patch([SegsInFrame(syli,1) SegsInFrame(syli,2) SegsInFrame(syli,2) SegsInFrame(syli,1)],...
-                [6 6 6.5 6.5], 'k')
+            patches{syli} = patch([SegsInFrame(syli,1) SegsInFrame(syli,2) SegsInFrame(syli,2) SegsInFrame(syli,1)],...
+                [6 6 6.5 6.5], 'k');
         end
-
         axis off
-        h(2) = subplot('position', [.1 .1 .8 .75]);cla; hold on; 
+        
+        % traces plot
+        h(2) = subplot('position', [.1 .1 .8 .75]);
+        cla; hold on; 
         tmp = PlotC(indSeqSort,istart:istart+stepdur-1); 
         tmp1 = tmp(:,~isnan(sum(tmp,1))); 
-%         baselines = median(tmp1,2); % overwriting given baselines
-
-        baselines = min(tmp1,[],2); % overwriting given baselines
+        baselines = min(tmp1,[],2); 
         tmp = bsxfun(@minus, tmp, baselines); 
-%         tmp(tmp<clims(1)) = clims(1); 
-%         tmp(tmp>clims(2)) = clims(2); 
-        tmp = (tmp-clims(1))/diff(clims); 
-        %%
-%         N = tmp(18,110:(173)); 
-%         X = N-mean(N); 
-%         Fs = 30;
-% T = 1/Fs;             % Sampling period
-% L = length(N);             % Length of signal
-% t = (0:L-1)*T;        % Time vector
-% Y = fft(X);
-% P2 = abs(Y/L);
-% P1 = P2(1:L/2+1);
-% P1(2:end-1) = 2*P1(2:end-1);
-% f = Fs*(0:(L/2))/L;
-% plot(f,P1)
-% title('Single-Sided Amplitude Spectrum of X(t)')
-% xlabel('f (Hz)')
-% ylabel('|P1(f)|')
-%%
-
-%         tmp = bsxfun(@rdivide, tmp, baselines);
-%         tmp = bsxfun(@rdivide, tmp, max(tmp,[],2));
-%         tmp = bsxfun(@rdivide, tmp, max(tmp,[],2)); 
-%         tmp(tmp>prctile(ByMotif(:),satPrc)) = prctile(ByMotif(:),satPrc);
-%         ColoredC = cat(3,...
-%             PlotC(indSeqSort,istart:istart+stepdur-1).*repmat(nColors(:,1),1,stepdur),...
-%             PlotC(indSeqSort,istart:istart+stepdur-1).*repmat(nColors(:,2),1,stepdur),...
-%             PlotC(indSeqSort,istart:istart+stepdur-1).*repmat(nColors(:,3),1,stepdur));
-
-        % colored neurons
-%         ColoredC = cat(3,...
-%             tmp.*repmat(nColors(:,1),1,stepdur),...
-%             tmp.*repmat(nColors(:,2),1,stepdur),...
-%             tmp.*repmat(nColors(:,3),1,stepdur));
-%         image(1-ColoredC, 'xdata', (1:stepdur)/VIDEOfs); 
-%         colormap(flipud(gray))
+        tmp = bsxfun(@rdivide, (tmp-clims(1)), max(diff(clims), max(tmp,[],2)));
+        tmp = 3*tmp/4; 
+        tmp(isnan(tmp)) = 0; % file borders
+        tmp = bsxfun(@plus, tmp, (1:size(tmp,1))');
         set(gca, 'colororder', 1-nColors)
-        plot((1:stepdur)/VIDEOfs, bsxfun(@plus, tmp/2, (1:size(tmp,1))')')
-        
-        % jet coloring
-%         imagesc(tmp, 'xdata',(1:stepdur)/VIDEOfs,...
-%             [prctile(tmp(:),50) prctile(tmp(:),100)])
-%         colormap jet
-        
-        ylabel('neuron'); set(gca, 'ytick', 1:size(PlotC,1))
-        xlabel('Time (s)')
-        linkaxes(h,'x'); 
-        axis tight
-        drawnow; shg;
-        waitforbuttonpress;
-        pressed=double(get(gcf,'CurrentCharacter')); 
-        if length(pressed)>0
-            switch pressed
-                case 29% right
-                    istart = min(istart+stepdur/2, size(PlotC,2));
-                case 28 % left
-                    istart = max(istart-stepdur/2,1);
-            end 
+        steps = 1:stepdur; 
+        for i = size(tmp,1):-1:1
+            npat{i} = patch(([1 steps stepdur])/VIDEOfs, [i tmp(i,:) i], ...
+                1-nColors(i,:), 'edgecolor', 'none', 'facealpha', .75);
         end
+        for syli = 1:size(SegsInFrame,1)
+            subplot(h(2))
+            slines1{syli} = plot(SegsInFrame(syli,1)*[1 1], [0 length(indSeqSort)], ':', 'color', .7*[1 1 1]);
+            slines2{syli} = plot(SegsInFrame(syli,2)*[1 1], [0 length(indSeqSort)], ':', 'color', .7*[1 1 1]);
+        end
+        ylabel('Unit'); %set(gca, 'ytick', 1:size(PlotC,1))
+        xlabel('Time (s)')
+        xlim([1 stepdur]/VIDEOfs)
+        
+        % extra plot, if applicable
+        if length(ExtraMatrixToPlot)>0
+            plotheight = .3;
+            set(h(2), 'position', [.1 .1+plotheight .8 .75-plotheight]);
+            h(3) = subplot('position', [.1 .1 .8 plotheight]);
+            ExtraIm = imagesc((1:stepdur)/VIDEOfs, ExtraMatY, ...
+                ExtraMatrixToPlot(:,istart:istart+stepdur-1));
+            xlabel('Time (s)'); ylabel(ExtraPlotYLabel); 
+        end
+        axis tight
+        linkaxes(h,'x'); 
+    end
+    function UpdatePlot
+        % spectrogram plot
+        subplot(h(1))
+        indSpec = find(SpecTime>=(istart/VIDEOfs) & SpecTime<((istart+stepdur)/VIDEOfs));
+        Plot = SongSpec(:,indSpec);      
+        SpecIm.CData = Plot; axis tight; 
+        [~,nam,~] = fileparts(DataFolder);
+        Tit.String = ([nam '; ' num2str(istart) '/' num2str(size(PlotC,2)) '; file ' num2str(FnumBnum(istart,1))]); 
+        for i = 1:length(patches)
+            delete(patches{i}); 
+            delete(slines1{i});
+            delete(slines2{i});
+        end
+        SegsInFrame = (segs(segs(:,2)>istart*SOUNDfs/VIDEOfs &...
+            segs(:,1)<(istart+stepdur)*SOUNDfs/VIDEOfs,:) - istart*SOUNDfs/VIDEOfs)/SOUNDfs;
+        SegsInFrame(SegsInFrame<0) = 0;
+        SegsInFrame(SegsInFrame>stepdur/VIDEOfs) = stepdur/VIDEOfs;
+     
+        for syli = 1:size(SegsInFrame,1)
+            patches{syli} = patch([SegsInFrame(syli,1) SegsInFrame(syli,2) SegsInFrame(syli,2) SegsInFrame(syli,1)],...
+                [6 6 6.5 6.5], 'k');
+        end
+        
+        % traces plot
+        subplot(h(2));
+        tmp = PlotC(indSeqSort,istart:istart+stepdur-1); 
+        tmp1 = tmp(:,~isnan(sum(tmp,1))); 
+        baselines = min(tmp1,[],2); 
+        tmp = bsxfun(@minus, tmp, baselines); 
+        tmp = bsxfun(@rdivide, (tmp-clims(1)), max(diff(clims), max(tmp,[],2)));
+        tmp = 3*tmp/4; 
+        tmp(isnan(tmp)) = 0; % file borders
+        tmp = bsxfun(@plus, tmp, (1:size(tmp,1))');
+        steps = 1:stepdur; 
+        for i = size(tmp,1):-1:1
+            npat{i}.Vertices = [[1 steps stepdur]'/VIDEOfs [i tmp(i,:) i]'];
+        end
+        for syli = 1:size(SegsInFrame,1)
+            subplot(h(2))
+            slines1{syli} = plot(SegsInFrame(syli,1)*[1 1], [0 length(indSeqSort)], ':', 'color', .7*[1 1 1]);
+            slines2{syli} = plot(SegsInFrame(syli,2)*[1 1], [0 length(indSeqSort)], ':', 'color', .7*[1 1 1]);
+        end
+        
+        % extra plot, if applicable
+        if length(ExtraMatrixToPlot)>0
+            ExtraIm.CData = ExtraMatrixToPlot(:,istart:istart+stepdur-1);
+        end
+        drawnow; 
     end
 end
