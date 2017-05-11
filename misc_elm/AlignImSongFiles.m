@@ -1,8 +1,8 @@
 %% choose audio and imaging folders to align
-audfolder = fullfile('V:\AcqGui\HVCOpto\2017-04-18'); 
+audfolder = fullfile('\\feevault\data0\AcqGui\HVCOpto\2017-04-27'); 
 load(fullfile(audfolder, 'AcqGui_timestamps.mat'));
 audDir = dir('initializingemptydirstruct');
-imfolder = fullfile('C:\Users\emackev\inscopix\041817');
+imfolder = fullfile('C:\Users\emackev\inscopix\042717');
 imDir = dir(fullfile(imfolder, '\*.tif')); % tif if recording uncompressed.
 imDir = imDir(cellfun(@numel,(regexp( {imDir.name}', 'recording_\d+_\d+.tif')))==1);
 imTimes = cellfun(@datenum,{imDir.date});

@@ -17,7 +17,7 @@ savedir = '\\feevault\data0\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix
 %         1809 1810 1833:1835 1890 1891 1919 1922 1857 1894 ...
 %         1928 1935 1939 1940 1948 1957 1965 1967 1962]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
 
-for row = [3603:3625];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2014]
+for row = [3811:3864];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2014]
     try
     clearvars -except row XLS Columns savedir
     display(['working on row ' num2str(row)])
@@ -28,7 +28,8 @@ for row = [3603:3625];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2
     if length(strfind(filenameAUDIO, '.dat'))==0 % some rows include .dat, some don't
         filenameAUDIO = [filenameAUDIO '.dat']; 
     end 
-    filenameSYNC = filenameAUDIO; filenameSYNC(end-4) = '5'; % chan 5 contains sync input
+    filenameSYNC_5140C = filenameAUDIO; filenameSYNC_5140C(end-4) = '1'; % chan 1 contains sync input (or, chan 5 in 5140F... depends on the setup)
+    filenameSYNC_5140F = filenameAUDIO; filenameSYNC_5140F(end-4) = '5'; % chan 1 contains sync input (or, chan 5 in 5140F... depends on the setup)
     filenameVIDEO = char(XLS.textdata.Sheet1(row,strmatch('InscopixFilename', Columns))); 
     filenameVIDEO(strfind(filenameVIDEO, '''')) = []; % to avoid excel adding extra ''''s
     if length(strfind(filenameVIDEO, '.tif'))==0 % some rows include .tif, some don't
@@ -39,7 +40,13 @@ for row = [3603:3625];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2
 
     % load sound and sync data, clip to align with video
     [SOUND SOUNDfs SOUNDabsstarttime label props] = egl_AA_daq(filenameAUDIO, 1);
-    [SYNC SOUNDfs SOUNDabsstarttime label props] = egl_AA_daq(filenameSYNC, 1); 
+    try
+        filenameSYNC = filenameSYNC_5140C; 
+        [SYNC SOUNDfs SOUNDabsstarttime label props] = egl_AA_daq(filenameSYNC, 1); 
+    catch
+        filenameSYNC = filenameSYNC_5140F; 
+        [SYNC SOUNDfs SOUNDabsstarttime label props] = egl_AA_daq(filenameSYNC, 1); 
+    end
     % align video and audio using sync channel
     AudBinWhenFrameStarts = find(SYNC(2:end)>1 & SYNC(1:end-1)<1 & ...
         [SYNC(3:end); SYNC(end)] > 1 & [SYNC(4:end); SYNC(end); SYNC(end)] > 1 & [SYNC(5:end); SYNC(end); SYNC(end); SYNC(end)] > 1); % to prevent false reads when sync is finicky

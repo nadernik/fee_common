@@ -1,7 +1,7 @@
 function [data, fs, dateandtime, label, Props] = egl_Open_Ephys(filename, loadData)
 
 label = 'Voltage (mV)';
-[data, ~, info] = load_open_ephys_data(filename);
+[data, timestamps, info] = load_open_ephys_data_faster(filename);
 data = data.*info.header.bitVolts;
 if loadData ~= 1
     data = [];
