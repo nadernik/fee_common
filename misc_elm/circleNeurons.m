@@ -22,6 +22,6 @@ function circleNeurons(cnmfeFilePath, indSeqSort, nColors)
 %     end
     % clear all; close all; clc
 
-    papersize = [4 3]
+    papersize = [4 3];
     set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 end

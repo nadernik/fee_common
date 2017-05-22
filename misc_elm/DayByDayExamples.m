@@ -1,11 +1,14 @@
 %% transfer files over
-rootSaveHere = '\\feevault\data0\AcqGui\6938'; 
-rootFromHere = '\\feevault\data0\AcqGui\HVCOpto';
-birthday = '02/06/2017';
+% rootSaveHere = '\\feevault\data0\AcqGui\6865'; 
+% rootFromHere = '\\feevault\data0\AcqGui\HVCOpto';
+rootSaveHere = '\\feevault\data0\AcqGui\6962'; 
+rootFromHere = '\\feevault\data0\AcqGui\6962';
+birthday = '2/23/2017';
 AllDays = dir(rootFromHere);
 AllDays = AllDays([AllDays.isdir]); % just directories
 AllDays = AllDays(arrayfun(@(x) x.name(1), AllDays) ~= '.') % take out ., .. listings
-DateMin = datenum('04/06/2017');
+DateMin = datenum('4/29/2016');
+DateMax = datenum('4/29/2017'); 
 % make a new folder with 5 example files per day
 savehere = fullfile(rootSaveHere, 'OnePerDay'); 
 mkdir(savehere); 
@@ -14,7 +17,7 @@ tic
 for dayi = 1:length(AllDays)
     try
         folderdate = datenum(AllDays(dayi).name); 
-        if folderdate>DateMin;
+        if (folderdate>DateMin) & (folderdate<DateMax);
         Wav = dir(fullfile(rootFromHere, AllDays(dayi).name, '*.wav'));
         Dat = dir(fullfile(rootFromHere, AllDays(dayi).name, '*chan0.dat'));
         allfiles = [Wav; Dat]; 

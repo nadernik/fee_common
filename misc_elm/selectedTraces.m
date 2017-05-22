@@ -48,7 +48,7 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
     global istart w pressed patches h SpecIm ExtraIm Tit npat slines1 slines2; 
     patches = {};
     istart = 1; 
-    stepdur = 200; 
+    stepdur = 300; 
     npat = {}; 
     slines1 = {}; 
     slines2 = {}; 
@@ -66,7 +66,7 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
         KeyPressed = eventdata.Key; 
         switch KeyPressed
             case 'rightarrow'
-                istart = min(istart+stepdur/2, size(PlotC,2));
+                istart = min(istart+stepdur/2, size(PlotC,2)-stepdur);
                 set(mTextBox,'String',num2str(istart));
                 UpdatePlot()
             case 'leftarrow'
@@ -138,8 +138,10 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
             set(h(2), 'position', [.1 .1+plotheight .8 .75-plotheight]);
             h(3) = subplot('position', [.1 .1 .8 plotheight]);
             ExtraIm = imagesc((1:stepdur)/VIDEOfs, ExtraMatY, ...
-                ExtraMatrixToPlot(:,istart:istart+stepdur-1));
+                ExtraMatrixToPlot(:,istart:istart+stepdur-1), ...
+                [min(ExtraMatrixToPlot(:)) max(ExtraMatrixToPlot(:))]);
             xlabel('Time (s)'); ylabel(ExtraPlotYLabel); 
+            set(gca, 'ydir', 'normal')
         end
         axis tight
         linkaxes(h,'x'); 
