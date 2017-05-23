@@ -70,17 +70,15 @@ classdef (Sealed) SpectrogramDisplay < ResizableDisplay
             end
             parse(p, varargin{:});
             Params = p.Results;
-            if isgraphics(in1)
-                superArgs = {in1};
-                signal = in2;
-                fs = Params.fs;
-            elseif isnumeric(in1)
+            if isnumeric(in1)
                 superArgs = {gca()};
                 signal = in1;
                 fs = in2;
                 assert(isnumeric(fs), 'fs must be numeric');
             else
-                error('Input parsing failed');
+                superArgs = {in1};
+                signal = in2;
+                fs = Params.fs;
             end
             assert(isnumeric(signal) && numel(signal) > 0, 'Signal invalid');
             assert(fs > 0, 'fs must be specified');

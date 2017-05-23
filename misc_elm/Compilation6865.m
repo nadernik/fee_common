@@ -52,8 +52,8 @@ ShowCaVid(VIDEObs_smooth,CompSoundSONG,CompSpecSONG, 'C:\Users\emackev\Downloads
 %% plot raster
 % clf
 
-DataFolder = 'G:\ProcessedCalciumData\6938_April7prepostnap'; % singing, tutoring, sleep
-cnmfeFilePath = 'G:\ProcessedCalciumData\6938_April7prepostnap\cnmfe_results.mat'; 
+DataFolder = 'G:\ProcessedCalciumData\6961_April25_FirstTutDay'; % singing, tutoring, sleep
+cnmfeFilePath = 'G:\ProcessedCalciumData\6961_April25_FirstTutDay\cnmfe_results.mat'; 
 % 
 % DataFolder = 'E:\ProcessedCalciumData\6701_Nov20'; % first tutoring and sleep
 % cnmfeFilePath = 'E:\ProcessedCalciumData\6701_Nov20\cnmfe_results'; 
@@ -62,7 +62,7 @@ cnmfeFilePath = 'G:\ProcessedCalciumData\6938_April7prepostnap\cnmfe_results.mat
 moat = .5; 
 % check neurons, discard bad ones
 load(cnmfeFilePath, 'neuron'); 
-% TOEXCLUDE = indSeqSort([31:59]); %excludeNeurons(cnmfeFilePath);
+% TOEXCLUDE = indSeqSort([31:59]); %TOEXCLUDE = excludeNeurons(cnmfeFilePath);
 % circleNeurons(cnmfeFilePath,indSeqSort, nColors);
 % tokeep = setdiff(1:size(neuron.C,1), TOEXCLUDE);
 % neuron.C = neuron.C(tokeep,:); 
@@ -89,7 +89,7 @@ M = neuron.C; %conv2(neuron.C, gausswin(50)');
 
 figure(3); clf
 nNeurons = size(neuron.C,1);
-Corr = corr(M(:,[1:2431 8506:end])'); %(:,1:1400)'); %imagesc(Corr)
+Corr = corr(M(:,[1:7000])'); %(:,1:1400)'); %imagesc(Corr)
 % indSeqSort = sortbyCorr(Corr); 
 % [~,indSeqSort] = sort(mdscale(1-Corr, 1)); 
 Corr(isnan(Corr)) = 0; 
@@ -98,7 +98,7 @@ D = pdist(Corr);
 leafOrder = optimalleaforder(Z,D, 'criteria', 'group');
 h(1) = subplot(2,2,1); 
 [dend,T,indSeqSort] = dendrogram(Z, size(M,1), 'Reorder',leafOrder,'Orientation','left'); 
-nColors1 = lines(nNeurons);
+nColors1 = jet(nNeurons);
 [~,unsort] = sort(indSeqSort); 
 hold on
 scatter( 0*ones(1,nNeurons),1:nNeurons, 'cdata', 1-nColors1, 'marker', 's', 'markerfacecolor', 'flat')
@@ -137,7 +137,7 @@ set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 % [indSeqSort1, nColors, baselines] = cnmfe2raster(DataFolder, cnmfeFilePath, LabelCanon, moat, indSeqSort([15 19 20 21 23 27 30 32 34 38 40 41 43 44 45:51 54 57 58]));
 % circleNeurons(cnmfeFilePath,indSeqSort([31 33 150 152 156]), nColors);
 % circleNeurons(cnmfeFilePath,indSeqSort([1:30 60:end]), nColors1([1:30 60:end],:));
-figure(1); coloredTraces(DataFolder, cnmfeFilePath, indSeqSort([1:30 60:end]), nColors1([1:30 60:end],:))
+figure(1); coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors1)
 % figure(1); coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors1)
 % selectedTraces(DataFolder, cnmfeFilePath, indSeqSort([31 33 150 152 156]), nColors1, baselines)
 % selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, baselines)
@@ -146,20 +146,20 @@ figure(1); coloredTraces(DataFolder, cnmfeFilePath, indSeqSort([1:30 60:end]), n
 %% April 7
 clear all
 DataFolder = 'G:\ProcessedCalciumData\6938_April7prepostnap'; % singing, tutoring, sleep
-cnmfeFilePath = 'G:\ProcessedCalciumData\6938_April7prepostnap\cnmfe_results.mat'; 
+cnmfeFilePath = 'G:\ProcessedCalciumData\6938_April7prepostnap\cnmfe_results_cleaned.mat'; 
 % 
 load(cnmfeFilePath, 'neuron'); 
 load(fullfile(DataFolder, 'compiled.mat'), 'Labels', 'segs', 'VIDEOfs', 'SOUNDfs', 'CompSoundSONG', 'FnumBnum');
 
 % check neurons, discard bad ones
-load(cnmfeFilePath, 'neuron'); 
-TOEXCLUDE = indSeqSort([31:59]); %excludeNeurons(cnmfeFilePath);
-% circleNeurons(cnmfeFilePath,indSeqSort, nColors);
-tokeep = setdiff(1:size(neuron.C,1), TOEXCLUDE);
-neuron.C = neuron.C(tokeep,:); 
-neuron.A = neuron.A(:,tokeep); 
-cnmfeFilePath = [cnmfeFilePath(1:end-4) '_cleaned.mat']; 
-save(cnmfeFilePath, 'neuron'); 
+% load(cnmfeFilePath, 'neuron'); 
+% TOEXCLUDE = indSeqSort([31:59]); %excludeNeurons(cnmfeFilePath);
+% % circleNeurons(cnmfeFilePath,indSeqSort, nColors);
+% tokeep = setdiff(1:size(neuron.C,1), TOEXCLUDE);
+% neuron.C = neuron.C(tokeep,:); 
+% neuron.A = neuron.A(:,tokeep); 
+% cnmfeFilePath = [cnmfeFilePath(1:end-4) '_cleaned.mat']; 
+% save(cnmfeFilePath, 'neuron'); 
 
 % distance matrix
 nNeurons = size(neuron.C,1);
@@ -226,14 +226,45 @@ title('Distance Matrix')
 
 subplot(2,2,3)
 scatter(Dmatsorted(:), Cmatsorted(:), 'o', 'cdata', 1-repmat(nColors1,length(indSeqSort),1), 'markerfacecolor', 'flat'); 
-xlabel('Distance (pixels)'); ylabel('Correlation')
+xlabel('Distance (pixels)'); ylabel('Correlation'); xlim([1 max(Dmatsorted(:))])
 
 subplot(2,2,4)
 circleNeurons(cnmfeFilePath,indSeqSort, nColors1);
 papersize = [8 8];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 shg
+%% nnmf
+k = 20;
+[W,H,rmsresidual(k)] = nnmf(M(:,1:7000),k);
 
+% rmsresidual = [];
+% for k = 1:25
+%     [W,H,rmsresidual(k)] = nnmf(M,k);
+%     k
+% end
+% figure(4); clf; plot(rmsresidual)
+% [W,S,H] = svd(bsxfun(@minus, M, mean(M,2))); 
+figure(3);clf; 
+subplot(2,1, 1)
+range = [-.8 .8]; 
+imagesc(corr(H'), range);axis image; 
+cmap = [[(1:64)'; 64*ones(64,1)] ...
+    [1:64 64:-1:1]' ...
+    [64*ones(64,1); (64:-1:1)']]/64;
+colormap(cmap);shg
+fcolors = lines(k); 
+subplot(2,1, 2); 
+Im = image(zeros(300,400,3)); 
+for i = 1:k
+    hold all; axis image
+    tmp = reshape(neuron.A*W(:,i),300,400)/k/size(neuron.A,2);
+    Im.CData = Im.CData + ...
+        cat(3, tmp*fcolors(i,1), tmp*fcolors(i,2), tmp*fcolors(i,3)); 
+%     Im.CData = Im.CData/max(Im.CData(:)); 
+    pause(.1); drawnow
+end
+
+selectedTraces(DataFolder, H, 1:k,1-fcolors)
 
 %% April 7
 figure(1)

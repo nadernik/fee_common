@@ -3,6 +3,7 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
         signal
         startTime
         fs
+        downsampleMin
     end
     properties (Access = private)
         timeCourse
@@ -18,20 +19,19 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
                 p = inputParser();
                 addOptional(p, 'fs', 0, @isnumeric);
                 addParameter(p, 'startTime', 0);
+                addParameter(p, 'downsampleMin', 4); % If more than this number of points per pixel, start downsampling
             end
             parse(p, varargin{:});
             Params = p.Results;
-            if isgraphics(in1)
-                superArgs = {in1};
-                signal = in2; %#ok<*PROP>
-                fs = Params.fs;
-            elseif isnumeric(in1)
+            if isnumeric(in1)
                 superArgs = {gca()};
                 signal = in1;
                 fs = in2;
                 assert(isnumeric(fs), 'fs must be numeric');
             else
-                error('Input parsing failed');
+                superArgs = {in1};
+                signal = in2; %#ok<*PROP>
+                fs = Params.fs;
             end
             assert(isnumeric(signal) && ~isempty(signal), 'Signal invalid');
             assert(isnumeric(fs) && fs > 0, 'fs invalid');
@@ -43,6 +43,7 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
             end
             self.fs = fs;
             self.startTime = Params.startTime;
+            self.downsampleMin = Params.downsampleMin;
             self.nSamp = numel(self.signal);
             self.endNdx = self.nSamp;
             self.timeCourse = self.startTime + (0:(self.nSamp - 1)) ./ self.fs;
@@ -58,11 +59,14 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
             
             pointsPerPixel = nDispSamps / pixelWidth;
             cla(self.AxisHandle);
-            if pointsPerPixel < 4
+            if pointsPerPixel < self.downsampleMin
                 %% Plot without down sampling
-                PlotHandle = plot(self.AxisHandle, ...
-                    self.timeCourse(self.startNdx:self.endNdx), displayedSig);
+                hold(self.AxisHandle, 'all');
+                subTimeCourse = self.timeCourse(self.startNdx:self.endNdx);
+                PlotHandle = plot(self.AxisHandle, subTimeCourse, displayedSig);
                 PlotHandle.HitTest = 'Off';
+                hold(self.AxisHandle, 'off');
+                xlim([subTimeCourse(1), subTimeCourse(end)]);
             else
                 %% Calculate maximum and minimum
                 pointsPerBin = ceil(nDispSamps / pixelWidth);
@@ -71,7 +75,7 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
                 paddedSig = vertcat(displayedSig, nan(nPad, 1));
                 binnedSig = reshape(paddedSig, pointsPerBin, nBins);
                 binCenterSamp = (pointsPerBin - 1) / 2;
-                firstBinTime = self.timeCourse(1) + binCenterSamp / self.fs;
+                firstBinTime = self.timeCourse(1) + (binCenterSamp + self.startNdx - 1) / self.fs;
                 binTime = firstBinTime  + pointsPerBin * (0:(nBins - 1)) / self.fs;
                 minSig = nanmin(binnedSig);
                 maxSig = nanmax(binnedSig);
