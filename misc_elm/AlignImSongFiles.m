@@ -1,8 +1,8 @@
 %% choose audio and imaging folders to align
-audfolder = fullfile('\\feevault\data0\AcqGui\HVCOpto\2017-04-27'); 
+audfolder = fullfile('\\feevault\data0\AcqGui\HVCOpto\2017-05-21_5140F'); %1
 load(fullfile(audfolder, 'AcqGui_timestamps.mat'));
 audDir = dir('initializingemptydirstruct');
-imfolder = fullfile('C:\Users\emackev\inscopix\042717');
+imfolder = fullfile('C:\Users\emackev\inscopix\052117_5140F'); %2
 imDir = dir(fullfile(imfolder, '\*.tif')); % tif if recording uncompressed.
 imDir = imDir(cellfun(@numel,(regexp( {imDir.name}', 'recording_\d+_\d+.tif')))==1);
 imTimes = cellfun(@datenum,{imDir.date});
@@ -58,30 +58,30 @@ I = {imDir(imnum).name}'; I = cellfun(@(X) [X(1:end-4) '.tif'], I, 'uniformoutpu
 A = {audDir.name}';
 [A I]; shg
 %% transfer nonsongfiles to temporary folder to delete
-trashdir = 'C:\Users\emackev\Downloads\Temp_To_Delete'; 
-for fi = 1:length(imDir); %length(imnum)
-    if sum(imnum==fi)==0
-        fname = imDir(fi).name;
-        movefile(fullfile(imfolder, fname),...
-            fullfile(trashdir, fname))
-        fnamexml = fname; 
-        fnamexml(end-3:end) = '.xml'; 
-        movefile(fullfile(imfolder, fnamexml),...
-            fullfile(trashdir, fnamexml))
-        display(['moving ' ...
-            fname])
-    else
-        display(['keeping ' ...
-            fname])
-    end
-%     try
-%         fnametif = fname; 
-%         fnametif(end-3:end) = '.tif'; 
-%         movefile(fullfile(imfolder, fnametif),...
-%             fullfile(imfolder, 'ToDecompress', fnametif))
-%         display(['moved tif too'])
-%     catch
-%         
+% trashdir = 'C:\Users\emackev\Downloads\Temp_To_Delete'; 
+% for fi = 1:length(imDir); %length(imnum)
+%     if sum(imnum==fi)==0
+%         fname = imDir(fi).name;
+%         movefile(fullfile(imfolder, fname),...
+%             fullfile(trashdir, fname))
+%         fnamexml = fname; 
+%         fnamexml(end-3:end) = '.xml'; 
+%         movefile(fullfile(imfolder, fnamexml),...
+%             fullfile(trashdir, fnamexml))
+%         display(['moving ' ...
+%             fname])
+%     else
+%         display(['keeping ' ...
+%             fname])
 %     end
-
-end
+% %     try
+% %         fnametif = fname; 
+% %         fnametif(end-3:end) = '.tif'; 
+% %         movefile(fullfile(imfolder, fnametif),...
+% %             fullfile(imfolder, 'ToDecompress', fnametif))
+% %         display(['moved tif too'])
+% %     catch
+% %         
+% %     end
+% 
+% end

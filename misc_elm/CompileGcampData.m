@@ -17,7 +17,7 @@ savedir = '\\feevault\data0\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix
 %         1809 1810 1833:1835 1890 1891 1919 1922 1857 1894 ...
 %         1928 1935 1939 1940 1948 1957 1965 1967 1962]; %1181:1271 1179:1180 %882;%941:947; %862:-1:804; %741:803;%[713:740 673:712]; %646:-1:622; %[431:-1:382]; %[198:203 207:229]
 
-for row = [3811:3864];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2014]
+for row = [4345:4378];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2014]
     try
     clearvars -except row XLS Columns savedir
     display(['working on row ' num2str(row)])
@@ -79,24 +79,25 @@ for row = [3811:3864];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2
     end
     display('done processing video data')
 
+
     % compile spectrogram for each frame
-    soundclip = zeros(1,round(SOUNDfs)+1); 
-    specTime = -.5:(1/SOUNDfs):.5; 
-    [S,~,F] = spectrogramELM(soundclip,SOUNDfs,.002, 0); 
-    SPEC = zeros(nFrames,size(S,1), size(S,2));
-    for framei = 1:nFrames
-        soundclip = zeros(1,round(SOUNDfs)+1); 
-        tframe = AudBinWhenFrameStarts(framei) + round(specTime*SOUNDfs);
-        indtframe = tframe>0 & tframe <= length(SOUND); 
-        tframe = tframe(indtframe); 
-        soundclip(indtframe) = SOUND(tframe); 
-        [S,~,~] = spectrogramELM(soundclip,SOUNDfs,.002, 0); 
-        tmp = 10*log10(S+eps); 
-        tmp(tmp(:)<prctile(tmp(:),50)) = prctile(tmp(:),50);
-        SPEC(framei,:,:) = tmp;
-    end
-    display('done computing spectrograms')
-    
+%     soundclip = zeros(1,round(SOUNDfs)+1); 
+%     specTime = -.5:(1/SOUNDfs):.5; 
+%     [S,~,F] = spectrogramELM(soundclip,SOUNDfs,.002, 0); 
+%     SPEC = zeros(nFrames,size(S,1), size(S,2));
+%     for framei = 1:nFrames
+%         soundclip = zeros(1,round(SOUNDfs)+1); 
+%         tframe = AudBinWhenFrameStarts(framei) + round(specTime*SOUNDfs);
+%         indtframe = tframe>0 & tframe <= length(SOUND); 
+%         tframe = tframe(indtframe); 
+%         soundclip(indtframe) = SOUND(tframe); 
+%         [S,~,~] = spectrogramELM(soundclip,SOUNDfs,.002, 0); 
+%         tmp = 10*log10(S+eps); 
+%         tmp(tmp(:)<prctile(tmp(:),50)) = prctile(tmp(:),50);
+%         SPEC(framei,:,:) = tmp;
+%     end
+%     display('done computing spectrograms')
+  
     % computing delta F over F video
     VIDEOfs = round(SOUNDfs/min(diff(AudBinWhenFrameStarts))); 
     
@@ -120,7 +121,6 @@ for row = [3811:3864];%[1987 1993 1994 2001 2002 1979 1989 2006 2003 2012 2013 2
     tic; save(filename, 'VIDEOfs', ...%'VIDEObs', ...
         'SOUND', 'VIDEO', 'SOUNDfs', 'nFrames', ...
         'tSound','AudBinWhenFrameEnds', 'AudBinWhenFrameStarts',...
-        'SPEC', 'specTime', 'F',...
         'filenameVIDEO', 'filenameAUDIO',  '-v7.3'); toc;
     display(['saved, saving took ' num2str(toc) ' sec'])
     catch
