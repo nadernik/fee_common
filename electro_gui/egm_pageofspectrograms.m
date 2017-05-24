@@ -1,8 +1,15 @@
 function handles = egm_pageofspectrograms(handles)
 %%
-birthday = '2/23/2017';
-FilesPerPage = 15; 
-SecondsPerFile = 4; 
+% Batch segment first...
+answer = inputdlg({'Birthday', 'FilesPerPage', 'SecondsPerFile', 'Save jpgs?'},...
+    'Enter Birthday',1,...
+    {'01/01/2017', '15', '4', '0'}); % input dialog box
+
+birthday = answer{1};
+FilesPerPage = eval(answer{2}); 
+SecondsPerFile = eval(answer{3}); 
+Save = eval(answer{4}); 
+
 age = [];
 dbase = handles.dbase;
 for fi = 1:length(dbase.SoundFiles)
@@ -11,7 +18,12 @@ for fi = 1:length(dbase.SoundFiles)
             'yyyymmdd') - ...
             datenum(birthday); 
     catch 
-        age(fi) = 0; 
+        try
+            age(fi) = datenum(dbase.SoundFiles(fi).date) - ...
+                datenum(birthday);
+        catch
+            age(fi) = 0; 
+        end
     end
 end
 [age,sortbyage] = sort(age, 'ascend'); 
@@ -27,16 +39,24 @@ for fi = 1:length(dbase.SoundFiles)
 %             (num2str(birdnum(row))), 'OnePerDay', ...
 %             dbase.SoundFiles(fi).name)); 
 %     else
-    if sum(dbase.SegmentIsSelected{sortbyage(fi)})>0
-    [sndOrig fsOrig dt label props] = ...
-        eval(['egl_AA_daq' ...
-        '([''' fullfile(dbase.PathName, ...
+    if sum(dbase.SegmentIsSelected{sortbyage(fi)})>0 % if there's any song
+        
+        
+    if issame(dbase.SoundFiles(fi).name(end), 'v') % if it's a wav file
+        [sndOrig fsOrig] = ...
+            audioread(fullfile(dbase.PathName, ...
+        dbase.SoundFiles(fi).name)); 
+    else
+        [sndOrig fsOrig dt label props] = ...
+            eval(['egl_AA_daq' ...
+            '([''' fullfile(dbase.PathName, ...
         dbase.SoundFiles(fi).name) '''],1)']);
+    end
+   
 %     end
 
     axes('Parent',gcf,'Units','normalized',...
         'Position',[.1 c*.8/FilesPerPage+.1 .8 .8/FilesPerPage]);
-%     subplot('position', [.1 c*.8/10+.1 .8 .09]);
     len = length(sndOrig); 
     sndOrig = [sndOrig; max(sndOrig(:))*ones(round(fsOrig*SecondsPerFile),1)]; 
     istart = dbase.SegmentTimes{sortbyage(fi)}(min(find(dbase.SegmentIsSelected{sortbyage(fi)})),1); 
@@ -72,9 +92,13 @@ for fi = 1:length(dbase.SoundFiles)
     
     if c == FilesPerPage || fi == length(dbase.SoundFiles)
 %         title((num2str(birdnum(row))))
-        saveas(gcf, fullfile(dbase.PathName, ...
-            ['Spectrograms _' num2str(d) '.jpg'])); 
-        figure
+        if Save
+            saveas(gcf, fullfile(dbase.PathName, ...
+                ['Spectrograms _' num2str(d) '.jpg'])); 
+        end
+        if fi<length(dbase.SoundFiles)
+            figure
+        end
         set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize]); 
         d = d+1; 
         c = 1;
