@@ -6,31 +6,21 @@ DataFolder = fullfile('U:\ProcessedCalciumData\', foldername);
 cnmfeFilePath = fullfile('U:\ProcessedCalciumData\', foldername, 'cnmfe_results_cleaned.mat'); 
 load(cnmfeFilePath, 'neuron'); 
 clf; imagesc(neuron.C);shg
-load(fullfile(DataFolder, 'compiled.mat'), 'SongSpec', 'CompSoundSONG', 'SOUNDfs','VIDEOfs');
-
+load(fullfile(DataFolder, 'compiled.mat'),  'SOUNDfs','VIDEOfs');
+load(fullfile(DataFolder, 'analysis.mat')); 
+AddGcampDataTimestamps(DataFolder);
 %% play movie?
 % indSong = 1000:1500; 
-indSong = 1:500; 
-
+indSong = 133000:134000; 
+indSeqSort = 1:size(neuron.C,1); 
 tmp = neuron.C(indSeqSort,indSong); %medianFilter(neuron.C(:,indSong),.2*VIDEOfs);
 tmp = tmp.*(tmp>0); 
 Brainbow = neuron2brainbow(neuron.A(:,indSeqSort),tmp,.7*hsv(size(neuron.C,1)));
+SpecForMov = SpectrogramForMovie(DataFolder, indSong);
 
-SpecForMov = zeros(size(SongSpec(1:5:end,:),1),400, 3,size(Brainbow,4));
-% tfac = 5; 
-% tind = reshape(repmat(1:(400/tfac), tfac,1),1,400);
-for fi = 1:length(indSong)
-    istart = ceil(indSong(fi)/VIDEOfs*200); %specfs is 200hz
-    tmpsnp = SongSpec(1:5:end,istart:istart+400-1); 
-    SpecForMov(:,:,:,fi) = repmat(tmpsnp,1,1,3);
-end
-SpecForMov(SpecForMov<prctile(SpecForMov(:),50)) = prctile(SpecForMov(:),50); % flat background
-SpecForMov = -flipud(SpecForMov); % for colormap and display
-SpecForMov-min(SpecForMov(:)); SpecForMov = SpecForMov/max(SpecForMov(:)); 
 ToPlay = [Brainbow; SpecForMov]; 
 implay(ToPlay,30);
 %% save the video
-
 obj = vision.VideoFileWriter('C:\Users\emackev\Downloads\BlinkingBrainbow.avi', 'AudioInputPort', 1);%,  'fps', 20);
 obj.FrameRate = VIDEOfs; 
 for framei = 1:length(indSong)
@@ -40,9 +30,6 @@ for framei = 1:length(indSong)
     display(framei)
 end
 release(obj)
-%%
-ToPlay = neuron2brainbow(neuron.A(:,indSeqSort),tmp(indSeqSort,:),jet(size(neuron.C,1)));
-implay(ToPlay,30);
 
 %% make spectrogram if haven't already
 variableInfo = who('-file', fullfile(DataFolder, 'compiled.mat'));
@@ -57,7 +44,6 @@ if ~ismember('SongSpec', variableInfo)
     display('saved spectrogram')
 end
 %% sort by correlation during singing
-indSong = 1:1000; %133000:134000; 
 
 M = neuron.C;
 nNeurons = size(neuron.C,1);
@@ -130,7 +116,7 @@ xlabel('lag (s)');ylabel('Neuron #')
 title('autocorrelations')
 
 subplot(2,2,3:4)
-circleNeurons(cnmfeFilePath,indSeqSort, nColors);
+circleNeurons(cnmfeFilePath, indSeqSort([89 91 93 109 111 113 114 115 118 119 120 121]), nColors);
 papersize = [8 8];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 
@@ -147,9 +133,11 @@ set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 % after excluding neurons, rerun from beginning
 %% raw traces
 figure(1); 
-papersize = [8 6];
+papersize = [8 3.5];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
-selectedTraces(DataFolder, M, indSeqSort, nColors)
+set(gca, 'color', 'none', 'tickdir', 'out', 'ticklength', [0.01, 0.01])
+set(gca, 'fontsize' ,6)
+selectedTraces(DataFolder, M, indSeqSort([89 91 93 109 111 113 114 115 118 119 120 121]), nColors)
 % figure(1); coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors)
 
 %% nnmf

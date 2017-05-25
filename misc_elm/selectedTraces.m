@@ -18,10 +18,16 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
             '-append');
         display('saved spectrogram')
     end
+    AddGcampDataTimestamps(DataFolder); % compute
+
     
     % load song data
+    global istart w pressed patches h SpecIm ExtraIm Tit npat ...
+        slines1 slines2 dbase FnumBnum Timestamps; 
+
     load(fullfile(DataFolder, 'compiled.mat'), 'Labels', 'segs', 'VIDEOfs',...
-            'SOUNDfs', 'SongSpec','SpecTime','SpecF', 'FnumBnum');
+            'SOUNDfs', 'SongSpec','SpecTime','SpecF', 'FnumBnum', 'Timestamps');
+    load(fullfile(DataFolder, 'analysis.mat')); 
     SongSpec = SongSpec + eps; 
     SongSpec(SongSpec(:)<prctile(SongSpec(:),75)) = prctile(SongSpec(:),75);   
     display('loaded data')
@@ -45,10 +51,9 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
     
     clims = [0 prctile(PlotC(:),99)]; %[3 25]; 
 
-    global istart w pressed patches h SpecIm ExtraIm Tit npat slines1 slines2; 
     patches = {};
     istart = 1; 
-    stepdur = 300; 
+    stepdur = 150; 
     npat = {}; 
     slines1 = {}; 
     slines2 = {}; 
@@ -93,8 +98,9 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
         cmap(1,:) = zeros(1,3);
         colormap(cmap);
         set(gca, 'ydir', 'normal')
-        [~,nam,~] = fileparts(DataFolder);      
-        Tit = title([nam '; ' num2str(istart) '/' num2str(size(PlotC,2)) '; file ' num2str(FnumBnum(istart,1))], 'interpreter', 'none'); 
+        [~,nam,~] = fileparts(DataFolder);   
+        Tit = title([nam '; '  Timestamps{FnumBnum(istart,1)} '; ' ...
+            num2str(istart) '/' num2str(size(PlotC,2))], 'interpreter', 'none'); 
         SegsInFrame = (segs(segs(:,2)>istart*SOUNDfs/VIDEOfs &...
             segs(:,1)<(istart+stepdur)*SOUNDfs/VIDEOfs,:) - istart*SOUNDfs/VIDEOfs)/SOUNDfs;
         SegsInFrame(SegsInFrame<0) = 0;
@@ -153,7 +159,8 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
         Plot = SongSpec(:,indSpec);      
         SpecIm.CData = Plot; axis tight; 
         [~,nam,~] = fileparts(DataFolder);
-        Tit.String = ([nam '; ' num2str(istart) '/' num2str(size(PlotC,2)) '; file ' num2str(FnumBnum(istart,1))]); 
+        fnam = dbase.SoundFiles(FnumBnum(istart,1)).name; 
+        Tit.String = ([nam '; '  Timestamps{FnumBnum(istart,1)} '; ' num2str(istart) '/' num2str(size(PlotC,2))]); 
         for i = 1:length(patches)
             delete(patches{i}); 
             delete(slines1{i});
