@@ -1,32 +1,37 @@
 function TOEXCLUDE = excludeNeurons(cnmfeFilePath)
+    global tmp
     load(cnmfeFilePath, 'neuron'); 
     figure; 
     hold all
     color_palet = 1-[[1 0 0]; [1 .6 0]; [.7 .6 .4]; [.6 .8 .3]; [0 .6 .3]; [0 0 1]; [0 .6 1]; [0 .7 .7]; [.7 0 .7];  [.7 .4 1]]; 
     color_palet = color_palet([1:2:end 2:2:end],:); % scramble slightly
-    nColors = color_palet(mod(1:(size(neuron.C,1)),size(color_palet,1))+1,:); 
+    nColors = color_palet(mod(1:(size(neuron.A,2)),size(color_palet,1))+1,:); 
     ImAll = reshape(sum(neuron.A,2),300,400)./prctile(sum(neuron.A,2),99); 
     h = image(cat(3,ImAll, ImAll, ImAll)); % colormap gray
     set(gca, 'ydir', 'reverse')
     axis image; axis off; shg
-    t = text(100,10, ['click n to reject, y accept, b back'],'color',[1 1 1], ...
+    t = text(200,30, {'click n to reject, y accept, b back', 'starting from in 3 sec','Get ready!'},'color',[1 1 1], ...
            'verticalalignment', 'middle',...
-            'horizontalalignment', 'center', 'fontsize', 20); 
-    for ni = 1:size(neuron.A,2)
-        tmp = reshape(neuron.A(:,(ni)),300,400);
-        h.CData = h.CData - ...
-            cat(3,tmp*nColors(ni,1), tmp*nColors(ni,2),tmp*nColors(ni,3)); 
-        drawnow
-    end
-    [C,hh] = contour(ImAll>0,1, 'color',[1 1 1]);
-    ni = 1; TOEXCLUDE = []; 
+            'horizontalalignment', 'center', 'fontsize', 20);
+    pause(3)
+%     for ni = 1:size(neuron.A,2)
+%         tmp = reshape(neuron.A(:,(ni)),300,400);
+%         h.CData = h.CData - ...
+%             cat(3,tmp*nColors(ni,1), tmp*nColors(ni,2),tmp*nColors(ni,3)); 
+%         drawnow
+%    end
+    ni = 1; TOEXCLUDE = [];
     while ni <= size(neuron.A,2)
-        tmp = reshape(neuron.A(:,(ni)),300,400);
-        hh.LineStyle = 'none';
-        [C,hh] = contour(tmp,1, 'color',.8*[1 1 1]); %1-nColors(ni,:));
-        t.Color = 1-nColors(ni,:);
-        t.Position = [mean(C(1,:)), mean(C(2,:))];
-        t.String = num2str(ni); 
+          tmp = reshape(neuron.A(:,(ni)),300,400);
+          h.CData = h.CData - ...
+          cat(3,tmp*nColors(ni,1), tmp*nColors(ni,2),tmp*nColors(ni,3)); 
+%         tmp = reshape(neuron.A(:,(ni)),300,400);
+
+%         tmpVector=reshape(tmp,[],1);
+          [C,hh] = contour(tmp,1, 'color',.8*[1 1 1]); %1-nColors(ni,:));
+          t.Color = 1-nColors(ni,:);
+          t.Position = [mean(C(1,:)), mean(C(2,:))];
+          t.String = num2str(ni); 
         drawnow; shg;
         waitforbuttonpress;
         pressed=double(get(gcf,'CurrentCharacter'))
