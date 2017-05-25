@@ -1,16 +1,17 @@
 % also see Compilation6865 for notes on how to run things on openmind, rasters in labeled data, etc.
 
 %% decide what data to look at
-foldername = '6961_April29'; 
+foldername = '6938_FirstTutNewSyll'; 
 DataFolder = fullfile('U:\ProcessedCalciumData\', foldername); 
-cnmfeFilePath = fullfile('U:\ProcessedCalciumData\', foldername, 'cnmfe_results.mat'); 
+cnmfeFilePath = fullfile('U:\ProcessedCalciumData\', foldername, 'cnmfe_results_cleaned.mat'); 
 load(cnmfeFilePath, 'neuron'); 
 clf; imagesc(neuron.C);shg
 load(fullfile(DataFolder, 'compiled.mat'),  'SOUNDfs','VIDEOfs');
-
+load(fullfile(DataFolder, 'analysis.mat')); 
+AddGcampDataTimestamps(DataFolder);
 %% play movie?
 % indSong = 1000:1500; 
-indSong = 1:1000; 133000:134000; 
+indSong = 133000:134000; 
 indSeqSort = 1:size(neuron.C,1); 
 tmp = neuron.C(indSeqSort,indSong); %medianFilter(neuron.C(:,indSong),.2*VIDEOfs);
 tmp = tmp.*(tmp>0); 
@@ -20,7 +21,6 @@ SpecForMov = SpectrogramForMovie(DataFolder, indSong);
 ToPlay = [Brainbow; SpecForMov]; 
 implay(ToPlay,30);
 %% save the video
-
 obj = vision.VideoFileWriter('C:\Users\emackev\Downloads\BlinkingBrainbow.avi', 'AudioInputPort', 1);%,  'fps', 20);
 obj.FrameRate = VIDEOfs; 
 for framei = 1:length(indSong)
@@ -116,7 +116,7 @@ xlabel('lag (s)');ylabel('Neuron #')
 title('autocorrelations')
 
 subplot(2,2,3:4)
-circleNeurons(cnmfeFilePath,indSeqSort, nColors);
+circleNeurons(cnmfeFilePath, indSeqSort([89 91 93 109 111 113 114 115 118 119 120 121]), nColors);
 papersize = [8 8];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 
@@ -133,9 +133,11 @@ set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 % after excluding neurons, rerun from beginning
 %% raw traces
 figure(1); 
-papersize = [8 11];
+papersize = [8 3.5];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
-selectedTraces(DataFolder, neuron.C, indSeqSort(70:100), nColors)
+set(gca, 'color', 'none', 'tickdir', 'out', 'ticklength', [0.01, 0.01])
+set(gca, 'fontsize' ,6)
+selectedTraces(DataFolder, M, indSeqSort([89 91 93 109 111 113 114 115 118 119 120 121]), nColors)
 % figure(1); coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors)
 
 %% nnmf
