@@ -1,35 +1,36 @@
 % also see Compilation6865 for notes on how to run things on openmind, rasters in labeled data, etc.
 %% check row movies
-sharedfolder = '\\feevault\shared\EmilyShijieShared\'; 
+
+folder = 'G:\ProcessedCalciumData\6865_Jan9';%'\\feevault\data0\ProcessedCalciumData\AllRows\'; 
 cnmfe_codepath = fullfile(sharedfolder, 'CNMF_E-master'); 
 addpath(genpath(cnmfe_codepath)); 
-for row = [3244 3400 3330 4400 4399 4398 3740 3442 3289 3075]
-    rowpath = [fullfile(sharedfolder, 'TestDatasets', 'CaELM_row') num2str(row)];
-    savepath = [fullfile(sharedfolder, 'TestDatasets', 'Movie') num2str(row) '.avi']; 
+for row = [2155]; %3244 3400 3330 4400 4399 4398 3740 3442 3289 3075]
+    rowpath = [fullfile(folder, 'CaELM_row') num2str(row)];
+    savepath = [fullfile(folder, 'Movie') num2str(row) '.avi']; 
     row2movie(rowpath, savepath);
 end
 %% decide what data to look at
-foldername = '6962_April28_firstTut'; 
+foldername = '6865_Jan9'; 
 DataFolder = fullfile('U:\ProcessedCalciumData\', foldername); 
-cnmfeFilePath = fullfile('U:\ProcessedCalciumData\', foldername, 'cnmfe_results.mat'); 
+cnmfeFilePath = fullfile('U:\ProcessedCalciumData\', foldername, 'cnmfe_results_cleaned.mat'); 
 load(cnmfeFilePath, 'neuron'); 
 clf; imagesc(neuron.C);shg
 load(fullfile(DataFolder, 'compiled.mat'),  'SOUNDfs','VIDEOfs');
 load(fullfile(DataFolder, 'analysis.mat')); 
 AddGcampDataTimestamps(DataFolder);
 %% play movie?
-% indSong = 1000:1500; 
-indSong = 133000:134000; 
-indSeqSort = 1:size(neuron.C,1); 
+indSong = 1:250; 
+% indSong = 133000:134000; 
+% indSeqSort = randperm(size(neuron.C,1)); 
 tmp = neuron.C(indSeqSort,indSong); %medianFilter(neuron.C(:,indSong),.2*VIDEOfs);
 tmp = tmp.*(tmp>0); 
-Brainbow = neuron2brainbow(neuron.A(:,indSeqSort),tmp,.7*hsv(size(neuron.C,1)));
+Brainbow = neuron2brainbow(neuron.A(:,indSeqSort),tmp,.8*(1-hsv(size(neuron.C,1))));
 SpecForMov = SpectrogramForMovie(DataFolder, indSong);
 
-ToPlay = [Brainbow; SpecForMov]; 
+ToPlay = [[Brainbow; 0*SpecForMov+1] ToPlayRaw(:,:,:,1:250)]; 
 implay(ToPlay,30);
 %% save the video
-obj = vision.VideoFileWriter('C:\Users\emackev\Downloads\BlinkingBrainbow.avi', 'AudioInputPort', 1);%,  'fps', 20);
+obj = vision.VideoFileWriter('C:\Users\emackev\Downloads\BlinkingBrainbow1.avi', 'AudioInputPort', 1);%,  'fps', 20);
 obj.FrameRate = VIDEOfs; 
 for framei = 1:length(indSong)
     istart = floor(indSong(framei)*SOUNDfs/VIDEOfs); 
@@ -62,7 +63,7 @@ Z = linkage(Corr, 'weighted', 'correlation');
 D = pdist(Corr);
 leafOrder = optimalleaforder(Z,D, 'criteria', 'group');
 
-figure(3); clf
+figure(4); clf
 h(1) = subplot(2,2,1); 
 [dend,T,indSeqSort] = dendrogram(Z, size(M,1), 'Reorder',leafOrder,'Orientation','left'); 
 hold on
@@ -132,7 +133,7 @@ set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 
 %% excude some neurons
 % TOEXCLUDE = excludeNeurons_ByLocation(cnmfeFilePath);
-% TOEXCLUDE = excludeNeurons(cnmfeFilePath); %TOEXCLUDE = indSeqSort([122:194]); 
+% TOEXCLUDE = excludeNeurons(cnmfeFilePath); %TOEXCLUDE = 19; %indSeqSort([19]); 
 % tokeep = setdiff(1:size(neuron.C,1), TOEXCLUDE);
 % neuron.C = neuron.C(tokeep,:); 
 % neuron.A = neuron.A(:,tokeep); 
@@ -145,7 +146,7 @@ papersize = [8 4];
 set(gcf, 'papersize', papersize, 'paperposition', [0 0 papersize])
 set(gca, 'color', 'none', 'tickdir', 'out', 'ticklength', [0.01, 0.01])
 set(gca, 'fontsize' ,6)
-selectedTraces(DataFolder, M, indSeqSort([1 18 19 25 27 30:34 47 48 50 51 61 62 63 24]), nColors); %([89 91 93 109 111 113 114 115 118 119 120 121]), nColors)
+selectedTraces(DataFolder, M, indSeqSort([18 24 43:50]), nColors); %([89 91 93 109 111 113 114 115 118 119 120 121]), nColors)
 % figure(1); coloredTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors)
 
 %% nnmf

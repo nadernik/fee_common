@@ -17,7 +17,7 @@ else
 end
 
 % do background subtraction, if haven't already
-if 1; ~ismember('VIDEObs_smooth', variableInfo) 
+if ~ismember('VIDEObs_smooth', variableInfo) 
     Y = permute(VIDEO,[2 3 1]); 
     Y = Y - min(Y(:)); 
     
@@ -44,9 +44,9 @@ end
 SpecForMov = SpectrogramForMovie(SongSpec, 1:size(VIDEObs_smooth,1));
 VidForMov = repmat(permute(VIDEObs_smooth,[2,3,1]),1,1,1, 3);
 VidForMov = permute(VidForMov, [1 2 4 3]); 
-VidForMov(VidForMov<prctile(VidForMov(:),50)) = prctile(VidForMov(:),50); 
+VidForMov(VidForMov<prctile(VidForMov(:),75)) = prctile(VidForMov(:),75); 
 VidForMov = VidForMov-min(VidForMov(:)); 
-VidForMov = VidForMov/prctile(VidForMov(:),99.996); 
+VidForMov = VidForMov/prctile(VidForMov(:),100); %99.996); 
 ToPlay = [VidForMov; 1-SpecForMov]; 
 % implay(ToPlay,VIDEOfs);
 
