@@ -5,6 +5,7 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
     if nargin<6; ExtraMatY = 1:size(ExtraMatrixToPlot,1); end
     if nargin<7; ExtraPlotYLabel = ''; end
     
+    %% Compute spectrogram
     % to make it faster, consider make song spectrogram ahead of time
     variableInfo = who('-file', fullfile(DataFolder, 'compiled.mat'));
     if ~ismember('SongSpec', variableInfo) 
@@ -21,7 +22,8 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
     AddGcampDataTimestamps(DataFolder); % compute
 
     
-    % load song data
+    %% load data
+    % (1) Recording data
     global istart w pressed patches h SpecIm ExtraIm Tit npat ...
         slines1 slines2 dbase FnumBnum Timestamps; 
 
@@ -32,7 +34,7 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
     SongSpec(SongSpec(:)<prctile(SongSpec(:),75)) = prctile(SongSpec(:),75);   
     display('loaded data')
     
-    % load extracted neurons from path, or take variable from function
+    % (2) Load extracted neurons activity from path, or take variable from function
     % input
     if ischar(cnmfeFilePath)
         load(cnmfeFilePath, 'neuron'); 
@@ -64,7 +66,7 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
     
     fpos = get(gcf, 'Position');
     set(gcf, 'WindowKeyPressFcn', @ButtonWasPressed, 'busyaction', 'cancel', 'interruptible', 'off')
-    mTextBox = uicontrol('style','edit', 'callback', @TextboxCallback, 'Position', [fpos(3)-80 fpos(4)-40 60 20]);
+    mTextBox = uicontrol('style','edit','callback', @TextboxCallback, 'Position', [fpos(3)-80 fpos(4)-40 60 20]);
     set(mTextBox,'String',num2str(istart));
     
     function ButtonWasPressed(hObject, eventdata, handles)
@@ -116,7 +118,7 @@ function selectedTraces(DataFolder, cnmfeFilePath, indSeqSort, nColors, ExtraMat
         h(2) = subplot('position', [.1 .1 .8 .75]);
         cla; hold on; 
         tmp = PlotC(indSeqSort,istart:istart+stepdur-1); 
-        tmp1 = tmp(:,~isnan(sum(tmp,1))); 
+        tmp1 = tmp(:,~isnan(sum(tmp,1))); % not including file borders. line126
         baselines = min(tmp1,[],2); 
         tmp = bsxfun(@minus, tmp, baselines); 
         tmp = bsxfun(@rdivide, (tmp-clims(1)), max(diff(clims), max(tmp,[],2)));
