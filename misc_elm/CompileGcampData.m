@@ -3,7 +3,7 @@
 XLS = importdata('C:/Users/emackev/Dropbox (MIT)/MackeviciusLabPresentations/CalciumData.xlsx');
 XLS.data.Sheet1 = [NaN*ones(1, size(XLS.data.Sheet1,2)); XLS.data.Sheet1]; % add row corresponding to title row, so indices line up.
 Columns = XLS.textdata.Sheet1(1,:);
-
+save('\\feevault\data0\ProcessedCalciumData\CalciumDataXLS_backup060717.mat', 'XLS', 'Columns')
 % decide where to save stuff
 savedir = '\\feevault\data0\ProcessedCalciumData\AllRows'; %'Z:\emackev\inscopix'; 'C:\Users\emackev\Documents\StuffICanDelete';
 % to populate xls... use AlignImSongFiles now...
