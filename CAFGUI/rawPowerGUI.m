@@ -220,13 +220,12 @@ hold(handles.axesFiltered,'off')
 plot(handles.axesFiltered, t, sigfilt,'k')
 hold(handles.axesFiltered,'on')
 plot(handles.axesFiltered, t, handles.params.threshold*ones(size(t)),'b:')
-% fill in area where tf = true
-x = [t t(end) t(1)];
-y = ones(1,length(t)+2)*handles.params.threshold;
-y(tf) = sigfilt(tf);
-set(0,'CurrentFigure',handles.figure1)
-set(handles.figure1,'CurrentAxes',handles.axesFiltered)
-fill(x, y, 'r','LineStyle','none')
+
+% Plot line in red where rule is true
+y = sigfilt;
+y(~tf) = nan;
+plot(handles.axesFiltered, t, y, 'r')
+
 axis(handles.axesFiltered, [t(1) t(end) ymin ymax])
 % tf = double(tf);
 % tf(tf==0) = nan;
