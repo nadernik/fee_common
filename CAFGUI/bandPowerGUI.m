@@ -212,18 +212,19 @@ function checkAutoshow_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of checkAutoshow
 
 function showFile(handles)
-
+return;
 % make filter
 handles.params = createFilter(handles);
 
 % load audio if not already loaded
 currentFileNumber = get(handles.listFile,'Value');
-if handles.audioFileNumber ~= currentFileNumber
+
     audio = loadAudio(handles.exper, currentFileNumber);
     audio = audio - mean(audio);
+
     audio_tdt = resample2(audio, handles.tdt_fs, handles.fs);
     handles.audio = audio_tdt;
-end
+
 
 % Run filter on audio. Returns binary (tf) where the rule is met
 % (bandpassed power ratio above threshold) and the actual ratio of
@@ -242,13 +243,10 @@ plot(handles.axesFiltered, t, powerRatio,'k')
 hold(handles.axesFiltered,'on')
 plot(handles.axesFiltered, t, handles.params.threshold*ones(size(t)),'b:')
 
-% fill in area where tf = true
-x = [t t(end) t(1)];
-y = ones(1,length(t)+2)*handles.params.threshold;
-y(tf) = powerRatio(tf);
-set(0,'CurrentFigure',handles.figure1)
-set(handles.figure1,'CurrentAxes',handles.axesFiltered)
-fill(x, y, 'r','LineStyle','none')
+% Plot red where rule is true
+y = powerRatio;
+y(~tf) = nan;
+plot(handles.axesFiltered, t, y, 'r')
 % axis(handles.axesFiltered, [t(1) t(end) ymin ymax])
 axis(handles.axesFiltered, [t(1) t(end) -.1 1]) %%%DEBUG
 hold(handles.axesFiltered,'off')
