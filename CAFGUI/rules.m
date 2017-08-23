@@ -72,6 +72,8 @@ set(handles.buttonCondition,'Enable','off')
 
 handles.testSuffix = get(handles.editTestSuffix,'String');
 
+handles.tdt.rcx = '';
+
 % Defaults for the dialog box that appears when you click "Test Clustered
 % Syllables" button
 handles.testSyllablesDefaults = {'1,2','50','60'};
@@ -456,16 +458,40 @@ function buttonLoadRules_Callback(hObject, eventdata, handles)
 % hObject    handle to buttonLoadRules (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+% This function can load rules. Depending on 
+% 1. The full guidata "handles" struct is saved.
+%
+% 2. Same as format 1, but handles now contains new fields:
+% tdt, testSuffix
+%
+% 3. Starting in MATLAB2014b, graphics handes are objects, not handles.
+% This caused problems for format 2, including large file size and
+% appearance of a second rules window after loading. The solution is to
+% stop saving all of the graphics handles. Instead of saving the handles
+% struct, we just save the fields we need (rules, list2rule, tdt, testSuffix).
+
 [FileName,PathName] = uigetfile('*.mat');
 temp = load([PathName FileName]);
-handles.rules = temp.handles.rules;
-handles.list2rule = temp.handles.list2rule;
-if isfield(temp.handles, 'tdt')
-    % for backwards compatability, checks to see if the field exists. In
-    % rules made before 2011-02-03 this field will not exist
-    handles.tdt = temp.handles.tdt;
-    set(handles.editTdtCircuit, 'String', handles.tdt.rcx);
+if isfield(temp, 'handles')  % format 1 or 2 (see above)
+    handles.rules = temp.handles.rules;
+    handles.list2rule = temp.handles.list2rule;
+    if isfield(temp.handles, 'tdt')  % format 2 (see above)
+        handles.tdt = temp.handles.tdt;
+    end
+    if isfield(temp.handles,'testSuffix')  % format 2 (see above)
+        handles.testSuffix = temp.handles.testSuffix;
+    end
+elseif isfield(temp, 'rules')  % format 3 (see above)
+    handles.rules = temp.rules;
+    handles.list2rule = temp.list2rule;
+    handles.tdt = temp.tdt;
+    handles.testSuffix = temp.testSuffix;
+else
+    msgbox('Unable to read rules', 'Error');
+    return;
 end
+    
 % put list of rules in box
 str = cell(length(handles.list2rule),1);
 for n = 1:length(handles.list2rule)
@@ -473,13 +499,11 @@ for n = 1:length(handles.list2rule)
     str{n} = handles.rules(r).name;
 end
 set(handles.listRules,'String',str);
-if isfield(temp.handles,'testSuffix')
-    set(handles.editTestSuffix,'String',temp.handles.testSuffix)
-    handles.testSuffix = temp.handles.testSuffix;
-end
+
+set(handles.editTestSuffix,'String', handles.testSuffix)
+set(handles.editTdtCircuit, 'String', handles.tdt.rcx);
 guidata(hObject,handles)
 refreshRuleDisplay(handles)
-    
 
 
 % --- Executes on button press in buttonSaveRules.
@@ -488,7 +512,8 @@ function buttonSaveRules_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 [FileName,PathName] = uiputfile('*.mat');
-save([PathName FileName], 'handles')
+save([PathName FileName], '-struct', 'handles', ...
+    'rules', 'list2rule', 'tdt', 'testSuffix');
 
 
 % --- Executes on selection change in listFiles.
