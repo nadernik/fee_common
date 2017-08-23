@@ -71,7 +71,8 @@ if nargin > 3
     catch
         e = lasterror;
         if strcmp(e.identifier,'MATLAB:nonExistentField') || ...
-                strcmp(e.identifier,'MATLAB:nonStrucReference')
+                strcmp(e.identifier,'MATLAB:nonStrucReference') || ...
+                strcmp(e.identifier,'MATLAB:structRefFromNonStruct')
             % params field or one of its subfields doesn't exist. Recover
             % by using some default values.
             handles.params.dependencies = [];
