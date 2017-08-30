@@ -26,7 +26,7 @@ total_parts = ceil(length(data) / samples_per_part);
 
 for part_num = 1:total_parts
     sample_start = (part_num - 1) * samples_per_part + 1;
-    sample_end = sample_start + samples_per_part;
+    sample_end = min(sample_start + samples_per_part, length(data));
     part.data = data(sample_start:sample_end);
     part.info.fs = info.fs;
     part.info.absStartTime = info.absStartTime + sample_start / info.fs / 60 / 60 / 24;
