@@ -46,7 +46,7 @@ end
 clear ii subdirs paths_to_add
 
 % Remove Chronux
-rmpath(genpath(fullfile(code_dir, 'toolbox\chronux')))
+rmpath(genpath(fullfile(code_dir, 'toolbox', 'chronux')))
 clear code_dir 
 
 if verbosity > 0
