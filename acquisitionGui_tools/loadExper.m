@@ -19,4 +19,10 @@ load(fullfile(rootdir, birdname, expername, 'exper.mat'));
 
 if nargin >= 4 && fixdir
     exper.dir = fullfile(rootdir, birdname, expername);
+    if isfield(exper, 'rootdir')
+        exper.rootdir = rootdir;
+    end
+    if isfield(exper, 'birddir')
+        exper.birddir = fullfile(rootdir, birdname);
+    end
 end
