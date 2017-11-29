@@ -21,6 +21,7 @@ d = 1;
 for fi = 1:length(dbase.SoundFiles)
     % load one bout
 %     if issame(dbase.SoundFiles(fi).name(end), 'v') % if it's a wav file
+    try
         [sndOrig fsOrig] = ...
             audioread(fullfile(dbase.PathName, ...
         dbase.SoundFiles(fi).name)); 
@@ -78,6 +79,10 @@ for fi = 1:length(dbase.SoundFiles)
         end
         d = d+1; 
         c = 1;
+    end
+    catch exception
+        warning(['Problem with file ' fullfile(dbase.PathName, ...
+        dbase.SoundFiles(fi).name) ])
     end
 end
 
