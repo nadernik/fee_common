@@ -30,7 +30,7 @@ for dayi = 1:length(AllDays)
             for i = 1:length(ChosenFive)
                 copyfile(fullfile(birdFolder, ...
                     AllDays(dayi).name, allfiles(ChosenFive(i)).name), ...
-                    fullfile(savehere, allfiles(ChosenFive(i)).name))
+                    fullfile(savehere, [AllDays(dayi).name '_' allfiles(ChosenFive(i)).name]))
             end
         end
 % copy them, appending age to the file name
