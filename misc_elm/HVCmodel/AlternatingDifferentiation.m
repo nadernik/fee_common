@@ -8,7 +8,7 @@
 % Calls HVCIter to step through one iteration of the model
 
 % fixed parameters
-seed = 9038;
+seed = 10002; %9038;
 p.seed = seed;          % seed random number generator
 p.n = 100;              % n neurons
 p.trainint = 10;        % Time interval between inputs
@@ -141,7 +141,7 @@ if isEPS
 else
     PlottingParams.msize = 10;
     PlottingParams.linewidth = .25;
-    PlottingParams.labelFontSize = 7; 
+    PlottingParams.labelFontSize = 20; 
 end
 
 PlottingParams.SeedColor = [.95 .5 1];

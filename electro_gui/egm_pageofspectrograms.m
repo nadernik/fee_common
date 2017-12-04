@@ -1,6 +1,7 @@
 function handles = egm_pageofspectrograms(handles)
 %%
-birthday = '2/23/2017';
+answer = inputdlg('BIRTHDAY?');
+birthday = answer{1};
 FilesPerPage = 15; 
 SecondsPerFile = 4; 
 age = [];
