@@ -534,7 +534,7 @@ function push_PreviousFile_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 if get(handles.check_Shuffle,'value')==0
     filenum = filenum-1;
     if filenum == 0
@@ -560,7 +560,7 @@ function push_NextFile_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-filenum = str2num(get(handles.edit_FileNumber,'string')); % get current file number
+filenum = getFileNum(handles); % get current file number
 if get(handles.check_Shuffle,'value')==0 % shuffle is checked off
     filenum = filenum+1; % go to next file
     if filenum > handles.TotalFileNumber
@@ -840,7 +840,7 @@ end
 %% Load new file
 function handles = eg_LoadFile(handles)
 
-filenum = str2num(get(handles.edit_FileNumber,'string')); % get file number that is to be opened
+filenum = getFileNum(handles); % get file number that is to be opened
 set(handles.list_Files,'value',filenum); % update list
 str = get(handles.list_Files,'string');
 if strcmp(str{filenum}(26:27),'× ')
@@ -1006,7 +1006,7 @@ else
     set(handles.(['popup_Function',num2str(axnum)]),'enable','on');
 end
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 
 val = get(handles.(['popup_Channel',num2str(axnum)]),'value');
 str = get(handles.(['popup_Channel',num2str(axnum)]),'string');
@@ -1182,7 +1182,7 @@ if isempty(thr)
     xlim(xl);
     hold off;
     
-    if size(handles.SegmentTimes{str2num(get(handles.edit_FileNumber,'string'))},2)==0
+    if size(handles.SegmentTimes{getFileNum(handles)},2)==0
         if strcmp(get(handles.menu_AutoSegment,'checked'),'on')
             handles = SegmentSounds(handles);
         end
@@ -1212,7 +1212,7 @@ for c = 1:length(handles.menu_Segmenter)
     end
 end
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 handles.SegmenterParams.IsSplit = 0;
 
 %---- modified by Tatsuo
@@ -1236,7 +1236,7 @@ cla
 hold on
 handles.SegmentHandles = [];
 handles.LabelHandles = [];
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 for c = 1:size(handles.SegmentTimes{filenum},1)
     xs = linspace(0,length(handles.sound)/handles.fs,length(handles.sound));
     x1 = xs(handles.SegmentTimes{filenum}(c,1));
@@ -2101,7 +2101,7 @@ function menu_AutoThreshold_Callback(hObject, eventdata, handles)
 if strcmp(get(handles.menu_AutoThreshold,'checked'),'off')
     set(handles.menu_AutoThreshold,'checked','on');
     handles.CurrentThreshold = eg_AutoThreshold(handles.amplitude);
-    handles.SoundThresholds(str2num(get(handles.edit_FileNumber,'string'))) = handles.CurrentThreshold;
+    handles.SoundThresholds(getFileNum(handles)) = handles.CurrentThreshold;
     handles = SetThreshold(handles);
 else
     set(handles.menu_AutoThreshold,'checked','off');
@@ -2282,7 +2282,7 @@ elseif strcmp(get(gcf,'selectiontype'),'normal') % left click
 elseif strcmp(get(gcf,'selectiontype'),'extend') % shift + left click
     pos = get(gca,'currentpoint');
     handles.CurrentThreshold = pos(1,2);
-    handles.SoundThresholds(str2num(get(handles.edit_FileNumber,'string'))) = handles.CurrentThreshold;
+    handles.SoundThresholds(getFileNum(handles)) = handles.CurrentThreshold;
     handles = SetThreshold(handles);
 end
 
@@ -2301,7 +2301,7 @@ if isempty(answer)
     return
 end
 handles.CurrentThreshold = str2num(answer{1});
-handles.SoundThresholds(str2num(get(handles.edit_FileNumber,'string'))) = handles.CurrentThreshold;
+handles.SoundThresholds(getFileNum(handles)) = handles.CurrentThreshold;
 
 handles = SetThreshold(handles);
 
@@ -2372,7 +2372,7 @@ guidata(hObject, handles);
 %%
 function click_segmentaxes(hObject, eventdata, handles)
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 
 if strcmp(get(gcf,'selectiontype'),'normal') % left click on the segment
     set(gca,'units','pixels');
@@ -2478,7 +2478,7 @@ function menu_DeleteAll_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 handles.SegmentSelection{filenum} = zeros(size(handles.SegmentSelection{filenum}));
 
 set(handles.SegmentHandles,'facecolor',[.5 .5 .5]);
@@ -2493,7 +2493,7 @@ function menu_UndeleteAll_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 handles.SegmentSelection{filenum} = ones(size(handles.SegmentSelection{filenum}));
 
 set(handles.SegmentHandles,'facecolor','r');
@@ -2504,7 +2504,7 @@ guidata(hObject, handles);
 function click_segment(hObject, eventdata, handles)
 
 f = find(handles.SegmentHandles==hObject);
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 if strcmp(get(gcf,'selectiontype'),'normal')
     set(handles.SegmentHandles,'edgecolor','k','linewidth',1);
     set(hObject,'edgecolor','y','linewidth',2);
@@ -2539,13 +2539,13 @@ guidata(hObject, handles);
 function labelsegment(hObject, eventdata, handles)
 
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 ch = get(gcf,'currentcharacter');
 chn = sum(ch);
 obj = findobj('parent',handles.axes_Segments,'edgecolor','y');
 
 if chn==44
-    filenum = str2num(get(handles.edit_FileNumber,'string'));
+    filenum = getFileNum(handles);
     filenum = filenum-1;
     if filenum == 0
         filenum = handles.TotalFileNumber;
@@ -2557,7 +2557,7 @@ if chn==44
     return
 end
 if chn==46
-    filenum = str2num(get(handles.edit_FileNumber,'string'));
+    filenum = getFileNum(handles);
     filenum = filenum+1;
     if filenum > handles.TotalFileNumber
         filenum = 1;
@@ -3000,7 +3000,7 @@ elseif strcmp(get(gcf,'selectiontype'),'extend')
         indx = handles.EventCurrentIndex(axnum);
         if indx > 0
             handles.EventCurrentThresholds(indx) = pos(1,2);
-            handles.EventThresholds(indx,str2num(get(handles.edit_FileNumber,'string'))) = pos(1,2);
+            handles.EventThresholds(indx,getFileNum(handles)) = pos(1,2);
             for axn = 1:2
                 if strcmp(get(handles.(['axes_Channel' num2str(axn)]),'visible'),'on') & handles.EventCurrentIndex(axn)==indx
                     handles = EventSetThreshold(handles,axn);
@@ -3067,9 +3067,9 @@ elseif strcmp(get(gcf,'selectiontype'),'extend')
         for c = 1:length(handles.EventHandles{axnum})
             for d = 1:length(handles.EventHandles{axnum}{c})
                 if sum(get(handles.EventHandles{axnum}{c}(d),'markerfacecolor')==[1 1 1])==3
-                    handles.EventSelected{indx}{c,str2num(get(handles.edit_FileNumber,'string'))}(d) = 0;
+                    handles.EventSelected{indx}{c,getFileNum(handles)}(d) = 0;
                 else
-                    handles.EventSelected{indx}{c,str2num(get(handles.edit_FileNumber,'string'))}(d) = 1;
+                    handles.EventSelected{indx}{c,getFileNum(handles)}(d) = 1;
                 end
             end
         end
@@ -3122,15 +3122,15 @@ end
 xl = xlim;
 yl = ylim;
 indx = handles.EventCurrentIndex(axnum);
-if handles.EventThresholds(indx,str2num(get(handles.edit_FileNumber,'string'))) < inf
-    handles.EventCurrentThresholds(indx) = handles.EventThresholds(indx,str2num(get(handles.edit_FileNumber,'string')));
+if handles.EventThresholds(indx,getFileNum(handles)) < inf
+    handles.EventCurrentThresholds(indx) = handles.EventThresholds(indx,getFileNum(handles));
     handles = DisplayEvents(handles,axnum);
     if strcmp(get(handles.menu_AutoDisplayEvents,'checked'),'on')
         handles = UpdateEventBrowser(handles);
     end
     subplot(handles.(['axes_Channel' num2str(axnum)]));
 else
-    handles.EventThresholds(indx,str2num(get(handles.edit_FileNumber,'string'))) = handles.EventCurrentThresholds(indx);
+    handles.EventThresholds(indx,getFileNum(handles)) = handles.EventCurrentThresholds(indx);
     if strcmp(get(handles.(['menu_EventAutoDetect' num2str(axnum)]),'checked'),'on') & strcmp(get(handles.(['push_Detect' num2str(axnum)]),'enable'),'on')
         handles = DetectEvents(handles,axnum);
         if strcmp(get(handles.menu_AutoDisplayEvents,'checked'),'on')
@@ -3579,7 +3579,7 @@ if isempty(answer)
     return
 end
 handles.EventCurrentThresholds(indx) = str2num(answer{1});
-handles.EventThresholds(indx,str2num(get(handles.edit_FileNumber,'string'))) = str2num(answer{1});
+handles.EventThresholds(indx,getFileNum(handles)) = str2num(answer{1});
 for axn = 1:2
     if strcmp(get(handles.(['axes_Channel' num2str(axn)]),'visible'),'on') & handles.EventCurrentIndex(axn)==indx
         handles = EventSetThreshold(handles,axn);
@@ -3675,7 +3675,7 @@ delete(findobj('linestyle','-.'));
 
 val = handles.(['chan' num2str(axnum)]);
 indx = handles.EventCurrentIndex(axnum);
-thres = handles.EventThresholds(indx,str2num(get(handles.edit_FileNumber,'string')));
+thres = handles.EventThresholds(indx,getFileNum(handles));
 
 str = get(handles.(['popup_EventDetector' num2str(axnum)]),'string');
 dtr = str{get(handles.(['popup_EventDetector' num2str(axnum)]),'value')};
@@ -3686,8 +3686,8 @@ end
 [events labels] = eval(['ege_' dtr '(val,handles.fs,thres,handles.EventParams' num2str(axnum) ')']);
 
 for c = 1:length(events)
-    handles.EventTimes{indx}{c,str2num(get(handles.edit_FileNumber,'string'))} = events{c};
-    handles.EventSelected{indx}{c,str2num(get(handles.edit_FileNumber,'string'))} = ones(1,length(events{c}));
+    handles.EventTimes{indx}{c,getFileNum(handles)} = events{c};
+    handles.EventSelected{indx}{c,getFileNum(handles)} = ones(1,length(events{c}));
 end
 
 handles = DisplayEvents(handles,axnum);
@@ -3707,8 +3707,8 @@ ev = {};
 sel = {};
 handles.EventHandles{axnum} = {};
 for c = 1:size(handles.EventTimes{indx},1)
-    ev{c} = handles.EventTimes{indx}{c,str2num(get(handles.edit_FileNumber,'string'))};
-    sel{c} = handles.EventSelected{indx}{c,str2num(get(handles.edit_FileNumber,'string'))};
+    ev{c} = handles.EventTimes{indx}{c,getFileNum(handles)};
+    sel{c} = handles.EventSelected{indx}{c,getFileNum(handles)};
 end
 h = handles.menu_EventsDisplayList{axnum};
 chan = handles.(['chan' num2str(axnum)]);
@@ -3760,9 +3760,9 @@ if strcmp(get(gcf,'selectiontype'),'extend')
     for c = 1:length(handles.EventHandles{axnum})
         for d = 1:length(handles.EventHandles{axnum}{c})
             if sum(get(handles.EventHandles{axnum}{c}(d),'markerfacecolor')==[1 1 1])==3
-                handles.EventSelected{indx}{c,str2num(get(handles.edit_FileNumber,'string'))}(d) = 0;
+                handles.EventSelected{indx}{c,getFileNum(handles)}(d) = 0;
             else
-                handles.EventSelected{indx}{c,str2num(get(handles.edit_FileNumber,'string'))}(d) = 1;
+                handles.EventSelected{indx}{c,getFileNum(handles)}(d) = 1;
             end
         end
     end
@@ -3807,7 +3807,7 @@ elseif strcmp(get(gcf,'selectiontype'),'normal') & sum(get(hObject,'markerfaceco
     else
         g = indx;
     end
-    filenum = str2num(get(handles.edit_FileNumber,'string'));
+    filenum = getFileNum(handles);
     tm = handles.EventTimes{f}{g,filenum};
     sel = handles.EventSelected{f}{g,filenum};
     xs = linspace(0,length(handles.sound)/handles.fs,length(handles.sound));
@@ -4373,7 +4373,7 @@ else
     end
 end
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 nums = [];
 for c = 1:length(handles.EventTimes);
     nums(c) = size(handles.EventTimes{c},1);
@@ -4474,7 +4474,7 @@ end
 drawnow expose
 
 function click_eventwave(hObject, eventdata, handles)
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 nums = [];
 for c = 1:length(handles.EventTimes);
     nums(c) = size(handles.EventTimes{c},1);
@@ -4549,7 +4549,7 @@ drawnow expose
 
 set(handles.EventWaveHandles,'buttondownfcn','electro_gui(''click_eventwave'',gcbo,[],guidata(gcbo))');
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 nums = [];
 for c = 1:length(handles.EventTimes);%For every event detector
     nums(c) = size(handles.EventTimes{c},1);%For each set of event times within the same detector
@@ -4700,7 +4700,7 @@ ylb = get(handles.axes_Events,'ylim');
 delete(handles.EventWaveHandles(todel));
 handles.EventWaveHandles(todel) = [];
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 nums = [];
 for c = 1:length(handles.EventTimes);
     nums(c) = size(handles.EventTimes{c},1);
@@ -5156,7 +5156,7 @@ switch str
         end
         handles.DefaultDirectory = path;
 
-        filenum = str2num(get(handles.edit_FileNumber,'string'));
+        filenum = getFileNum(handles);
 
         if isfield(handles,'DefaultLabels')
             labs = handles.DefaultLabels;
@@ -5830,8 +5830,8 @@ elseif get(handles.radio_PowerPoint,'value')==1
                             include_progbar = 1;
                         end
                         
-                        st = handles.SegmentTimes{str2num(get(handles.edit_FileNumber,'string'))};
-                        sel = handles.SegmentSelection{str2num(get(handles.edit_FileNumber,'string'))};
+                        st = handles.SegmentTimes{getFileNum(handles)};
+                        sel = handles.SegmentSelection{getFileNum(handles)};
                         f = find(st(:,1)>xl(1)*handles.fs & st(:,1)<xl(2)*handles.fs);
                         g = find(st(:,2)>xl(1)*handles.fs & st(:,2)<xl(2)*handles.fs);
                         h = find(st(:,1)<xl(1)*handles.fs & st(:,2)>xl(2)*handles.fs);
@@ -5850,9 +5850,9 @@ elseif get(handles.radio_PowerPoint,'value')==1
 
 
                     case 'Segment labels'
-                        st = handles.SegmentTimes{str2num(get(handles.edit_FileNumber,'string'))};
-                        sel = handles.SegmentSelection{str2num(get(handles.edit_FileNumber,'string'))};
-                        lab = handles.SegmentTitles{str2num(get(handles.edit_FileNumber,'string'))};
+                        st = handles.SegmentTimes{getFileNum(handles)};
+                        sel = handles.SegmentSelection{getFileNum(handles)};
+                        lab = handles.SegmentTitles{getFileNum(handles)};
                         f = find(st(:,1)>xl(1)*handles.fs & st(:,1)<xl(2)*handles.fs);
                         g = find(st(:,2)>xl(1)*handles.fs & st(:,2)<xl(2)*handles.fs);
                         h = find(st(:,1)<xl(1)*handles.fs & st(:,2)>xl(2)*handles.fs);
@@ -7452,7 +7452,7 @@ for c = 1:length(handles.menu_Segmenter)
     end
 end
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 
 
 f = find(handles.SegmentTimes{filenum}(:,1)>rect(1)*handles.fs & handles.SegmentTimes{filenum}(:,1)<(rect(1)+rect(3))*handles.fs);
@@ -7600,7 +7600,7 @@ function menu_Concatenate_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 
 set(gca,'units','pixels');
 set(get(gca,'parent'),'units','pixels');
@@ -7962,7 +7962,7 @@ set(handles.PropertyTextHandles,'buttondownfcn','electro_gui(''ClickPropertyText
 
 function ChangeProperty(hObject, eventdata, handles)
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 f = find(handles.PropertyObjectHandles==hObject);
 
 for d = 1:length(handles.Properties.Names{filenum})
@@ -8007,7 +8007,7 @@ guidata(hObject, handles);
 function ClickPropertyText(hObject, eventdata, handles)
 
 if strcmp(get(hObject,'enable'),'off')
-    filenum = str2num(get(handles.edit_FileNumber,'string'));
+    filenum = getFileNum(handles);
 
     handles.Properties.Names{filenum}{end+1} = get(hObject,'string');
     
@@ -8023,7 +8023,7 @@ guidata(hObject, handles);
 
 function handles = eg_LoadProperties(handles)
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 
 for c = 1:length(handles.PropertyNames)
     indx = [];
@@ -8123,7 +8123,7 @@ function handles = eg_AddProperty(handles,type,varargin)
 % eg_AddProperty(handles, type)
 %     user is prompted for name, val, and files
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 
 if nargin >= 5
     name = varargin{1};
@@ -8229,7 +8229,7 @@ function menu_RemoveProperty_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 
 if ~isfield(handles,'PropertyNames') | isempty(handles.PropertyNames)
     errordlg('No properties to remove!','Error');
@@ -8503,7 +8503,7 @@ if ~isfield(handles,'PropertyNames') | isempty(handles.PropertyNames)
     return
 end
 
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 
 [indx,ok] = listdlg('ListString',handles.PropertyNames,'InitialValue',[],'Name','Select property','SelectionMode','single','PromptString','Select property to fill');
 if ok == 0
@@ -9033,7 +9033,7 @@ dbase.Properties = handles.Properties;
 
 dbase.AnalysisState.SourceList = get(handles.popup_Channel1,'string');
 dbase.AnalysisState.EventList = get(handles.popup_EventList,'string');
-dbase.AnalysisState.CurrentFile = str2num(get(handles.edit_FileNumber,'string'));
+dbase.AnalysisState.CurrentFile = getFileNum(handles);
 dbase.AnalysisState.EventWhichPlot = handles.EventWhichPlot;
 dbase.AnalysisState.EventLims = handles.EventLims;
 
@@ -9115,7 +9115,7 @@ selectedEventNums = find(sel);
 trueEventNumber = selectedEventNums(n);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [tm, sel] = eventInfoForCurrentFile(handles)
-filenum = str2num(get(handles.edit_FileNumber,'string'));
+filenum = getFileNum(handles);
 nums = [];
 for c = 1:length(handles.EventTimes);%For every event detector
     nums(c) = size(handles.EventTimes{c},1);%For each set of event times within the same detector
@@ -9131,3 +9131,6 @@ end
 tm = handles.EventTimes{f}{g,filenum};
 sel = handles.EventSelected{f}{g,filenum};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function fileNum = getFileNum(handles)
+% Current file number (the value of the edit_FileNumber text box)
+fileNum = str2double(get(handles.edit_FileNumber,'string'));
