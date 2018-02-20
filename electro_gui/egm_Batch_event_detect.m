@@ -36,10 +36,10 @@ for j = 1:length(fls)
         end
         if val <= length(str)-sum(nums) & val > 1
             if length(str{val})>4 & strcmp(str{val}(1:5),'Sound')
-                [chan fs dt lab props] = eval(['egl_' handles.sound_loader '([''' handles.path_name '\' handles.sound_files(fls(j)).name '''],1)']);
+                [chan fs dt lab props] = eval(['egl_' handles.sound_loader '([''' fullfile(handles.path_name, handles.sound_files(fls(j)).name) '''],1)']);
             else
                 chan = str2num(str{val}(9:end));
-                [chan fs dt lab props] = eval(['egl_' handles.chan_loader{chan} '([''' handles.path_name '\' handles.chan_files{chan}(fls(j)).name '''],1)']);
+                [chan fs dt lab props] = eval(['egl_' handles.chan_loader{chan} '([''' fullfile(handles.path_name, handles.chan_files{chan}(fls(j)).name) '''],1)']);
             end
             handles.FileLength(fls(j)) = length(chan);
             handles.DatesAndTimes(fls(j)) = dt;
