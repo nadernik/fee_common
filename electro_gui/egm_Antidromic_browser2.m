@@ -22,7 +22,7 @@ function varargout = egm_Antidromic_browser2(varargin)
 
 % Edit the above text to modify the response to help egm_Antidromic_browser2
 
-% Last Modified by GUIDE v2.5 07-Aug-2014 14:34:50
+% Last Modified by GUIDE v2.5 21-Feb-2018 15:13:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -150,7 +150,7 @@ else
     lms = round(handles.EventLims*handles.fs);
     for c = 1:handles.egh.TotalFileNumber
         if ~isempty(evtimes{c})
-            [data fs dt label props] = eval(['egl_' loader '([''' handles.egh.path_name '\' filelist(c).name '''],1)']);
+            [data fs dt label props] = eval(['egl_' loader '([''' fullfile(handles.egh.path_name, filelist(c).name) '''],1)']);
             if size(data,1) > size(data,2)
                 data = data';
             end
