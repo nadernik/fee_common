@@ -1,4 +1,5 @@
 *.asv
+*.avi
 defaults_*.m
 *.mat
 *.pyc
