@@ -30,8 +30,9 @@ for si = 1:size(SegmentTimes,1)
 end
 
 %% using chronux. It is prettier this way, but the figures are huge.
+figure; 
 % Thres = -95; % threshold for being in black background
-%
+% 
 % params.Fs = fs;
 % params.fpass = [0 8000];
 % winsize = .015;
@@ -50,8 +51,8 @@ end
 % surf(t, f/1000, Pow,'edgecolor','none'); axis tight;
 % view(0,90);
 % ylabel('Frequency (kHz)')
-% %imagesc(t, f, 10*log10(S)');shg
-% %set(gca, 'Ydir', 'normal')
+%imagesc(t, f, 10*log10(S)');shg
+%set(gca, 'Ydir', 'normal')
 %% using displayspecgramquick
 %set(gca, 'xtick', [])
 %displaySpecgramQuick(song,fs);
@@ -59,7 +60,7 @@ end
 % cdata = get(temp, 'Cdata');
 % fdata = get(temp, 'ydata');
 % tdata = get(temp, 'xdata'); tdata = time;
-fig = figure;
+% fig = figure;
 % %h = subplot(2,1,1);
 
 % %Thres = -16.2;
@@ -90,7 +91,7 @@ fig = figure;
 %         text(mean(SegmentTimes(si,:)), 8.5, SegmentNames{si}, 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom','fontsize',FS_axes)
 %     end
 % end
-[cdata,tdata,fdata] = spectrogramELM(song,fs,.005, 1);
+[cdata,tdata,fdata] = spectrogramELM(song,fs,.001, 1, [200 10000]);
 title([handles.path_name '\' handles.dbase.SoundFiles(filenum).name], 'fontsize', FS);
 % title([handles.path_name ' #' num2str(filenum)], 'fontsize', FS);
 % ylim([min(fdata/1000) 6.6])
