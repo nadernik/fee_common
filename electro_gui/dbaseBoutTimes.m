@@ -73,14 +73,14 @@ for n = 1:length(filenums)
             TempBoutTimes(end + 1, 1) = nextSyllOnset;  % bout onset
         end
     end
-    
+
     % Last bout offset is at the end of the last syllable
     TempBoutTimes(end,2) = dbase.SegmentTimes{c}(f(end),2);
+    
+    % Remove bouts that are shorter than MinBoutDuration
+    BoutDuration = (TempBoutTimes(:, 2) - TempBoutTimes(:, 1)) / dbase.Fs;
+    isLongEnough = BoutDuration > MinBoutDuration;
+    BoutTimes{c} = TempBoutTimes(isLongEnough,:);
 end
-
-% Remove bouts that are shorter than MinBoutDuration
-BoutDuration = (TempBoutTimes(:, 2) - TempBoutTimes(:, 1)) / dbase.Fs;
-isLongEnough = BoutDuration > MinBoutDuration;
-BoutTimes{c} = TempBoutTimes(isLongEnough,:);
 
 end
