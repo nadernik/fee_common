@@ -207,7 +207,7 @@ function varargout = Parse_segments_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-varargout{1} = handles.output;
+    varargout{1} = handles.output;
 
 
 % --- Executes on button press in pushbutton1.

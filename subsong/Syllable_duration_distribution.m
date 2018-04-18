@@ -14,7 +14,7 @@ lst = 7:1:700; % array of histogram syllable edges (ms)
 lst2 = 7:1:300; % array of histogram gap edges (ms)
 B = 20; % # of bins for smoothing
 
-if nargin==5 % fileNum specified
+if nargin==6 % fileNum specified
     C = fileNum;
 else
     C = 1:length(dbase.FileLength); % all the files

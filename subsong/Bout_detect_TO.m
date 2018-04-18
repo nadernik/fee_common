@@ -23,18 +23,18 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     end
 
     dbase = []; % initialize dbase
-    dbase.PathName = [pathName]; % put path name in dbase
+    dbase.PathName = pathName; % put path name in dbase
 
     s_files = dir([dbase.PathName filesep '*chan' num2str(soundchan) '.dat']); % list of sound files
     dbase.SoundLoader = 'AA_daq';
 
     if ~isempty(datachan)
-        for i=1:length(datachan); % for all the channels
+        for i=1:length(datachan) % for all the channels
             dchan = datachan(i); % channel number
             %d_files{i} = dir([dbase.PathName filesep '*chan' num2str(dchan) '.dat']); % list of neural files
             %dbase.ChannelLoader{1,i} = 'AA_daq';
             d_files{dchan} = dir([dbase.PathName filesep '*chan' num2str(dchan) '.dat']); % list of neural files
-            dbase.ChannelLoader{1,dchan} = 'AA_daq'
+            dbase.ChannelLoader{1,dchan} = 'AA_daq';
         end
     end
 
@@ -55,7 +55,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     dbase.SoundFiles = s_files;
     dbase.ChannelFiles = {};
     if ~isempty(datachan)
-        for i=1:length(datachan);
+        for i=1:length(datachan)
             dchan = datachan(i);
             %dbase.ChannelFiles{end+1} = d_files{i};
             dbase.ChannelFiles{dchan} = d_files{dchan};
@@ -66,7 +66,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     dbase.AnalysisState.SourceList = {'(None)','Sound'}';
     dbase.AnalysisState.EventList = {'(None)',};
     dbase.AnalysisState.CurrentFile = 0;
-    dbase.AnalysisState.EventWhichPlot = [0];
+    dbase.AnalysisState.EventWhichPlot = 0;
     dbase.AnalysisState.EventLims = repmat([0.001 0.003],1,1); % -1ms to 3ms on the event viewer
     dbase.FileLength = zeros(1,length(s_files));
     dbase.Times = zeros(1,length(s_files));
@@ -101,7 +101,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     if ~isempty(dir([pathName filesep 'analysis_incomplete.mat']))
         load([pathName filesep 'analysis_incomplete.mat']);
     end
-
+    firstRun = true;
     for fl = dbase.AnalysisState.CurrentFile+1:length(s_files)
         dbase.AnalysisState.CurrentFile = fl;
         tempsound = dir([dbase.PathName '\bouts\sound' num2str(fl,'%04.f') '_*']);
@@ -123,41 +123,46 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
         end
 
         try
-            [a fs dateandtime label props] = egl_AA_daq([pathName filesep s_files(fl).name], 1); % load sound file
-            dbase.Times(fl) = dateandtime; % file start time
-            dbase.FileLength(fl) = length(a); % file length
-            if ~isempty(datachan)
-                for i=1:length(datachan)
-                    dchan = datachan(i);
-                    [chdata{dchan} fs dateandtime label props] = egl_AA_daq([pathName filesep d_files{dchan}(fl).name], 1); % load data channels
-                end
-            end     
-
+            [a, fs, dateandtime, ~, ~] = ...
+                egl_AA_daq([pathName filesep s_files(fl).name], 1); % load sound file
         catch
             disp('fail');
             a = [];
         end
+        if ~isempty(datachan) && ~isempty(a)
+            try
+                for i=1:length(datachan)
+                    dchan = datachan(i);
+                    [chdata{dchan}, fs, dateandtime, ~, ~] = ...
+                        egl_AA_daq([pathName, filesep(), d_files{dchan}(fl).name], 1); % load data channels
+                end
+            catch
+                disp('fail');
+                a = [];
+            end
+        end
+            
 
-        if ~isempty(a) % sound successfully loaded            
+        if ~isempty(a) % sound successfully loaded 
+            dbase.Times(fl) = dateandtime; % file start time
+            dbase.FileLength(fl) = length(a); % file length
             % Segment
-            b = fir1(200,[1000 4000]/(fs/2));
-            snd = filtfilt(b, 1, a); % low pass fileter from 1-4 kHz
-            smooth_window = 0.0025;
-            wind = round(smooth_window*fs);
-            amp = smooth(10*log10(snd.^2+eps),wind); % convert it to dB
-            amp = amp-prctile(amp(wind:length(amp)-wind),5);
-            amp(find(amp<0))=0;
-            th = eg_AutoThreshold(amp);
-            params.Values = {'7', '7','7','0'};
-            params.IsSplit = 0;
-            segs = DA_segmenter(amp,fs,th,params); % segment
-            sel = select_bouts(a,fs,amp,th,segs); % select bout
+            amp = calculate_amplitude(a, fs);
+            if firstRun
+                [noiseEst, soundEst, noiseStd, soundStd] = init_two_means(amp);
+                firstRun = false;
+            end
+            [noiseEst, soundEst, noiseStd, soundStd] = eg_estimateTwoMeans(amp, noiseEst, soundEst, noiseStd, soundStd);
+            th = eg_AutoThreshold(amp, noiseEst, soundEst, noiseStd, soundStd);
+
+            segs = DA_segmenter(amp,fs,th, 0.007, 0.007); % segment
+            sel = select_bouts(fs, amp, th, segs);
             dbase.SegmentThresholds(fl) = th;
             dbase.SegmentTimes{fl} = segs;
             dbase.SegmentTitles{fl} = cell(1,size(segs,1));
             dbase.SegmentIsSelected{fl} = sel;
 
-            syll = segs(find(sel==1),:); % find only selected segment by bout selection
+            syll = segs(sel==1,:); % find only selected segment by bout selection
             if ~isempty(syll)
                 intr = find(syll(2:end,1)-syll(1:end-1,2)>.5*fs); % interval that has silence of more than 500 ms
                 ons = [1; intr+1]; % syll # of bout onsets
@@ -182,7 +187,6 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                     temp.time(end+1) = rec.Time;
                     temp.len(end+1) = length(rec.Data);
 
-                    param.Values = {'7','7','0'};
                     temp.ev{end+1} = zeros(0,2);
 
                     rec.Properties.Names = {};
@@ -225,25 +229,14 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                     figure(fig);
                     subplot('position',[.05 0.05 0.9 0.3]);
                     ylim([1000 7000]);
-                    [p f t] = quick_spectrogram(gca,rec.Data,rec.Fs);
+                    [p, f, t] = quick_spectrogram(gca,rec.Data,rec.Fs);
                     imagesc(t,f,p);
                     set(gca,'ydir','normal');
                     axis tight
                     axis off
-                    set(gca,'clim',[prctile(p(1:prod(size(p))),50) prctile(p(1:prod(size(p))),95)*1.2]);
+                    set(gca,'clim',[prctile(p(:),50) prctile(p(:),95)*1.2]);
                     drawnow
                 end % for all bouts within a file
-            end
-
-            iss = 0;
-            while iss==0
-                try
-                    save([pathName filesep 'analysis_incomplete.mat'],'dbase','temp');
-                    iss = 1;
-                catch
-                    disp('fail');
-                    pause(1);
-                end
             end
 
             set(filesanalyzed,'string',['Files analyzed: ' num2str(fl) ' of ' num2str(length(s_files))]);
@@ -322,7 +315,7 @@ if ~isempty(datachan)
 end
     dbase.AnalysisState.EventList = {'(None)'};
     dbase.AnalysisState.CurrentFile = 1;
-    dbase.AnalysisState.EventWhichPlot = [0];
+    dbase.AnalysisState.EventWhichPlot = 0;
     iss = 0;
     while iss==0
         try
@@ -334,51 +327,53 @@ end
         end
     end
 end
+end
 
 
 %% Select bouts
-function sel = select_bouts(a,fs,ampl,thres,segs)
+function selected = select_bouts(fs, ampl, ~, segs) % segs is in indices
 
-seg = segs/fs*1000;
-sel = zeros(1,size(seg,1));
-if size(seg,1)<2
+seg_times = segs/fs*1000; % in milliseconds
+selected = zeros(1,size(seg_times,1));
+if size(seg_times,1)<2
     return
 end
 
-dur = seg(:,2)-seg(:,1);
+durations = seg_times(:,2)-seg_times(:,1);
+wind = round(0.0025 * fs);
 
-wind = round(0.001*fs);
-b = fir1(200,[1000 10000]/(fs/2));
-snd = filtfilt(b, 1, a);
-snd = 10*log10(smooth(snd.^2,wind));
-mn = median(abs(diff(snd(1:wind:end))));
-gd = sel;
-loud = sel;
-for c = 1:size(seg,1)
-    amp = snd(segs(c,1):segs(c,2));
-    loud(c) = median(amp);
-    df = diff(amp(1:wind:end));
-    df = abs(df)/mn;
-    if mean(df)/dur(c)<.075
+%% Find segments with low amplitude variation
+med_deriv = median(abs(diff(ampl(1:wind:end)))); % median derivative
+gd = selected;
+loudness = selected;
+for c = 1:size(seg_times,1)
+    seg_amp = ampl(segs(c,1):segs(c,2));
+    loudness(c) = median(seg_amp);
+    seg_deriv = diff(seg_amp(1:wind:end));
+    seg_deriv = abs(seg_deriv)/med_deriv;
+    if mean(seg_deriv) / durations(c) < 0.075 % What a weird measure?
         gd(c) = 1;
     end
 end
-f = find(diff(diff(loud))<-40)+1;
+
+%% Eliminate exceptionally loud segments
+f = find(diff(diff(loudness)) < -40) + 1; %times where the second derivative is less than -40
 gd(f) = 0;
 
-pause = zeros(size(seg,1),1);
+%% Select segments with reasonably short pauses between them
+pause = zeros(size(seg_times, 1), 1);
 f = find(gd==1);
-ps = seg(f(2:end),1)-seg(f(1:end-1),2);
-if ~isempty(ps)
-    ps = min([[ps(1); ps] [ps; ps(end)]],[],2);
-    pause(f) = ps;
+seg_gaps = seg_times(f(2:end),1)-seg_times(f(1:end-1),2);
 
-    f = find(dur./(pause+eps)>.20 & gd'==1);
+if ~isempty(seg_gaps)
+    pause(f) = min([[seg_gaps(1); seg_gaps], [seg_gaps; seg_gaps(end)]],[],2); % take minimum pause for two consecutive gaps
+
+    f = find(durations./(pause+eps) > .20 & gd.'==1); % selected syllables with comparitively short flanking gaps
 
     if ~isempty(f)
-        intr = find(seg(f(2:end),1)-seg(f(1:end-1),2)>500);
-        ons = [1; intr+1];
-        offs = [intr; length(f)];
+        intr = find(seg_times(f(2:end),1) - seg_times(f(1:end-1), 2) > 500); % long gaps (more than 500)
+        ons = [1; intr+1]; % bout onsets
+        offs = [intr; length(f)]; % bout offsets
     else
         ons = [];
         offs = [];
@@ -386,26 +381,29 @@ if ~isempty(ps)
 
     for c = 1:length(ons)
         numsyll = offs(c)-ons(c)+1;
-        boutlength = seg(f(offs(c)),2)-seg(f(ons(c)),1);
-        sylldur = sum(seg(f(ons(c):offs(c)),2)-seg(f(ons(c):offs(c)),1));
-        if numsyll>2 & boutlength>300 & sylldur/boutlength>.3 ...
-                & prctile(ampl(round(segs(f(ons(c)),1)):round(segs(f(offs(c)),2))),90)>15
-            sel(f(ons(c)):f(offs(c))) = 1;
+        boutlength = seg_times(f(offs(c)), 2) - seg_times(f(ons(c)), 1);
+        sylldur = sum(seg_times(f(ons(c):offs(c)),2)-seg_times(f(ons(c):offs(c)),1));
+        if numsyll > 2 && boutlength > 300 && sylldur / boutlength > 0.3 ...
+                && prctile(ampl(round(segs(f(ons(c)), 1)):round(segs(f(offs(c)), 2))), 90) > 15
+            selected(f(ons(c)):f(offs(c))) = 1;
         end
     end
 
-    sel(find(gd==0)) = 0;
+    selected(gd==0) = 0;
+end
 end
 
+function amp = calculate_amplitude(a, fs)
+    b = fir1(200,[1000, 4000] / (fs/2));
+    snd = filtfilt(b, 1, a); % low pass fileter from 1-4 kHz
+    smooth_window = 0.0025;
+    wind = round(smooth_window*fs);
+    amp = smooth(10*log10(snd.^2+eps), wind); % convert it to dB
+    amp = amp-prctile(amp(wind:length(amp) - wind), 5);
+    amp(amp<0)=0;
+end
 %%
-function threshold = eg_AutoThreshold(amp)
-
-if mean(amp)<0
-    amp = -amp;
-    isneg=1;
-else
-    isneg=0;
-end
+function threshold = eg_AutoThreshold(amp, noiseEst, soundEst, noiseStd, soundStd)
 if range(amp)==0
     threshold = inf;
     return;
@@ -413,7 +411,6 @@ end
 
 try
     % Code from Aaron Andalman
-    [noiseEst, soundEst, noiseStd, soundStd] = eg_estimateTwoMeans(amp);
     if(noiseEst>soundEst)
         disc = max(amp)+eps;
     else
@@ -422,8 +419,8 @@ try
         p(2) = (noiseEst)/(noiseStd^2) - (soundEst)/(soundStd^2+eps);
         p(3) = (soundEst^2)/(2*soundStd^2+eps) - (noiseEst^2)/(2*noiseStd^2) + log(soundStd/noiseStd+eps);
         disc = roots(p);
-        disc = disc(find(disc>noiseEst & disc<soundEst));
-        if(length(disc)==0)
+        disc = disc(disc>noiseEst & disc<soundEst);
+        if isempty(disc)
             disc = max(amp)+eps;
         else
             disc = disc(1);
@@ -439,34 +436,30 @@ catch
     threshold = max(amp)*1.1;
 end
 
-if isneg
-    threshold = -threshold;
 end
 
-
+function [uNoise, uSound, sdNoise, sdSound] = init_two_means(audioLogPow)
+    %set initial conditions
+m = sort(audioLogPow);
+nAud = numel(audioLogPow);
+uNoise = median(m(fix(1:nAud/2)));
+uSound = median(m(fix(nAud/2:nAud)));
+sdNoise = 5;
+sdSound = 20;
+end
 %%
 % by Aaron Andalman
-function [uNoise, uSound, sdNoise, sdSound] = eg_estimateTwoMeans(audioLogPow)
+function [uNoise, uSound, sdNoise, sdSound] = eg_estimateTwoMeans(audioLogPow, uNoise, uSound, sdNoise, sdSound)
 
 %Run EM algorithm on mixture of two gaussian model:
 
-%set initial conditions
-l = length(audioLogPow);
-len = 1/l;
-m = sort(audioLogPow);
-uNoise = median(m(fix(1:length(m)/2)));
-uSound = median(m(fix(length(m)/2:length(m))));
-sdNoise = 5;
-sdSound = 20;
-
 %compute estimated log likelihood given these initial conditions...
-prob = zeros(2,l);
+nAud = numel(audioLogPow);
+prob = zeros(2, nAud);
 prob(1,:) = (exp(-(audioLogPow - uNoise).^2 / (2*sdNoise^2)))./sdNoise;
 prob(2,:) = (exp(-(audioLogPow - uSound).^2 / (2*sdSound^2)))./sdSound;
 [estProb, class] = max(prob);
-warning off
-logEstLike = sum(log(estProb)) * len;
-warning on
+logEstLike = sum(log(estProb)) / nAud;
 logOldEstLike = -Inf;
 
 %maximize using Estimation Maximization
@@ -492,71 +485,57 @@ while(abs(logEstLike-logOldEstLike) > .005)
     prob(1,:) = (exp(-(audioLogPow - uNoise).^2 / (2*sdNoise^2+eps)))./(sdNoise+eps);
     prob(2,:) = (exp(-(audioLogPow - uSound).^2 / (2*sdSound^2+eps)))./(sdSound+eps)+eps;
     [estProb, class] = max(prob);
-    logEstLike = sum(log(estProb+eps)) * len;
+    logEstLike = sum(log(estProb+eps)) / nAud;
+end
 end
 
 %%
-function segs = DA_segmenter(a,fs,th,params)
+function segs = DA_segmenter(amp, fs, th, min_dur, min_stop)
 % ElectroGui segmenter
-
-if isstr(a) & strcmp(a,'params')
-    segs.Names = {'Minimum duration (ms)','Minimum interval (ms)','Mininum duration for splitting (ms)','Minimum interval for splitting (ms)'};
-    segs.Values = {'7', '7','7','0'};
-    return
-end
-
-min_dur = str2num(params.Values{1})/1000;
-min_stop = str2num(params.Values{2})/1000;
-
-if params.IsSplit == 1
-    min_dur = str2num(params.Values{3})/1000;
-    min_stop = str2num(params.Values{4})/1000;
-end
-
-if th < 0
-    a = -a;
-    th = -th;
-end
-th = th-min(a);
-a = a-min(a);
+nAmp = numel(amp);
+minAmp = min(amp);
+th = th-minAmp;
+amp = amp-minAmp;
 
 % Find threshold crossing points
-f = [];
-a = [0; a; 0];
-f(:,1) = find(a(1:end-1)<th & a(2:end)>=th)-1;
-f(:,2) = find(a(1:end-1)>=th & a(2:end)<th)-1;
-a = a(2:end-1);
+overthresh = [0; amp; 0] >= th; % pad for calculation below
+onsets = find(~overthresh(1:end-1) & overthresh(2:end))-1;
+f = zeros(numel(onsets), 2);
+f(:,1) = onsets;
+f(:,2) = find(overthresh(1:end-1) & ~overthresh(2:end))-1;
 
 % Eliminate VERY short syllables
-i = find(f(:,2)-f(:,1)>min_dur/2*fs);
-f = f(i,:);
+f = f(f(:,2) - f(:,1) > min_dur / 2 * fs, :);
 
 % Extend syllables to a lower threshold
-if params.IsSplit == 0
-    warning off
-    mn = mean(a(find(a<th)));
-    st = std(a(find(a<th)));
-    warning on
-    thnew = min([th mn+2*st]);
-    for c=1:size(f,1)
-        f(c,1)=max([1; find(a(1:f(c,1)-1)<thnew)]);
-        f(c,2)=min([length(a); f(c,2)+find(a(f(c,2)+1:end)<th/2)]);
+mn = mean(amp(amp < th));
+st = std(amp(amp < th));
+thnew = min([th, mn + 2 * st]);
+for c = 1:size(f, 1)
+    newstart = f(c, 1);
+    while newstart > 1 && amp(newstart - 1) >= thnew
+        newstart = newstart - 1;
     end
+    f(c, 1) = newstart;
+    newstop = f(c, 2);
+    while newstart < nAmp && amp(newstop + 1) >= thnew
+        newstop = newstop + 1;
+    end
+    f(c,2) = newstop;
 end
 
 % Eliminate short syllables
-i = find(f(:,2)-f(:,1)>min_dur*fs);
-f = f(i,:);
+f = f(f(:, 2) - f(:, 1) > min_dur * fs, :);
 
 if isempty(f)
     segs = zeros(0,2);
-    return
+else
+    % Eliminate short intervals
+    if size(f,1) > 1
+        i = [find(f(2:end,1)-f(1:end-1,2) > min_stop*fs); length(f)];
+        f = [f([1; i(1:end-1)+1],1) f(i,2)];
+    end
+    
+    segs = f;
 end
-
-% Eliminate short intervals
-if size(f,1)>1
-    i = [find(f(2:end,1)-f(1:end-1,2) > min_stop*fs); length(f)];
-    f = [f([1; i(1:end-1)+1],1) f(i,2)];
 end
-
-segs = f;
