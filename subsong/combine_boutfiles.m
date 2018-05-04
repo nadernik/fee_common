@@ -7,7 +7,7 @@ function combine_boutfiles(filename)
 load(filename); % load dbase
 pathName = [dbase.PathName filesep];
 
-[dbase.Times ord] = sort(dbase.Times);
+[dbase.Times, ord] = sort(dbase.Times);
 dbase.FileLength = dbase.FileLength(ord);
 dbase.SoundFiles = dbase.SoundFiles(ord);
 for c = 1:length(dbase.ChannelFiles) % for all the channels

@@ -26,7 +26,10 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     dbase.PathName = pathName; % put path name in dbase
 
     s_files = dir([dbase.PathName filesep '*chan' num2str(soundchan) '.dat']); % list of sound files
+    n_song = numel(s_files);
+
     dbase.SoundLoader = 'AA_daq';
+
 
     if ~isempty(datachan)
         for i=1:length(datachan) % for all the channels
@@ -42,11 +45,11 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     dbase.EventSources = {};
     dbase.EventFunctions = {};
     dbase.EventDetectors = {};
-    dbase.EventThresholds = zeros(0,length(s_files));
+    dbase.EventThresholds = zeros(0,n_song);
     dbase.EventTimes = {};
     dbase.EventIsSelected = {};
 
-    for fl = 1:length(s_files)
+    for fl = 1:n_song
         dbase.Properties.Names{fl} = {};
         dbase.Properties.Values{fl} = {};
         dbase.Properties.Types{fl} = {};
@@ -68,17 +71,17 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     dbase.AnalysisState.CurrentFile = 0;
     dbase.AnalysisState.EventWhichPlot = 0;
     dbase.AnalysisState.EventLims = repmat([0.001 0.003],1,1); % -1ms to 3ms on the event viewer
-    dbase.FileLength = zeros(1,length(s_files));
-    dbase.Times = zeros(1,length(s_files));
+    dbase.FileLength = zeros(1,n_song);
+    dbase.Times = zeros(1,n_song);
 
-%% figure    
+%% figure
     fig = figure(55);
     clf
     subplot('position',[.05 0.35 0.9 0.6]);
     text(0,3,[pathName],'fontsize',14,'interpreter','none','horizontalalignment','center');
     hold on
-    filesanalyzed = text(0,2,['Files analyzed: 0 of ' num2str(length(s_files))],'fontsize',14,'interpreter','none','horizontalalignment','center');
-    progbar = imagesc([-1 1],[.4 .6],zeros(1,length(s_files)));
+    filesanalyzed = text(0,2,['Files analyzed: 0 of ' num2str(n_song)],'fontsize',14,'interpreter','none','horizontalalignment','center');
+    progbar = imagesc([-1 1],[.4 .6],zeros(1,n_song));
     timeelapsed = text(0,-1,'Time elapsed: 0 sec','fontsize',14,'interpreter','none','horizontalalignment','center');
     boutssaved = text(0,-2,'Bouts saved: 0','fontsize',14,'interpreter','none','horizontalalignment','center');
     xlim([-1 1])
@@ -102,7 +105,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
         load([pathName filesep 'analysis_incomplete.mat']);
     end
     firstRun = true;
-    for fl = dbase.AnalysisState.CurrentFile+1:length(s_files)
+    for fl = dbase.AnalysisState.CurrentFile+1:n_song
         dbase.AnalysisState.CurrentFile = fl;
         tempsound = dir([dbase.PathName '\bouts\sound' num2str(fl,'%04.f') '_*']);
         if ~isempty(datachan)
@@ -111,7 +114,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                 chtemp{i} = dir([dbase.PathName '\bouts\ch' num2str(dchan,'%d') '_' num2str(fl,'%04.f') '_*']);
             end
         end
-                
+
         %% delete the files from incomplete analysis
         for i = 1:length(tempsound)
             delete([dbase.PathName '\bouts\' tempsound(i).name]);
@@ -141,9 +144,9 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                 a = [];
             end
         end
-            
 
-        if ~isempty(a) % sound successfully loaded 
+
+        if ~isempty(a) % sound successfully loaded
             dbase.Times(fl) = dateandtime; % file start time
             dbase.FileLength(fl) = length(a); % file length
             % Segment
@@ -169,19 +172,19 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                 offs = [intr; size(syll,1)]; % syll # of bout offsets1
                 for c = 1:length(ons) % for all bouts
                     temp.files(end+1) = fl; % file number
-                    temp.bouts(end+1,:) = [max(1,round(syll(ons(c),1)-.7*fs)) min(length(a),round(syll(offs(c),2)+.7*fs))]; 
+                    temp.bouts(end+1,:) = [max(1,round(syll(ons(c),1)-.7*fs)) min(length(a),round(syll(offs(c),2)+.7*fs))];
                         % include +/- 700 ms from bout onsets and offsets
                     f = find(segs(:,1)>temp.bouts(end,1) & segs(:,2)<temp.bouts(end,2)); % find all segments within bouts
                     temp.syll{end+1} = segs(f,:)-temp.bouts(end,1); % with respect to bout file onset
                     temp.titl{end+1} = cell(1,size(f,1));
                     temp.sel{end+1} = sel(f);
-                    
+
                     % rec is the structure that will be saved under the
                     % audio file
                     rec.Fs = fs;
                     rec.Data = a(temp.bouts(end,1):temp.bouts(end,2)); % extract a bout from audio signal
                     rec.Time = dateandtime + temp.bouts(end,1)/fs/(24*60*60); % modify time (MATLAB time)
-                    
+
                     % temp is the structure that will be saved under
                     % analysis_incomplete
                     temp.time(end+1) = rec.Time;
@@ -192,7 +195,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                     rec.Properties.Names = {};
                     rec.Properties.Types = [];
                     rec.Properties.Values = {};
-                 
+
                     if ~isempty(datachan)
                         for i=1:length(datachan)
                             dchan = datachan(i);
@@ -204,7 +207,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                             ch_temp{dchan}.Properties.Values = {};
                         end
                     end
-                    
+
 %% save the structures
                     iss = 0;
                     while iss==0
@@ -239,8 +242,8 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                 end % for all bouts within a file
             end
 
-            set(filesanalyzed,'string',['Files analyzed: ' num2str(fl) ' of ' num2str(length(s_files))]);
-            set(progbar,'cdata',[ones(1,fl) zeros(1,length(s_files)-fl)]);
+            set(filesanalyzed,'string',['Files analyzed: ' num2str(fl) ' of ' num2str(n_song)]);
+            set(progbar,'cdata',[ones(1,fl) zeros(1,n_song-fl)]);
             set(timeelapsed,'string',['Time elapsed: ' num2str((now-starttime)*(24*60*60)) ' sec']);
             set(boutssaved,'string',['Bouts saved: ' num2str(length(temp.files))]);
             drawnow
@@ -277,7 +280,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
         for i=1:length(datachan)
             dchan = datachan(i);
             dbase.ChannelFiles{dchan} = dir([dbase.PathName filesep 'ch' num2str(dchan,'%d') '*.mat']);
-            dbase.ChannelLoader{dchan} = 'Surgery_Rig_daq_ch'; 
+            dbase.ChannelLoader{dchan} = 'Surgery_Rig_daq_ch';
         end
     end
 
@@ -304,7 +307,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
         dbase.Properties.Values{fl} = {};
         dbase.Properties.Types{fl} = {};
     end
-    
+
     dbase.AnalysisState.SourceList = {'(None)','Sound'};
 if ~isempty(datachan)
     for i=1:length(datachan)
@@ -535,7 +538,7 @@ else
         i = [find(f(2:end,1)-f(1:end-1,2) > min_stop*fs); length(f)];
         f = [f([1; i(1:end-1)+1],1) f(i,2)];
     end
-    
+
     segs = f;
 end
 end
