@@ -1,8 +1,31 @@
+# Windows default autosave extension
 *.asv
+
+# OSX / *nix default autosave extension
+*.m~
+
+# Compiled MEX binaries (all platforms)
+*.mex*
+
+# Packaged app and toolbox files 
+*.mlappinstall 
+*.mltbx 
+  
+# Generated helpsearch folders 
+helpsearch*/
+
+# data files
 *.avi
-defaults_*.m
 *.mat
+
+# Python files
 *.pyc
-*.orig
-*~
+  
+# electro_gui
+defaults_*.m
+
+# OS X files
 *.DS_Store
+
+# Don't know what
+*.orig

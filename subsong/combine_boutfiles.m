@@ -26,7 +26,7 @@ ctr = 1;
 while ctr == 1
     ctr = 0;
     for i = 1:length(dbase.Times) % for all the files
-        for j = i+1:length(dbase.Times) % for all the files after that file         
+        for j = i+1:length(dbase.Times) % for all the files after that file
             if ctr == 0
                 if dbase.Times(j) < dbase.Times(i)+dbase.FileLength(i)/dbase.Fs/60/60/24; % if the next file begins after the current one ends
                     [i j length(dbase.Times)]
@@ -42,7 +42,7 @@ while ctr == 1
 
                     save([pathName dbase.SoundFiles(i).name],'rec'); % save the new rec
                     delete([pathName dbase.SoundFiles(j).name]); % delete the second bout
-                    
+
                     %%% TO
                     if length(dbase.ChannelFiles)>0
                         Temp = cellfun(@isempty,dbase.ChannelFiles);
@@ -57,7 +57,7 @@ while ctr == 1
                             save([pathName dbase.ChannelFiles{c}(i).name],'ch');
                             delete([pathName dbase.ChannelFiles{c}(j).name]);
                         end
-                    end                    
+                    end
                     %% end of TO
 
                     dbase.FileLength(i) = length(rec.Data); % new length
