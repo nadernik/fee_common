@@ -46,7 +46,7 @@ end
 
 
 % --- Executes just before Parse_segments is made visible.
-function Parse_segments_OpeningFcn(hObject, eventdata, handles, varargin)
+function Parse_segments_OpeningFcn(hObject, ~, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -57,13 +57,13 @@ function Parse_segments_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.output = hObject;
 
 [filename, pathname] = uigetfile('*.mat', 'Pick an analysis file');
-if ~isstr(filename)
+if ~ischar(filename)
     return
 end
 handles.filename = filename;
 handles.pathname = pathname;
 
-load([pathname filename]);
+load([pathname, filename], 'dbase');
 handles.dbase = dbase;
 
 handles.symbols = [97:122 48:57 65:90];
@@ -90,7 +90,7 @@ fnum = handles.dbase.AnalysisState.CurrentFile;
 handles.currentletter = [];
 
 try
-    [handles.snd handles.fs dt label props] = eval(['egl_' handles.dbase.SoundLoader '([''' handles.dbase.PathName '\' handles.dbase.SoundFiles(fnum).name '''],1)']);
+    [handles.snd, handles.fs, ~, ~, ~] = eval(['egl_' handles.dbase.SoundLoader '([''' handles.dbase.PathName '\' handles.dbase.SoundFiles(fnum).name '''],1)']);
 catch
     handles.snd = zeros(1000,1);
     handles.fs = 40000;
@@ -135,12 +135,12 @@ function handles = color_lines(handles)
 
 set(handles.lines,'color',[0.6 0.6 0.6]);
 fnum = handles.dbase.AnalysisState.CurrentFile;
-f = find(handles.dbase.SegmentIsSelected{fnum}==1);
-set(handles.lines(f),'color',[1 0 0]);
+sel_mask = handles.dbase.SegmentIsSelected{fnum}==1;
+set(handles.lines(sel_mask),'color',[1 0 0]);
 if ~isempty(handles.currentletter)
-    f = find(handles.symbols==handles.currentletter);
-    if f <= length(handles.lines)
-        set(handles.lines(f),'color',[1 1 0]);
+    sel_mask = find(handles.symbols==handles.currentletter);
+    if sel_mask <= length(handles.lines)
+        set(handles.lines(sel_mask),'color',[1 1 0]);
     end
 end
 
@@ -186,12 +186,12 @@ end
 
 %Compute the spectrogram
 %[S,F,T,P] = spectrogram(sss,windowSize,windowOverlap,NFFT,Fs);
-[S,F,t] = specgram(wv, NFFT, fs, windowSize, windowOverlap);
+[S,F,~] = specgram(wv, NFFT, fs, windowSize, windowOverlap);
 
-ndx = find((F>=freqRange(1)) & (F<=freqRange(2)));
+f_mask = (F>=freqRange(1)) & (F<=freqRange(2));
 
 %The spectrogram
-p = 2*log(abs(S(ndx,:))+eps)+20;
+p = 2*log(abs(S(f_mask,:))+eps)+20;
 f = linspace(freqRange(1),freqRange(2),size(p,1));
 
 set(ax,'units',bck);
@@ -201,7 +201,7 @@ imagesc(linspace(xl(1),xl(2),size(p,2)),f,p);
 end
 
 % --- Outputs from this function are returned to the command line.
-function varargout = Parse_segments_OutputFcn(hObject, eventdata, handles) 
+function varargout = Parse_segments_OutputFcn(~, ~, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -212,7 +212,7 @@ function varargout = Parse_segments_OutputFcn(hObject, eventdata, handles)
 end
 
 % --- Executes on button press in pushbutton1.
-function key_press(hObject, eventdata, handles)
+function key_press(hObject, ~, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -268,7 +268,7 @@ switch double(get(gcf,'currentcharacter'))
         switch char(handles.currentletter)
             case 's'
                 [filename, pathname] = uiputfile([handles.pathname handles.filename], 'Pick an analysis file');
-                if ~isstr(filename)
+                if ~ischar(filename)
                     return
                 else
                     dbase = handles.dbase;
@@ -281,7 +281,7 @@ switch double(get(gcf,'currentcharacter'))
                 if isempty(answer)
                     return
                 end
-                handles.clim = [str2num(answer{1}) str2num(answer{2})];
+                handles.clim = [str2double(answer{1}), str2double(answer{2})];
             case 'p'
                 b = fir1(200,[500 10000]/(handles.fs/2));
                 snd = filtfilt(b, 1, handles.snd);
@@ -291,7 +291,7 @@ switch double(get(gcf,'currentcharacter'))
                 if isempty(answer)
                     return
                 end
-                handles.volume = str2num(answer{1});
+                handles.volume = str2double(answer{1});
             case 'r'
                 handles = Parse_radio(handles);
         end
