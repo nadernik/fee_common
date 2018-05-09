@@ -42,6 +42,7 @@ else
     gui_mainfcn(gui_State, varargin{:});
 end
 % End initialization code - DO NOT EDIT
+end
 
 
 % --- Executes just before Parse_segments is made visible.
@@ -81,7 +82,7 @@ guidata(hObject, handles);
 
 % UIWAIT makes Parse_segments wait for user response (see UIRESUME)
 % uiwait(handles.main_fig);
-
+end
 
 function handles = load_file(handles)
 
@@ -128,7 +129,7 @@ for c = 1:length(handles.lines)
         text((xs(1,c)+xs(2,c))/2,2,char(handles.symbols(c)),'horizontalalignment','center');
     end
 end
-
+end
 
 function handles = color_lines(handles)
 
@@ -144,7 +145,7 @@ if ~isempty(handles.currentletter)
 end
 
 set(handles.axes_Sonogram,'clim',handles.clim);
-
+end
 
 function AA_quick_sonogram(ax,wv,fs)
 % ElectroGui spectrum algorithm
@@ -197,7 +198,7 @@ set(ax,'units',bck);
 
 xl = xlim;
 imagesc(linspace(xl(1),xl(2),size(p,2)),f,p);
-
+end
 
 % --- Outputs from this function are returned to the command line.
 function varargout = Parse_segments_OutputFcn(hObject, eventdata, handles) 
@@ -208,7 +209,7 @@ function varargout = Parse_segments_OutputFcn(hObject, eventdata, handles)
 
 % Get default command line output from handles structure
     varargout{1} = handles.output;
-
+end
 
 % --- Executes on button press in pushbutton1.
 function key_press(hObject, eventdata, handles)
@@ -312,3 +313,4 @@ switch double(get(gcf,'currentcharacter'))
 end
 
 guidata(hObject, handles);
+end
