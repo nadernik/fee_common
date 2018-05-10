@@ -127,7 +127,11 @@ if isempty(handles.dbase.SegmentTimes{fnum})
     xs = [];
     ys = [];
 else
-    xs = [handles.dbase.SegmentTimes{fnum}(:,1)'; handles.dbase.SegmentTimes{fnum}(:,2)'; handles.dbase.SegmentTimes{fnum}(:,2)'; handles.dbase.SegmentTimes{fnum}(:,1)'; handles.dbase.SegmentTimes{fnum}(:,1)']/handles.dbase.Fs;
+    xs = [handles.dbase.SegmentTimes{fnum}(:,1)'; ...
+          handles.dbase.SegmentTimes{fnum}(:,2)'; ...
+          handles.dbase.SegmentTimes{fnum}(:,2)'; ...
+          handles.dbase.SegmentTimes{fnum}(:,1)'; ...
+          handles.dbase.SegmentTimes{fnum}(:,1)']/handles.dbase.Fs;
     ys = repmat([0; 0; 1; 1; 0],1,size(handles.dbase.SegmentTimes{fnum},1));
 end
 handles.lines = line(xs,ys);
@@ -217,7 +221,7 @@ imagesc(linspace(xl(1),xl(2),size(p,2)),f,p);
 end
 
 % --- Outputs from this function are returned to the command line.
-function varargout = Parse_segments_OutputFcn(~, ~, handles) 
+function varargout = Parse_segments_OutputFcn(~, ~, handles)
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -326,7 +330,7 @@ switch double(get(gcf,'currentcharacter'))
         else
             f = find(handles.symbols==handles.currentletter);
             g = find(handles.symbols==double(get(gcf,'currentcharacter')));
-            if ~isempty(g)                          
+            if ~isempty(g)
                 col = round(mean([handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile}(f:g) 0.5]));
                 handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile}(f:g) = 1-col;
                 handles.currentletter = [];

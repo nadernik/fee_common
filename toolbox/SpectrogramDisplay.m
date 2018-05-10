@@ -32,7 +32,7 @@ classdef (Sealed) SpectrogramDisplay < ResizableDisplay
     properties (SetAccess = private)
         signal
         fs
-        
+
         freqRange
         startTime
         nCourse
@@ -97,7 +97,7 @@ classdef (Sealed) SpectrogramDisplay < ResizableDisplay
             self.backgroundColor = Params.backgroundColor;
             self.cMap(1,:) = self.backgroundColor; %set background to black
             self.ImageHandle = gobjects(1);
-            
+
             self.frequencyUnits = Params.frequencyUnits;
             if strcmpi(self.frequencyUnits, 'Hz')
                 self.freqScaling = 1;
@@ -108,11 +108,11 @@ classdef (Sealed) SpectrogramDisplay < ResizableDisplay
             end
             self.update_display();
         end
-        
+
         function update_display(self, ~, ~)
             %% Determine axis pixel size
             pixelWidth = self.pixel_width(); % X extent of spectrogram, in pixels
-            
+
             %% Determine how many fft windows we can display
             thisWindowSize = min(self.windowSize, self.endNdx - self.startNdx);%must be at least as long as the signal
             nDispSamps = self.endNdx - self.startNdx + 1;
@@ -129,14 +129,14 @@ classdef (Sealed) SpectrogramDisplay < ResizableDisplay
             end
             overlapSamples = floor(windowOverlap * finalWindowSize);
             displayedSignal = self.signal(self.startNdx:self.endNdx);
-            
+
             %% Compute the spectrogram
             if size(self.taper, 1) ~= finalWindowSize
                 self.taper = hann(finalWindowSize); % Only want the first taper
             end
             [S,F,T] = spectrogram(displayedSignal, self.taper, ...
                 overlapSamples, self.NFFT, self.fs);
-            
+
             %% Draw the spectrogram
             oldImgNdx = find(self.ImageHandle == self.AxisHandle.Children, 1, 'first');
             delete(self.ImageHandle); %Get rid of the outdated spectrogram
@@ -170,7 +170,7 @@ classdef (Sealed) SpectrogramDisplay < ResizableDisplay
             ylim(self.AxisHandle, [freqs(1), freqs(end)]);
             axis(self.AxisHandle, 'xy');
             colormap(self.AxisHandle, self.cMap);
-            
+
             set(self.ImageHandle, 'HitTest', 'off'); % Don't block click events
             %% Hopefully re-order the draw stack
             if ~isempty(oldImgNdx)
@@ -182,7 +182,7 @@ classdef (Sealed) SpectrogramDisplay < ResizableDisplay
                 self.AxisHandle.Children = tmpChildren;
             end
         end
-        
+
         function ndx = x_to_ndx(self, x)
             ndx = floor((x - self.startTime) * self.fs) + 1;
         end
