@@ -69,10 +69,11 @@ handles.dbase = dbase;
 handles.symbols = [97:122 48:57 65:90];
 handles.currentletter = [];
 
-handles.clim = [17 24]; % changed from [15 20] TO
+handles.clim = []; % changed from [15 20] TO
 handles.volume = 0.5; % changed from 5 TO
 
-handles.colormap = colormap;
+colormap('default');
+handles.colormap = colormap();
 handles.colormap(1,:) = [0 0 0];
 
 handles = load_file(handles);
@@ -157,7 +158,9 @@ if ~isempty(handles.currentletter)
     end
 end
 
-set(handles.axes_Sonogram,'clim',handles.clim);
+if ~isempty(handles.clim)
+    set(handles.axes_Sonogram,'clim',handles.clim);
+end
 end
 
 function AA_quick_sonogram(ax,wv,fs)
@@ -290,7 +293,14 @@ switch double(get(gcf,'currentcharacter'))
                     save([handles.pathname handles.filename],'dbase');
                 end
             case 'c'
-                answer = inputdlg({'Offset','Brightness'},'Color scale',1,{num2str(handles.clim(1)),num2str(handles.clim(2))});
+                if isempty(handles.clim)
+                    def = {'', ''};
+                else
+                    def = arrayfun(@num2str, handles.clim, 'UniformOutput', false);
+                end
+                answer = inputdlg(...
+                                     {'Offset','Brightness'},...
+                                     'Color scale', 1, def);
                 if isempty(answer)
                     return
                 end
