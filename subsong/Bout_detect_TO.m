@@ -7,7 +7,7 @@ function Bout_detect_TO(pathName,soundchan,datachan)
 %%% data channel: both pressure and neural
 
 if nargin<1 % input argument empty
-    pathName = uigetdir('Z:\Data\subsong_HVC\', 'Choose the directory that contains songs');
+    pathName = uigetdir(pwd(), 'Choose the directory that contains songs');
 end
 if nargin<3 % not all input argument specified
     val = inputdlg({'Sound channel','Neural and pressure channel (array)'},'Channel selection',1,{'0','[1,4]'});
@@ -17,15 +17,16 @@ end
 
 cd(pathName)
 
-if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% necessary?
-    if isempty(dir([pathName filesep 'bouts'])) % no bouts folder
-        mkdir([pathName filesep 'bouts']); % make bouts folder
+if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%% necessary?
+    boutpath = fullfile(pathName, 'bouts');
+    if exist(boutpath, 'dir') == 0 % no bouts folder
+        mkdir(boutpath); % make bouts folder
     end
 
     dbase = []; % initialize dbase
     dbase.PathName = pathName; % put path name in dbase
 
-    s_files = dir([dbase.PathName filesep '*chan' num2str(soundchan) '.dat']); % list of sound files
+    s_files = dir(fullfile(dbase.PathName, sprintf('*chan%d.dat', soundchan))); % list of sound files
     n_song = numel(s_files);
 
     dbase.SoundLoader = 'AA_daq';
@@ -34,9 +35,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     if ~isempty(datachan)
         for i=1:length(datachan) % for all the channels
             dchan = datachan(i); % channel number
-            %d_files{i} = dir([dbase.PathName filesep '*chan' num2str(dchan) '.dat']); % list of neural files
-            %dbase.ChannelLoader{1,i} = 'AA_daq';
-            d_files{dchan} = dir([dbase.PathName filesep '*chan' num2str(dchan) '.dat']); % list of neural files
+            d_files{dchan} = dir(fullfile(dbase.PathName, sprintf('*chan%d.dat', dchan))); % list of neural files
             dbase.ChannelLoader{1,dchan} = 'AA_daq';
         end
     end
@@ -49,10 +48,10 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     dbase.EventTimes = {};
     dbase.EventIsSelected = {};
 
-    for fl = 1:n_song
-        dbase.Properties.Names{fl} = {};
-        dbase.Properties.Values{fl} = {};
-        dbase.Properties.Types{fl} = {};
+    for file_no = 1:n_song
+        dbase.Properties.Names{file_no} = {};
+        dbase.Properties.Values{file_no} = {};
+        dbase.Properties.Types{file_no} = {};
     end
 
     dbase.SoundFiles = s_files;
@@ -100,34 +99,13 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     temp.len = [];
     temp.ev = {};
 
-    % if the process stopped in the middle
-    if ~isempty(dir([pathName filesep 'analysis_incomplete.mat']))
-        load([pathName filesep 'analysis_incomplete.mat']);
-    end
     firstRun = true;
-    for fl = dbase.AnalysisState.CurrentFile+1:n_song
-        dbase.AnalysisState.CurrentFile = fl;
-        tempsound = dir([dbase.PathName '\bouts\sound' num2str(fl,'%04.f') '_*']);
-        if ~isempty(datachan)
-            for i=1:length(datachan)
-                dchan = datachan(i);
-                chtemp{i} = dir([dbase.PathName '\bouts\ch' num2str(dchan,'%d') '_' num2str(fl,'%04.f') '_*']);
-            end
-        end
-
-        %% delete the files from incomplete analysis
-        for i = 1:length(tempsound)
-            delete([dbase.PathName '\bouts\' tempsound(i).name]);
-            if ~isempty(datachan)
-                for j=1:length(datachan)
-                    delete([dbase.PathName '\bouts\' chtemp{j}(i).name]);
-                end
-            end
-        end
+    for file_no = dbase.AnalysisState.CurrentFile+1:n_song
+        dbase.AnalysisState.CurrentFile = file_no;
 
         try
             [a, fs, dateandtime, ~, ~] = ...
-                egl_AA_daq([pathName filesep s_files(fl).name], 1); % load sound file
+                egl_AA_daq(fullfile(pathName, s_files(file_no).name), 1); % load sound file
         catch
             disp('fail');
             a = [];
@@ -137,7 +115,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                 for i=1:length(datachan)
                     dchan = datachan(i);
                     [chdata{dchan}, fs, dateandtime, ~, ~] = ...
-                        egl_AA_daq([pathName, filesep(), d_files{dchan}(fl).name], 1); % load data channels
+                        egl_AA_daq(fullfile(pathName, d_files{dchan}(file_no).name), 1); % load data channels
                 end
             catch
                 disp('fail');
@@ -147,8 +125,8 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
 
 
         if ~isempty(a) % sound successfully loaded
-            dbase.Times(fl) = dateandtime; % file start time
-            dbase.FileLength(fl) = length(a); % file length
+            dbase.Times(file_no) = dateandtime; % file start time
+            dbase.FileLength(file_no) = length(a); % file length
             % Segment
             amp = calculate_amplitude(a, fs);
             if firstRun
@@ -160,19 +138,19 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
 
             segs = DA_segmenter(amp,fs,th, 0.007, 0.007); % segment
             sel = select_bouts(fs, amp, th, segs);
-            dbase.SegmentThresholds(fl) = th;
-            dbase.SegmentTimes{fl} = segs;
-            dbase.SegmentTitles{fl} = cell(1,size(segs,1));
-            dbase.SegmentIsSelected{fl} = sel;
+            dbase.SegmentThresholds(file_no) = th;
+            dbase.SegmentTimes{file_no} = segs;
+            dbase.SegmentTitles{file_no} = cell(1,size(segs,1));
+            dbase.SegmentIsSelected{file_no} = sel;
 
             syll = segs(sel==1,:); % find only selected segment by bout selection
             if ~isempty(syll)
                 intr = find(syll(2:end,1)-syll(1:end-1,2)>.5*fs); % interval that has silence of more than 500 ms
                 ons = [1; intr+1]; % syll # of bout onsets
                 offs = [intr; size(syll,1)]; % syll # of bout offsets1
-                for c = 1:length(ons) % for all bouts
-                    temp.files(end+1) = fl; % file number
-                    temp.bouts(end+1,:) = [max(1,round(syll(ons(c),1)-.7*fs)) min(length(a),round(syll(offs(c),2)+.7*fs))];
+                for bout_no = 1:length(ons) % for all bouts
+                    temp.files(end+1) = file_no; % file number
+                    temp.bouts(end+1,:) = [max(1,round(syll(ons(bout_no),1)-.7*fs)) min(length(a),round(syll(offs(bout_no),2)+.7*fs))];
                         % include +/- 700 ms from bout onsets and offsets
                     f = find(segs(:,1)>temp.bouts(end,1) & segs(:,2)<temp.bouts(end,2)); % find all segments within bouts
                     temp.syll{end+1} = segs(f,:)-temp.bouts(end,1); % with respect to bout file onset
@@ -212,13 +190,15 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                     iss = 0;
                     while iss==0
                         try
-                            save([dbase.PathName '\bouts\sound_' num2str(fl,'%04.f') '_' num2str(c,'%03.f') '.mat'],'rec');
+                            bout_soundpath = fullfile(boutpath, sprintf('sound_%04d_%03d.mat', file_no, bout_no));
+                            save(bout_soundpath,'rec');
 
                             if ~isempty(datachan)
                                 for i=1:length(datachan)
                                     dchan = datachan(i);
                                     ch = ch_temp{dchan};
-                                    save([dbase.PathName '\bouts\ch' num2str(dchan,'%d') '_' num2str(fl,'%04.f') '_' num2str(c,'%03.f') '.mat'],'ch');
+                                    bout_dat_path = fullfile(boutpath, sprintf('ch%d_%04d_%03d.mat', dchan, file_no, bout_no));
+                                    save(bout_dat_path,'ch');
                                 end
                             end
                             iss = 1;
@@ -242,8 +222,8 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
                 end % for all bouts within a file
             end
 
-            set(filesanalyzed,'string',['Files analyzed: ' num2str(fl) ' of ' num2str(n_song)]);
-            set(progbar,'cdata',[ones(1,fl) zeros(1,n_song-fl)]);
+            set(filesanalyzed,'string',['Files analyzed: ' num2str(file_no) ' of ' num2str(n_song)]);
+            set(progbar,'cdata',[ones(1,file_no) zeros(1,n_song-file_no)]);
             set(timeelapsed,'string',['Time elapsed: ' num2str((now-starttime)*(24*60*60)) ' sec']);
             set(boutssaved,'string',['Bouts saved: ' num2str(length(temp.files))]);
             drawnow
@@ -254,9 +234,7 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     iss = 0;
     while iss==0
         try
-            %              save([fold(bird).name filesep days(dy).name filesep 'analysis.mat'],'dbase');
-            save([pathName filesep 'analysis_original.mat'],'dbase');
-            delete([pathName filesep 'analysis_incomplete.mat']);
+            save(fullfile(pathName, 'analysis_original.mat'),'dbase');
             iss = 1;
         catch
             disp('fail');
@@ -269,17 +247,18 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     thres = dbase.SegmentThresholds; %DEBUG
 
     dbase = [];
-    dbase.PathName = [pathName filesep 'bouts'];
+    dbase.PathName = boutpath;
     dbase.Times = temp.time;
     dbase.FileLength = temp.len;
-    dbase.SoundFiles = dir([dbase.PathName filesep 'sound*.mat']);
+    dbase.SoundFiles = dir(fullfile(boutpath, 'sound*.mat'));
     dbase.SoundLoader = 'Surgery_Rig_daq';
     dbase.ChannelFiles = {};
     dbase.ChannelLoader = {};
     if ~isempty(datachan)
         for i=1:length(datachan)
             dchan = datachan(i);
-            dbase.ChannelFiles{dchan} = dir([dbase.PathName filesep 'ch' num2str(dchan,'%d') '*.mat']);
+            glob_path = fullfile(boutpath, sprintf('ch%d*.mat', dchan));
+            dbase.ChannelFiles{dchan} = dir(glob_path);
             dbase.ChannelLoader{dchan} = 'Surgery_Rig_daq_ch';
         end
     end
@@ -302,10 +281,10 @@ if isempty(dir([pathName filesep 'analysis.mat'])) % no analysis.mat   %%% neces
     dbase.EventTimes = {};
     dbase.EventIsSelected = {};
 
-    for fl = 1:length(temp.files)
-        dbase.Properties.Names{fl} = {};
-        dbase.Properties.Values{fl} = {};
-        dbase.Properties.Types{fl} = {};
+    for file_no = 1:length(temp.files)
+        dbase.Properties.Names{file_no} = {};
+        dbase.Properties.Values{file_no} = {};
+        dbase.Properties.Types{file_no} = {};
     end
 
     dbase.AnalysisState.SourceList = {'(None)','Sound'};
@@ -322,7 +301,7 @@ end
     iss = 0;
     while iss==0
         try
-            save([pathName filesep 'bouts' filesep 'analysis_bout.mat'],'dbase');
+            save(fullfile(boutpath, 'analysis_bout.mat'),'dbase');
             iss = 1;
         catch
             disp('fail');
