@@ -7426,6 +7426,8 @@ end
 
 
 % --------------------------------------------------------------------
+% Re-segment syllables that fall inside rbbox, using the lower edge of the box
+% as a new amplitude threshold for segmenting
 function menu_Split_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_Split (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -7438,7 +7440,7 @@ end
 ginput(1);
 set(gca,'units','pixels');
 set(get(gca,'parent'),'units','pixels');
-rect = rbbox;
+rect = rbbox; % x, y, width, height where x and y is lower left
 pos = get(gca,'position');
 set(get(gca,'parent'),'units','normalized');
 set(gca,'units','normalized');
@@ -7456,10 +7458,15 @@ end
 
 filenum = getFileNum(handles);
 
-
-f = find(handles.SegmentTimes{filenum}(:,1)>rect(1)*handles.fs & handles.SegmentTimes{filenum}(:,1)<(rect(1)+rect(3))*handles.fs);
-g = find(handles.SegmentTimes{filenum}(:,2)>rect(1)*handles.fs & handles.SegmentTimes{filenum}(:,2)<(rect(1)+rect(3))*handles.fs);
-h = find(handles.SegmentTimes{filenum}(:,1)<rect(1)*handles.fs & handles.SegmentTimes{filenum}(:,2)>(rect(1)+rect(3))*handles.fs);
+% start is in rect
+f = find(handles.SegmentTimes{filenum}(:,1)>rect(1)*handles.fs & ...
+         handles.SegmentTimes{filenum}(:,1)<(rect(1)+rect(3))*handles.fs);
+% end is in rect
+g = find(handles.SegmentTimes{filenum}(:,2)>rect(1)*handles.fs & ...
+         handles.SegmentTimes{filenum}(:,2)<(rect(1)+rect(3))*handles.fs);
+% extent is in rect
+h = find(handles.SegmentTimes{filenum}(:,1)<rect(1)*handles.fs & ...
+         handles.SegmentTimes{filenum}(:,2)>(rect(1)+rect(3))*handles.fs);
 dl = unique([f; g; h]);
 if isempty(dl)
     return
@@ -7597,6 +7604,7 @@ end
 
 
 % --------------------------------------------------------------------
+% Concatenate all segments that fall inside left and right edges of rbbox
 function menu_Concatenate_Callback(hObject, eventdata, handles)
 % hObject    handle to menu_Concatenate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB

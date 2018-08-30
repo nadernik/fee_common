@@ -2,7 +2,7 @@ function [data, fs, dateandtime, label, props] = egl_Surgery_Rig_daq(filename, l
 
 label = 'Voltage (mV)';
 
-load(filename)
+load(filename, 'rec')
 
 if loaddata == 1
     data = rec.Data;
