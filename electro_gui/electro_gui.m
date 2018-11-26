@@ -2051,7 +2051,14 @@ end
 
 handles = eg_RestartProperties(handles);
 
-handles = eg_LoadFile(handles);
+% If the current file doesn't exist, give a warning but keep going to put
+% the newly loaded handles into guidata.
+try
+    handles = eg_LoadFile(handles);
+catch
+    warning('electro_gui:LoadFailureAfterOpenDbase', ...
+        'Cannot load file number %d', getFileNum(handles))
+end
 
 guidata(hObject, handles);
 
