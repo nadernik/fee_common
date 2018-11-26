@@ -1869,7 +1869,15 @@ else
     [file, path] = uigetfile('*.mat','Load analysis'); 
 end
 if length(file)<=1 % if you clicked cancel
-    return
+    answer = questdlg('Do you want to load a NIf row?');
+    if strcmp(answer, 'Yes')
+        % ask which row you want to
+        answer = inputdlg('Which row?');
+        [XLS, Columns] = loadNIfSpreadsheet_elm(); 
+        [dbase rowstr path file] = getDbase_elm(str2num(answer{1}), XLS, Columns);
+    else
+        return
+    end
 else
     if ~isstr(file)
         return % file name is not a string
