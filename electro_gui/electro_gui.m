@@ -1659,6 +1659,21 @@ handles = eg_PlotSonogram(handles);
 
 guidata(hObject, handles);
 
+function handles = get_filter_params(handles)
+                                % get filter parameters
+    for c = 1:length(handles.menu_Filter)
+        if strcmp(get(handles.menu_Filter(c), 'checked'), 'on')
+            h = handles.menu_Filter(c);
+            alg = get(handles.menu_Filter(c), 'label');
+        end
+    end
+    if isempty(get(h, 'userdata'))
+        handles.FilterParams = eval(['egf_', alg, '(''params'')']);
+        set(h, 'userdata', handles.FilterParams);
+    else
+        handles.FilterParams = get(h, 'userdata');
+    end
+
 %%
 % --- Executes on button press in push_New.
 function push_New_Callback(hObject, eventdata, handles)
@@ -1772,18 +1787,7 @@ else
 end
 
 % get filter parameters
-for c = 1:length(handles.menu_Filter)
-    if strcmp(get(handles.menu_Filter(c),'checked'),'on')
-        h = handles.menu_Filter(c);
-        alg = get(handles.menu_Filter(c),'label');
-    end
-end
-if isempty(get(h,'userdata'))
-    handles.FilterParams = eval(['egf_' alg '(''params'')']);
-    set(h,'userdata',handles.FilterParams);
-else
-    handles.FilterParams = get(h,'userdata');
-end
+handles = get_filter_params(handles)
 
 % get event parameters
 for axnum = 1:2
@@ -1821,7 +1825,6 @@ handles = eg_LoadFile(handles);
 
 guidata(hObject, handles);
 
-
 function handles = InitializeVariables(handles)
 
 %%%% Initialize variables
@@ -1852,6 +1855,8 @@ handles.EventWaveHandles = [];
 
 handles.FileLength = zeros(1,handles.TotalFileNumber);
 
+% This code loads a dbase!
+%
 %%
 % --- Executes on button press in push_Open.
 function push_Open_Callback(hObject, eventdata, handles)
@@ -2011,6 +2016,8 @@ if isempty(get(h,'userdata'))
 else
     handles.SonogramParams = get(h,'userdata');
 end
+
+handles = get_filter_params(handles);
 
 % get event parameters
 for axnum = 1:2
