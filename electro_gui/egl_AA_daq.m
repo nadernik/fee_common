@@ -87,7 +87,7 @@ function [out1, out2, out3, out4, out5, out6, out7, out8] = daq_readDatafile_for
 %%%%       WITHOUT INCREMENTING THE TRIGGER FILE FORMAT ID NUMBER!!!! 
 
 if(~exist(filename,'file'))
-    error('File does not exist');
+    error('File does not exist: %s', filename);
 end
 if(~exist('bUseNewOutput','var'))
     bUseNewOutput = false;
