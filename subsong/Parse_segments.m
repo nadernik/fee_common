@@ -94,9 +94,10 @@ try
     loader_func = str2func(['egl_', handles.dbase.SoundLoader]);
     sound_path = fullfile(handles.dbase.PathName, handles.dbase.SoundFiles(fnum).name);
     [handles.snd, handles.fs, ~, ~, ~] = loader_func(sound_path, 1);
-catch
+catch ME
     handles.snd = zeros(1000,1);
     handles.fs = 40000;
+    disp( getReport( ME, 'extended', 'hyperlinks', 'on' ) );
 end
 
 subplot(handles.axes_Sonogram);

@@ -1,4 +1,4 @@
-function Bout_detect_TO(pathName,soundchan,datachan)
+function Bout_detect_TO(varargin)
 
 %%% originally written by Lena Veit
 %%% Tatsuo Okubo
@@ -6,14 +6,41 @@ function Bout_detect_TO(pathName,soundchan,datachan)
 %%% sound channel: audio
 %%% data channel: both pressure and neural
 
-if nargin<1 % input argument empty
-    pathName = uigetdir(pwd(), 'Choose the directory that contains songs');
-end
-if nargin<3 % not all input argument specified
-    val = inputdlg({'Sound channel','Neural and pressure channel (array)'},'Channel selection',1,{'0','[1,4]'});
-    soundchan = eval(val{1});
-    datachan = eval(val{2});
-end
+    persistent p;
+    if isempty(p)
+        p = inputParser();
+        addOptional(p, 'pathName', '', @ischar);
+        addOptional(p, 'soundchan', []);
+        addOptional(p, 'datachan', []);
+        addParameter(p, 'filter_order', 200);
+        addParameter(p, 'filter_band', [1000, 4000]);
+        addParameter(p, 'amplitude_smoothing_window', 0.0025);
+    end
+    p.parse(varargin{:});
+
+    if isempty(p.Results.pathName)
+        pathName = uigetdir(pwd(), 'Choose the directory that contains songs');
+    else
+        pathName = p.Results.pathName;
+    end
+
+    if isempty(p.Results.soundchan)
+        answer = inputdlg( ...
+                          {'Sound channel','Data channels (array)'}, ...
+                          'Channel selection', ...
+                          1, ...
+                          {'0','[]'} ...
+                      );
+        soundchan = str2double(answer{1});
+        datachan = str2num(answer{2});
+    else
+        soundchan = p.Results.soundchan;
+        datachan = p.Results.datachan;
+    end
+
+    filter_order = p.Results.filter_order;
+    filter_band = p.Results.filter_band;
+    amplitude_smoothing_window = p.Results.amplitude_smoothing_window;
 
 cd(pathName)
 
@@ -100,6 +127,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
     temp.ev = {};
 
     firstRun = true;
+    last_fs = 0;
     for file_no = dbase.AnalysisState.CurrentFile+1:n_song
         dbase.AnalysisState.CurrentFile = file_no;
 
@@ -123,15 +151,23 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
             end
         end
 
-
-        if ~isempty(a) % sound successfully loaded
+                if ~isempty(a) % sound successfully loaded
             dbase.Times(file_no) = dateandtime; % file start time
             dbase.FileLength(file_no) = length(a); % file length
             % Segment
-            amp = calculate_amplitude(a, fs);
+
             if firstRun
+                b = fir1(filter_order, 2 * filter_band / fs);
+                smooth_len = round(amplitude_smoothing_window * fs);
+                amp = calculate_amplitude(a, b, smooth_len);
+                last_fs = fs;
                 [noiseEst, soundEst, noiseStd, soundStd] = init_two_means(amp);
                 firstRun = false;
+            else
+                if abs(fs - last_fs) > 0.0001
+                    error("fs %f is not the same as last_fs %f", fs, last_fs)
+                end
+                amp = calculate_amplitude(a, b, smooth_len);
             end
             [noiseEst, soundEst, noiseStd, soundStd] = eg_estimateTwoMeans(amp, noiseEst, soundEst, noiseStd, soundStd);
             th = eg_AutoThreshold(amp, noiseEst, soundEst, noiseStd, soundStd);
@@ -375,15 +411,13 @@ if ~isempty(seg_gaps)
 end
 end
 
-function amp = calculate_amplitude(a, fs)
-    b = fir1(200,[1000, 4000] / (fs/2));
-    snd = filtfilt(b, 1, a); % low pass fileter from 1-4 kHz
-    smooth_window = 0.0025;
-    wind = round(smooth_window*fs);
-    amp = smooth(10*log10(snd.^2+eps), wind); % convert it to dB
-    amp = amp-prctile(amp(wind:length(amp) - wind), 5);
-    amp(amp<0)=0;
+function amp = calculate_amplitude(s, b, smooth_len)
+    snd = filtfilt(b, 1, s); % low pass fileter from 1-4 kHz
+    amp = smooth(10*log10(snd.^2+eps), smooth_len); % convert it to dB
+    amp = amp - prctile(amp(smooth_len:length(amp) - smooth_len), 5);
+    amp(amp<0) = 0;
 end
+
 %%
 function threshold = eg_AutoThreshold(amp, noiseEst, soundEst, noiseStd, soundStd)
 if range(amp)==0
@@ -469,4 +503,5 @@ while(abs(logEstLike-logOldEstLike) > .005)
     [estProb, class] = max(prob);
     logEstLike = sum(log(estProb+eps)) / nAud;
 end
+
 end
