@@ -6,25 +6,25 @@ function Bout_detect_TO(varargin)
 %%% sound channel: audio
 %%% data channel: both pressure and neural
 
-    persistent p;
-    if isempty(p)
-        p = inputParser();
-        addOptional(p, 'pathName', '', @ischar);
-        addOptional(p, 'soundchan', []);
-        addOptional(p, 'datachan', []);
-        addParameter(p, 'filter_order', 200);
-        addParameter(p, 'filter_band', [1000, 4000]);
-        addParameter(p, 'amplitude_smoothing_window', 0.0025);
+    persistent params;
+    if isempty(params)
+        params = inputParser();
+        addOptional(params, 'pathName', '', @ischar);
+        addOptional(params, 'soundchan', []);
+        addOptional(params, 'datachan', []);
+        addParameter(params, 'filter_order', 200);
+        addParameter(params, 'filter_band', [1000, 4000]);
+        addParameter(params, 'amplitude_smoothing_window', 0.0025);
     end
-    p.parse(varargin{:});
+    params.parse(varargin{:});
 
-    if isempty(p.Results.pathName)
+    if isempty(params.Results.pathName)
         pathName = uigetdir(pwd(), 'Choose the directory that contains songs');
     else
-        pathName = p.Results.pathName;
+        pathName = params.Results.pathName;
     end
 
-    if isempty(p.Results.soundchan)
+    if isempty(params.Results.soundchan)
         answer = inputdlg( ...
                           {'Sound channel','Data channels (array)'}, ...
                           'Channel selection', ...
@@ -34,13 +34,13 @@ function Bout_detect_TO(varargin)
         soundchan = str2double(answer{1});
         datachan = str2num(answer{2});
     else
-        soundchan = p.Results.soundchan;
-        datachan = p.Results.datachan;
+        soundchan = params.Results.soundchan;
+        datachan = params.Results.datachan;
     end
 
-    filter_order = p.Results.filter_order;
-    filter_band = p.Results.filter_band;
-    amplitude_smoothing_window = p.Results.amplitude_smoothing_window;
+    filter_order = params.Results.filter_order;
+    filter_band = params.Results.filter_band;
+    amplitude_smoothing_window = params.Results.amplitude_smoothing_window;
 
 cd(pathName)
 
