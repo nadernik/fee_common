@@ -151,7 +151,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
             end
         end
 
-                if ~isempty(a) % sound successfully loaded
+        if ~isempty(a) % sound successfully loaded
             dbase.Times(file_no) = dateandtime; % file start time
             dbase.FileLength(file_no) = length(a); % file length
             % Segment
@@ -181,12 +181,16 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
 
             syll = segs(sel==1,:); % find only selected segment by bout selection
             if ~isempty(syll)
-                intr = find(syll(2:end,1)-syll(1:end-1,2)>.5*fs); % interval that has silence of more than 500 ms
+                % interval that has silence of more than 500 ms
+                intr = find(syll(2:end, 1) - syll(1:end - 1, 2) > 0.5 * fs);
                 ons = [1; intr+1]; % syll # of bout onsets
                 offs = [intr; size(syll,1)]; % syll # of bout offsets1
                 for bout_no = 1:length(ons) % for all bouts
                     temp.files(end+1) = file_no; % file number
-                    temp.bouts(end+1,:) = [max(1,round(syll(ons(bout_no),1)-.7*fs)) min(length(a),round(syll(offs(bout_no),2)+.7*fs))];
+                    temp.bouts(end+1,:) = [...
+                        max(1,round(syll(ons(bout_no),1)-.7*fs)), ...
+                        min(length(a),round(syll(offs(bout_no),2)+.7*fs)) ...
+                        ];
                         % include +/- 700 ms from bout onsets and offsets
                     f = find(segs(:,1)>temp.bouts(end,1) & segs(:,2)<temp.bouts(end,2)); % find all segments within bouts
                     temp.syll{end+1} = segs(f,:)-temp.bouts(end,1); % with respect to bout file onset
@@ -287,8 +291,12 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
     dbase.Times = temp.time;
     dbase.FileLength = temp.len;
     dbase.SoundFiles = dir(fullfile(boutpath, 'sound*.mat'));
+    dbase.OldSoundLoader = dbase.SoundLoader;
+    dbase.OldSoundFiles = s_files;
     dbase.SoundLoader = 'Surgery_Rig_daq';
+    dbase.OldChannelFiles = dbase.ChannelFiles;
     dbase.ChannelFiles = {};
+    dbase.OldChannelLoader = dbase.ChannelLoader;
     dbase.ChannelLoader = {};
     if ~isempty(datachan)
         for i=1:length(datachan)
