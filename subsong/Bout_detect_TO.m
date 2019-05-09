@@ -58,7 +58,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
 
     dbase.SoundLoader = 'AA_daq';
 
-
+    dbase.ChannelLoader = {};
     if ~isempty(datachan)
         for i=1:length(datachan) % for all the channels
             dchan = datachan(i); % channel number
@@ -67,7 +67,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
         end
     end
 
-%% initialize dbase
+    %% initialize dbase
     dbase.EventSources = {};
     dbase.EventFunctions = {};
     dbase.EventDetectors = {};
@@ -100,7 +100,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
     dbase.FileLength = zeros(1,n_song);
     dbase.Times = zeros(1,n_song);
 
-%% figure
+    %% figure
     fig = figure(55);
     clf
     subplot('position',[.05 0.35 0.9 0.6]);
@@ -116,7 +116,6 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
     drawnow
     starttime = now;
 
-%%
     temp.files = [];
     temp.bouts = zeros(0,2);
     temp.syll = {};
@@ -133,7 +132,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
 
         try
             [a, fs, dateandtime, ~, ~] = ...
-                egl_AA_daq(fullfile(pathName, s_files(file_no).name), 1); % load sound file
+            egl_AA_daq(fullfile(pathName, s_files(file_no).name), 1); % load sound file
         catch
             disp('fail');
             a = [];
@@ -143,7 +142,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
                 for i=1:length(datachan)
                     dchan = datachan(i);
                     [chdata{dchan}, fs, dateandtime, ~, ~] = ...
-                        egl_AA_daq(fullfile(pathName, d_files{dchan}(file_no).name), 1); % load data channels
+                    egl_AA_daq(fullfile(pathName, d_files{dchan}(file_no).name), 1); % load data channels
                 end
             catch
                 disp('fail');
@@ -188,10 +187,10 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
                 for bout_no = 1:length(ons) % for all bouts
                     temp.files(end+1) = file_no; % file number
                     temp.bouts(end+1,:) = [...
-                        max(1,round(syll(ons(bout_no),1)-.7*fs)), ...
-                        min(length(a),round(syll(offs(bout_no),2)+.7*fs)) ...
-                        ];
-                        % include +/- 700 ms from bout onsets and offsets
+                                              max(1,round(syll(ons(bout_no),1)-.7*fs)), ...
+                                              min(length(a),round(syll(offs(bout_no),2)+.7*fs)) ...
+                                          ];
+                               % include +/- 700 ms from bout onsets and offsets
                     f = find(segs(:,1)>temp.bouts(end,1) & segs(:,2)<temp.bouts(end,2)); % find all segments within bouts
                     temp.syll{end+1} = segs(f,:)-temp.bouts(end,1); % with respect to bout file onset
                     temp.titl{end+1} = cell(1,size(f,1));
@@ -226,7 +225,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
                         end
                     end
 
-%% save the structures
+                    %% save the structures
                     iss = 0;
                     while iss==0
                         try
@@ -248,7 +247,7 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
                         end
                     end
 
-%% update figure
+                    %% update figure
                     figure(fig);
                     subplot('position',[.05 0.05 0.9 0.3]);
                     ylim([1000 7000]);
@@ -286,7 +285,6 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
     %% Modify dbase to bout base structure
     thres = dbase.SegmentThresholds; %DEBUG
 
-    dbase = [];
     dbase.PathName = boutpath;
     dbase.Times = temp.time;
     dbase.FileLength = temp.len;
@@ -307,7 +305,6 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
         end
     end
 
-    %
     dbase.Fs = fs;
     dbase.SegmentThresholds = thres(temp.files);
     dbase.SegmentTimes = temp.syll;
@@ -332,13 +329,13 @@ if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%
     end
 
     dbase.AnalysisState.SourceList = {'(None)','Sound'};
-if ~isempty(datachan)
-    for i=1:length(datachan)
-        dchan = datachan(i);
-        dbase.AnalysisState.SourceList{end+1} = ['Channel ',num2str(dchan)];
+    if ~isempty(datachan)
+        for i=1:length(datachan)
+            dchan = datachan(i);
+            dbase.AnalysisState.SourceList{end+1} = ['Channel ',num2str(dchan)];
+        end
+        dbase.AnalysisState.EventLims = repmat([0.001 0.003],length(dchan),1);
     end
-    dbase.AnalysisState.EventLims = repmat([0.001 0.003],length(dchan),1);
-end
     dbase.AnalysisState.EventList = {'(None)'};
     dbase.AnalysisState.CurrentFile = 1;
     dbase.AnalysisState.EventWhichPlot = 0;
@@ -352,6 +349,8 @@ end
             pause(1);
         end
     end
+else
+    error('analysis.mat already exists');
 end
 end
 
@@ -359,64 +358,64 @@ end
 %% Select bouts
 function selected = select_bouts(fs, ampl, ~, segs) % segs is in indices
 
-seg_times = segs/fs*1000; % in milliseconds
-selected = zeros(1,size(seg_times,1));
-if size(seg_times,1)<2
-    return
-end
-
-durations = seg_times(:,2)-seg_times(:,1);
-wind = round(0.0025 * fs);
-
-%% Find segments with low amplitude variation
-med_deriv = median(abs(diff(ampl(1:wind:end)))); % median derivative
-gd = selected;
-loudness = selected;
-for c = 1:size(seg_times,1)
-    seg_amp = ampl(segs(c,1):segs(c,2));
-    loudness(c) = median(seg_amp);
-    seg_deriv = diff(seg_amp(1:wind:end));
-    seg_deriv = abs(seg_deriv)/med_deriv;
-    if mean(seg_deriv) / durations(c) < 0.075 % What a weird measure?
-        gd(c) = 1;
-    end
-end
-
-%% Eliminate exceptionally loud segments
-f = find(diff(diff(loudness)) < -40) + 1; %times where the second derivative is less than -40
-gd(f) = 0;
-
-%% Select segments with reasonably short pauses between them
-pause = zeros(size(seg_times, 1), 1);
-f = find(gd==1);
-seg_gaps = seg_times(f(2:end),1)-seg_times(f(1:end-1),2);
-
-if ~isempty(seg_gaps)
-    pause(f) = min([[seg_gaps(1); seg_gaps], [seg_gaps; seg_gaps(end)]],[],2); % take minimum pause for two consecutive gaps
-
-    f = find(durations./(pause+eps) > .20 & gd.'==1); % selected syllables with comparitively short flanking gaps
-
-    if ~isempty(f)
-        intr = find(seg_times(f(2:end),1) - seg_times(f(1:end-1), 2) > 500); % long gaps (more than 500)
-        ons = [1; intr+1]; % bout onsets
-        offs = [intr; length(f)]; % bout offsets
-    else
-        ons = [];
-        offs = [];
+    seg_times = segs/fs*1000; % in milliseconds
+    selected = zeros(1,size(seg_times,1));
+    if size(seg_times,1)<2
+        return
     end
 
-    for c = 1:length(ons)
-        numsyll = offs(c)-ons(c)+1;
-        boutlength = seg_times(f(offs(c)), 2) - seg_times(f(ons(c)), 1);
-        sylldur = sum(seg_times(f(ons(c):offs(c)),2)-seg_times(f(ons(c):offs(c)),1));
-        if numsyll > 2 && boutlength > 300 && sylldur / boutlength > 0.3 ...
-                && prctile(ampl(round(segs(f(ons(c)), 1)):round(segs(f(offs(c)), 2))), 90) > 15
-            selected(f(ons(c)):f(offs(c))) = 1;
+    durations = seg_times(:,2)-seg_times(:,1);
+    wind = round(0.0025 * fs);
+
+    %% Find segments with low amplitude variation
+    med_deriv = median(abs(diff(ampl(1:wind:end)))); % median derivative
+    gd = selected;
+    loudness = selected;
+    for c = 1:size(seg_times,1)
+        seg_amp = ampl(segs(c,1):segs(c,2));
+        loudness(c) = median(seg_amp);
+        seg_deriv = diff(seg_amp(1:wind:end));
+        seg_deriv = abs(seg_deriv)/med_deriv;
+        if mean(seg_deriv) / durations(c) < 0.075 % What a weird measure?
+            gd(c) = 1;
         end
     end
 
-    selected(gd==0) = 0;
-end
+    %% Eliminate exceptionally loud segments
+    f = find(diff(diff(loudness)) < -40) + 1; %times where the second derivative is less than -40
+    gd(f) = 0;
+
+    %% Select segments with reasonably short pauses between them
+    pause = zeros(size(seg_times, 1), 1);
+    f = find(gd==1);
+    seg_gaps = seg_times(f(2:end),1)-seg_times(f(1:end-1),2);
+
+    if ~isempty(seg_gaps)
+        pause(f) = min([[seg_gaps(1); seg_gaps], [seg_gaps; seg_gaps(end)]],[],2); % take minimum pause for two consecutive gaps
+
+        f = find(durations./(pause+eps) > .20 & gd.'==1); % selected syllables with comparitively short flanking gaps
+
+        if ~isempty(f)
+            intr = find(seg_times(f(2:end),1) - seg_times(f(1:end-1), 2) > 500); % long gaps (more than 500)
+            ons = [1; intr+1]; % bout onsets
+            offs = [intr; length(f)]; % bout offsets
+        else
+            ons = [];
+            offs = [];
+        end
+
+        for c = 1:length(ons)
+            numsyll = offs(c)-ons(c)+1;
+            boutlength = seg_times(f(offs(c)), 2) - seg_times(f(ons(c)), 1);
+            sylldur = sum(seg_times(f(ons(c):offs(c)),2)-seg_times(f(ons(c):offs(c)),1));
+            if numsyll > 2 && boutlength > 300 && sylldur / boutlength > 0.3 ...
+               && prctile(ampl(round(segs(f(ons(c)), 1)):round(segs(f(offs(c)), 2))), 90) > 15
+                selected(f(ons(c)):f(offs(c))) = 1;
+            end
+        end
+
+        selected(gd==0) = 0;
+    end
 end
 
 function amp = calculate_amplitude(s, b, smooth_len)
@@ -428,32 +427,32 @@ end
 
 %%
 function threshold = eg_AutoThreshold(amp, noiseEst, soundEst, noiseStd, soundStd)
-if range(amp)==0
-    threshold = inf;
-    return;
-end
+    if range(amp)==0
+        threshold = inf;
+        return;
+    end
 
-try
-    % Code from Aaron Andalman
-    if(noiseEst>soundEst)
-        disc = max(amp)+eps;
-    else
-        %Compute the optimal classifier between the two gaussians...
-        p(1) = 1/(2*soundStd^2+eps) - 1/(2*noiseStd^2);
-        p(2) = (noiseEst)/(noiseStd^2) - (soundEst)/(soundStd^2+eps);
-        p(3) = (soundEst^2)/(2*soundStd^2+eps) - (noiseEst^2)/(2*noiseStd^2) + log(soundStd/noiseStd+eps);
-        disc = roots(p);
-        disc = disc(disc>noiseEst & disc<soundEst);
-        if isempty(disc)
+    try
+        % Code from Aaron Andalman
+        if(noiseEst>soundEst)
             disc = max(amp)+eps;
         else
-            disc = disc(1);
-            disc = soundEst - 0.5 * (soundEst - disc);
+                    %Compute the optimal classifier between the two gaussians...
+            p(1) = 1/(2*soundStd^2+eps) - 1/(2*noiseStd^2);
+            p(2) = (noiseEst)/(noiseStd^2) - (soundEst)/(soundStd^2+eps);
+            p(3) = (soundEst^2)/(2*soundStd^2+eps) - (noiseEst^2)/(2*noiseStd^2) + log(soundStd/noiseStd+eps);
+            disc = roots(p);
+            disc = disc(disc>noiseEst & disc<soundEst);
+            if isempty(disc)
+                disc = max(amp)+eps;
+            else
+                disc = disc(1);
+                disc = soundEst - 0.5 * (soundEst - disc);
+            end
         end
-    end
-    threshold = disc;
+        threshold = disc;
 
-    if ~isreal(threshold)
+        if ~isreal(threshold)
         threshold = max(amp)*1.1;
     end
 catch
