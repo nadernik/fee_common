@@ -1195,7 +1195,7 @@ function push_Save_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-[pathstr,name,ext,versn] = fileparts(handles.egh.DefaultFile);
+[pathstr,name,ext] = fileparts(handles.egh.DefaultFile);
 [file, path] = uiputfile([pathstr name '_anti.mat'],'Save antidromic data');
 if ~isstr(file)
     return
