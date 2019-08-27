@@ -23,7 +23,7 @@ function varargout = egm_Antidromic_browser(varargin)
 % Edit the above text to modify the response to help egm_Antidromic_browser
 
 % Last Modified by GUIDE v2.5 10-Mar-2008 16:31:31
-
+% Nader Nikbakht - 2019 modified
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
@@ -1209,7 +1209,7 @@ anti.TimeLimits = [-handles.EventLims(1) handles.EventLims(2)];
 anti.ChronologicalOrder = handles.Order(f);
 anti.FileNumber = handles.Filenum(f);
 anti.NumberWithinFile = handles.InFile(f);
-anto.PreviousSpikeTime = -handles.PrevSpike(f)/handles.fs*1000;
+anti.PreviousSpikeTime = -handles.PrevSpike(f)/handles.fs*1000;
 anti.ResponseTime = (handles.Response(f)/handles.fs - handles.EventLims(1))*1000;
 anti.ColorGroup = handles.Group(f);
 
@@ -1389,3 +1389,50 @@ set(handles.text_N,'BackgroundColor',bck);
 set(handles.text_Reliability,'BackgroundColor',bck);
 set(handles.text_Latency,'BackgroundColor',bck);
 set(handles.text_Jitter,'BackgroundColor',bck);
+
+% save antidromic response statistics into a data base
+pathstr = 'D:\DATA\';
+fileName = fullfile(pathstr, 'anti_stat.mat');
+if  exist(fileName,'file') == 0
+    makeEmptyStructure(fileName);
+    load(fileName);
+else
+    load(fileName);
+end
+
+filelist = handles.egh.sound_files;
+f = find(handles.Deleted==0);
+fNumbers = unique(handles.Filenum(f));
+for fNum = 1:numel(fNumbers)
+%     if anti.numStims(anti.fName)
+    fName = filelist(fNum).name;
+end
+numStims = str2double(get(handles.text_N,'string'));
+reliability = str2double(get(handles.text_Reliability,'string'));
+latency = str2double(get(handles.text_Latency,'string'));
+jitter = str2double(get(handles.text_Jitter,'string'));
+
+anti.numStims = nan(1,numel(f));
+anti.reliability = nan(1,numel(f));
+anti.latency = nan(1,numel(f));
+anti.jitter = nan(1,numel(f));
+
+for fn = unique(anti.FileNumber)
+    anti.numStims(anti.FileNumber==fn) = repmat(numStims,1,sum(anti.FileNumber==fn));
+    anti.reliability(anti.FileNumber==fn) = repmat(reliability,1,sum(anti.FileNumber==fn));
+    anti.latency(anti.FileNumber==fn) = repmat(latency,1,sum(anti.FileNumber==fn));
+    anti.jitter(anti.FileNumber==fn) = repmat(jitter,1,sum(anti.FileNumber==fn));
+end
+
+function anti = makeEmptyStructure(fileName)
+anti.date = [];
+anti.fileName = [];
+anti.FileNumber = [];
+anti.subSel = [];
+anti.numStims = [];
+anti.reliability = [];
+anti.latency = [];
+anti.jitter = [];
+
+save(fileName,'anti');
+
