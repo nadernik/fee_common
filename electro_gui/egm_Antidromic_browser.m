@@ -142,11 +142,37 @@ else
     handles.PrevSpike = [];
     handles.Filenum = [];
     handles.InFile = [];
-    answer = inputdlg({'Min (ms)','Max (ms)'},'Time limits',1,{'-10','10'});
+    answer = inputdlg({'Min (ms)','Max (ms)'},'Time limits',1,{'-2','5'});
     handles.EventLims = [-str2num(answer{1}) str2num(answer{2})]/1000;
     handles.xlim = handles.EventLims;
     lms = round(handles.EventLims*handles.fs);
-    for c = 1:handles.egh.TotalFileNumber
+    allFiles = questdlg('Load all stim events?','All events?','Yes','No','No'); % show all stim files or the selected from electro_gui.m?
+    switch allFiles
+        case 'Yes'
+        for c = 1:handles.egh.TotalFileNumber
+            if ~isempty(evtimes{c})
+                [data fs dt label props] = eval(['egl_' loader '([''' handles.egh.path_name '\' filelist(c).name '''],1)']);
+                if size(data,1) > size(data,2)
+                    data = data';
+                end
+                for d = 1:length(evtimes{c})
+                    if evtimes{c}(d)-lms(1)>0 & evtimes{c}(d)+lms(2)<=length(data)
+                        handles.trials(end+1,:) = data(evtimes{c}(d)-lms(1):evtimes{c}(d)+lms(2));
+                        f = find(spks{c}<evtimes{c}(d));
+                        if isempty(f)
+                            handles.PrevSpike(end+1) = inf;
+                        else
+                            handles.PrevSpike(end+1) = evtimes{c}(d)-spks{c}(f(end));
+                        end
+                        handles.Filenum(end+1) = c;
+                        handles.InFile(end+1) = d;
+                    end
+                end
+                handles.Label = label;
+            end
+        end
+        case 'No'
+        c = str2double(handles.egh.edit_FileNumber.String);
         if ~isempty(evtimes{c})
             [data fs dt label props] = eval(['egl_' loader '([''' handles.egh.path_name '\' filelist(c).name '''],1)']);
             if size(data,1) > size(data,2)
@@ -168,7 +194,6 @@ else
             handles.Label = label;
         end
     end
-
     figure(handles.MainFigure)
        
     set(handles.text_TotalNumber,'string',['of ' num2str(size(handles.trials,1))]);
@@ -216,7 +241,7 @@ xs = linspace(-handles.EventLims(1),handles.EventLims(2),size(handles.trials,2))
 plot(xs,handles.trials(trialnum,:));
 ylabel(handles.Label);
 xlabel('Time from stim (ms)');
-title(['File ' num2str(handles.Filenum(trialnum)) '. Stim ' num2str(handles.InFile(trialnum)) '.']);
+title(['Bird ' handles.egh.WorksheetTitle ' File ' num2str(handles.Filenum(trialnum)) '. Stim ' num2str(handles.InFile(trialnum)) '.']);
 ylim(handles.ylim);
 hold on
 plot([-handles.PrevSpike(trialnum) -handles.PrevSpike(trialnum)]/handles.fs*1000,ylim,':r');
@@ -1391,7 +1416,7 @@ set(handles.text_Latency,'BackgroundColor',bck);
 set(handles.text_Jitter,'BackgroundColor',bck);
 
 % save antidromic response statistics into a data base
-pathstr = 'D:\DATA\';
+pathstr = 'D:\DATA\'; % fix later
 fileName = fullfile(pathstr, 'anti_stat.mat');
 if  exist(fileName,'file') == 0
     makeEmptyStructure(fileName);
@@ -1399,40 +1424,67 @@ if  exist(fileName,'file') == 0
 else
     load(fileName);
 end
-
-filelist = handles.egh.sound_files;
-f = find(handles.Deleted==0);
-fNumbers = unique(handles.Filenum(f));
-for fNum = 1:numel(fNumbers)
-%     if anti.numStims(anti.fName)
-    fName = filelist(fNum).name;
-end
 numStims = str2double(get(handles.text_N,'string'));
+if get(handles.check_StatisticsSelection,'value')==1
+    if numStims == 0
+        msgbox('No stim events detected','No Stims');
+        return;
+    else
+        h = find(handles.Selected==1);
+    end
+else
+    h = find(handles.Deleted==0);
+end
+
+trialnum = str2num(get(handles.edit_TrialNumber,'string'));
+fileNum= unique(handles.Filenum(h));
+[~, fIdx] = max(histc(handles.Filenum(h), fileNum));
+fileCount = length(fileNum);
+if fileCount > 1
+    msgbox(['Selection contains more than one file: ', num2str(fileNum)],'Many files error!');
+end
+filenum = fileNum(fIdx);
+filelist = handles.egh.sound_files;
+fName = filelist(fileNum).name;
+dfName = str2double(fName(regexp(fName,'\d'))); % regexp returned index of numbers in string
+fDate = filelist(fileNum).datenum;
+birdName = handles.egh.WorksheetTitle;
+dBirdName = str2double(birdName(regexp(birdName,'\d')));
 reliability = str2double(get(handles.text_Reliability,'string'));
 latency = str2double(get(handles.text_Latency,'string'));
 jitter = str2double(get(handles.text_Jitter,'string'));
-
-anti.numStims = nan(1,numel(f));
-anti.reliability = nan(1,numel(f));
-anti.latency = nan(1,numel(f));
-anti.jitter = nan(1,numel(f));
-
-for fn = unique(anti.FileNumber)
-    anti.numStims(anti.FileNumber==fn) = repmat(numStims,1,sum(anti.FileNumber==fn));
-    anti.reliability(anti.FileNumber==fn) = repmat(reliability,1,sum(anti.FileNumber==fn));
-    anti.latency(anti.FileNumber==fn) = repmat(latency,1,sum(anti.FileNumber==fn));
-    anti.jitter(anti.FileNumber==fn) = repmat(jitter,1,sum(anti.FileNumber==fn));
+% append stats for the selection to the end of the data structure
+if any(anti.fileName == dfName & anti.numStims == numStims)
+    msgbox('This data was already added.');
+    return;
+else  
+    anti.birdName = [anti.birdName, dBirdName];
+    anti.date = [anti.date, fDate];
+    anti.fileName = [anti.fileName, dfName];
+    anti.fileCount = [anti.fileCount, fileCount];
+    anti.numStims = [anti.numStims, numStims];
+    anti.reliability = [anti.reliability, reliability];
+    anti.latency = [anti.latency, latency];
+    anti.jitter = [anti.jitter, jitter];
+    switch handles.egh.sound_loader
+        case 'Surgery_Rig_daq'
+            anti.birdState = [anti.birdState, 1];
+        case 'AA_daq'
+             anti.birdState = [anti.birdState, 2];
+    end
+    msgbox(['Statistics were added to data base ', fileName]);
 end
+save(fileName,'anti');
 
 function anti = makeEmptyStructure(fileName)
+anti.birdName = [];
 anti.date = [];
 anti.fileName = [];
-anti.FileNumber = [];
-anti.subSel = [];
+anti.fileCount = [];
 anti.numStims = [];
 anti.reliability = [];
 anti.latency = [];
 anti.jitter = [];
-
+anti.birdState = []; % is the bird freely moving?
 save(fileName,'anti');
 
