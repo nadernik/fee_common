@@ -1448,8 +1448,16 @@ filelist = handles.egh.sound_files;
 fName = filelist(fileNum).name;
 dfName = str2double(fName(regexp(fName,'\d'))); % regexp returned index of numbers in string
 fDate = filelist(fileNum).datenum;
-birdName = handles.egh.WorksheetTitle;
-dBirdName = str2double(birdName(regexp(birdName,'\d')));
+switch handles.egh.sound_loader
+    case 'Surgery_Rig_daq'
+        ss = strsplit(handles.egh.path_name,'\')
+        definput = ss{end};
+    case 'AA_daq'
+        ss = strsplit(handles.egh.path_name,'\')
+        definput = ss{end-1};
+end
+birdName = inputdlg('What''s the bird name?','Name',1,{definput});
+dBirdName = str2double(birdName{1});
 reliability = str2double(get(handles.text_Reliability,'string'));
 latency = str2double(get(handles.text_Latency,'string'));
 jitter = str2double(get(handles.text_Jitter,'string'));
