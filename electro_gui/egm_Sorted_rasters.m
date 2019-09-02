@@ -649,7 +649,7 @@ switch str{val}
         opt.ignoreSyllList = answer{2};
     case 'Motifs'
         opt.motifSequences = eval(answer{1}); %%% Tatsuo
-        %opt.motifSequences = answer{1};
+%         opt.motifSequences = answer{1};
         opt.motifInterval = str2num(answer{2});
     case 'Bouts'
         opt.includeSyllList = answer{1};

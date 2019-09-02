@@ -1487,7 +1487,6 @@ for c = 1:length(handles.menu_Algorithm)
         alg = get(handles.menu_Algorithm(c),'label'); % get algorithm name
     end
 end
-
 subplot(handles.axes_Sonogram);
 cla;
 xlim(xl); % set x-axis limit
