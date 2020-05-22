@@ -6,6 +6,7 @@ if nargin < 5; fpass = [500 6000]; end
 if nargin < 4; makePlot = 0; end
 if nargin < 3; specDT = .005; end
 
+
 if round(specDT*fs*1e5) ~= round(specDT*fs*1e5) % 1e5 to deal with machine precision errors (eg round(40.0000)~=40); 
     error('Must choose winstep with integer number of bins')
 end
