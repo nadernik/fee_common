@@ -2,7 +2,7 @@ function [S,Time,F] = spectrogramELM(song,fs,specDT, makePlot, fpass, BandwidthP
 
 if nargin < 7; winsize = .02; end
 if nargin < 6; BandwidthProduct = 150; end
-if nargin < 5; fpass = [500 10000]; end
+if nargin < 5; fpass = [500 8000]; end
 if nargin < 4; makePlot = 0; end
 if nargin < 3; specDT = .005; end
 
@@ -43,16 +43,18 @@ if makePlot
     % to make black background, set everything below threshold to threshold, then cmap(1,:) = zeros(1,3); % background = black
 %     cmap(1,:) = zeros(1,3);
     cmap = flipud(brewermap(256,'Spectral'));
+    cmap = jet(256);
 %     cmap = 1/256*flipud([158,1,66;213,62,79;244,109,67;253,174,97;254,224,139;255,255,191;230,245,152;171,221,164;102,194,165;50,136,189;94,79,162;1 1 1]);%cbrewer spectral, modified
 %     cmap = flipud(gray); 
 %     cmap = parula(256);
     cmap(1,:) = [0 0 0]; % set baseline black
     colormap(cmap);
     Plot = 10*log10(S+eps);
-    Plot(Plot(:)<prctile(Plot(:),50)) = prctile(Plot(:),50);
+    p_thresh = 55; % thresholding the spectrogram
+    Plot(Plot(:)<prctile(Plot(:),p_thresh)) = prctile(Plot(:),p_thresh);
     imagesc(Time,F/1000,Plot); axis tight; 
     set(gca, 'ydir', 'normal')
-%     surf(Time, F/1000, Plot,'edgecolor','none'); axis tight; view(0,90);
+%      surf(Time, F/1000, Plot,'edgecolor','none'); axis tight; view(0,90);
     ylabel('Frequency (kHz)'); xlabel('Time (s)')
     shg
 end
