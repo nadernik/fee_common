@@ -1,4 +1,4 @@
-function Bout_detect_TO(pathName,soundchan,datachan)
+function Bout_detect_TO(varargin)
 
 %%% originally written by Lena Veit
 %%% Tatsuo Okubo
@@ -6,288 +6,262 @@ function Bout_detect_TO(pathName,soundchan,datachan)
 %%% sound channel: audio
 %%% data channel: both pressure and neural
 
-if nargin<1 % input argument empty
+persistent params;
+if isempty(params)
+    params = inputParser();
+    addOptional(params, 'pathName', '', @ischar);
+    addOptional(params, 'soundchan', []);
+    addOptional(params, 'datachan', []);
+    addParameter(params, 'filter_order', 200);
+    addParameter(params, 'filter_band', [1000, 4000]);
+    addParameter(params, 'amplitude_smoothing_window', 0.0025);
+end
+params.parse(varargin{:});
+
+if isempty(params.Results.pathName)
     pathName = uigetdir(pwd(), 'Choose the directory that contains songs');
+else
+    pathName = params.Results.pathName;
 end
-if nargin<3 % not all input argument specified
-    val = inputdlg({'Sound channel','Neural and pressure channel (array)'},'Channel selection',1,{'0','[1,4]'});
-    soundchan = eval(val{1});
-    datachan = eval(val{2});
-end
+
+[soundchan, datachan] = defafault_channel_dialog(params.Resuts.soundchan, params.Results.datachan);
+
+filter_order = params.Results.filter_order;
+filter_band = params.Results.filter_band;
+amplitude_smoothing_window = params.Results.amplitude_smoothing_window;
 
 cd(pathName)
 
-if exist(fullfile(pathName, 'analysis.mat'), 'file') == 0 % no analysis.mat   %%% necessary?
-    boutpath = fullfile(pathName, 'bouts');
-    if exist(boutpath, 'dir') == 0 % no bouts folder
-        mkdir(boutpath); % make bouts folder
+if exist(fullfile(pathName, 'analysis.mat'), 'file') == 2 % analysis.mat already exists
+    error('analysis.mat already exists');
+end
+
+boutpath = fullfile(pathName, 'bouts');
+if exist(boutpath, 'dir') == 0 % no bouts folder
+    mkdir(boutpath); % make bouts folder
+end
+
+s_files = dir(fullfile(pathName, sprintf('*chan%d.dat', soundchan))); % list of sound files
+n_song = numel(s_files);
+
+dbase = empty_dbase();
+dbase = init_dbase(dbase, pathName, loader_str, datachan, n_song, s_files);
+
+fig = bout_figure(pathName, n_song);
+drawnow;
+starttime = now;
+
+temp.files = [];
+temp.bouts = zeros(0,2);
+temp.syll = {};
+temp.titl = {};
+temp.sel = {};
+temp.time = [];
+temp.len = [];
+temp.ev = {};
+
+firstRun = true;
+last_fs = 0;
+for file_no = dbase.AnalysisState.CurrentFile+1:n_song
+    dbase.AnalysisState.CurrentFile = file_no;
+
+    try
+        [a, fs, dateandtime, ~, ~] = ...
+            egl_AA_daq(fullfile(pathName, s_files(file_no).name), 1); % load sound file
+    catch
+        disp('fail');
+        a = [];
     end
-
-    dbase = []; % initialize dbase
-    dbase.PathName = pathName; % put path name in dbase
-
-    s_files = dir(fullfile(dbase.PathName, sprintf('*chan%d.dat', soundchan))); % list of sound files
-    n_song = numel(s_files);
-
-    dbase.SoundLoader = 'AA_daq';
-
-
-    if ~isempty(datachan)
-        for i=1:length(datachan) % for all the channels
-            dchan = datachan(i); % channel number
-            d_files{dchan} = dir(fullfile(dbase.PathName, sprintf('*chan%d.dat', dchan))); % list of neural files
-            dbase.ChannelLoader{1,dchan} = 'AA_daq';
-        end
-    end
-
-%% initialize dbase
-    dbase.EventSources = {};
-    dbase.EventFunctions = {};
-    dbase.EventDetectors = {};
-    dbase.EventThresholds = zeros(0,n_song);
-    dbase.EventTimes = {};
-    dbase.EventIsSelected = {};
-
-    for file_no = 1:n_song
-        dbase.Properties.Names{file_no} = {};
-        dbase.Properties.Values{file_no} = {};
-        dbase.Properties.Types{file_no} = {};
-    end
-
-    dbase.SoundFiles = s_files;
-    dbase.ChannelFiles = {};
-    if ~isempty(datachan)
-        for i=1:length(datachan)
-            dchan = datachan(i);
-            %dbase.ChannelFiles{end+1} = d_files{i};
-            dbase.ChannelFiles{dchan} = d_files{dchan};
-        end
-    end
-
-    dbase.Fs = 40000;
-    dbase.AnalysisState.SourceList = {'(None)','Sound'}';
-    dbase.AnalysisState.EventList = {'(None)',};
-    dbase.AnalysisState.CurrentFile = 0;
-    dbase.AnalysisState.EventWhichPlot = 0;
-    dbase.AnalysisState.EventLims = repmat([0.001 0.003],1,1); % -1ms to 3ms on the event viewer
-    dbase.FileLength = zeros(1,n_song);
-    dbase.Times = zeros(1,n_song);
-
-%% figure
-    fig = figure(55);
-    clf
-    subplot('position',[.05 0.35 0.9 0.6]);
-    text(0,3,[pathName],'fontsize',14,'interpreter','none','horizontalalignment','center');
-    hold on
-    filesanalyzed = text(0,2,['Files analyzed: 0 of ' num2str(n_song)],'fontsize',14,'interpreter','none','horizontalalignment','center');
-    progbar = imagesc([-1 1],[.4 .6],zeros(1,n_song));
-    timeelapsed = text(0,-1,'Time elapsed: 0 sec','fontsize',14,'interpreter','none','horizontalalignment','center');
-    boutssaved = text(0,-2,'Bouts saved: 0','fontsize',14,'interpreter','none','horizontalalignment','center');
-    xlim([-1 1])
-    ylim([-3 3]);
-    axis off
-    drawnow
-    starttime = now;
-
-%%
-    temp.files = [];
-    temp.bouts = zeros(0,2);
-    temp.syll = {};
-    temp.titl = {};
-    temp.sel = {};
-    temp.time = [];
-    temp.len = [];
-    temp.ev = {};
-
-    firstRun = true;
-    for file_no = dbase.AnalysisState.CurrentFile+1:n_song
-        dbase.AnalysisState.CurrentFile = file_no;
-
+    if ~isempty(datachan) && ~isempty(a)
         try
-            [a, fs, dateandtime, ~, ~] = ...
-                egl_AA_daq(fullfile(pathName, s_files(file_no).name), 1); % load sound file
+            for i=1:length(datachan)
+                dchan = datachan(i);
+                [chdata{dchan}, fs, dateandtime, ~, ~] = ...
+                    egl_AA_daq(fullfile(pathName, d_files{dchan}(file_no).name), 1); % load data channels
+            end
         catch
             disp('fail');
             a = [];
         end
-        if ~isempty(datachan) && ~isempty(a)
-            try
-                for i=1:length(datachan)
-                    dchan = datachan(i);
-                    [chdata{dchan}, fs, dateandtime, ~, ~] = ...
-                        egl_AA_daq(fullfile(pathName, d_files{dchan}(file_no).name), 1); % load data channels
+    end
+
+    if ~isempty(a) % sound successfully loaded
+        dbase.Times(file_no) = dateandtime; % file start time
+        dbase.FileLength(file_no) = length(a); % file length
+        % Segment
+
+        if firstRun
+            b = fir1(filter_order, 2 * filter_band / fs);
+            smooth_len = round(amplitude_smoothing_window * fs);
+            amp = calculate_amplitude(a, b, smooth_len);
+            last_fs = fs;
+            [noiseEst, soundEst, noiseStd, soundStd] = init_two_means(amp);
+            firstRun = false;
+        else
+            if abs(fs - last_fs) > 0.0001
+                error("fs %f is not the same as last_fs %f", fs, last_fs)
+            end
+            amp = calculate_amplitude(a, b, smooth_len);
+        end
+        [noiseEst, soundEst, noiseStd, soundStd] = eg_estimateTwoMeans(amp, noiseEst, soundEst, noiseStd, soundStd);
+        th = eg_AutoThreshold(amp, noiseEst, soundEst, noiseStd, soundStd);
+
+        segs = DA_segmenter(amp,fs,th, 0.007, 0.007); % segment
+        sel = select_bouts(fs, amp, th, segs);
+        dbase.SegmentThresholds(file_no) = th;
+        dbase.SegmentTimes{file_no} = segs;
+        dbase.SegmentTitles{file_no} = cell(1,size(segs,1));
+        dbase.SegmentIsSelected{file_no} = sel;
+
+        syll = segs(sel==1,:); % find only selected segment by bout selection
+        if ~isempty(syll)
+            % interval that has silence of more than 500 ms
+            intr = find(syll(2:end, 1) - syll(1:end - 1, 2) > 0.5 * fs);
+            ons = [1; intr+1]; % syll # of bout onsets
+            offs = [intr; size(syll,1)]; % syll # of bout offsets1
+            for bout_no = 1:length(ons) % for all bouts
+                temp.files(end+1) = file_no; % file number
+                temp.bouts(end+1,:) = [...
+                    max(1,round(syll(ons(bout_no),1)-.7*fs)), ...
+                    min(length(a),round(syll(offs(bout_no),2)+.7*fs)) ...
+                    ];
+                % include +/- 700 ms from bout onsets and offsets
+                f = find(segs(:,1)>temp.bouts(end,1) & segs(:,2)<temp.bouts(end,2)); % find all segments within bouts
+                temp.syll{end+1} = segs(f,:)-temp.bouts(end,1); % with respect to bout file onset
+                temp.titl{end+1} = cell(1,size(f,1));
+                temp.sel{end+1} = sel(f);
+
+                % rec is the structure that will be saved under the
+                % audio file
+                rec.Fs = fs;
+                rec.Data = a(temp.bouts(end,1):temp.bouts(end,2)); % extract a bout from audio signal
+                rec.Time = dateandtime + temp.bouts(end,1)/fs/(24*60*60); % modify time (MATLAB time)
+
+                % temp is the structure that will be saved under
+                % analysis_incomplete
+                temp.time(end+1) = rec.Time;
+                temp.len(end+1) = length(rec.Data);
+
+                temp.ev{end+1} = zeros(0,2);
+
+                rec.Properties.Names = {};
+                rec.Properties.Types = [];
+                rec.Properties.Values = {};
+
+                if ~isempty(datachan)
+                    for i=1:length(datachan)
+                        dchan = datachan(i);
+                        ch_temp{dchan}.Fs = fs;
+                        ch_temp{dchan}.Data = chdata{dchan}(temp.bouts(end,1):temp.bouts(end,2));
+                        ch_temp{dchan}.Time = dateandtime + temp.bouts(end,1)/fs/(24*60*60);
+                        ch_temp{dchan}.Properties.Names = {};
+                        ch_temp{dchan}.Properties.Types = [];
+                        ch_temp{dchan}.Properties.Values = {};
+                    end
                 end
-            catch
-                disp('fail');
-                a = [];
-            end
-        end
 
+                %% save the structures
+                iss = 0;
+                while iss==0
+                    try
+                        bout_soundpath = fullfile(boutpath, sprintf('sound_%04d_%03d.mat', file_no, bout_no));
+                        save(bout_soundpath,'rec');
 
-        if ~isempty(a) % sound successfully loaded
-            dbase.Times(file_no) = dateandtime; % file start time
-            dbase.FileLength(file_no) = length(a); % file length
-            % Segment
-            amp = calculate_amplitude(a, fs);
-            if firstRun
-                [noiseEst, soundEst, noiseStd, soundStd] = init_two_means(amp);
-                firstRun = false;
-            end
-            [noiseEst, soundEst, noiseStd, soundStd] = eg_estimateTwoMeans(amp, noiseEst, soundEst, noiseStd, soundStd);
-            th = eg_AutoThreshold(amp, noiseEst, soundEst, noiseStd, soundStd);
-
-            segs = DA_segmenter(amp,fs,th, 0.007, 0.007); % segment
-            sel = select_bouts(fs, amp, th, segs);
-            dbase.SegmentThresholds(file_no) = th;
-            dbase.SegmentTimes{file_no} = segs;
-            dbase.SegmentTitles{file_no} = cell(1,size(segs,1));
-            dbase.SegmentIsSelected{file_no} = sel;
-
-            syll = segs(sel==1,:); % find only selected segment by bout selection
-            if ~isempty(syll)
-                intr = find(syll(2:end,1)-syll(1:end-1,2)>.5*fs); % interval that has silence of more than 500 ms
-                ons = [1; intr+1]; % syll # of bout onsets
-                offs = [intr; size(syll,1)]; % syll # of bout offsets1
-                for bout_no = 1:length(ons) % for all bouts
-                    temp.files(end+1) = file_no; % file number
-                    temp.bouts(end+1,:) = [max(1,round(syll(ons(bout_no),1)-.7*fs)) min(length(a),round(syll(offs(bout_no),2)+.7*fs))];
-                        % include +/- 700 ms from bout onsets and offsets
-                    f = find(segs(:,1)>temp.bouts(end,1) & segs(:,2)<temp.bouts(end,2)); % find all segments within bouts
-                    temp.syll{end+1} = segs(f,:)-temp.bouts(end,1); % with respect to bout file onset
-                    temp.titl{end+1} = cell(1,size(f,1));
-                    temp.sel{end+1} = sel(f);
-
-                    % rec is the structure that will be saved under the
-                    % audio file
-                    rec.Fs = fs;
-                    rec.Data = a(temp.bouts(end,1):temp.bouts(end,2)); % extract a bout from audio signal
-                    rec.Time = dateandtime + temp.bouts(end,1)/fs/(24*60*60); % modify time (MATLAB time)
-
-                    % temp is the structure that will be saved under
-                    % analysis_incomplete
-                    temp.time(end+1) = rec.Time;
-                    temp.len(end+1) = length(rec.Data);
-
-                    temp.ev{end+1} = zeros(0,2);
-
-                    rec.Properties.Names = {};
-                    rec.Properties.Types = [];
-                    rec.Properties.Values = {};
-
-                    if ~isempty(datachan)
-                        for i=1:length(datachan)
-                            dchan = datachan(i);
-                            ch_temp{dchan}.Fs = fs;
-                            ch_temp{dchan}.Data = chdata{dchan}(temp.bouts(end,1):temp.bouts(end,2));
-                            ch_temp{dchan}.Time = dateandtime + temp.bouts(end,1)/fs/(24*60*60);
-                            ch_temp{dchan}.Properties.Names = {};
-                            ch_temp{dchan}.Properties.Types = [];
-                            ch_temp{dchan}.Properties.Values = {};
-                        end
-                    end
-
-%% save the structures
-                    iss = 0;
-                    while iss==0
-                        try
-                            bout_soundpath = fullfile(boutpath, sprintf('sound_%04d_%03d.mat', file_no, bout_no));
-                            save(bout_soundpath,'rec');
-
-                            if ~isempty(datachan)
-                                for i=1:length(datachan)
-                                    dchan = datachan(i);
-                                    ch = ch_temp{dchan};
-                                    bout_dat_path = fullfile(boutpath, sprintf('ch%d_%04d_%03d.mat', dchan, file_no, bout_no));
-                                    save(bout_dat_path,'ch');
-                                end
+                        if ~isempty(datachan)
+                            for i=1:length(datachan)
+                                dchan = datachan(i);
+                                ch = ch_temp{dchan};
+                                bout_dat_path = fullfile(boutpath, sprintf('ch%d_%04d_%03d.mat', dchan, file_no, bout_no));
+                                save(bout_dat_path,'ch');
                             end
-                            iss = 1;
-                        catch
-                            disp('fail');
-                            pause(1);
                         end
+                        iss = 1;
+                    catch
+                        disp('fail');
+                        pause(1);
                     end
+                end
 
-%% update figure
-                    figure(fig);
-                    subplot('position',[.05 0.05 0.9 0.3]);
-                    ylim([1000 7000]);
-                    [p, f, t] = quick_spectrogram(gca,rec.Data,rec.Fs);
-                    imagesc(t,f,p);
-                    set(gca,'ydir','normal');
-                    axis tight
-                    axis off
-                    set(gca,'clim',[prctile(p(:),50) prctile(p(:),95)*1.2]);
-                    drawnow
-                end % for all bouts within a file
-            end
-
-            set(filesanalyzed,'string',['Files analyzed: ' num2str(file_no) ' of ' num2str(n_song)]);
-            set(progbar,'cdata',[ones(1,file_no) zeros(1,n_song-file_no)]);
-            set(timeelapsed,'string',['Time elapsed: ' num2str((now-starttime)*(24*60*60)) ' sec']);
-            set(boutssaved,'string',['Bouts saved: ' num2str(length(temp.files))]);
-            drawnow
+                %% update figure
+                figure(fig);
+                subplot('position',[.05 0.05 0.9 0.3]);
+                ylim([1000 7000]);
+                [p, f, t] = quick_spectrogram(gca,rec.Data,rec.Fs);
+                imagesc(t,f,p);
+                set(gca,'ydir','normal');
+                axis tight
+                axis off
+                set(gca,'clim',[prctile(p(:),50) prctile(p(:),95)*1.2]);
+                drawnow
+            end % for all bouts within a file
         end
-    end % for all the files
 
-    dbase.AnalysisState.CurrentFile = 1;
-    iss = 0;
-    while iss==0
-        try
-            save(fullfile(pathName, 'analysis_original.mat'),'dbase');
-            iss = 1;
-        catch
-            disp('fail');
-            pause(1);
-        end
+        set(filesanalyzed,'string',['Files analyzed: ' num2str(file_no) ' of ' num2str(n_song)]);
+        set(progbar,'cdata',[ones(1,file_no) zeros(1,n_song-file_no)]);
+        set(timeelapsed,'string',['Time elapsed: ' num2str((now-starttime)*(24*60*60)) ' sec']);
+        set(boutssaved,'string',['Bouts saved: ' num2str(length(temp.files))]);
+        drawnow
     end
+end % for all the files
 
-
-    %% Modify dbase to bout base structure
-    thres = dbase.SegmentThresholds; %DEBUG
-
-    dbase = [];
-    dbase.PathName = boutpath;
-    dbase.Times = temp.time;
-    dbase.FileLength = temp.len;
-    dbase.SoundFiles = dir(fullfile(boutpath, 'sound*.mat'));
-    dbase.SoundLoader = 'Surgery_Rig_daq';
-    dbase.ChannelFiles = {};
-    dbase.ChannelLoader = {};
-    if ~isempty(datachan)
-        for i=1:length(datachan)
-            dchan = datachan(i);
-            glob_path = fullfile(boutpath, sprintf('ch%d*.mat', dchan));
-            dbase.ChannelFiles{dchan} = dir(glob_path);
-            dbase.ChannelLoader{dchan} = 'Surgery_Rig_daq_ch';
-        end
+dbase.AnalysisState.CurrentFile = 1;
+iss = 0;
+while iss==0
+    try
+        save(fullfile(pathName, 'analysis_original.mat'),'dbase');
+        iss = 1;
+    catch
+        disp('fail');
+        pause(1);
     end
+end
 
-    %
-    dbase.Fs = fs;
-    dbase.SegmentThresholds = thres(temp.files);
-    dbase.SegmentTimes = temp.syll;
-    dbase.SegmentTitles = temp.titl;
 
-    for jj = 1:length(temp.sel)
-        temp.sel{jj}(1:end) = 1;
+%% Modify dbase to bout base structure
+dbase.PathName = boutpath;
+dbase.Times = temp.time;
+dbase.FileLength = temp.len;
+dbase.SoundFiles = dir(fullfile(boutpath, 'sound*.mat'));
+dbase.OldSoundLoader = dbase.SoundLoader;
+dbase.OldSoundFiles = s_files;
+dbase.SoundLoader = 'Surgery_Rig_daq';
+dbase.OldChannelFiles = dbase.ChannelFiles;
+dbase.ChannelFiles = {};
+dbase.OldChannelLoader = dbase.ChannelLoader;
+dbase.ChannelLoader = {};
+if ~isempty(datachan)
+    for i=1:length(datachan)
+        dchan = datachan(i);
+        glob_path = fullfile(boutpath, sprintf('ch%d*.mat', dchan));
+        dbase.ChannelFiles{dchan} = dir(glob_path);
+        dbase.ChannelLoader{dchan} = 'Surgery_Rig_daq_ch';
     end
-    dbase.SegmentIsSelected = temp.sel;
+end
 
-    dbase.EventSources = {};
-    dbase.EventFunctions = {};
-    dbase.EventDetectors = {};
-    dbase.EventThresholds = zeros(0,length(dbase.FileLength)); %% TO
-    dbase.EventTimes = {};
-    dbase.EventIsSelected = {};
+dbase.Fs = fs;
+dbase.SegmentThresholds = thres(temp.files);
+dbase.SegmentTimes = temp.syll;
+dbase.SegmentTitles = temp.titl;
 
-    for file_no = 1:length(temp.files)
-        dbase.Properties.Names{file_no} = {};
-        dbase.Properties.Values{file_no} = {};
-        dbase.Properties.Types{file_no} = {};
-    end
+for jj = 1:length(temp.sel)
+    temp.sel{jj}(1:end) = 1;
+end
+dbase.SegmentIsSelected = temp.sel;
 
-    dbase.AnalysisState.SourceList = {'(None)','Sound'};
+dbase.EventSources = {};
+dbase.EventFunctions = {};
+dbase.EventDetectors = {};
+dbase.EventThresholds = zeros(0,length(dbase.FileLength)); %% TO
+dbase.EventTimes = {};
+dbase.EventIsSelected = {};
+
+for file_no = 1:length(temp.files)
+    dbase.Properties.Names{file_no} = {};
+    dbase.Properties.Values{file_no} = {};
+    dbase.Properties.Types{file_no} = {};
+end
+
+dbase.AnalysisState.SourceList = {'(None)','Sound'};
 if ~isempty(datachan)
     for i=1:length(datachan)
         dchan = datachan(i);
@@ -295,18 +269,17 @@ if ~isempty(datachan)
     end
     dbase.AnalysisState.EventLims = repmat([0.001 0.003],length(dchan),1);
 end
-    dbase.AnalysisState.EventList = {'(None)'};
-    dbase.AnalysisState.CurrentFile = 1;
-    dbase.AnalysisState.EventWhichPlot = 0;
-    iss = 0;
-    while iss==0
-        try
-            save(fullfile(boutpath, 'analysis_bout.mat'),'dbase');
-            iss = 1;
-        catch
-            disp('fail');
-            pause(1);
-        end
+dbase.AnalysisState.EventList = {'(None)'};
+dbase.AnalysisState.CurrentFile = 1;
+dbase.AnalysisState.EventWhichPlot = 0;
+iss = 0;
+while iss==0
+    try
+        save(fullfile(boutpath, 'analysis_bout.mat'),'dbase');
+        iss = 1;
+    catch
+        disp('fail');
+        pause(1);
     end
 end
 end
@@ -375,15 +348,13 @@ if ~isempty(seg_gaps)
 end
 end
 
-function amp = calculate_amplitude(a, fs)
-    b = fir1(200,[1000, 4000] / (fs/2));
-    snd = filtfilt(b, 1, a); % low pass fileter from 1-4 kHz
-    smooth_window = 0.0025;
-    wind = round(smooth_window*fs);
-    amp = smooth(10*log10(snd.^2+eps), wind); % convert it to dB
-    amp = amp-prctile(amp(wind:length(amp) - wind), 5);
-    amp(amp<0)=0;
+function amp = calculate_amplitude(s, b, smooth_len)
+snd = filtfilt(b, 1, s); % low pass fileter from 1-4 kHz
+amp = smooth(10*log10(snd.^2+eps), smooth_len); % convert it to dB
+amp = amp - prctile(amp(smooth_len:length(amp) - smooth_len), 5);
+amp(amp<0) = 0;
 end
+
 %%
 function threshold = eg_AutoThreshold(amp, noiseEst, soundEst, noiseStd, soundStd)
 if range(amp)==0
@@ -421,7 +392,7 @@ end
 end
 
 function [uNoise, uSound, sdNoise, sdSound] = init_two_means(audioLogPow)
-    %set initial conditions
+%set initial conditions
 m = sort(audioLogPow);
 nAud = numel(audioLogPow);
 uNoise = median(m(fix(1:nAud/2)));
@@ -469,4 +440,93 @@ while(abs(logEstLike-logOldEstLike) > .005)
     [estProb, class] = max(prob);
     logEstLike = sum(log(estProb+eps)) / nAud;
 end
+
+end
+
+function [soundchan, datachan] = default_channel_dialog(soundchan, datachan)
+    if isempty(soundchan)
+        answer = inputdlg( ...
+                             {'Sound channel','Data channels (array)'}, ...
+                             'Channel selection', ...
+                             1, ...
+                             {'0','[]'} ...
+                         );
+        soundchan = str2double(answer{1});
+        datachan = str2num(answer{2});
+    end
+end
+
+function dbase = empty_dbase()
+dbase = [];
+dbase.PathName = '';
+
+dbase.SoundLoader = '';
+dbase.SoundFiles = s_files;
+
+dbase.ChannelLoader = {};
+dbase.ChannelFiles = {};
+
+dbase.EventSources = {};
+dbase.EventFunctions = {};
+dbase.EventDetectors = {};
+dbase.EventThresholds = [];
+dbase.EventTimes = {};
+dbase.EventIsSelected = {};
+
+dbase.Properties.Names = {};
+dbase.Properties.Values = {};
+dbase.Properties.Types = {};
+
+dbase.Fs = NaN;
+dbase.AnalysisState.SourceList = {'(None)'};
+dbase.AnalysisState.EventList = {'(None)',};
+dbase.AnalysisState.CurrentFile = 0;
+dbase.AnalysisState.EventWhichPlot = 0;
+dbase.AnalysisState.EventLims = repmat([0.001 0.003],1,1); % -1ms to 3ms on the event viewer
+dbase.FileLength = zeros(1,0);
+dbase.Times = zeros(1,0);
+end
+
+function dbase = init_dbase(dbase, pathName, loader_str, datachan, n_song, s_files)
+dbase.PathName = pathName;
+
+dbase.SoundLoader = loader_str;
+
+dbase.SoundFiles = s_files;
+if ~isempty(datachan)
+    for i=1:length(datachan) % for all the channels
+        dchan = datachan(i); % channel number
+        dbase.ChannelFiles{dchan} = dir(fullfile(pathName, sprintf('*chan%d.dat', dchan))); % list of neural files
+        dbase.ChannelLoader{1,dchan} = loader_str;
+    end
+end
+
+dbase.EventThresholds = zeros(0,n_song);
+
+for file_no = 1:n_song
+    dbase.Properties.Names{file_no} = {};
+    dbase.Properties.Values{file_no} = {};
+    dbase.Properties.Types{file_no} = {};
+end
+
+dbase.Fs = 40000;
+dbase.AnalysisState.SourceList{end+1, 1} = {'Sound'}';
+dbase.FileLength = zeros(1,n_song);
+dbase.Times = zeros(1,n_song);
+end
+
+function fig = bout_figure(pathName, n_song)
+%% figure
+fig = figure(55);
+clf
+subplot('position',[.05 0.35 0.9 0.6]);
+text(0,3,[pathName],'fontsize',14,'interpreter','none','horizontalalignment','center');
+hold on
+filesanalyzed = text(0,2,['Files analyzed: 0 of ' num2str(n_song)],'fontsize',14,'interpreter','none','horizontalalignment','center');
+progbar = imagesc([-1 1],[.4 .6],zeros(1,n_song));
+timeelapsed = text(0,-1,'Time elapsed: 0 sec','fontsize',14,'interpreter','none','horizontalalignment','center');
+boutssaved = text(0,-2,'Bouts saved: 0','fontsize',14,'interpreter','none','horizontalalignment','center');
+xlim([-1 1])
+ylim([-3 3]);
+axis off;
 end
