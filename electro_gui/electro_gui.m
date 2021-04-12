@@ -319,7 +319,7 @@ if any(strcmp(macronames, 'Macro_Manager'))
         'callback','electro_gui(''MacrosMenuclick'',gcbo,[],guidata(gcbo))');
     macronames = macronames(~strcmp(macronames, 'Macro_Manager'));
     pos = 1;
-else 
+else
     pos = 0;
 end
 
@@ -972,7 +972,7 @@ if ~isempty(handles.amplitude) && ~all(handles.amplitude == 0)
     set(get(gca,'children'),'uicontextmenu',get(gca,'uicontextmenu'));
     set(get(gca,'children'),'buttondownfcn',get(gca,'buttondownfcn'));
     drawnow expose
-    
+
     if handles.SoundThresholds(filenum)==inf
         if strcmp(get(handles.menu_AutoThreshold,'checked'),'on')
             handles.CurrentThreshold = eg_AutoThreshold(handles.amplitude);
@@ -1181,7 +1181,7 @@ if isempty(thr)
         'color',handles.AmplitudeThresholdColor);
     xlim(xl);
     hold off;
-    
+
     if size(handles.SegmentTimes{getFileNum(handles)},2)==0
         if strcmp(get(handles.menu_AutoSegment,'checked'),'on')
             handles = SegmentSounds(handles);
@@ -1710,7 +1710,7 @@ for c = 1:handles.TotalFileNumber
     handles.Properties.Values{c} = props.Values;
     handles.Properties.Types{c} = props.Types;
 end
-    
+
 
 handles.ShuffleOrder = randperm(handles.TotalFileNumber);
 
@@ -1866,7 +1866,7 @@ function push_Open_Callback(hObject, eventdata, handles)
 if isfield(handles, 'path_name')
     [file, path] = uigetfile('*.mat','Load analysis', handles.path_name); % open file dialog box
 else
-    [file, path] = uigetfile('*.mat','Load analysis'); 
+    [file, path] = uigetfile('*.mat','Load analysis');
 end
 if ~isstr(file)
     return % file name is not a string
@@ -1969,7 +1969,7 @@ else
     end
     set(handles.popup_Channel1,'string',str);
     set(handles.popup_Channel2,'string',str);
-    
+
     str = {'(None)'};
     for c = 1:length(dbase.EventTimes)
         [param labels] = eval(['ege_' dbase.EventDetectors{c} '(''params'')']);
@@ -1978,9 +1978,9 @@ else
         end
     end
     set(handles.popup_EventList,'string',str);
-    
+
     handles.EventCurrentThresholds = inf*ones(1,length(str)-1);
-    
+
     handles.EventWhichPlot = zeros(1,length(str));
     handles.EventLims = repmat(handles.EventLims,length(str),1);
 end
@@ -2064,7 +2064,7 @@ function push_Save_Callback(hObject, eventdata, handles)
 % hObject    handle to push_Save (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-pause(.5); 
+pause(.5);
 drawnow expose
 [file, path] = uiputfile(handles.DefaultFile,'Save analysis');
 if ~isstr(file)
@@ -4655,7 +4655,7 @@ elseif strcmp(get(gcf,'selectiontype'),'open')
             end
         end
     end
-    
+
 
 elseif strcmp(get(gcf,'selectiontype'),'extend')
     delete(findobj('parent',gca,'linewidth',2));
@@ -5307,7 +5307,7 @@ switch str
     case 'Sound mix'
         wav = GenerateSound(handles,'mix');
         fs = handles.fs * handles.SoundSpeed;
-        
+
     case 'Events'
         if get(handles.radio_Matlab,'value')==1
             fig = figure;
@@ -5374,7 +5374,7 @@ switch str
                 errordlg('Must be in the Display->Features mode!','Error');
             end
         end
-            
+
         delete(txtexp)
         return
 end
@@ -5511,33 +5511,33 @@ elseif get(handles.radio_Files,'value')==1
 drawnow expose
 %%%%%%%%%%%%%%%%%%%%%%%
 % The Microsoft APIs for Office 2007 are different from those used for Office 2003. You can create a new presentation in Powerpoint 2007 and add slides to it using MATLAB with the following code (note the commented sections for modifying an existing presentation):
-% 
+%
 % ppt = actxserver('powerpoint.application');
 % ppt.Visible = 1;
-% % Open an existing presentation 
+% % Open an existing presentation
 % % ppt.Presentations.Open(<presentationname>); % Already existing presentation in the current working directory
-% 
+%
 % % Create a new presentation
 % ppt.Presentations.Add()
 % layout = ppt.ActivePresentation.SlideMaster.CustomLayouts.Item(1);
 % ppt.ActivePresentation.Slides.AddSlide(1, layout); %Add slide to the presentation
-% 
+%
 % % Add another slide and add an image to that slide
 % layout = ppt.ActiveWindow.Selection.SlideRange(2).CustomLayout;
 % slides = ppt.ActivePresentation.Slides;
 % newSlide = slides.AddSlide(2,layout);
 % pic = ppt.ActiveWindow.Selection.SlideRange(2).Shapes.AddPicture(<imagename>,'msoFalse','msoTrue',100,20,500,500); % Adds an existing image to the slide
-% 
+%
 % % Save an existing presentation
 % % ppt.ActivePresentation.Save;
-% 
+%
 % % Save a newly created presentation
 % ppt.ActivePresentation.SaveAs('filename.pptx')
-% 
+%
 % ppt.ActivePresentation.Close
 % ppt.release
-%%%%%%%%%%%%%%%%   
-    
+%%%%%%%%%%%%%%%%
+
 elseif get(handles.radio_PowerPoint,'value')==1
     ppt = actxserver('PowerPoint.Application');
     op = get(ppt,'ActivePresentation');
@@ -5744,7 +5744,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
 
         case 'Figure'
             handles.template = get(handles.menu_EditFigureTemplate,'userdata');
-            
+
             ppt = actxserver('PowerPoint.Application');
             op = get(ppt,'ActivePresentation');
 
@@ -5758,7 +5758,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
             offy = (get(op.PageSetup,'SlideHeight')-72*(sum(handles.template.Height)+sum(handles.template.Interval(1:end-1))))/2;
 
             sound_inserted = 0;
-            
+
             ch = get(handles.menu_ProgressBar,'children');
             progbar = [];
             axs = [handles.axes_Channel2 handles.axes_Channel1 handles.axes_Amplitude handles.axes_Segments handles.axes_Sonogram handles.axes_Sound];
@@ -5777,16 +5777,16 @@ elseif get(handles.radio_PowerPoint,'value')==1
                 set(fig,'position',ps);
 
                 cla
-                
+
                 include_progbar = 0;
 
                 switch handles.template.Plot{c}
-                                     
+
                     case 'Sonogram'
                         if ~isempty(find(progbar==5))
                             include_progbar = 1;
                         end
-                        
+
                         yl = get(handles.axes_Sonogram,'ylim');
 
                         hold on
@@ -5827,13 +5827,13 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         axis tight;
                         axis off;
                         drawnow expose
-                        
+
 
                     case 'Segments'
                         if ~isempty(find(progbar==4))
                             include_progbar = 1;
                         end
-                        
+
                         st = handles.SegmentTimes{getFileNum(handles)};
                         sel = handles.SegmentSelection{getFileNum(handles)};
                         f = find(st(:,1)>xl(1)*handles.fs & st(:,1)<xl(2)*handles.fs);
@@ -5887,7 +5887,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         if ~isempty(find(progbar==3))
                             include_progbar = 1;
                         end
-                        
+
                         m = findobj('parent',handles.axes_Amplitude,'linestyle','-');
                         x = get(m,'xdata');
                         y = get(m,'ydata');
@@ -5898,7 +5898,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                             col = col-eps;
                         end
                         plot(x(f),y(f),'color',col);
-                        
+
                         ylim(get(handles.axes_Amplitude,'ylim'));
                         set(gca,'ydir','normal');
                         axis off
@@ -5911,7 +5911,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         if ~isempty(find(progbar==2)) & strcmp(handles.template.Plot{c},'Top plot')
                             include_progbar = 1;
                         end
-                        
+
                         if strcmp(handles.template.Plot{c},'Top plot')
                             axnum = 1;
                         else
@@ -5964,8 +5964,8 @@ elseif get(handles.radio_PowerPoint,'value')==1
                 end
                 yl = ylim;
                 xlim(xl);
-                
-                
+
+
                 if ~strcmp(handles.template.Plot{c},'Segment labels')
                     if verLessThan('matlab','8.4.0')
                         figNo = fig;
@@ -5978,7 +5978,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                     set(ug,'Height',72*handles.template.Height(c));
                     set(ug,'Width',72*handles.ExportSonogramWidth*(xl(2)-xl(1)));
                     set(ug,'Left',offx,'Top',offy+72*(sum(handles.template.Interval(1:c-1))+sum(handles.template.Height(1:c-1))));
-                    
+
                     switch handles.template.YScaleType(c)
                         case 0
                             % no scale bar
@@ -5994,7 +5994,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                             [mx fnd] = min(abs(pres-val));
                             val = pres(fnd)*10^ord;
                             sb_height = 72*val/(yl(2)-yl(1))*handles.template.Height(c);
-                            
+
                             unit = '';
                             switch handles.template.Plot{c}
                                 case 'Sonogram'
@@ -6029,8 +6029,8 @@ elseif get(handles.radio_PowerPoint,'value')==1
                                     end
                                 case 'Sound wave'
                                     unit = 'ADU';
-                            end     
-                            
+                            end
+
                             sb_posy = get(ug,'Top')+0.5*get(ug,'Height')-0.5*sb_height;
 
                             if handles.VerticalScalebarPosition <= 0
@@ -6047,9 +6047,9 @@ elseif get(handles.radio_PowerPoint,'value')==1
                             set(txt.TextFrame.TextRange.Font,'Size',8);
                             set(txt,'Height',get(txt.TextFrame.TextRange,'BoundHeight'));
                             set(txt,'Width',get(txt.TextFrame.TextRange,'BoundWidth'));
-                            
+
                             set(txt,'Top',get(ug,'Top')+0.5*get(ug,'Height')-0.5*get(txt,'Height'));
-                            
+
                             if handles.VerticalScalebarPosition <= 0
                                 set(txt,'Left',sb_posx-get(txt,'Width')-72*0.05);
                                 set(txt.TextFrame.TextRange.ParagraphFormat,'Alignment','ppAlignRight');
@@ -6057,7 +6057,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                                 set(txt,'Left',sb_posx+72*0.05);
                                 set(txt.TextFrame.TextRange.ParagraphFormat,'Alignment','ppAlignLeft');
                             end
-                            
+
                         case 2 % axis
                             ax_line = invoke(newslide.Shapes,'AddLine',offx,get(ug,'Top'),offx,get(ug,'Top')+get(ug,'Height'));
                             fig_yscale = figure('visible','off','units','inches');
@@ -6068,7 +6068,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                             ylim([yl(1) yl(2)]);
                             ytick = get(gca,'ytick');
                             delete(fig_yscale);
-                            
+
                             switch handles.template.Plot{c}
                                 case 'Sonogram'
                                     str = get(get(handles.axes_Sonogram,'ylabel'),'string');
@@ -6081,12 +6081,12 @@ elseif get(handles.radio_PowerPoint,'value')==1
                                 case 'Sound wave'
                                     str = 'Sound amplitude (ADU)';
                             end
-                            
+
                             mn = inf;
                             for j = 1:length(ytick')
                                 tickpos = get(ug,'Top')+get(ug,'Height')-(ytick(j)-yl(1))/(yl(2)-yl(1))*get(ug,'Height');
                                 ax_line = invoke(newslide.Shapes,'AddLine',offx,tickpos,offx+72*0.02,tickpos);
-                                
+
                                 txt = invoke(newslide.Shapes,'AddTextBox',1,0,0,0,0);
                                 set(txt.TextFrame.TextRange,'Text',num2str(ytick(j)));
                                 set(txt.TextFrame,'VerticalAnchor','msoAnchorMiddle','WordWrap','msoFalse',...
@@ -6099,11 +6099,11 @@ elseif get(handles.radio_PowerPoint,'value')==1
                                 mn = min([mn get(txt,'Left')]);
                                 set(txt.TextFrame.TextRange.ParagraphFormat,'Alignment','ppAlignRight');
                             end
-                            
+
                             if strcmp(handles.template.Plot{c},'Sonogram')
                                 ytick = ytick/1000;
                             end
-                            
+
                             txt = invoke(newslide.Shapes,'AddTextBox',1,0,0,0,0);
                             set(txt.TextFrame.TextRange,'Text',str);
                             set(txt.TextFrame,'VerticalAnchor','msoAnchorBottom','HorizontalAnchor','msoAnchorCenter',...
@@ -6116,7 +6116,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                             set(txt,'Left',mn-0.5*get(txt,'Width')-72*0.15);
                             set(txt.TextFrame.TextRange.ParagraphFormat,'Alignment','ppAlignCenter');
                     end
-                    
+
                     if include_progbar == 1
                         ycoord = [ycoord; get(ug,'Left') get(ug,'Top') get(ug,'Width') get(ug,'Height')];
                         switch handles.template.Plot{c}
@@ -6162,12 +6162,12 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         crd(:,1) = crd(:,1)*ycoord(end,3)/get(op.PageSetup,'SlideWidth');
                         crd(:,2) = -crd(:,2)*ycoord(end,4)/get(op.PageSetup,'SlideHeight');
                         crd = sortrows(crd);
-                        
+
                         if strcmp(get(handles.menu_PlayReverse,'checked'),'on')
                             crd(:,1) = flipud(crd(:,1))-crd(end,1);
                             crd(:,2) = flipud(crd(:,2));
                         end
-                        
+
                         vals = [];
                         if ~strcmp(handles.template.Plot{c},'Segments')
                             lst = linspace(crd(1,1),crd(end,1),round(get(ug,'Width'))*2);
@@ -6180,7 +6180,7 @@ elseif get(handles.radio_PowerPoint,'value')==1
                         end
                         coords{end+1} = crd;
                     end
-                    
+
                     if strcmp(handles.template.Plot{c},'Sonogram') & handles.ExportSonogramIncludeClip > 0
                         if handles.ExportSonogramIncludeClip == 1
                             wav = GenerateSound(handles,'snd');
@@ -6197,16 +6197,16 @@ elseif get(handles.radio_PowerPoint,'value')==1
                             audiowrite('eg_temp.wav', wav, round(fs), 'BitsPerSample', 16);
                             snd = invoke(newslide.Shapes,'AddMediaObject2',[pwd '\eg_temp.wav']);
                         end
-                        
+
                         warning on
-                        
+
                         set(snd,'Left',get(ug,'Left'));
                         set(snd,'Top',get(ug,'Top'));
                         mt = dir('eg_temp.wav');
                         delete(mt(1).name);
                         sound_inserted = 1;
                     end
-                    
+
                     ug = invoke(ug,'Ungroup');
                     if ~strcmp(handles.template.Plot{c},'Segments')
                         for j = 1:get(ug,'Count')
@@ -6339,8 +6339,8 @@ elseif get(handles.radio_PowerPoint,'value')==1
                 end
             end
 
-            
-            
+
+
             delete(fig);
 
             bestlength = handles.ScalebarWidth/handles.ExportSonogramWidth;
@@ -7274,7 +7274,7 @@ for j = da
     for c = 1:length(ch)
         x = get(ch(c),'xdata');
         y = get(ch(c),'ydata');
-        
+
         % If the feature is pitch or mean frequency, don't rescale the
         % y-axis
         List = get(handles.(['popup_Function' num2str(j)]),'String');
@@ -7885,7 +7885,7 @@ if isfield(handles,'DefaultPropertyValues')
         lst_menus{c} = get(handles.PropertyObjectHandles(c),'string')';
         lst_menus{c} = lst_menus{c}(1:end-1);
     end
-            
+
 else
     bck_def = {};
     bck_nm = {};
@@ -7920,7 +7920,7 @@ lns = lns(2:2:end);
 for c = 1:length(handles.PropertyNames)
     wd = min([0.95*(1/7) 0.95*(1/length(handles.PropertyNames))]);
     x = lns(c)-wd/2;
-    
+
     switch handles.PropertyTypes(c)
         case 1 % string
             handles.PropertyObjectHandles(c) = uicontrol(handles.panel_Properties,'Style','edit',...
@@ -7940,13 +7940,13 @@ for c = 1:length(handles.PropertyNames)
                     str = [str lst_menus{d}];
                 end
             end
-            
+
             for d = 1:length(bck_nm)
                 if strcmp(bck_nm{d},handles.PropertyNames{c})
                     str{end+1} = bck_def{d};
                 end
             end
-            
+
             str = unique(str);
             str{end+1} = 'New value...';
             handles.PropertyObjectHandles(c) = uicontrol(handles.panel_Properties,'Style','popupmenu',...
@@ -7954,7 +7954,7 @@ for c = 1:length(handles.PropertyNames)
                 'FontSize',10,'horizontalalignment','center','backgroundcolor',[1 1 1]);
             handles.DefaultPropertyValues{c} = str{1};
     end
-    
+
     handles.PropertyTextHandles(c) = uicontrol(handles.panel_Properties,'Style','text',...
         'units','normalized','string',handles.PropertyNames{c},'position',[x 0.65 wd 0.3],...
         'FontSize',8,'horizontalalignment','center');
@@ -7996,7 +7996,7 @@ switch handles.PropertyTypes(f)
             if ~isempty(answer)
                 handles.Properties.Values{filenum}{indx} = answer{1};
             end
-                
+
             str = get(handles.PropertyObjectHandles(f),'string');
             str = str(1:end-1);
             str{end+1} = handles.Properties.Values{filenum}{indx};
@@ -8022,11 +8022,11 @@ if strcmp(get(hObject,'enable'),'off')
     filenum = getFileNum(handles);
 
     handles.Properties.Names{filenum}{end+1} = get(hObject,'string');
-    
+
     f = find(handles.PropertyTextHandles==hObject);
     handles.Properties.Values{filenum}{end+1} = handles.DefaultPropertyValues{f};
     handles.Properties.Types{filenum}(end+1) = handles.PropertyTypes(f);
-    
+
     handles = eg_LoadProperties(handles);
 end
 
@@ -8164,8 +8164,8 @@ else
             indx = 1:handles.TotalFileNumber;
             selstr = 'all files';
     end
-    
-    
+
+
     switch type
         case 1
             answer = inputdlg({'Property name',['Value for ' selstr]},'Add property',1,{'',''});
@@ -8200,13 +8200,13 @@ else
             for c = 1:size(lst,1)
                 str{c} = strtrim(lst(c,:));
             end
-            
+
             [val,ok] = listdlg('ListString',str,'Name','Add property','PromptString',['Value for ' selstr],'SelectionMode','single');
             if ok == 0
                 return
             end
             val = str{val};
-            
+
             str{end+1} = 'Dummy';
             handles.PropertyNames{end+1} = name;
             handles.PropertyObjectHandles(end+1) = uicontrol(handles.panel_Properties,'Style','popupmenu',...
