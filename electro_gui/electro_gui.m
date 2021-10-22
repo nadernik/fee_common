@@ -1102,14 +1102,14 @@ end
 if length(handles.(['chan',num2str(axnum)])) < length(handles.sound)
     indx = fix(linspace(1,length(handles.(['chan',num2str(axnum)])),length(handles.sound)));
     chan = handles.(['chan',num2str(axnum)]);
-    handles.(['chan',num2str(axnum)]) = chan(indx);
+    handles.(['chan',num2str(axnum)]) = chan(indx,:); % NADER FIX: MULTIPLE CHANNELS 
 end
 
 handles = eg_PlotChannel(handles,axnum);
 
 subplot(handles.(['axes_Channel',num2str(axnum)]));
 if strcmp(get(handles.(['menu_AutoLimits' num2str(axnum)]),'checked'),'on')
-    yl = [min(handles.(['chan',num2str(axnum)])) max(handles.(['chan',num2str(axnum)]))];
+    yl = [min(min(handles.(['chan',num2str(axnum)]))) max(max(handles.(['chan',num2str(axnum)])))];
     if yl(1)==yl(2)
         yl = [yl(1)-1 yl(2)+1];
     end
@@ -1153,8 +1153,13 @@ else
     h = plot(f,handles.(['chan',num2str(axnum)]));
 end
 hold off
-set(h,'color',handles.ChannelColor(axnum,:));
 set(h,'linewidth',handles.ChannelLineWidth(axnum));
+if size(handles.(['chan',num2str(axnum)]),2)>1 % if multiple channels were loaded.
+    legend('temp_{RA}','set point_{RA}','current_{RA}','temp_{HVC}','set point_{HVC}','current_{HVC}');
+else
+    legend off;
+    set(h,'color',handles.ChannelColor(axnum,:)); % NADER FIX
+end
 xlim(xl);
 
 set(gca,'xticklabel',[]);
@@ -3231,7 +3236,7 @@ if strcmp(get(handles.menu_AutoLimits1,'checked'),'on')
 else
     set(handles.menu_AutoLimits1,'checked','on');
     subplot(handles.axes_Channel1);
-    yl = [min(handles.chan1) max(handles.chan1)];
+    yl = [min(min(handles.chan1)) max(max(handles.chan1))]; % NADER FIX
     if yl(1)==yl(2)
         yl = [yl(1)-1 yl(2)+1];
     end
@@ -5484,12 +5489,13 @@ if get(handles.radio_Matlab,'value')==1
 elseif get(handles.radio_Clipboard,'value')==1
     set(fig,'units','inches');
     pos = get(gcf,'position');
-    pos(3) = handles.ExportSonogramWidth*(xl(2)-xl(1));
+    pos(3) = handles.ExportSonogramWidth*(xl(2)-xl(1))*2;
     pos(4) = handles.ExportSonogramHeight;
     set(fig,'position',pos);
     set(fig,'PaperPositionMode','manual','Renderer','painters')
 
-    print('-dmeta',['-f' num2str(fig)],['-r' num2str(handles.ExportSonogramResolution)]);
+%     print('-dmeta',['-f' num2str(fig)],['-r' num2str(handles.ExportSonogramResolution)]);
+    print(fig,'-clipboard','-dmeta'); % nader fix
     delete(fig)
 
 elseif get(handles.radio_Files,'value')==1

@@ -22,7 +22,7 @@ function varargout = egm_Antidromic_browser(varargin)
 
 % Edit the above text to modify the response to help egm_Antidromic_browser
 
-% Last Modified by GUIDE v2.5 10-Mar-2008 16:31:31
+% Last Modified by GUIDE v2.5 27-Feb-2021 15:41:30
 % Nader Nikbakht - 2019 modified
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -1496,3 +1496,10 @@ anti.jitter = [];
 anti.birdState = []; % is the bird freely moving?
 save(fileName,'anti');
 
+
+
+% --- Executes on mouse press over axes background.
+function axes_ColorPlot_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to axes_ColorPlot (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
