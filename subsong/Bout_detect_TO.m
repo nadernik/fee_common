@@ -9,45 +9,63 @@ function Bout_detect_TO(varargin)
 persistent params;
 if isempty(params)
     params = inputParser();
-    addOptional(params, 'pathName', '', @ischar);
+    addOptional(params, 'path_name', '', @ischar);
     addOptional(params, 'soundchan', []);
     addOptional(params, 'datachan', []);
+    addParameter(params, 'sound_glob', '');
+    addParameter(params, 'neural_globs', []);
     addParameter(params, 'filter_order', 200);
     addParameter(params, 'filter_band', [1000, 4000]);
     addParameter(params, 'amplitude_smoothing_window', 0.0025);
+    addParameter(params, 'loader_fun', @egl_AA_daq);
+    addParameter(params, 'loader_str', 'egl_AA_daq');
+    addParameter(params, 'save_path', '');
 end
 params.parse(varargin{:});
 
-if isempty(params.Results.pathName)
-    pathName = uigetdir(pwd(), 'Choose the directory that contains songs');
+if isempty(params.Results.path_name)
+    path_name = uigetdir(pwd(), 'Choose the directory that contains songs');
 else
-    pathName = params.Results.pathName;
+    path_name = params.Results.path_name;
 end
 
-[soundchan, datachan] = defafault_channel_dialog(params.Resuts.soundchan, params.Results.datachan);
+if isempty(params.Results.sound_glob)
+    [soundchan, datachan] = defafault_channel_dialog(params.Resuts.soundchan, params.Results.datachan);
+    sound_glob = sprintf('*chan%d.dat', soundchan);
+else
+    sound_glob = params.Results.sound_glob;
+    datachan = [];
+end
+
+if isempty(params.Results.save_path)
+    save_path = path_name;
+else
+    save_path = params.Results.save_path;
+end
 
 filter_order = params.Results.filter_order;
 filter_band = params.Results.filter_band;
 amplitude_smoothing_window = params.Results.amplitude_smoothing_window;
+loader_str = params.Results.loader_str;
 
-cd(pathName)
+cd(path_name)
 
-if exist(fullfile(pathName, 'analysis.mat'), 'file') == 2 % analysis.mat already exists
+if exist(fullfile(path_name, 'analysis.mat'), 'file') == 2 % analysis.mat already exists
     error('analysis.mat already exists');
 end
 
-boutpath = fullfile(pathName, 'bouts');
+boutpath = fullfile(save_path, 'bouts');
 if exist(boutpath, 'dir') == 0 % no bouts folder
     mkdir(boutpath); % make bouts folder
 end
 
-s_files = dir(fullfile(pathName, sprintf('*chan%d.dat', soundchan))); % list of sound files
+s_files = dir(fullfile(path_name, sound_glob)); % list of sound files
 n_song = numel(s_files);
 
 dbase = empty_dbase();
-dbase = init_dbase(dbase, pathName, loader_str, datachan, n_song, s_files);
+dbase = init_dbase(dbase, path_name, loader_str, datachan, n_song, s_files);
 
-fig = bout_figure(pathName, n_song);
+[fig, progbar, timeelapsed, boutssaved, filesanalyzed] = bout_figure(path_name, n_song);
 drawnow;
 starttime = now;
 
@@ -62,14 +80,16 @@ temp.ev = {};
 
 firstRun = true;
 last_fs = 0;
+loader_fun = params.Results.loader_fun;
 for file_no = dbase.AnalysisState.CurrentFile+1:n_song
     dbase.AnalysisState.CurrentFile = file_no;
 
+    song_fname = fullfile(path_name, s_files(file_no).name);
     try
         [a, fs, dateandtime, ~, ~] = ...
-            egl_AA_daq(fullfile(pathName, s_files(file_no).name), 1); % load sound file
+            loader_fun(song_fname, 1); % load sound file
     catch
-        disp('fail');
+        fprintf('failed to read file %s\n', song_fname);
         a = [];
     end
     if ~isempty(datachan) && ~isempty(a)
@@ -77,10 +97,10 @@ for file_no = dbase.AnalysisState.CurrentFile+1:n_song
             for i=1:length(datachan)
                 dchan = datachan(i);
                 [chdata{dchan}, fs, dateandtime, ~, ~] = ...
-                    egl_AA_daq(fullfile(pathName, d_files{dchan}(file_no).name), 1); % load data channels
+                loader_fun(fullfile(path_name, d_files{dchan}(file_no).name), 1); % load data channels
             end
         catch
-            disp('fail');
+            fprintf('failed to read data for song file %s\n', song_fname);
             a = [];
         end
     end
@@ -164,7 +184,8 @@ for file_no = dbase.AnalysisState.CurrentFile+1:n_song
                 iss = 0;
                 while iss==0
                     try
-                        bout_soundpath = fullfile(boutpath, sprintf('sound_%04d_%03d.mat', file_no, bout_no));
+                        sound_savefile = sprintf('sound_%04d_%03d.mat', file_no, bout_no);
+                        bout_soundpath = fullfile(boutpath, sound_savefile);
                         save(bout_soundpath,'rec');
 
                         if ~isempty(datachan)
@@ -208,7 +229,7 @@ dbase.AnalysisState.CurrentFile = 1;
 iss = 0;
 while iss==0
     try
-        save(fullfile(pathName, 'analysis_original.mat'),'dbase');
+        save(fullfile(path_name, 'analysis_original.mat'),'dbase');
         iss = 1;
     catch
         disp('fail');
@@ -239,7 +260,7 @@ if ~isempty(datachan)
 end
 
 dbase.Fs = fs;
-dbase.SegmentThresholds = thres(temp.files);
+dbase.SegmentThresholds = dbase.SegmentThresholds(temp.files);
 dbase.SegmentTimes = temp.syll;
 dbase.SegmentTitles = temp.titl;
 
@@ -461,7 +482,7 @@ dbase = [];
 dbase.PathName = '';
 
 dbase.SoundLoader = '';
-dbase.SoundFiles = s_files;
+dbase.SoundFiles = {};
 
 dbase.ChannelLoader = {};
 dbase.ChannelFiles = {};
@@ -487,8 +508,8 @@ dbase.FileLength = zeros(1,0);
 dbase.Times = zeros(1,0);
 end
 
-function dbase = init_dbase(dbase, pathName, loader_str, datachan, n_song, s_files)
-dbase.PathName = pathName;
+function dbase = init_dbase(dbase, path_name, loader_str, datachan, n_song, s_files)
+dbase.PathName = path_name;
 
 dbase.SoundLoader = loader_str;
 
@@ -496,7 +517,7 @@ dbase.SoundFiles = s_files;
 if ~isempty(datachan)
     for i=1:length(datachan) % for all the channels
         dchan = datachan(i); % channel number
-        dbase.ChannelFiles{dchan} = dir(fullfile(pathName, sprintf('*chan%d.dat', dchan))); % list of neural files
+        dbase.ChannelFiles{dchan} = dir(fullfile(path_name, sprintf('*chan%d.dat', dchan))); % list of neural files
         dbase.ChannelLoader{1,dchan} = loader_str;
     end
 end
@@ -515,12 +536,12 @@ dbase.FileLength = zeros(1,n_song);
 dbase.Times = zeros(1,n_song);
 end
 
-function fig = bout_figure(pathName, n_song)
+function [fig, progbar, timeelapsed, boutssaved, filesanalyzed] = bout_figure(path_name, n_song)
 %% figure
 fig = figure(55);
 clf
 subplot('position',[.05 0.35 0.9 0.6]);
-text(0,3,[pathName],'fontsize',14,'interpreter','none','horizontalalignment','center');
+text(0,3,[path_name],'fontsize',14,'interpreter','none','horizontalalignment','center');
 hold on
 filesanalyzed = text(0,2,['Files analyzed: 0 of ' num2str(n_song)],'fontsize',14,'interpreter','none','horizontalalignment','center');
 progbar = imagesc([-1 1],[.4 .6],zeros(1,n_song));
