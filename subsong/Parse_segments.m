@@ -332,8 +332,15 @@ switch double(get(gcf,'currentcharacter'))
             f = find(handles.symbols==handles.currentletter);
             g = find(handles.symbols==double(get(gcf,'currentcharacter')));
             if ~isempty(g)
-                col = round(mean([handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile}(f:g) 0.5]));
-                handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile}(f:g) = 1-col;
+                this_selected = handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile};
+                nseg = numel(this_selected);
+                selmax = max([f, g]);
+                if selmax <= nseg
+                    col = round(mean([this_selected(f:g) 0.5]));
+                    handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile}(f:g) = 1-col;
+                else
+                    fprintf('selection (%d) exceeds number of segments (%d)\n', selmax, nseg);
+                end
                 handles.currentletter = [];
             end
         end
