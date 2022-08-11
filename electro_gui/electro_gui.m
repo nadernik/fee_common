@@ -844,7 +844,7 @@ filenum = getFileNum(handles); % get file number that is to be opened
 set(handles.list_Files,'value',filenum); % update list
 str = get(handles.list_Files,'string');
 if strcmp(str{filenum}(26:27),'× ')
-    str{filenum} = str{filenum}([1:25 28:end]); % remove the x in fromt of the file name after opening
+    str{filenum} = str{filenum}([1:25 28:end]); % remove the x in front of the file name after opening
     set(handles.list_Files,'string',str);
 end
 
@@ -9035,7 +9035,7 @@ end
 guidata(hObject, handles);
 
 %% save relevant variables to dbase for further analysis
-function dbase = GetDBase(handles);
+function dbase = GetDBase(handles)
 
 dbase.PathName = handles.path_name;
 dbase.Times = handles.DatesAndTimes;
