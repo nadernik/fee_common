@@ -1,4 +1,4 @@
-function [S,Time,F] = spectrogramELM(song,fs,specDT, makePlot, fpass, BandwidthProduct, winsize)
+function [S,Time,F] = spectrogramELM(song,fs,specDT, makePlot, fpass, BandwidthProduct, winsize,Time)
 
 if nargin < 7; winsize = .02; end
 if nargin < 6; BandwidthProduct = 150; end
@@ -7,54 +7,60 @@ if nargin < 4; makePlot = 0; end
 if nargin < 3; specDT = .005; end
 
 
-if round(specDT*fs*1e5) ~= round(specDT*fs*1e5) % 1e5 to deal with machine precision errors (eg round(40.0000)~=40); 
+if round(specDT*fs*1e5) ~= round(specDT*fs*1e5) % 1e5 to deal with machine precision errors (eg round(40.0000)~=40);
     error('Must choose winstep with integer number of bins')
 end
 
-winstep =specDT; 
-Time = (winstep:winstep:(length(song)/fs))-winstep; 
+winstep =specDT;
+if nargin < 8
+    Time = (winstep:winstep:(length(song)/fs))-winstep;
+end
 
 % parameters for chronux spectrogram
 params.Fs = fs;
 params.fpass = fpass;
-T = winsize; 
+T = winsize;
 W = BandwidthProduct; % frequency bandwidth product
 K = 1; %number of tapers
 params.tapers = [T*W K];
-movingwin = [winsize winstep]; 
+movingwin = [winsize winstep];
 
 % zeropad song by 1 windowsize so we can keep the spectrogram the right length
-zpSong = [zeros(round(winsize*fs),1); song(:); zeros(round(winsize*fs),1)]; 
+zpSong = [zeros(round(winsize*fs),1); song(:); zeros(round(winsize*fs),1)];
 
 % calculate spectrogram using chronux function
 [Szp,tzp,F]=mtspecgramc(zpSong,movingwin,params);
 
 % recover part of spectrogram corresponding to original signal
-tind_start = find(abs(tzp-winsize)<=winstep/2); 
+tind_start = find(abs(tzp-winsize)<=winstep/2);
 tind = tind_start + Time/winstep;
 if winstep<1
     tind = round(tind/10/winstep)*10*winstep; % to get rid of rounding from weird machine-precision errors
 end
-S = Szp(tind,:)';
+if nargin <8
+    S = Szp(tind,:)';
+else
+    S = Szp';
+end
 
 
 % plotting stuff
 if makePlot
     % to make black background, set everything below threshold to threshold, then cmap(1,:) = zeros(1,3); % background = black
-%     cmap(1,:) = zeros(1,3);
-    cmap = flipud(brewermap(256,'Spectral'));
+    %     cmap(1,:) = zeros(1,3);
+    %     cmap = flipud(brewermap(256,'Spectral'));
     cmap = jet(256);
-%     cmap = 1/256*flipud([158,1,66;213,62,79;244,109,67;253,174,97;254,224,139;255,255,191;230,245,152;171,221,164;102,194,165;50,136,189;94,79,162;1 1 1]);%cbrewer spectral, modified
-%     cmap = flipud(gray); 
-%     cmap = parula(256);
+    %     cmap = 1/256*flipud([158,1,66;213,62,79;244,109,67;253,174,97;254,224,139;255,255,191;230,245,152;171,221,164;102,194,165;50,136,189;94,79,162;1 1 1]);%cbrewer spectral, modified
+    %     cmap = flipud(gray);
+    %     cmap = parula(256);
     cmap(1,:) = [0 0 0]; % set baseline black
     colormap(cmap);
     Plot = 10*log10(S+eps);
     p_thresh = 55; % thresholding the spectrogram
     Plot(Plot(:)<prctile(Plot(:),p_thresh)) = prctile(Plot(:),p_thresh);
-    imagesc(Time,F/1000,Plot); axis tight; 
+    imagesc(Time,F/1000,Plot); axis tight;
     set(gca, 'ydir', 'normal')
-%      surf(Time, F/1000, Plot,'edgecolor','none'); axis tight; view(0,90);
+    %      surf(Time, F/1000, Plot,'edgecolor','none'); axis tight; view(0,90);
     ylabel('Frequency (kHz)'); xlabel('Time (s)')
     shg
 end
