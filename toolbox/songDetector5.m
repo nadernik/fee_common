@@ -28,7 +28,7 @@ actInSampleRate = fs;
 sig = audio;
 
 %Parameters for part 1.  Spectrogram Parameters
-windowSize = actInSampleRate/20;
+windowSize = double(actInSampleRate/20);
 windowOverlap = fix(windowSize*.5);
 
 %Parameters for Part 2.  Frequency range in which songs typically has
