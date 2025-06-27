@@ -49,14 +49,14 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
             self.timeCourse = self.startTime + (0:(self.nSamp - 1)) ./ self.fs;
             self.update_display();
         end
-        
+
         function update_display(self, ~, ~)
             %% Determine axis pixel size
             pixelWidth = self.pixel_width(); % X extent of axis, in pixels
-            
+
             nDispSamps = self.endNdx - self.startNdx + 1;
             displayedSig = self.signal(self.startNdx:self.endNdx);
-            
+
             pointsPerPixel = nDispSamps / pixelWidth;
             cla(self.AxisHandle);
             if pointsPerPixel < self.downsampleMin
@@ -79,18 +79,23 @@ classdef (Sealed) SignalBoundsDisplay < ResizableDisplay
                 binTime = firstBinTime  + pointsPerBin * (0:(nBins - 1)) / self.fs;
                 minSig = nanmin(binnedSig);
                 maxSig = nanmax(binnedSig);
-                
+
                 %% Plotting
-                hold(self.AxisHandle, 'all');
-                MinPlot = plot(self.AxisHandle, binTime, minSig);
-                MaxPlot = plot(self.AxisHandle, binTime, maxSig, 'Color', MinPlot.Color);
-                MinPlot.HitTest = 'Off';
-                MaxPlot.HitTest = 'Off';
-                hold(self.AxisHandle, 'off');
+                plot_x = nan(2 * nBins, 1);
+                plot_x(1:2:end - 1) = binTime;
+                plot_x(2:2:end) = binTime;
+
+                plot_y = nan(2 * nBins, 1);
+                plot_y(1:2:end - 1) = maxSig;
+                plot_y(2:2:end) = minSig;
+
+                DPlot = plot(self.AxisHandle, plot_x, plot_y);
+                DPlot.HitTest = 'Off';
+
                 xlim(self.AxisHandle, [binTime(1), binTime(end)]);
             end
         end
-        
+
         function ndx = x_to_ndx(self, x)
             ndx = floor((x - self.startTime) * self.fs) + 1;
         end

@@ -94,9 +94,10 @@ try
     loader_func = str2func(['egl_', handles.dbase.SoundLoader]);
     sound_path = fullfile(handles.dbase.PathName, handles.dbase.SoundFiles(fnum).name);
     [handles.snd, handles.fs, ~, ~, ~] = loader_func(sound_path, 1);
-catch
+catch ME
     handles.snd = zeros(1000,1);
     handles.fs = 40000;
+    disp( getReport( ME, 'extended', 'hyperlinks', 'on' ) );
 end
 
 subplot(handles.axes_Sonogram);
@@ -331,8 +332,15 @@ switch double(get(gcf,'currentcharacter'))
             f = find(handles.symbols==handles.currentletter);
             g = find(handles.symbols==double(get(gcf,'currentcharacter')));
             if ~isempty(g)
-                col = round(mean([handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile}(f:g) 0.5]));
-                handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile}(f:g) = 1-col;
+                this_selected = handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile};
+                nseg = numel(this_selected);
+                selmax = max([f, g]);
+                if selmax <= nseg
+                    col = round(mean([this_selected(f:g) 0.5]));
+                    handles.dbase.SegmentIsSelected{handles.dbase.AnalysisState.CurrentFile}(f:g) = 1-col;
+                else
+                    fprintf('selection (%d) exceeds number of segments (%d)\n', selmax, nseg);
+                end
                 handles.currentletter = [];
             end
         end
